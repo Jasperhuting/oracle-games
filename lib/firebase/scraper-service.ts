@@ -22,8 +22,6 @@ export async function saveScraperData(
   key: ScraperDataKey,
   data: StartlistResult | StageResult
 ): Promise<void> {
-  console.log('Saving scraper data:', data);
-  console.log('key', key);
 
   const db = getServerFirebase();
   const docId = generateDocumentId(key);

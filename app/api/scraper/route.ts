@@ -108,7 +108,6 @@ export async function POST(request: NextRequest) {
     // Save to Firebase (this will overwrite existing data)
     await saveScraperData(key, scraperData);
 
-    console.log('scraperData', scraperData);
 
     // Calculate data count based on type
     let dataCount = 0;

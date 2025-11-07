@@ -64,7 +64,6 @@ export function useDataRefresh({
           // If we had a timestamp before but now file doesn't exist, it was deleted
           if (hasInitialized.current && previousTimestamp) {
             changedFiles.push(file.race);
-            console.log(`File deleted or became unavailable: ${file.race}`);
           }
           // Don't update lastChecked for non-existent files
           if (previousTimestamp) {

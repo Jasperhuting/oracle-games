@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerFirebase } from '@/lib/firebase/server';
+
+export interface ActivityLog {
+  action: string;
+  userId: string;
+  userEmail?: string;
+  userName?: string;
+  targetUserId?: string;
+  targetUserEmail?: string;
+  targetUserName?: string;
+  details?: Record<string, any>;
+  timestamp: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { 
+      action, 
+      userId, 
+      userEmail, 
+      userName,
+      targetUserId, 
+      targetUserEmail,
+      targetUserName,
+      details 
+    } = body;
+
+    if (!action || !userId) {
+      return NextResponse.json(
+        { error: 'Action and userId are required' },
+        { status: 400 }
+      );
+    }
+
+    const db = getServerFirebase();
+
+    // Get IP address and user agent
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                      request.headers.get('x-real-ip') || 
+                      'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Create activity log entry
+    const activityLog: ActivityLog = {
+      action,
+      userId,
+      userEmail,
+      userName,
+      targetUserId,
+      targetUserEmail,
+      targetUserName,
+      details,
+      timestamp: new Date().toISOString(),
+      ipAddress,
+      userAgent,
+    };
+
+    // Save to Firestore
+    await db.collection('activityLogs').add(activityLog);
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Activity logged successfully' 
+    });
+  } catch (error) {
+    console.error('Error logging activity:', error);
+    return NextResponse.json(
+      { error: 'Failed to log activity', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}

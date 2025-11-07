@@ -37,3 +37,5 @@ export function getServerFirebase() {
   
   return getAdminFirestore();
 }
+
+export const db = getClientFirebase();

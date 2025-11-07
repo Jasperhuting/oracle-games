@@ -1,3 +1,5 @@
+import { TTTTeamResult } from "../scraper";
+
 /**
  * Recursively removes undefined values from an object to make it Firebase-safe
  * Firebase doesn't allow undefined values in documents
@@ -37,3 +39,27 @@ export function iso2ToFlag(code: string): string {
     A + (c2.charCodeAt(0) - asciiA)
   );
 }
+
+export function isTTTTeamResult(v: unknown): v is TTTTeamResult {
+  const obj = v as any;
+  return obj && typeof obj === 'object' && typeof obj.team === 'string' && Array.isArray(obj.riders);
+}
+
+
+export const toSlug = (str: string) => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0142]/g, "l")   // ł
+    .replace(/[\u0141]/g, "L")   // Ł
+    .replace(/[\u00F8]/g, "o")   // ø
+    .replace(/[\u00D8]/g, "O")   // Ø
+    .replace(/[\u00DF]/g, "ss")  // ß
+    .replace(/[\u00E6]/g, "ae")  // æ
+    .replace(/[\u00C6]/g, "Ae")  // Æ
+    .replace(/[\u0300-\u036f]/g, "") // remove combining accents
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+};

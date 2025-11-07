@@ -27,11 +27,70 @@ export interface Rider {
   dropout: boolean;
 }
 
+export interface EnrichedRider {
+  jerseyImage: string;
+  name: string;
+  age: number;
+}
+
+export interface Rider {
+  name: string;
+  rank: number;
+  points: number;
+  team: RankedTeam;
+  country: string;
+  id: string;
+}
+
+export interface RankedRider {
+  points: number;
+  team: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  nameID: string;
+  rank: number;
+  country: string;
+}
+
+export interface RankedTeam {
+  rank: number;
+  name: string;
+  nameID: string;
+  slug: string;
+  class: string;
+  country: string;
+  points: number;
+}
+
 export interface Team {
+  id?: string;
   image?: string;
   name: string;
-  shortName: string;
-  riders: Rider[];
+  shortName?: string;
+  riders?: Rider[];
+  pcsRank?: number;
+  rank?: number;
+  points?: number;
+  country?: string;
+  slug?: string;
+  class?: string;
+}
+
+export interface RankedTeamsResult {
+  source: string;
+  count: number;
+  teams: RankedTeam[];
+  scrapedAt: string;
+  year: number;
+}
+
+export interface RankedRidersResult {
+  source: string;
+  count: number;
+  riders: RankedRider[];
+  scrapedAt: string;
+  year: number;
 }
 
 export interface StartlistResult {
@@ -50,12 +109,14 @@ export interface StageRider {
   startNumber: string;
   gc: string;
   place: number;
+  timeDifferenceGc: string;
   timeDifference: string;
+  breakAway: boolean;
   team: string;
   shortName: string;
   uciPoints: string;
   points: string;
-  qualificationTime: string;
+  qualificationTime?: number;
 }
 
 export interface TTTTeamResult {
@@ -83,7 +144,7 @@ export interface ClassificationRider {
   gc?: string;
   timeDifference?: string;
   uciPoints?: string;
-  qualificationTime?: string;
+  qualificationTime?: number;
 }
 
 export interface TeamClassification {
@@ -91,6 +152,7 @@ export interface TeamClassification {
   team: string;
   shortName: string;
   class: string;
+  timeInSeconds?: number;
 }
 
 export interface StageResult {
@@ -105,4 +167,14 @@ export interface StageResult {
   youthClassification: ClassificationRider[];
   teamClassification: TeamClassification[];
   scrapedAt: string;
+}
+
+export interface Country {
+    capital?: string,
+    code: string,
+    continent?: string,
+    flag_1x1: string,
+    flag_4x3: string,
+    iso: boolean,
+    name: string;
 }
