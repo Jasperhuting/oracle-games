@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
-import { enrichTeamsAndRiders } from "@/lib/scraper/enrichTeamsAndRiders";
+import { enrichTeams } from "@/lib/scraper/enrichTeams";
 import { getServerFirebase } from "@/lib/firebase/server";
-import { toSlug } from "@/lib/firebase/utils";
+import { EnrichedRider } from "@/lib/scraper";
+
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -12,7 +13,9 @@ export async function GET(request: NextRequest) {
         return Response.json({ error: 'Missing year or team parameter' }, { status: 400 });
     }
 
-    const result = await enrichTeamsAndRiders({ year: Number(year), team });
+    const result = await enrichTeams({ year: Number(year), team });
+
+    console.log('result', result)
 
     const db = getServerFirebase();
 
@@ -39,40 +42,14 @@ export async function GET(request: NextRequest) {
     if (result.name !== undefined) {
         updateData.name = result.name;
     }
-
-    if (Object.keys(result.riders).length > 0) {
-        for (const rider of result.riders) {
-
-            console.log('rider', rider)
-
-            await db.collection(`rankings_${year}`).doc(rider.name).update({
-                jerseyImage: rider.jerseyImage,
-            });
-        }
+    if (result.class !== undefined) {
+        updateData.class = result.class;
     }
 
     // Only update if there's data to update
     if (Object.keys(updateData).length > 0) {
         await db.collection('teams').doc(team).update(updateData);
     }
-
-    // try {
-    //   for (const team of result.teams) {
-
-    //     const teamId = toSlug(team.name);
-
-    //     await db.collection('teams').doc(teamId).set({
-    //       name: team.name,
-    //       class: team.class,
-    //       country: team.country,
-    //       points: team.points,
-    //       slug: toSlug(team.name),
-    //     });
-    //   }
-    // } catch (error) {
-    //   console.error('Error creating rankings:', error);
-    //   return Response.json({ error: 'Failed to create rankings' }, { status: 500 });
-    // }
 
     return Response.json({ result });
 }

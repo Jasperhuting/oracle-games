@@ -68,14 +68,14 @@ export const AddGameTab = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon race niet aanmaken');
+        throw new Error(errorData.error || 'Could not create race');
       }
 
-      setSuccess('Race succesvol toegevoegd en startlijst is geladen!');
+      setSuccess('Race successfully added and starting list is loaded!');
       reset();
     } catch (error: any) {
       console.error('Error creating race:', error);
-      setError(error.message || 'Er is iets misgegaan bij het toevoegen van de race');
+      setError(error.message || 'Something went wrong adding the race');
     } finally {
       setIsSubmitting(false);
     }

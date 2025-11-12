@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./Button";
 import { EnrichedRider } from "@/lib/scraper";
 import { Flag } from "@/components/Flag";
 import ClassificationTabs from "./ClassificationTabs";
+import { ChevronLeft, ChevronRight } from "tabler-icons-react";
 
 interface Race {
   id: string;
@@ -24,6 +25,7 @@ const stagesCache = new Map<string, any[]>();
 
 export const GamesTab = () => {
   const { user } = useAuth();
+  const userId = user?.uid;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [races, setRaces] = useState<Race[]>([]);
@@ -48,11 +50,14 @@ export const GamesTab = () => {
   const [showAllMountains, setShowAllMountains] = useState(false);
   const [activeClassificationTab, setActiveClassificationTab] = useState<'stage' | 'gc' | 'points' | 'mountains' | 'youth' | 'team'>('stage');
 
-  const fetchRaces = async () => {
-    if (!user) return;
+  const fetchRaces = useCallback(async () => {
+
+    console.log('userID', userId)
+
+    if (!userId) return;
 
     try {
-      const response = await fetch(`/api/getRaces?userId=${user.uid}`);
+      const response = await fetch(`/api/getRaces?userId=${userId}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -68,15 +73,12 @@ export const GamesTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
+  // Fetch races when component mounts or userId changes
   useEffect(() => {
     fetchRaces();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchRaces, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+  }, [fetchRaces]);
 
   // Check URL for race parameter and load race data
   useEffect(() => {
@@ -247,6 +249,65 @@ export const GamesTab = () => {
     }
   };
 
+  const handleSaveAllStages = async () => {
+    if (!user || !selectedRace) return;
+
+    const totalStages = 21;
+    const confirmed = confirm(`Weet je zeker dat je alle ${totalStages} etappes wilt toevoegen? Dit kan enkele minuten duren.`);
+    
+    if (!confirmed) return;
+
+    setSavingStage(true);
+    let successCount = 0;
+    let failedStages: number[] = [];
+
+    try {
+      for (let stage = 1; stage <= totalStages; stage++) {
+        try {
+          const response = await fetch('/api/saveStageResult', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.uid,
+              raceSlug: selectedRace.slug,
+              year: selectedRace.year,
+              stage: stage,
+            }),
+          });
+
+          if (response.ok) {
+            successCount++;
+            console.log(`✓ Stage ${stage} opgeslagen`);
+          } else {
+            failedStages.push(stage);
+            console.error(`✗ Stage ${stage} mislukt`);
+          }
+        } catch (error) {
+          failedStages.push(stage);
+          console.error(`✗ Stage ${stage} error:`, error);
+        }
+
+        // Small delay to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      if (failedStages.length === 0) {
+        alert(`🎉 Alle ${totalStages} etappes succesvol opgeslagen!`);
+      } else {
+        alert(`✓ ${successCount} etappes opgeslagen\n✗ ${failedStages.length} mislukt: ${failedStages.join(', ')}`);
+      }
+
+      fetchStages(selectedRace.slug);
+    } catch (error: any) {
+      console.error('Error saving all stages:', error);
+      alert(`Er is iets misgegaan. ${successCount} etappes zijn opgeslagen.`);
+    } finally {
+      setSavingStage(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('nl-NL', {
@@ -332,7 +393,7 @@ export const GamesTab = () => {
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <Button
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700"
+              className="px-4 py-2 "
               text="← Terug naar overzicht"
               onClick={() => {
                 setSelectedRace(null);
@@ -354,17 +415,19 @@ export const GamesTab = () => {
           </div>
           <div className="flex gap-2">
             <Button
-              className={`px-4 py-2 ${!showStages ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+              className="px-4 py-2"
               text="Renners"
+              selected={!showStages}
               onClick={() => setShowStages(false)}
             />
             <Button
-              className={`px-4 py-2 ${showStages ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+              className="px-4 py-2"
               text={`Etappes (${stages.length})`}
+              selected={showStages}
               onClick={() => setShowStages(true)}
             />
             <Button
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 ml-auto"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 ml-auto"
               text={loadingRaceData ? "🔄 Laden..." : "🔄 Vernieuwen"}
               onClick={() => fetchRaceData(selectedRace, false, true)}
               disabled={loadingRaceData}
@@ -380,7 +443,7 @@ export const GamesTab = () => {
               {/* Back Button */}
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <Button
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700"
+                  className="px-4 py-2 "
                   text="← Terug naar etappes"
                   onClick={() => setSelectedStage(null)}
                 />
@@ -389,6 +452,22 @@ export const GamesTab = () => {
               {/* Stage Header */}
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h2 className="text-2xl font-semibold">Etappe {selectedStage.stage}</h2>
+                <div className="flex gap-2">
+
+                  <Button
+                    className="px-4 py-2"
+                    text={<div className="flex flex-row items-center"><ChevronLeft size={16} /> Vorige etappe</div>}
+                    disabled={selectedStage.stage === 1}
+                    onClick={() => setSelectedStage(stages.find(stage => stage.stage === selectedStage.stage - 1))}
+                  />
+                  <Button
+                    className="px-4 py-2"
+                    text={<div className="flex flex-row items-center">Volgende etappe <ChevronRight size={16} /></div>}
+                    disabled={selectedStage.stage === stages.length}
+                    onClick={() => setSelectedStage(stages.find(stage => stage.stage === selectedStage.stage + 1))}
+                  />
+                  
+                  </div>
                 <p className="text-sm text-gray-600 mt-1">
                   Opgeslagen op: {new Date(selectedStage.scrapedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -403,20 +482,46 @@ export const GamesTab = () => {
               {/* Add Stage Form */}
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-3">Etappe Toevoegen</h3>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={stageNumber}
-                    onChange={(e) => setStageNumber(e.target.value)}
-                    placeholder="Etappe nummer (bijv. 1)"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <Button
-                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700"
-                    text={savingStage ? "Bezig..." : "Opslaan"}
-                    onClick={handleSaveStage}
-                    disabled={savingStage || !stageNumber}
-                  />
+                <div className="space-y-3">
+                  {/* Single stage */}
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={stageNumber}
+                      onChange={(e) => setStageNumber(e.target.value)}
+                      placeholder="Etappe nummer (bijv. 1)"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <Button
+                      className="px-6 py-2 bg-primary hover:bg-primary/90"
+                      text={savingStage ? "Bezig..." : "Opslaan"}
+                      onClick={handleSaveStage}
+                      disabled={savingStage || !stageNumber}
+                    />
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">of</span>
+                    </div>
+                  </div>
+
+                  {/* All stages */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      className="flex-1 px-6 py-2 bg-green-600 hover:bg-green-700 text-white"
+                      text={savingStage ? "Bezig met alle etappes..." : "📦 Voeg alle 21 etappes toe"}
+                      onClick={handleSaveAllStages}
+                      disabled={savingStage}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 text-center">
+                    Dit kan enkele minuten duren. Etappes worden één voor één opgeslagen.
+                  </p>
                 </div>
               </div>
 
@@ -427,8 +532,8 @@ export const GamesTab = () => {
                 </div>
               ) : stages.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                  <p className="text-gray-600">Nog geen etappes opgeslagen</p>
-                  <p className="text-sm text-gray-500 mt-2">Voeg een etappe nummer toe om te beginnen</p>
+                  <p className="text-gray-600">No stages saved yet</p>
+                  <p className="text-sm text-gray-500 mt-2">Add a stage number to get started</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
@@ -456,7 +561,7 @@ export const GamesTab = () => {
                           <p>⛰️ Bergen Leider: {stage.mountainsClassification[0]?.name || stage.mountainsClassification[0]?.firstName + ' ' + stage.mountainsClassification[0]?.lastName || 'Onbekend'} ({stage.mountainsClassification[0]?.pointsTotal || stage.mountainsClassification[0]?.points || '-'} ptn)</p>
                         )}
                       </div>
-                      <div className="mt-3 text-xs text-purple-600 font-medium">
+                      <div className="mt-3 text-xs text-primary font-medium">
                         Klik voor details →
                       </div>
                     </div>
@@ -648,7 +753,7 @@ export const GamesTab = () => {
           </div>
           {races.length === 0 && (
             <Button
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700"
+              className="px-4 py-2 bg-primary hover:bg-primary/90"
               text={initializing ? "Bezig..." : "Initialiseer Bestaande Races"}
               onClick={handleInitializeRaces}
               disabled={initializing}
@@ -660,10 +765,10 @@ export const GamesTab = () => {
       {/* Races Grouped by Year */}
       {races.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-600 mb-4">Geen races gevonden</p>
+          <p className="text-gray-600 mb-4">No races found</p>
           <p className="text-sm text-gray-500">
-            Klik op "Initialiseer Bestaande Races" om de huidige races toe te voegen,
-            of ga naar "Race Toevoegen" om een nieuwe race te maken.
+            Click "Initialize Existing Races" to add current races,
+            or go to "Add Race" to create a new race.
           </p>
         </div>
       ) : (
@@ -717,7 +822,7 @@ export const GamesTab = () => {
                                 type="text"
                                 value={editDescription}
                                 onChange={(e) => setEditDescription(e.target.value)}
-                                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
                                 placeholder="Beschrijving..."
                                 autoFocus
                               />
@@ -736,7 +841,7 @@ export const GamesTab = () => {
                             </div>
                           ) : (
                             <div 
-                              className="text-sm text-gray-600 cursor-pointer hover:text-purple-600 flex items-center gap-2"
+                              className="text-sm text-gray-600 cursor-pointer hover:text-primary flex items-center gap-2"
                               onClick={(e) => handleEditDescription(race, e)}
                             >
                               <span>{race.description || '-'}</span>
@@ -747,7 +852,7 @@ export const GamesTab = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-purple-600">
+                          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-primary">
                             {race.slug}
                           </code>
                         </td>

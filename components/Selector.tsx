@@ -15,6 +15,8 @@ interface SelectorProps<T> {
     renderSelectedItem: (item: T, index: number, onRemove: () => void) => React.ReactNode;
     localStorageKey?: string;
     initialResultsLimit?: number;
+    showSelected?: boolean;
+    getItemLabel?: (item: T) => string;
 }
 
 export function Selector<T>({
@@ -29,11 +31,12 @@ export function Selector<T>({
     renderItem,
     renderSelectedItem,
     localStorageKey,
-    initialResultsLimit = 50
+    initialResultsLimit = 50,
+    showSelected = true,
+    getItemLabel
 }: SelectorProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState<T[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [items, setItems] = useState<T[]>(initialItems);
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -57,14 +60,12 @@ export function Selector<T>({
 
     useEffect(() => {
         const performSearch = async () => {
-            setIsSearching(true);
             if (debouncedSearchTerm) {
                 const filteredItems = items.filter(item => searchFilter(item, debouncedSearchTerm));
                 setResults(filteredItems);
             } else {
                 setResults(items.slice(0, initialResultsLimit));
             }
-            setIsSearching(false);
         };
 
         performSearch();
@@ -92,25 +93,43 @@ export function Selector<T>({
         setSelectedItems([]);
     };
 
+    // Generate display value for input
+    const getDisplayValue = () => {
+        if (isFocused) {
+            return searchTerm;
+        }
+        if (selectedItems.length > 0 && getItemLabel) {
+            return selectedItems.map(item => getItemLabel(item)).join(', ');
+        }
+        return searchTerm;
+    };
+
+    const getPlaceholder = () => {
+        if (selectedItems.length > 0 && !isFocused && !getItemLabel) {
+            return `${placeholder} (${selectedItems.length} selected)`;
+        }
+        return placeholder;
+    };
+
     return (
         <div className="relative flex flex-row items-center gap-2">
             <div className="flex items-center gap-2">
                 <input
-                    className="h-[40px] max-w-[400px] w-full px-3 border border-gray-300 rounded"
+                    className={`h-[40px] max-w-[400px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
                     type="text"
-                    placeholder={placeholder}
-                    value={searchTerm}
+                    placeholder={getPlaceholder()}
+                    value={getDisplayValue()}
                     onChange={handleSearch}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                 />
-                {selectedItems.length > 0 && (
+                {selectedItems.length > 0 && multiSelect && (
                     <button
                         onClick={clearAll}
-                        className="h-[40px] px-3 bg-red-500 text-white rounded hover:bg-red-600 whitespace-nowrap"
+                        className="h-[40px] px-3 bg-red-500 cursor-pointer text-white rounded hover:bg-red-600 whitespace-nowrap"
                         title="Clear selection"
                     >
-                        ✕ Clear {multiSelect ? `(${selectedItems.length})` : ''}
+                        ✕ Clear ({selectedItems.length})
                     </button>
                 )}
             </div>
@@ -130,10 +149,9 @@ export function Selector<T>({
                     ))}
                 </div>
             )}
-            {isSearching ? 'Searching...' : 'Search'}
 
             {isFocused && (
-                <div className="absolute top-[40px] left-0 z-10 bg-white border border-solid border-gray-200 rounded-md w-[600px] max-w-[600px] max-h-[400px] overflow-y-scroll shadow-lg">
+                <div className="absolute top-[40px] left-0 bg-white border border-solid border-gray-200 rounded-md w-[600px] max-w-[600px] max-h-[400px] overflow-y-scroll shadow-lg" style={{ zIndex: 9999 }}>
                     {results.map((item, index) => {
                         const isSelected = selectedItems.some(selected => isEqual(selected, item));
                         return (

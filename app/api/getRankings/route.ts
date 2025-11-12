@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
           name: data.name,
           nameID: data.nameID,
           points: data.points,
+          jerseyImage: data.jerseyImage,
+          age: data.age,
           country: data.country,
           team: teamData, // Replace reference with actual team data
         };

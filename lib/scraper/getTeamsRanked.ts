@@ -21,7 +21,8 @@ export async function getTeamsRanked({ year }: GetTeamsOptions): Promise<RankedT
     dateStr = `${year}-12-31`;
   }
 
-  const url = `https://www.procyclingstats.com/rankings.php?p=season-teams&s=&date=${dateStr}&nation=&level=&filter=Filter`;
+  const url = `https://www.procyclingstats.com/rankings.php?p=season-teams&s=&date=${year}-11-10&nation=&level=&filter=Filter`;
+  
   
   const res = await fetch(url, { 
     headers: { 'User-Agent': 'Mozilla/5.0 (Node Script)' } 

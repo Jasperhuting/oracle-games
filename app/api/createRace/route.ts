@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
               await newTeamRef.set({
                 name: team,
                 slug: teamSlug,
-              });
+              }, { merge: true });
               teamRef = newTeamRef;
             }
           }

@@ -14,7 +14,7 @@ export const PasskeyLogin = () => {
 
     const handlePasskeyLogin = async () => {
         if (!isPasskeySupported()) {
-            setError('Je browser ondersteunt geen passkeys. Gebruik een moderne browser zoals Chrome, Safari of Edge.');
+            setError('Your browser does not support passkeys. Use a modern browser like Chrome, Safari or Edge.');
             return;
         }
 
@@ -24,7 +24,7 @@ export const PasskeyLogin = () => {
         try {
             // Authenticate with passkey (credential identifies the user)
             const passkeyData = await authenticateWithPasskey();
-            
+
             // Send to backend for verification
             const response = await fetch('/api/verifyPasskey', {
                 method: 'POST',
@@ -36,14 +36,14 @@ export const PasskeyLogin = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Passkey verificatie mislukt');
+                throw new Error(errorData.error || 'Passkey verification failed');
             }
 
             const { token, userId } = await response.json();
-            
+
             // Sign in with custom token
             await signInWithCustomToken(auth, token);
-            
+
             // Update last login method
             await fetch('/api/updateLoginMethod', {
                 method: 'POST',
@@ -55,12 +55,12 @@ export const PasskeyLogin = () => {
                     loginMethod: 'passkey',
                 }),
             });
-            
+
             console.log('Passkey login successful');
             router.push('/home');
         } catch (error: any) {
             console.error('Passkey login error:', error);
-            setError(error.message || 'Er is iets misgegaan bij het inloggen met passkey');
+            setError(error.message || 'Something went wrong logging in with passkey');
         } finally {
             setIsLoading(false);
         }
@@ -74,7 +74,7 @@ export const PasskeyLogin = () => {
         <div>
             <Button
                 className="w-full justify-center py-2 text-white "
-                text={isLoading ? "Bezig met inloggen..." : "Inloggen met Passkey 🔑"}
+                text={isLoading ? "Logging in..." : "Log in with Passkey 🔑"}
                 onClick={handlePasskeyLogin}
                 disabled={isLoading}
             />

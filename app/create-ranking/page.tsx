@@ -6,12 +6,16 @@ import { MyTeamSelection } from "@/components/MyTeamSelection";
 import { Pagination } from "@/components/Pagination";
 import { PlayerCard } from "@/components/PlayerCard";
 import { Toggle } from "@/components/Toggle";
+import { TeamSelector } from "@/components/TeamSelector";
+import { ClassSelector } from "@/components/ClassSelector";
 import { iso2ToFlag } from "@/lib/firebase/utils";
 import { Country, Team, Rider } from "@/lib/scraper";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { List } from 'react-window';
 import { PlayerRow } from "@/components/PlayerRow";
+import { Flag } from "@/components/Flag";
+import countriesList from '@/lib/country.json';
 
 export default function CreateRankingPage() {
   const router = useRouter();
@@ -24,36 +28,60 @@ export default function CreateRankingPage() {
   const [selectedPlayers, setSelectedPlayers] = useState<Rider[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
 
-  const [showPlayerCard, setShowPlayerCard] = useState(false);
+  const [viewRank, setViewRank] = useState(true);
+  const [viewClass, setViewClass] = useState(true);
+  const [viewPoints, setViewPoints] = useState(true);
+  const [viewCountry, setViewCountry] = useState(true);
+  const [viewImage, setViewImage] = useState(true);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+
+  // Inline editing state
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editingRiderTeam, setEditingRiderTeam] = useState<string | null>(null);
+  const [availableClasses, setAvailableClasses] = useState<string[]>([]);
 
   // Filtered lists based on selected countries and players
   const [filteredRiders, setFilteredRiders] = useState<any[]>([]);
   const [filteredTeams, setFilteredTeams] = useState<any[]>([]);
 
-  const [myTeamSelection, setMyTeamSelection] = useState<any[]>([]);
+  // Close editor when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside any editing area
+      if (!target.closest('[data-editing]')) {
+        setEditingRiderTeam(null);
+        setEditingTeamId(null);
+      }
+    };
 
-  const [startingList, setStartingList] = useState<any[]>([]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-  const setStartingListRace = async ({year, race}: {year: number, race: string}) => {
+
+
+  const setStartingListRace = async ({ year, race }: { year: number, race: string }) => {
     const response = await fetch(`/api/setStartingListRace?year=${year}&race=${race}`);
     const data = await response.json();
   }
 
-  const getStartingListRace = async ({year, race}: {year: number, race: string}) => {
+  const getStartingListRace = async ({ year, race }: { year: number, race: string }) => {
     const response = await fetch(`/api/getRidersFromRace?year=${year}&race=${race}`);
     const data = await response.json();
-    setStartingList(data.riders);
+    // setStartingList(data.riders);
   }
 
 
   const getAllTeams = async () => {
     const response = await fetch(`/api/getTeams`);
     const data = await response.json();
+
+    console.log('teams', data);
     setTeamsArray(data.teams);
     return data;
   };
@@ -65,8 +93,23 @@ export default function CreateRankingPage() {
   const getEnrichedRiders = async () => {
 
     teamsArray.forEach(async (team: any) => {
-      const response = await fetch(`/api/setEnrichedTeamsAndRiders?year=2025&team=${team.id}`);
+
+      const response = await fetch(`/api/setEnrichedRiders?year=2025&team=${team.slug}`);
       const data = await response.json();
+
+      console.log('enrichedRiders', data);
+    })
+
+  };
+
+  const getEnrichedTeams = async () => {
+
+    teamsArray.forEach(async (team: any) => {
+
+      const response = await fetch(`/api/setEnrichedTeams?year=2025&team=${team.slug}`);
+      const data = await response.json();
+
+      console.log('enrichedTeams', data);
     })
 
   };
@@ -147,6 +190,78 @@ export default function CreateRankingPage() {
     localStorage.removeItem(getCacheKey('teams', year));
     localStorage.removeItem(getCacheMetaKey(year));
     setUsingCache(false);
+  };
+
+  // Fetch available classes on mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await fetch('/api/getClasses');
+        const data = await response.json();
+        setAvailableClasses(data.classes || []);
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      }
+    };
+    fetchClasses();
+  }, []);
+
+  // Update team class
+  const handleUpdateTeamClass = async (teamId: string, newClass: string) => {
+    try {
+      const response = await fetch('/api/updateTeamClass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, teamClass: newClass }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update team class');
+      }
+
+      // Update local state
+      setTeamsList(teamsList.map(team =>
+        team.id === teamId ? { ...team, class: newClass } : team
+      ));
+      setFilteredTeams(filteredTeams.map(team =>
+        team.id === teamId ? { ...team, class: newClass } : team
+      ));
+
+      setEditingTeamId(null);
+    } catch (error) {
+      console.error('Error updating team class:', error);
+      alert('Failed to update team class');
+    }
+  };
+
+  // Update rider team
+  const handleUpdateRiderTeam = async (riderId: string, teamSlug: string) => {
+    try {
+      const response = await fetch('/api/updateRiderTeam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ riderId, teamSlug, year }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update rider team');
+      }
+
+      const result = await response.json();
+
+      // Update local state
+      setRankedRiders(rankedRiders.map(rider =>
+        rider.id === riderId ? { ...rider, team: result.team } : rider
+      ));
+      setFilteredRiders(filteredRiders.map(rider =>
+        rider.id === riderId ? { ...rider, team: result.team } : rider
+      ));
+
+      setEditingRiderTeam(null);
+    } catch (error) {
+      console.error('Error updating rider team:', error);
+      alert('Failed to update rider team');
+    }
   };
 
   const clearOldCaches = (currentYear: number) => {
@@ -242,7 +357,14 @@ export default function CreateRankingPage() {
         const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=${batchSize}&offset=${currentOffset}`);
         const ridersData = await ridersResponse.json();
 
-        allLoadedRiders = [...allLoadedRiders, ...(ridersData.riders || [])];
+        const newRiders = ridersData.riders || [];
+
+        // Break if no new riders were returned
+        if (newRiders.length === 0) {
+          break;
+        }
+
+        allLoadedRiders = [...allLoadedRiders, ...newRiders];
         setRankedRiders(allLoadedRiders);
         currentOffset = allLoadedRiders.length;
 
@@ -265,48 +387,72 @@ export default function CreateRankingPage() {
     }
   }, [year]);
 
-  // Filter riders and teams when selectedCountries, selectedPlayers, or selectedTeams changes
   useEffect(() => {
-    if (selectedPlayers.length > 0) {
-      // If players are selected, show only those players
-      const filtered = rankedRiders.filter(rider =>
-        selectedPlayers.some(p => p.name === rider.name && p.rank === rider.rank)
+    let filtered = rankedRiders;
+
+    // Apply country filter
+    if (selectedCountries.length > 0) {
+      const countryCodes = selectedCountries.map(c => c.code?.toLowerCase());
+      filtered = filtered.filter(rider =>
+        countryCodes.includes(rider.country?.toLowerCase())
       );
-      setFilteredRiders(filtered);
-      // Don't filter teams when players are selected
-      setFilteredTeams(teamsList);
-    } else if (selectedTeams.length > 0) {
-      // Filter riders by selected teams
+    }
+
+    // Apply team filter
+    if (selectedTeams.length > 0) {
       const teamNames = selectedTeams.map(t => t.name?.toLowerCase());
-      const filtered = rankedRiders.filter(rider => {
-        // Handle both string and object team types
+      filtered = filtered.filter(rider => {
         const riderTeamName = typeof rider.team === 'string'
           ? rider.team?.toLowerCase()
           : rider.team?.name?.toLowerCase();
         return riderTeamName && teamNames.includes(riderTeamName);
       });
-      setFilteredRiders(filtered);
-      // Show only selected teams
-      setFilteredTeams(selectedTeams);
-    } else if (selectedCountries.length > 0) {
-      // Filter riders by selected country codes
-      const countryCodes = selectedCountries.map(c => c.code?.toLowerCase());
-      const filtered = rankedRiders.filter(rider =>
-        countryCodes.includes(rider.country?.toLowerCase())
-      );
-      setFilteredRiders(filtered);
+    }
 
-      // Filter teams by selected country codes
-      const filteredTeamsList = teamsList.filter(team =>
+    // Apply player filter
+    if (selectedPlayers.length > 0) {
+      filtered = filtered.filter(rider =>
+        selectedPlayers.some(p => p.name === rider.name && p.rank === rider.rank)
+      );
+    }
+
+    // Apply class filter
+    if (selectedClasses.length > 0) {
+      const classNames = selectedClasses.map(c => c?.toLowerCase());
+      filtered = filtered.filter(rider =>
+        classNames.includes(rider.team?.class?.toLowerCase())
+      );
+    }
+
+    // Riders after all filters
+    setFilteredRiders(filtered);
+
+    // Filter teams list accordingly
+    let filteredTeamsList = teamsList;
+
+    if (selectedCountries.length > 0) {
+      const countryCodes = selectedCountries.map(c => c.code?.toLowerCase());
+      filteredTeamsList = filteredTeamsList.filter(team =>
         countryCodes.includes(team.country?.toLowerCase())
       );
-      setFilteredTeams(filteredTeamsList);
-    } else {
-      // No filters selected, show all
-      setFilteredRiders(rankedRiders);
-      setFilteredTeams(teamsList);
     }
-  }, [selectedCountries, selectedPlayers, selectedTeams, rankedRiders, teamsList]);
+
+    if (selectedTeams.length > 0) {
+      const teamNames = selectedTeams.map(t => t.name?.toLowerCase());
+      filteredTeamsList = filteredTeamsList.filter(team =>
+        teamNames.includes(team.name?.toLowerCase())
+      );
+    }
+
+    if (selectedClasses.length > 0) {
+      const classNames = selectedClasses.map(c => c?.toLowerCase());
+      filteredTeamsList = filteredTeamsList.filter(team =>
+        classNames.includes(team.class?.toLowerCase())
+      );
+    }
+
+    setFilteredTeams(filteredTeamsList);
+  }, [selectedCountries, selectedPlayers, selectedTeams, rankedRiders, teamsList, selectedClasses]);
 
   const setTeams = async () => {
     setIsLoading(true);
@@ -329,7 +475,7 @@ export default function CreateRankingPage() {
     }
   };
 
-  const setAllRankings = async () => {
+  const createRanking = async () => {
     const offsetOptions = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500];
 
     setProgress({ current: 0, total: offsetOptions.length, isRunning: true });
@@ -360,18 +506,22 @@ export default function CreateRankingPage() {
     router.refresh();
   };
 
+  console.log('selectedCountries', selectedCountries)
+
   return (
-    <div className="bg-gray-300">
+    <div className="bg-gray-300 min-h-[100vh] h-full">
       <div className="container mx-auto">
         <h1>Create Ranking</h1>
-        
+
 
         <div className="flex items-center justify-start gap-5 my-5">
+          <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={createRanking} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
+
+          <Button onClick={getEnrichedTeams} text="Get Enriched Teams" />
           <Button onClick={getEnrichedRiders} text="Get Enriched Riders" />
           <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
-          <Button text={progress.isRunning ? 'Running...' : 'Set All Rankings'} onClick={setAllRankings} disabled={isLoading || progress.isRunning} className="mr-[10px]" />          
-          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({year: 2024, race: 'tour-de-france'})} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
-          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({year, race: 'vuelta-a-espana'})} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
+          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: 2024, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
+          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
           <Button
             onClick={() => {
               clearCache(year);
@@ -387,69 +537,47 @@ export default function CreateRankingPage() {
         </div>
 
         {usingCache && (
-          <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '4px', fontSize: '14px' }}>
-            ✅ Data geladen vanuit lokale cache (geen database kosten)
+          <div className="mb-2.5 p-2 bg-blue-100 rounded text-sm">
+            ✅ Data loaded from local cache (no database costs)
           </div>
         )}
 
         {!usingCache && rankedRiders.length > 0 && totalCount && rankedRiders.length < totalCount && (
-          <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#fff3cd', borderRadius: '4px', fontSize: '14px' }}>
-            ⚠️ Alleen {rankedRiders.length} van {totalCount} riders geladen.
-            Klik op <strong>"Load All & Cache"</strong> om alle data te laden en op te slaan voor later (eenmalige database kosten).
+          <div className="mb-2.5 p-2 bg-yellow-100 rounded text-sm">
+            ⚠️ Only {rankedRiders.length} of {totalCount} riders loaded.
+            Click <strong>"Load All & Cache"</strong> to load and save all data for later (one-time database cost).
           </div>
         )}
 
         {progress.isRunning && (
-          <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
-            <div style={{ marginBottom: '5px' }}>
+          <div className="mb-5 p-2.5 bg-gray-100 rounded">
+            <div className="mb-1">
               Progress: {progress.current} / {progress.total}
             </div>
-            <div style={{ width: '100%', backgroundColor: '#ddd', borderRadius: '5px', height: '20px' }}>
+            <div className="w-full bg-gray-300 rounded h-5">
               <div
-                style={{
-                  width: `${(progress.current / progress.total) * 100}%`,
-                  backgroundColor: '#4caf50',
-                  height: '100%',
-                  borderRadius: '5px',
-                  transition: 'width 0.3s ease',
-                }}
+                className="bg-green-500 h-full rounded transition-all duration-300 ease-in-out"
+                style={{ width: `${(progress.current / progress.total) * 100}%` }}
               />
             </div>
           </div>
         )}
 
 
-        <ActionPanel showPlayerCard={showPlayerCard} setShowPlayerCard={setShowPlayerCard} selectedPlayers={selectedPlayers} setSelectedPlayers={setSelectedPlayers} selectedCountries={selectedCountries} setSelectedCountries={setSelectedCountries} selectedTeams={selectedTeams} setSelectedTeams={setSelectedTeams} />
-
-        <Pagination
-          currentPage={currentPage}
-          totalItems={startingList?.length || 0}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
+        <ActionPanel
+          selectedPlayers={selectedPlayers}
+          setSelectedPlayers={setSelectedPlayers}
+          selectedCountries={selectedCountries}
+          setSelectedCountries={setSelectedCountries}
+          selectedTeams={selectedTeams}
+          setSelectedTeams={setSelectedTeams}
+          selectedClasses={selectedClasses}
+          setSelectedClasses={setSelectedClasses}
+          availablePlayers={rankedRiders}
         />
 
-        <div className={`w-full ${showPlayerCard ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
-          {startingList?.length > 0 ?
-            startingList
-            .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-            .map((player, index) => {
-              return (
-                <div key={player.id || index} className="flex w-full">
-                  {showPlayerCard ?
-                    <PlayerCard player={player} selected={myTeamSelection.includes(player)} onClick={(player) => myTeamSelection.includes(player) ? setMyTeamSelection(myTeamSelection.filter((p) => p.id !== player.id)) : setMyTeamSelection([...myTeamSelection, player])} />
-                    :
-                    <PlayerRow index={index} showButton showRank fullWidth selectedPlayer={myTeamSelection.includes(player)} player={player} selectPlayer={(player) => myTeamSelection.includes(player) ? setMyTeamSelection(myTeamSelection.filter((p) => p.id !== player.id)) : setMyTeamSelection([...myTeamSelection, player])} />}
-                </div>
-              );
-            })
-            :
-            <p>No riders found</p>
-          }
-        </div>
 
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="grid grid-cols-2 gap-5 mt-5">
           <div className="bg-white rounded-md p-4">
             <h2>
               Ranked Riders ({filteredRiders.length}
@@ -461,60 +589,96 @@ export default function CreateRankingPage() {
               <p>No riders found{selectedPlayers.length > 0 ? ' - selected players not in loaded data' : selectedCountries.length > 0 ? ' for selected countries' : '. Click "Set Ranking" to load them'}.</p>
             ) : (
               <div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '60px 1fr 1fr 80px 60px',
-                  padding: '8px',
-                  borderBottom: '2px solid #ccc',
-                  fontWeight: 'bold',
-                  backgroundColor: '#f5f5f5'
-                }}>
+                <div className="grid p-2 border-b-2 border-gray-400 font-bold bg-gray-100" style={{ gridTemplateColumns: '60px 1fr 1fr 80px 60px' }}>
                   <div>Rank</div>
                   <div>Name</div>
                   <div>Team</div>
                   <div>Points</div>
                   <div>Country</div>
                 </div>
-                <List
-                  defaultHeight={600}
-                  rowCount={filteredRiders.length}
-                  rowHeight={40}
-                  rowProps={{}}
-                  rowComponent={({ index, style }) => {
-                    const rider = filteredRiders[index];
-                    return (
-                      <div
-                        style={{
-                          ...style,
-                          display: 'grid',
-                          gridTemplateColumns: '60px 1fr 320px 80px 60px',
-                          padding: '8px',
-                          borderBottom: '1px solid #eee',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <div>{rider.rank}</div>
-                        <div className="whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{rider.name}</div>
-                        <div className="whitespace-nowrap max-w-[300px] overflow-hidden text-ellipsis">{rider?.team?.name.replace(/\s*\d{4}$/, '')}</div>
-                        <div>{rider.points}</div>
-                        <div>{iso2ToFlag(rider.country)}</div>
-                      </div>
-                    );
-                  }}
-                />
+                <div className="relative overflow-visible">
+                  <List
+                    defaultHeight={600}
+                    rowCount={filteredRiders.length}
+                    rowHeight={(index) => {
+                      const rider = filteredRiders[index];
+                      return editingRiderTeam === rider.id ? 60 : 40;
+                    }}
+                    rowProps={{}}
+                    rowComponent={({ index, style }) => {
+                      const rider = filteredRiders[index];
+                      const isEditing = editingRiderTeam === rider.id;
+
+                      return (
+                        <div
+                          className="grid p-2 border-b border-gray-200 items-center overflow-visible"
+                          style={{
+                            ...style,
+                            gridTemplateColumns: '60px 1fr 320px 80px 60px',
+                            zIndex: isEditing ? 999 : 1
+                          }}
+                        >
+                          <div>{rider.rank}</div>
+                          <div className="whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis">{rider.name}</div>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingRiderTeam(rider.id);
+                            }}
+                            className="cursor-pointer relative overflow-visible"
+                          >
+                            {isEditing ? (
+                              <div data-editing>
+                                <TeamSelector
+                                  selectedTeams={rider?.team ? [rider.team] : []}
+                                  setSelectedTeams={(teams: Team[]) => {
+                                    if (teams.length > 0 && teams[0].slug) {
+                                      handleUpdateRiderTeam(rider.id, teams[0].slug);
+                                    }
+                                    setEditingRiderTeam(null);
+                                  }}
+                                  multiSelect={false}
+                                  multiSelectShowSelected={false}
+                                  placeholder={rider?.team?.name?.replace(/\s*\d{4}$/, '') || 'Select team...'}
+                                />
+                              </div>
+                            ) : (
+                              <span className={`hover:bg-gray-100 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis`}>
+                                {rider?.team?.name || <span className={`${rider?.team?.name ? '' : 'text-red-500'}`}>No Team</span>}
+                              </span>
+                            )}
+                          </div>
+                          <div>{rider.points}</div>
+                          <div
+                            onClick={() => {
+                              const countryObj = countriesList.find(c => c.code?.toLowerCase() === rider.country?.toLowerCase());
+                              if (countryObj) {
+                                setSelectedCountries([countryObj]);
+                              }
+                            }}
+                            className="cursor-pointer"
+                            title={countriesList.find(c => c.code?.toLowerCase() === rider.country?.toLowerCase())?.name}
+                          >
+                            <Flag countryCode={rider.country} />
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                </div>
                 {totalCount && rankedRiders.length < totalCount && (
-                  <div style={{ marginTop: '10px', textAlign: 'center', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <div className="mt-2.5 text-center flex gap-2.5 justify-center">
                     <button
                       onClick={loadMoreRiders}
                       disabled={loadingMore}
-                      style={{ padding: '10px 20px' }}
+                      className="px-5 py-2.5"
                     >
                       {loadingMore ? 'Loading...' : `Load More (${totalCount - rankedRiders.length} remaining)`}
                     </button>
                     <button
                       onClick={loadAllData}
                       disabled={loadingMore}
-                      style={{ padding: '10px 20px', backgroundColor: '#4caf50', color: 'white' }}
+                      className="px-5 py-2.5 bg-green-500 text-white"
                     >
                       Load All & Cache
                     </button>
@@ -525,6 +689,15 @@ export default function CreateRankingPage() {
           </div>
 
           <div className="bg-white rounded-md p-4">
+
+            <div className="grid grid-cols-3 gap-2.5">
+              <Toggle status={viewRank} onText="Show Rank" offText="Hide Rank" toggleOn={() => setViewRank(!viewRank)} toggleOff={() => setViewRank(!viewRank)} />
+              <Toggle status={viewClass} onText="Show Class" offText="Hide Class" toggleOn={() => setViewClass(!viewClass)} toggleOff={() => setViewClass(!viewClass)} />
+              <Toggle status={viewPoints} onText="Show Points" offText="Hide Points" toggleOn={() => setViewPoints(!viewPoints)} toggleOff={() => setViewPoints(!viewPoints)} />
+              <Toggle status={viewCountry} onText="Show Country" offText="Hide Country" toggleOn={() => setViewCountry(!viewCountry)} toggleOff={() => setViewCountry(!viewCountry)} />
+              <Toggle status={viewImage} onText="Show Image" offText="Hide Image" toggleOn={() => setViewImage(!viewImage)} toggleOff={() => setViewImage(!viewImage)} />
+            </div>
+
             <h2>Teams ({filteredTeams.length}
               {selectedCountries.length > 0 && ` (filtered by ${selectedCountries.length} countr${selectedCountries.length > 1 ? 'ies' : 'y'} from ${teamsList.length})`})
             </h2>
@@ -532,55 +705,87 @@ export default function CreateRankingPage() {
               <p>No teams found{selectedCountries.length > 0 ? ' for selected countries' : '. Click "Set Teams" to load them'}.</p>
             ) : (
               <div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '60px 1fr 100px 80px 70px ',
-                  padding: '8px',
-                  borderBottom: '2px solid #ccc',
-                  fontWeight: 'bold',
-                  backgroundColor: '#f5f5f5'
-                }}>
-                  <div>Rank</div>
+                <div className="grid p-2 border-b-2 border-gray-400 font-bold bg-gray-100" style={{ gridTemplateColumns: `${viewRank ? '60px' : ''} ${viewClass ? '100px' : ''} 1fr ${viewPoints ? '100px' : ''} ${viewCountry ? '80px' : ''} ${viewImage ? '70px' : ''}` }}>
+                  {viewRank && <div>Rank</div>}
+                  {viewClass && <div>Class</div>}
                   <div>Name</div>
-                  <div>Points</div>
-                  <div>Country</div>
-                  <div>Image</div>
+                  {viewPoints && <div>Points</div>}
+                  {viewCountry && <div>Country</div>}
+                  {viewImage && <div>Image</div>}
                 </div>
-                <List
-                  defaultHeight={600}
-                  rowCount={filteredTeams.length}
-                  rowHeight={40}
-                  rowProps={{}}
-                  rowComponent={({ index, style }) => {
-                    const team = filteredTeams[index];
-                    return (
-                      <div
-                        style={{
-                          ...style,
-                          display: 'grid',
-                          gridTemplateColumns: '60px 1fr 100px 80px 70px ',
-                          padding: '8px',
-                          borderBottom: '1px solid #eee',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <div>{team.pcsRank}</div>
-                        <div>{team.name}</div>
-                        <div>{team.points}</div>
-                        <div>{iso2ToFlag(team.country)}</div>
+                <div className="relative overflow-visible">
+                  <List
+                    defaultHeight={600}
+                    rowCount={filteredTeams.length}
+                    rowHeight={(index) => {
+                      const team = filteredTeams[index];
+                      return editingTeamId === team.id ? 60 : 40;
+                    }}
+                    rowProps={{}}
+                    rowComponent={({ index, style }) => {
+                      const team = filteredTeams[index];
+                      const isEditing = editingTeamId === team.id;
 
-
-                        <div>{team?.teamImage ? <img src={`https://www.procyclingstats.com/${team?.teamImage}`} alt={team?.name} style={{ width: '30px', height: '30px' }} /> : ""}</div>
-                      </div>
-                    );
-                  }}
-                />
+                      return (
+                        <div
+                          className="grid p-2 border-b border-gray-200 items-center overflow-visible"
+                          style={{
+                            ...style,
+                            gridTemplateColumns: `${viewRank ? '60px' : ''} ${viewClass ? '100px' : ''} 1fr ${viewPoints ? '100px' : ''} ${viewCountry ? '80px' : ''} ${viewImage ? '70px' : ''}`,
+                            zIndex: isEditing ? 999 : 1
+                          }}
+                        >
+                          {viewRank && <div>{team.pcsRank}</div>}
+                          {viewClass && <div
+                            onClick={() => setEditingTeamId(team.id)}
+                            className="cursor-pointer relative overflow-visible"
+                          >
+                            {isEditing ? (
+                              <div data-editing>
+                                <ClassSelector
+                                  selectedClasses={team.class ? [team.class] : []}
+                                  setSelectedClasses={(classes: string[]) => {
+                                    if (classes.length > 0) {
+                                      handleUpdateTeamClass(team.id, classes[0]);
+                                    }
+                                    setEditingTeamId(null);
+                                  }}
+                                  multiSelect={false}
+                                  multiSelectShowSelected={false}
+                                  placeholder={team.class || 'Select class...'}
+                                />
+                              </div>
+                            ) : (
+                              <span className="hover:bg-gray-100 px-2 py-1 rounded">
+                                {team.class || '—'}
+                              </span>
+                            )}
+                          </div>}
+                          <div title={team.name} className="whitespace-nowrap max-w-[300px] overflow-hidden text-ellipsis">{team.name}</div>
+                          {viewPoints && <div>{team.points}</div>}
+                          {viewCountry && <div>{team?.country && <div
+                            onClick={() => {
+                              const countryObj = countriesList.find(c => c.code?.toLowerCase() === team.country?.toLowerCase());
+                              if (countryObj) {
+                                setSelectedCountries([countryObj]);
+                              }
+                            }}
+                            className="cursor-pointer"
+                            title={countriesList.find(c => c.code?.toLowerCase() === team.country?.toLowerCase())?.name}
+                          >
+                            <Flag countryCode={team.country} />
+                          </div>}</div>}
+                          {viewImage && <div>{team?.teamImage ? <img src={`https://www.procyclingstats.com/${team?.teamImage}`} alt={team?.name} className="w-[30px] h-[30px]" /> : <img src="/jersey-transparent.png" className="w-[30px] h-[30px]" />}</div>}
+                        </div>
+                      );
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
-      <MyTeamSelection myTeamSelection={myTeamSelection} setMyTeamSelection={setMyTeamSelection} />
     </div>
 
   );

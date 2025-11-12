@@ -26,6 +26,8 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
   const html = await res.text();
   const $ = cheerio.load(html);
 
+  const title = $('title').text();
+
     
     const getName = (el: DomElement) => {
 
@@ -50,7 +52,7 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
     const rider: RankedRider = {
       rank: Number($(el).find('td').eq(0).text().trim()) || 0,
       team: $(el).find('td.cu600:not(.fs10) > a').attr('href')?.split('/')[1] || '',
-      fullName: getName(el).fullName,
+      name: getName(el).fullName,
       nameID: nameID,
       lastName: getName(el).lastName,
       firstName: getName(el).firstName,
@@ -59,9 +61,7 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
     };
     riders.push(rider);
   });
-
   
-
   return {
     count: riders.length,
     source: url,

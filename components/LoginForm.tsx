@@ -207,7 +207,7 @@ export const LoginForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs">Nog geen account? Ga naar de <Link className="underline" href="/register">registratiepagina</Link></span>
+                <span className="text-xs">Don't have an account? Go to the <Link className="underline" href="/register">registration page</Link></span>
             </div>
         </div>
     );

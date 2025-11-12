@@ -17,17 +17,17 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
           onClick={() => setActiveTab('stage')}
           className={`px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === 'stage'
-              ? 'border-b-2 border-purple-600 text-purple-600 bg-gray-50'
+              ? 'border-b-2 border-primary text-primary bg-gray-50'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
-          🚴 Etappe ({selectedStage.stageResults?.length || 0})
+          🚴 ({selectedStage.stageResults?.length || 0})
         </button>
         <button
           onClick={() => setActiveTab('gc')}
           className={`px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === 'gc'
-              ? 'border-b-2 border-purple-600 text-purple-600 bg-gray-50'
+              ? 'border-b-2 border-primary text-primary bg-gray-50'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -37,7 +37,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
           onClick={() => setActiveTab('points')}
           className={`px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === 'points'
-              ? 'border-b-2 border-purple-600 text-purple-600 bg-gray-50'
+              ? 'border-b-2 border-primary text-primary bg-gray-50'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -47,7 +47,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
           onClick={() => setActiveTab('mountains')}
           className={`px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === 'mountains'
-              ? 'border-b-2 border-purple-600 text-purple-600 bg-gray-50'
+              ? 'border-b-2 border-primary text-primary bg-gray-50'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -57,7 +57,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
           onClick={() => setActiveTab('team')}
           className={`px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
             activeTab === 'team'
-              ? 'border-b-2 border-purple-600 text-purple-600 bg-gray-50'
+              ? 'border-b-2 border-primary text-primary bg-gray-50'
               : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
           }`}
         >
@@ -83,8 +83,8 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
               <tbody className="bg-white divide-y divide-gray-200">
                 {selectedStage.stageResults.slice(0, showAllStageResults ? undefined : 20).map((result: any, idx: number) => (
                   <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{result.place || idx + 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-8">{result.place || idx + 1}</td>
+                    <td className="px-2 py-4 whitespace-nowrap w-20">
                       {result.jerseyImage && (
                         <img 
                           src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
@@ -104,7 +104,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
               <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-center">
                 <button
                   onClick={() => setShowAllStageResults(!showAllStageResults)}
-                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  className="text-sm text-primary hover:text-primary/90 font-medium"
                 >
                   {showAllStageResults ? '← Toon minder' : `Toon alle ${selectedStage.stageResults.length} renners →`}
                 </button>
@@ -132,8 +132,8 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                   
                   return (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{result.place || idx + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-8">{result.place || idx + 1}</td>
+                      <td className="px-2 py-4 whitespace-nowrap w-20">
                         {result.jerseyImage && (
                           <img 
                             src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
@@ -158,7 +158,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
               <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-center">
                 <button
                   onClick={() => setShowAllGC(!showAllGC)}
-                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  className="text-sm text-primary hover:text-primary/90 font-medium"
                 >
                   {showAllGC ? '← Toon minder' : `Toon alle ${selectedStage.generalClassification.length} renners →`}
                 </button>
@@ -186,8 +186,8 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                   
                   return (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{result.place || idx + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-8">{result.place || idx + 1}</td>
+                      <td className="px-2 py-4 whitespace-nowrap w-20">
                         {result.jerseyImage && (
                           <img 
                             src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
@@ -198,7 +198,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{teamName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.pointsTotal || result.points || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.pointsTotal} {result.points >= 0 && `(+${result.points})`}</td>
                     </tr>
                   );
                 })}
@@ -226,8 +226,8 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                   
                   return (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{result.place || idx + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-8">{result.place || idx + 1}</td>
+                      <td className="px-2 py-4 whitespace-nowrap w-20">
                         {result.jerseyImage && (
                           <img 
                             src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
@@ -238,7 +238,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{teamName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.pointsTotal || result.points || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.pointsTotal} {result.points >= 0 && `(+${result.points})`}</td>
                     </tr>
                   );
                 })}
@@ -273,7 +273,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
 
                   return (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{result.place || idx + 1}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-8">{result.place || idx + 1}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">{result.team || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{displayTime}</td>
                     </tr>

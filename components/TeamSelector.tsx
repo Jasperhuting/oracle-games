@@ -4,16 +4,20 @@ import { TeamRow } from "./TeamRow";
 import { Team } from "@/lib/scraper/types";
 import { Selector } from "./Selector";
 
-export const TeamSelector = ({ 
-    setSelectedTeams, 
-    selectedTeams, 
-    multiSelect = false, 
-    multiSelectShowSelected = true 
-}: { 
-    setSelectedTeams: (teams: Team[]) => void, 
-    selectedTeams: Team[], 
-    multiSelect?: boolean, 
-    multiSelectShowSelected?: boolean 
+export const TeamSelector = ({
+    setSelectedTeams,
+    selectedTeams,
+    multiSelect = false,
+    multiSelectShowSelected = true,
+    showSelected = true,
+    placeholder
+}: {
+    setSelectedTeams: (teams: Team[]) => void,
+    selectedTeams: Team[],
+    multiSelect?: boolean,
+    multiSelectShowSelected?: boolean,
+    showSelected?: boolean,
+    placeholder?: string
 }) => {
     const [teams, setTeams] = useState<Team[]>([]);
     
@@ -38,13 +42,15 @@ export const TeamSelector = ({
             setSelectedItems={setSelectedTeams}
             multiSelect={multiSelect}
             multiSelectShowSelected={multiSelectShowSelected}
-            placeholder={multiSelect ? "Search teams..." : "Search team..."}
+            placeholder={placeholder || (multiSelect ? "Filter on teams..." : "Filter on team...")}
+            getItemLabel={(team) => team.name?.replace(/\s*\d{4}$/, '') || ''}
             searchFilter={(team, searchTerm) => {
                 const lowerSearch = searchTerm.toLowerCase();
-                return !!(team?.name?.toLowerCase().includes(lowerSearch) || 
+                return !!(team?.name?.toLowerCase().includes(lowerSearch) ||
                          team?.country?.toLowerCase().includes(lowerSearch));
             }}
             isEqual={(t1, t2) => t1.name === t2.name}
+            showSelected={showSelected}
             renderItem={(team, index, isSelected) => (
                 <TeamRow 
                     selectedTeam={isSelected} 
@@ -53,10 +59,12 @@ export const TeamSelector = ({
                 />
             )}
             renderSelectedItem={(team, index, onRemove) => (
-                <TeamRow 
-                    team={team} 
-                    selectTeam={onRemove} 
-                />
+                showSelected ? (
+                    <TeamRow 
+                        team={team} 
+                        selectTeam={onRemove} 
+                    />
+                ) : null
             )}
         />
     );

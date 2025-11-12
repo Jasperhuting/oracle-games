@@ -58,7 +58,7 @@ export const toSlug = (str: string) => {
     .replace(/[\u00C6]/g, "Ae")  // Æ
     .replace(/[\u0300-\u036f]/g, "") // remove combining accents
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/[^a-z0-9\s.-]/g, "")  // allow periods in addition to alphanumeric, spaces, and hyphens
     .trim()
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");

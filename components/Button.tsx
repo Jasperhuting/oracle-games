@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    text?: string;
+    text?: string | React.ReactNode;
     fullWidth?: boolean;
     endIcon?: React.ReactNode;
     startIcon?: React.ReactNode;

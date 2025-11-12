@@ -12,15 +12,15 @@ export async function POST(request: NextRequest) {
     try {
       for (const team of result.teams) {
 
-        const teamId = toSlug(team.name);
+        const teamId = toSlug(team.nameID);
 
-        await db.collection('teams').doc(teamId).update({
+        await db.collection('teams').doc(teamId).set({
           name: team.name,
           class: team.class,
           country: team.country,
           points: team.points,
-          slug: team.name,
-        });
+          slug: team.nameID,
+        }, { merge: true });
       }
     } catch (error) {
       console.error('Error creating rankings:', error);

@@ -12,13 +12,14 @@ export async function POST(request: NextRequest) {
 
     try {
       for (const rider of result.riders) {
-        const team = rider.team;
-        const teamSlug = toSlug(team);
+        const teamSlug = rider?.team;
+        
 
         let teamRef;
 
         // Only create/reference team if team data exists
-        if (team && teamSlug) {
+        if (teamSlug) {
+
           // Check if team exists by querying for the slug
           const existingTeam = await db.collection('teams')
             .where('slug', '==', teamSlug)
@@ -32,9 +33,9 @@ export async function POST(request: NextRequest) {
             // Team doesn't exist, create it
             const newTeamRef = db.collection('teams').doc(teamSlug);
             await newTeamRef.set({
-              name: team,
+              name: rider.team,
               slug: teamSlug,
-            });
+            }, { merge: true });
             teamRef = newTeamRef;
           }
         }
@@ -43,11 +44,13 @@ export async function POST(request: NextRequest) {
         const docId = toSlug(rider.nameID);
 
         await db.collection(`rankings_${year}`).doc(docId).set({
-          rank: rider.rank,
-          name: rider.fullName,
-          points: rider.points,
-          nameID: rider.nameID,
           country: rider.country,
+          name: rider.name,
+          nameID: rider.nameID,
+          points: rider.points,
+          rank: rider.rank,
+          firstName: rider.firstName,
+          lastName: rider.lastName,
           ...(teamRef && { team: teamRef }),
         });
       }

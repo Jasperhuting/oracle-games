@@ -49,13 +49,22 @@ async function enrichRiders(riders: any[], year: number, db: any) {
       if (riderDoc.exists) {
         const riderData = riderDoc.data();
         
-        enrichedRiders.push({
+        // Preserve original points field (e.g., points gained on stage) if it exists
+        // Only add ranking points if there's no existing points field
+        const enrichedRider: any = {
           ...rider,
           nameID: riderData.nameID || rider.shortName,
           rank: riderData.rank,
-          points: riderData.points,
           jerseyImage: riderData.jerseyImage || '',
-        });
+        };
+        
+        // Only add ranking points if rider doesn't already have a points field
+        // (to preserve stage points in classifications)
+        if (rider.points === undefined) {
+          enrichedRider.rankingPoints = riderData.points;
+        }
+        
+        enrichedRiders.push(enrichedRider);
       } else {
         console.warn(`Rider ${rider.shortName} not found in rankings_${year}`);
         enrichedRiders.push(rider);

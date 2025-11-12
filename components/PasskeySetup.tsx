@@ -17,7 +17,7 @@ export const PasskeySetup = ({ userId, email, displayName }: PasskeySetupProps) 
 
   const handleSetupPasskey = async () => {
     if (!isPasskeySupported()) {
-      setError('Je browser ondersteunt geen passkeys. Gebruik een moderne browser zoals Chrome, Safari of Edge.');
+      setError('Your browser does not support passkeys. Use a modern browser like Chrome, Safari or Edge.');
       return;
     }
 
@@ -45,13 +45,13 @@ export const PasskeySetup = ({ userId, email, displayName }: PasskeySetupProps) 
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon passkey niet registreren');
+        throw new Error(errorData.error || 'Could not register passkey');
       }
 
       setSuccess(true);
     } catch (error: any) {
       console.error('Passkey setup error:', error);
-      setError(error.message || 'Er is iets misgegaan bij het instellen van de passkey');
+      setError(error.message || 'Something went wrong setting up the passkey');
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +65,7 @@ export const PasskeySetup = ({ userId, email, displayName }: PasskeySetupProps) 
     return (
       <div className="bg-green-50 border border-green-200 rounded-md p-4">
         <p className="text-green-800 text-sm">
-          ✓ Passkey succesvol ingesteld! Je kunt nu inloggen met je passkey.
+          ✓ Passkey successfully set up! You can now log in with your passkey.
         </p>
       </div>
     );
@@ -73,13 +73,13 @@ export const PasskeySetup = ({ userId, email, displayName }: PasskeySetupProps) 
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-      <h3 className="font-semibold mb-2">Stel een Passkey in 🔑</h3>
+      <h3 className="font-semibold mb-2">Set up a Passkey 🔑</h3>
       <p className="text-sm text-gray-700 mb-4">
-        Log in de volgende keer sneller en veiliger met een passkey. Geen wachtwoord meer nodig!
+        Log in faster and more securely next time with a passkey. No password needed!
       </p>
       <Button
         className="w-full justify-center py-2  text-white "
-        text={isLoading ? "Bezig met instellen..." : "Passkey instellen"}
+        text={isLoading ? "Setting up..." : "Set up Passkey"}
         onClick={handleSetupPasskey}
         disabled={isLoading}
       />

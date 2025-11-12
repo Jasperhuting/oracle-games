@@ -8,7 +8,7 @@ export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection }: { myTea
     const [open, setOpen] = useState(true);
 
     return (
-        <div className={`fixed bottom-0 px-4 pt-4 drop-shadow-header right-5 w-[calc(100%_-_600px)] max-w-[900px] min-w-[600px] bg-white rounded-t-lg border border-gray-200 transition-transform duration-300 ease-in-out ${open ? 'translate-y-0' : 'translate-y-[calc(100%_-_58px)]'}`}>
+        <div className={`fixed bottom-0 px-4 pt-4 drop-shadow-header right-5 z-50 w-[calc(100%_-_600px)] max-w-[900px] min-w-[600px] bg-white rounded-t-lg border border-gray-200 transition-transform duration-300 ease-in-out ${open ? 'translate-y-0' : 'translate-y-[calc(100%_-_58px)]'}`}>
             <div onClick={() => setOpen(!open)} className="flex items-center justify-between pb-2 px-2">
                 <h2 className="text-lg font-bold">Mijn Team</h2>
                 <button className="text-gray-500 cursor-pointer">

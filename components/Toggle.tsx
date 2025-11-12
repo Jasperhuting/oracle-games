@@ -40,14 +40,14 @@ export const Toggle = ({ toggleOn, toggleOff, status, onText, offText }: { toggl
             <button 
                 ref={onButtonRef}
                 onClick={handleToggleOn} 
-                className={`${optimisticStatus ? ' text-white' : ''} p-2 z-10 rounded-l-md transition-colors duration-150 cursor-pointer`}
+                className={`${optimisticStatus ? ' text-white' : ''} p-2 z-10 rounded-l-md transition-colors duration-150 cursor-pointer whitespace-nowrap`}
             >
                 {onText}
             </button>
             <button 
                 ref={offButtonRef}
                 onClick={handleToggleOff} 
-                className={`${!optimisticStatus ? ' text-white' : ''} p-2 z-10 rounded-r-md transition-colors duration-150 cursor-pointer`}
+                className={`${!optimisticStatus ? ' text-white' : ''} p-2 z-10 rounded-r-md transition-colors duration-150 cursor-pointer whitespace-nowrap`}
             >
                 {offText}
             </button>

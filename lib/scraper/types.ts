@@ -33,6 +33,20 @@ export interface EnrichedRider {
   age: number;
 }
 
+export interface EnrichedTeam {
+    jerseyImageTeam: string;
+    riders: EnrichedRider[];
+    pcsRank: number;
+    uciRank: number;
+    points: number;
+    country: string;
+    name: string;
+    class: string;
+    teamName: string;
+    teamNameID: string;
+    year: number;
+}
+
 export interface Rider {
   name: string;
   rank: number;
@@ -43,14 +57,15 @@ export interface Rider {
 }
 
 export interface RankedRider {
+  country: string;
+  name: string;
+  nameID: string;
   points: number;
+  rank: number;
   team: string;
+
   firstName: string;
   lastName: string;
-  fullName: string;
-  nameID: string;
-  rank: number;
-  country: string;
 }
 
 export interface RankedTeam {

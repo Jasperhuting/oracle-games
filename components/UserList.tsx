@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Button } from "./Button";
+import Link from "next/link";
 
 interface User {
   uid: string;
@@ -277,7 +278,7 @@ export const UserList = () => {
                       <div className="flex flex-col">
                         <div className="flex flex-col items-start gap-2">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.playername}
+                            <Link href={`/user/${user.uid}`}>{user.playername}</Link>
                           </div>
                           {user.blocked && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">

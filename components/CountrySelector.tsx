@@ -21,10 +21,11 @@ export const CountrySelector = ({
             setSelectedItems={setSelectedCountries}
             multiSelect={multiSelect}
             multiSelectShowSelected={multiSelectShowSelected}
-            placeholder={multiSelect ? "Search countries..." : "Search country..."}
+            placeholder={multiSelect ? "Filter on countries..." : "Filter on country..."}
+            getItemLabel={(country) => country.name || ''}
             searchFilter={(country, searchTerm) => {
                 const lowerSearch = searchTerm.toLowerCase();
-                return !!(country?.name?.toLowerCase().includes(lowerSearch) || 
+                return !!(country?.name?.toLowerCase().includes(lowerSearch) ||
                          country?.code?.toLowerCase().includes(lowerSearch));
             }}
             isEqual={(c1, c2) => c1.code === c2.code}
