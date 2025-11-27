@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image';
 
 import { Button } from "@/components/Button";
 import { auth } from "@/lib/firebase/client";
@@ -12,7 +13,7 @@ export default function VerifyEmailPage() {
     const [error, setError] = useState<string | null>(null);
     const [isResending, setIsResending] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
-    const router = useRouter();
+    const _router = useRouter();
 
     useEffect(() => {
         // Get the last attempted login email from localStorage or auth

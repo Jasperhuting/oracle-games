@@ -11,17 +11,13 @@ export async function getTeamsRanked({ year }: GetTeamsOptions): Promise<RankedT
   // Use today's date for current year, or December 31st for past years
   const today = new Date();
   const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
+  const currentDay = today.getDate();
 
-  let dateStr: string;
-  if (year >= currentYear) {
-    // For current or future years, use today's date
-    dateStr = today.toISOString().split('T')[0];
-  } else {
-    // For past years, use December 31st
-    dateStr = `${year}-12-31`;
-  }
 
-  const url = `https://www.procyclingstats.com/rankings.php?p=season-teams&s=&date=${year}-11-10&nation=&level=&filter=Filter`;
+   // https://www.procyclingstats.com/rankings.php?p=me&s=season-individual&date=${year}-11-24&nation=&age=&page=smallerorequal&team=&teamlevel=&offset=${offsetNum}&filter=Filter
+
+  const url = `https://www.procyclingstats.com/rankings.php?p=season-teams&s=&date=${currentYear}-${currentMonth}-${currentDay}&nation=&level=&filter=Filter`;
   
   
   const res = await fetch(url, { 

@@ -115,7 +115,7 @@ export function Selector<T>({
         <div className="relative flex flex-row items-center gap-2">
             <div className="flex items-center gap-2">
                 <input
-                    className={`h-[40px] max-w-[400px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                    className={`h-[40px] max-w-[400px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'}`}
                     type="text"
                     placeholder={getPlaceholder()}
                     value={getDisplayValue()}

@@ -38,14 +38,14 @@ export const AuthStatus = () => {
 
     return (
         <div className="p-4 border rounded-md bg-green-50">
-            <p className="font-bold mb-2">✓ Ingelogd</p>
+            <p className="font-bold mb-2">✓ Logged in</p>
             <div className="text-sm space-y-1 mb-4">
                 <p><strong>Email:</strong> {user?.email}</p>
                 <p><strong>User ID:</strong> {user?.uid}</p>
-                <p><strong>Email geverifieerd:</strong> {user?.emailVerified ? 'Ja' : 'Nee'}</p>
+                <p><strong>Email Verified:</strong> {user?.emailVerified ? 'Yes' : 'No'}</p>
             </div>
             <Button 
-                text="Uitloggen" 
+                text="Log out" 
                 onClick={handleLogout}
             />
         </div>

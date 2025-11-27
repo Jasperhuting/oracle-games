@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { ScraperRunner } from './ScraperRunner';
 import { DebugPanel } from './DebugPanel';
+import process from "process";
+
+const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 interface ScrapeResult {
   success: boolean;
@@ -129,7 +132,7 @@ interface CommandButtonProps {
 
 function CommandButton({ command, onRun, loading }: CommandButtonProps) {
   const [stage, setStage] = useState<string>('');
-  const [year, setYear] = useState<string>('2025');
+  const [year, setYear] = useState<string>(YEAR.toString());
 
   const handleRun = () => {
     const stageNum = stage ? parseInt(stage) : undefined;

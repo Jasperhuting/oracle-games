@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useEffectEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./Button";
@@ -50,7 +50,7 @@ export const GamesTab = () => {
   const [showAllMountains, setShowAllMountains] = useState(false);
   const [activeClassificationTab, setActiveClassificationTab] = useState<'stage' | 'gc' | 'points' | 'mountains' | 'youth' | 'team'>('stage');
 
-  const fetchRaces = useCallback(async () => {
+  const fetchRaces = useEffectEvent(async () => {
 
     console.log('userID', userId)
 
@@ -58,7 +58,7 @@ export const GamesTab = () => {
 
     try {
       const response = await fetch(`/api/getRaces?userId=${userId}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch races');
@@ -73,17 +73,17 @@ export const GamesTab = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  });
 
   // Fetch races when component mounts or userId changes
   useEffect(() => {
     fetchRaces();
-  }, [fetchRaces]);
+  }, [userId]);
 
   // Check URL for race parameter and load race data
   useEffect(() => {
     const raceSlug = searchParams.get('race');
-    
+
     if (raceSlug && races.length > 0) {
       // Only load if it's a different race than currently selected
       if (!selectedRace || selectedRace.slug !== raceSlug) {
@@ -95,12 +95,12 @@ export const GamesTab = () => {
       }
     } else if (!raceSlug && races.length > 0 && !selectedRace && !manuallyDeselected) {
       // Auto-load most recent race (highest year) - only if not manually deselected
-      const mostRecentRace = races.reduce((latest, current) => 
+      const mostRecentRace = races.reduce((latest, current) =>
         current.year > latest.year ? current : latest
       );
       fetchRaceData(mostRecentRace, true); // true = update URL
     }
-  }, [searchParams, races, manuallyDeselected]);
+  }, [searchParams, races, manuallyDeselected, selectedRace]);
 
   const handleInitializeRaces = async () => {
     if (!user || !confirm('Weet je zeker dat je de bestaande races wilt initialiseren?')) return;
@@ -259,7 +259,7 @@ export const GamesTab = () => {
 
     setSavingStage(true);
     let successCount = 0;
-    let failedStages: number[] = [];
+    const failedStages: number[] = [];
 
     try {
       for (let stage = 1; stage <= totalStages; stage++) {
@@ -859,7 +859,7 @@ export const GamesTab = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             race.active 
-                              ? 'bg-green-100 text-green-800' 
+                              ? 'bg-green-100 text-white' 
                               : 'bg-gray-100 text-gray-800'
                           }`}>
                             {race.active ? 'Actief' : 'Inactief'}

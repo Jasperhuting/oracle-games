@@ -1,15 +1,17 @@
 'use client'
 
+
 import Link from "next/link";
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useState } from "react";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
-import { PasskeyLogin } from "./PasskeyLogin";
+import dynamic from "next/dynamic";
 
+const PasskeyLogin = dynamic(() => import("./PasskeyLogin"), {
+    ssr: false,
+});
 interface LoginFormProps {
     email: string;
     password: string;
@@ -29,6 +31,8 @@ export const LoginForm = () => {
         setError(null);
 
         try {
+            const { signInWithEmailAndPassword } = await import ("firebase/auth");
+            const { auth } = await import ("@/lib/firebase/client");
             // Sign in with Firebase Auth
             const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
             const user = userCredential.user;
@@ -88,6 +92,8 @@ export const LoginForm = () => {
         setError(null);
 
         try {
+            const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+            const { auth } = await import("@/lib/firebase/client");
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             const user = result.user;

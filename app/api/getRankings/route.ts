@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const year = searchParams.get('year') || '2025';
+  const year = searchParams.get('year') || process.env.NEXT_PUBLIC_PLAYING_YEAR;
   const limit = parseInt(searchParams.get('limit') || '100');
   const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
           rank: data.rank,
           name: data.name,
           nameID: data.nameID,
+          retired: data.retired,
           points: data.points,
           jerseyImage: data.jerseyImage,
           age: data.age,

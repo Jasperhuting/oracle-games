@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user document
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       playername,
       updatedAt: new Date().toISOString(),
     };

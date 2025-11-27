@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user's blocked status
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       blocked: block,
       updatedAt: new Date().toISOString(),
     };

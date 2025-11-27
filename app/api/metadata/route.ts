@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 
 const BASE = "https://jasperhuting.github.io/oracle-games-scraper/output";
 const RACES = ["tour-de-france", "vuelta-a-espana", "world-championship", "giro-d-italia"] as const;
-const YEAR = 2025;
+const YEAR = process.env.NEXT_PUBLIC_PLAYING_YEAR;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

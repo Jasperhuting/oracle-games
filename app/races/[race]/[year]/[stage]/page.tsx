@@ -1,5 +1,5 @@
-import { iso2ToFlag, isTTTTeamResult } from "@/lib/firebase/utils";
-import { ClassificationRider, getStageResult, RaceSlug, type StageRider, type TTTTeamResult } from "@/lib/scraper";
+import { StageRider, ClassificationRider } from "@/lib/firebase/utils";
+import { StageRider, ClassificationRider } from "@/lib/scraper";
 
 export default async function StagePage({ params }: { params: { race: RaceSlug; year: number; stage: string } }) {
 
@@ -10,12 +10,12 @@ export default async function StagePage({ params }: { params: { race: RaceSlug; 
         <div className="container mx-auto p-10">
             <span>StageResults</span>
             {result.stageResults.map((rider) => {
-                
+
 
                 if (isTTTTeamResult(rider)) {
-                    return <div>
+                    return <div key={`ttt-stage-${rider.place}-${rider.team}`}>
                         <span>{rider.place}</span>
-                        <div key={rider.place}>{rider.team}</div>
+                        <div>{rider.team}</div>
                     </div>;
                 }
 
@@ -40,9 +40,9 @@ export default async function StagePage({ params }: { params: { race: RaceSlug; 
                 
 
                 if (isTTTTeamResult(rider)) {
-                    return <div>
+                    return <div key={`ttt-points-${rider.place}-${rider.team}`}>
                         <span>{rider.place}</span>
-                        <div key={rider.place}>{rider.team}</div>
+                        <div>{rider.team}</div>
                     </div>;
                 }
 

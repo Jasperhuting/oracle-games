@@ -9,8 +9,8 @@ export default function UserPage({ params }: { params: Promise<{ userID: string 
         const { userID } = use(params);
         const { user, loading } = useAuth();
         
-        const [isAdmin, setIsAdmin] = useState(false);
-        const [checking, setChecking] = useState(true);
+        const [_isAdmin, setIsAdmin] = useState(false);
+        const [_checking, setChecking] = useState(true);
 
         console.log(user);
     

@@ -6,6 +6,7 @@ import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Button } from "./Button";
 import Link from "next/link";
+import { EmailUserModal } from "./EmailUserModal";
 
 interface User {
   uid: string;
@@ -34,6 +35,9 @@ export const UserList = () => {
   const [filterType, setFilterType] = useState<string>("all");
   const [isAdmin, setIsAdmin] = useState(false);
   const [blockingUserId, setBlockingUserId] = useState<string | null>(null);
+  const [changingUserTypeId, setChangingUserTypeId] = useState<string | null>(null);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ email: string; name: string } | null>(null);
 
   // Check if user is admin
   useEffect(() => {
@@ -153,6 +157,55 @@ export const UserList = () => {
     } finally {
       setBlockingUserId(null);
     }
+  };
+
+  const changeUserType = async (userId: string, currentUserType: string, newUserType: string) => {
+    if (!user) return;
+
+    // Prevent changing admin to user
+    if (currentUserType === 'admin' && newUserType === 'user') {
+      alert('Het is niet toegestaan om een admin te degraderen naar gebruiker');
+      return;
+    }
+
+    if (!confirm(`Weet je zeker dat je deze gebruiker wilt wijzigen naar ${newUserType}?`)) return;
+
+    setChangingUserTypeId(userId);
+    try {
+      const response = await fetch('/api/changeUserType', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          adminUserId: user.uid,
+          targetUserId: userId,
+          newUserType: newUserType,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kon gebruikerstype niet wijzigen');
+      }
+
+      // Success - the realtime listener will update the UI automatically
+    } catch (error: any) {
+      console.error('Error changing user type:', error);
+      alert(error.message || 'Er is iets misgegaan bij het wijzigen van het gebruikerstype');
+    } finally {
+      setChangingUserTypeId(null);
+    }
+  };
+
+  const openEmailModal = (email: string, name: string) => {
+    setSelectedUser({ email, name });
+    setEmailModalOpen(true);
+  };
+
+  const closeEmailModal = () => {
+    setEmailModalOpen(false);
+    setSelectedUser(null);
   };
 
   // Filter users based on search term and type
@@ -297,13 +350,29 @@ export const UserList = () => {
                       <div className="text-sm text-gray-900">{user.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.userType === 'admin' 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {user.userType}
-                      </span>
+                      {isAdmin ? (
+                        <select
+                          value={user.userType}
+                          onChange={(e) => changeUserType(user.uid, user.userType, e.target.value)}
+                          disabled={changingUserTypeId === user.uid || user.userType === 'admin'}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            user.userType === 'admin'
+                              ? 'bg-primary text-white cursor-not-allowed'
+                              : 'bg-blue-100 text-blue-800 cursor-pointer'
+                          } ${changingUserTypeId === user.uid ? 'opacity-50 cursor-wait' : ''}`}
+                        >
+                          <option value="user">user</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      ) : (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.userType === 'admin'
+                            ? 'bg-primary text-white'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {user.userType}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -321,21 +390,30 @@ export const UserList = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.blocked ? (
-                        <Button 
-                          className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700" 
-                          text={blockingUserId === user.uid ? "Bezig..." : "Deblokkeer"} 
-                          onClick={() => unblockUser(user.uid)}
-                          disabled={blockingUserId === user.uid}
-                        />
-                      ) : (
-                        <Button 
-                          className="py-1 px-3 text-sm " 
-                          text={blockingUserId === user.uid ? "Bezig..." : "Blokkeer"} 
-                          onClick={() => blockUser(user.uid)}
-                          disabled={blockingUserId === user.uid}
-                        />
-                      )}
+                      <div className="flex gap-2">
+                        {/* <button
+                          onClick={() => openEmailModal(user.email, user.playername)}
+                          className="py-1 px-3 text-sm text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 rounded transition-colors"
+                          title="Stuur email"
+                        >
+                          Email
+                        </button> */}
+                        {user.blocked ? (
+                          <Button
+                            className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700"
+                            text={blockingUserId === user.uid ? "busy..." : "Deblock"}
+                            onClick={() => unblockUser(user.uid)}
+                            disabled={blockingUserId === user.uid}
+                          />
+                        ) : (
+                          <Button
+                            className="py-1 px-3 text-sm "
+                            text={blockingUserId === user.uid ? "busy..." : "Block"}
+                            onClick={() => blockUser(user.uid)}
+                            disabled={blockingUserId === user.uid}
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -353,7 +431,7 @@ export const UserList = () => {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-sm text-gray-600">Admins</div>
-          <div className="text-2xl font-bold text-purple-600">
+          <div className="text-2xl font-bold text-primary">
             {users.filter(u => u.userType === 'admin').length}
           </div>
         </div>
@@ -364,6 +442,16 @@ export const UserList = () => {
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      {selectedUser && (
+        <EmailUserModal
+          isOpen={emailModalOpen}
+          onClose={closeEmailModal}
+          userEmail={selectedUser.email}
+          userName={selectedUser.name}
+        />
+      )}
     </div>
   );
 }

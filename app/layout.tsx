@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { MotiaProvider } from "@/components/MotiaProvider";
+import { Toaster } from 'react-hot-toast';
+import { Header } from "@/components/Header";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,11 +24,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${inter.variable} antialiased bg-gray-50`}
         style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}
       >
         <MotiaProvider address={process.env.NEXT_PUBLIC_MOTIA_WS ?? 'ws://localhost:3000'}>
-          {children}
+          <Toaster position="top-center" />
+          <Header />
+          <main>
+            {children}
+          </main>
         </MotiaProvider>
       </body>
     </html>

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
           await db.collection(`rankings_${year}`).doc(docId).set({
             rank: rider.rank,
-            name: rider.fullName,
+            name: rider.name,
             nameID: rider.nameID,
             points: rider.points,
             country: rider.country,

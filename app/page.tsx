@@ -1,17 +1,16 @@
 "use client";
 
-import { Header } from "@/components/Header";
-
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
- 
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push('/home');
+  }, [router]);
 
   return (
-    <div>
-
-      <Header />
-    
-
-    </div>
+    <div className="flex items-center justify-center min-h-screen">...loading</div>
   );
 }

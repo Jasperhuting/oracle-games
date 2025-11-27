@@ -21,6 +21,7 @@ export const KNOWN_RACE_SLUGS = [
 export type RaceSlug = typeof KNOWN_RACE_SLUGS[number];
 
 export interface Rider {
+  nameID: string;
   name: string;
   country: string;
   startNumber: string;
@@ -51,7 +52,7 @@ export interface Rider {
   name: string;
   rank: number;
   points: number;
-  team: RankedTeam;
+  team?: RankedTeam;
   country: string;
   id: string;
 }
@@ -63,7 +64,6 @@ export interface RankedRider {
   points: number;
   rank: number;
   team: string;
-
   firstName: string;
   lastName: string;
 }
@@ -76,10 +76,11 @@ export interface RankedTeam {
   class: string;
   country: string;
   points: number;
+  teamImage?: string;
 }
 
 export interface Team {
-  id?: string;
+  id: string;
   image?: string;
   name: string;
   shortName?: string;

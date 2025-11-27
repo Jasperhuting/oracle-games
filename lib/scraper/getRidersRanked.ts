@@ -13,7 +13,7 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
 
 // https://www.procyclingstats.com/rankings.php?p=individual&s=&nation=&age=&page=smallerorequal&team=&offset=0&teamlevel=1&filter=Filter
 
-  const url = `https://www.procyclingstats.com/rankings.php?p=individual&s=&nation=&age=&page=smallerorequal&team=&offset=${offsetNum}&teamlevel=&filter=Filter`;
+  const url = `https://www.procyclingstats.com/rankings.php?p=me&s=season-individual&date=${year}-11-24&nation=&age=&page=smallerorequal&team=&teamlevel=&offset=${offsetNum}&filter=Filter`;
   
   const res = await fetch(url, { 
     headers: { 'User-Agent': 'Mozilla/5.0 (Node Script)' } 
@@ -31,7 +31,7 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
     
     const getName = (el: DomElement) => {
 
-      const name = $(el).find('td:nth-child(5) > a').text();
+      const name = $(el).find('td:nth-child(4) > a').text();
       const lastNameUppercase = String(name.match(/^[\p{Lu}\s']+(?=\s\p{Lu}\p{Ll})/u)?.[0] || '').toLowerCase();
       const lastName = lastNameUppercase.charAt(0).toUpperCase() + lastNameUppercase.slice(1);
       const firstName = String(name.match(/\b\p{Lu}\p{Ll}+\b/gu) || '').replace(/,/g, ' ');
@@ -47,17 +47,23 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
   const riders: RankedRider[] = [];
 
   $('.basic > tbody > tr').each((_, el) => {
-    const nameID = $(el).find('td:nth-child(5) > a').attr('href')?.split('/')[1] || '';
+    const nameID = $(el).find('td:nth-child(4) > a').attr('href')?.split('/')[1] || '';
+
+    let teamName = $(el).find('td.cu600:not(.fs10) > a').attr('href')?.split('/')[1] || '';
+
+    if (teamName === 'q365-pro-cycing-team-2025') {
+      teamName = 'q365-pro-cycling-team-2025';
+    }
     
     const rider: RankedRider = {
       rank: Number($(el).find('td').eq(0).text().trim()) || 0,
-      team: $(el).find('td.cu600:not(.fs10) > a').attr('href')?.split('/')[1] || '',
+      team: teamName,
       name: getName(el).fullName,
       nameID: nameID,
       lastName: getName(el).lastName,
       firstName: getName(el).firstName,
-      country: $(el).find('td:nth-child(5) > span').attr('class')?.split(' ')[1] || '',
-      points: Number($(el).find('td:nth-child(7) a').text().trim()) || 0,
+      country: $(el).find('td:nth-child(4) > span').attr('class')?.split(' ')[1] || '',
+      points: Number($(el).find('td:nth-child(6) a').text().trim()) || 0,
     };
     riders.push(rider);
   });

@@ -127,7 +127,7 @@ export const ActivityLogTab = () => {
             </span>
           )}
           {log.details.userType && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-50 text-purple-700">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary text-primary">
               {log.details.userType}
             </span>
           )}
@@ -169,7 +169,7 @@ export const ActivityLogTab = () => {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Alle activiteiten</option>
               <option value="USER_REGISTERED">Registraties</option>

@@ -33,6 +33,7 @@ export default function AccountPage() {
             <div className="max-w-4xl mx-auto w-full">
                 <div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center bg-white px-6 py-4 rounded-lg">
                     <Link href="/home">
+                        {/* @ts-expect-warning Image */}
                         <img src="/logo.png" alt="" className="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity" />
                     </Link>
                     <div className="flex-1 whitespace-nowrap text-3xl ml-4">

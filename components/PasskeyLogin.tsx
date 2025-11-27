@@ -4,8 +4,6 @@ import { useState } from "react";
 import { Button } from "./Button";
 import { authenticateWithPasskey, isPasskeySupported } from "@/lib/passkey";
 import { useRouter } from "next/navigation";
-import { signInWithCustomToken } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
 
 export const PasskeyLogin = () => {
     const [error, setError] = useState<string | null>(null);
@@ -24,6 +22,8 @@ export const PasskeyLogin = () => {
         try {
             // Authenticate with passkey (credential identifies the user)
             const passkeyData = await authenticateWithPasskey();
+            const { signInWithCustomToken } = await import("firebase/auth");
+            const { auth } = await import("@/lib/firebase/client");
 
             // Send to backend for verification
             const response = await fetch('/api/verifyPasskey', {

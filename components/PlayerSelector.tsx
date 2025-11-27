@@ -1,6 +1,9 @@
 import { PlayerRow } from "./PlayerRow";
 import { Rider } from "@/lib/scraper";
 import { Selector } from "./Selector";
+import process from "process";
+
+const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 export const PlayerSelector = ({
     setSelectedPlayers,
@@ -23,7 +26,7 @@ export const PlayerSelector = ({
             multiSelect={multiSelect}
             multiSelectShowSelected={multiSelectShowSelected}
             placeholder={multiSelect ? "Filter on players..." : "Filter on player..."}
-            localStorageKey="riders_2025"
+            localStorageKey={`riders_${YEAR}`}
             getItemLabel={(player) => player.name || ''}
             searchFilter={(player, searchTerm) => {
                 const lowerSearch = searchTerm.toLowerCase();

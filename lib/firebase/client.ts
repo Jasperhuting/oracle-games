@@ -22,7 +22,12 @@ function initializeFirebaseApp() {
 // Client-side Firebase
 export function getClientFirebase() {
   initializeFirebaseApp();
-  return getFirestore();
+  return getFirestore(); // Returns the default database
+}
+
+export function getClientFirebaseFootball() {
+  const app = initializeFirebaseApp();
+  return getFirestore(app, 'oracle-games-football');
 }
 
 export function getClientAuth() {
@@ -30,5 +35,6 @@ export function getClientAuth() {
   return getAuth();
 }
 
-export const db = getClientFirebase();
+export const db = getClientFirebase(); // Default database
+export const footballDb = getClientFirebaseFootball(); // Football database
 export const auth = getClientAuth();

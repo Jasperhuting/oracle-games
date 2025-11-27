@@ -1,29 +1,32 @@
 'use client'
+export const dynamic = "force-dynamic";
 
 import { ActionPanel } from "@/components/ActionPanel";
 import { Button } from "@/components/Button";
-import { MyTeamSelection } from "@/components/MyTeamSelection";
-import { Pagination } from "@/components/Pagination";
-import { PlayerCard } from "@/components/PlayerCard";
 import { Toggle } from "@/components/Toggle";
 import { TeamSelector } from "@/components/TeamSelector";
 import { ClassSelector } from "@/components/ClassSelector";
-import { iso2ToFlag } from "@/lib/firebase/utils";
 import { Country, Team, Rider } from "@/lib/scraper";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { List } from 'react-window';
-import { PlayerRow } from "@/components/PlayerRow";
 import { Flag } from "@/components/Flag";
 import countriesList from '@/lib/country.json';
+import toast from "react-hot-toast";
+import process from "process";
+import { useStreamGroup } from "@motiadev/stream-client-react";
+
+const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 export default function CreateRankingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [rankedRiders, setRankedRiders] = useState<any[]>([]);
-  const [teamsList, setTeamsList] = useState<any[]>([]);
-  const [year, setYear] = useState(2025);
-  const [teamsArray, setTeamsArray] = useState<any[]>([]);
+  const [rankedRiders, setRankedRiders] = useState<unknown[]>([]);
+  const [teamsList, setTeamsList] = useState<unknown[]>([]);
+  const [teamsArray, setTeamsArray] = useState<unknown[]>([]);
+  const [traceId, setTraceId] = useState<string | null>(null);
+  const [loadingToastId, setLoadingToastId] = useState<string | undefined>(undefined);
+  const [processedStages, setProcessedStages] = useState<Set<string>>(new Set());
 
   const [selectedPlayers, setSelectedPlayers] = useState<Rider[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
@@ -43,8 +46,8 @@ export default function CreateRankingPage() {
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
 
   // Filtered lists based on selected countries and players
-  const [filteredRiders, setFilteredRiders] = useState<any[]>([]);
-  const [filteredTeams, setFilteredTeams] = useState<any[]>([]);
+  const [filteredRiders, setFilteredRiders] = useState<unknown[]>([]);
+  const [filteredTeams, setFilteredTeams] = useState<unknown[]>([]);
 
   // Close editor when clicking outside
   useEffect(() => {
@@ -81,7 +84,6 @@ export default function CreateRankingPage() {
     const response = await fetch(`/api/getTeams`);
     const data = await response.json();
 
-    console.log('teams', data);
     setTeamsArray(data.teams);
     return data;
   };
@@ -90,11 +92,74 @@ export default function CreateRankingPage() {
     getAllTeams();
   }, []);
 
+
+  const streamGroup = useStreamGroup<{ id: string, stage: string, year: number, teamName: string, dataTeams?: any, dataRiders?: any }>({
+    streamName: 'updates',
+    groupId: traceId || 'default'
+  })
+
+
+  useEffect(() => {
+    if (streamGroup && streamGroup.data && streamGroup.data.length > 0) {
+      // Get all stages from the stream group data array
+      const stages = streamGroup.data.filter((item: Record<string, unknown>) => item && item.stage).map((item: Record<string, unknown>) => item.stage);
+
+      // Process stages in order: fetching-team, update-team, fetching-riders, update-riders
+      const stageOrder = ['fetching-team', 'update-team', 'fetching-riders', 'update-riders'];
+
+      // Find new stages to process
+      const newStagesToProcess = stageOrder.filter(
+        (expectedStage) => stages.includes(expectedStage) && !processedStages.has(expectedStage)
+      );
+
+      if (newStagesToProcess.length > 0) {
+        // Process stages sequentially with delays
+        let delay = 0;
+        newStagesToProcess.forEach((expectedStage) => {
+          setTimeout(() => {
+
+            // Dismiss initial loading toast on first stage
+            if (expectedStage === 'fetching-team' && loadingToastId) {
+              toast.dismiss(loadingToastId);
+            }
+
+            // Show different toasts based on the stage
+            if (expectedStage === 'fetching-team') {
+              toast.loading('Fetching team data...', { id: 'progress-toast' });
+            } else if (expectedStage === 'update-team') {
+              toast.dismiss('progress-toast');
+              toast.success('Team data updated! 🏆', { duration: 2000 });
+            } else if (expectedStage === 'fetching-riders') {
+              toast.loading('Fetching riders data...', { id: 'progress-toast' });
+            } else if (expectedStage === 'update-riders') {
+              toast.dismiss('progress-toast');
+              toast.success('Riders data updated! 🚴', { duration: 3000 });
+            }
+
+            // Mark this stage as processed
+            setProcessedStages(prev => new Set([...prev, expectedStage]));
+          }, delay);
+
+          // Add delay for next stage (500ms between stages)
+          delay += 500;
+        });
+      }
+    }
+  }, [streamGroup, processedStages, loadingToastId])
+
+
+
   const getEnrichedRiders = async () => {
 
     teamsArray.forEach(async (team: any) => {
 
-      const response = await fetch(`/api/setEnrichedRiders?year=2025&team=${team.slug}`);
+      let teamSlug = team.slug;
+
+      if (teamSlug === 'q365-pro-cycing-team-2025') {
+        teamSlug = 'q365-pro-cycling-team-2025'
+      }
+
+      const response = await fetch(`/api/setEnrichedRiders?year=${YEAR}&team=${teamSlug}`);
       const data = await response.json();
 
       console.log('enrichedRiders', data);
@@ -106,7 +171,13 @@ export default function CreateRankingPage() {
 
     teamsArray.forEach(async (team: any) => {
 
-      const response = await fetch(`/api/setEnrichedTeams?year=2025&team=${team.slug}`);
+      let teamSlug = team.slug;
+
+      if (teamSlug === 'q365-pro-cycing-team-2025') {
+        teamSlug = 'q365-pro-cycling-team-2025'
+      }
+
+      const response = await fetch(`/api/setEnrichedTeams?year=${YEAR}&team=${teamSlug}`);
       const data = await response.json();
 
       console.log('enrichedTeams', data);
@@ -159,7 +230,7 @@ export default function CreateRankingPage() {
     return false;
   };
 
-  const saveToCache = (year: number, riders: any[], teams: any[], totalCount: number) => {
+  const saveToCache = (year: number, riders: unknown[], teams: unknown[], totalCount: number) => {
     try {
       localStorage.setItem(getCacheKey('riders', year), JSON.stringify(riders));
       localStorage.setItem(getCacheKey('teams', year), JSON.stringify(teams));
@@ -240,7 +311,7 @@ export default function CreateRankingPage() {
       const response = await fetch('/api/updateRiderTeam', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ riderId, teamSlug, year }),
+        body: JSON.stringify({ riderId, teamSlug, YEAR }),
       });
 
       if (!response.ok) {
@@ -334,7 +405,7 @@ export default function CreateRankingPage() {
 
   const loadMoreRiders = () => {
     if (!loadingMore && totalCount && rankedRiders.length < totalCount) {
-      fetchData({ year, append: true });
+      fetchData({ year: YEAR, append: true });
     }
   };
 
@@ -354,7 +425,7 @@ export default function CreateRankingPage() {
       // Load all batches
       while (currentOffset < totalCount) {
 
-        const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=${batchSize}&offset=${currentOffset}`);
+        const ridersResponse = await fetch(`/api/getRankings?year=${YEAR}&limit=${batchSize}&offset=${currentOffset}`);
         const ridersData = await ridersResponse.json();
 
         const newRiders = ridersData.riders || [];
@@ -372,7 +443,7 @@ export default function CreateRankingPage() {
       }
 
       // Now save everything to cache
-      saveToCache(year, allLoadedRiders, teamsList, totalCount);
+      saveToCache(YEAR, allLoadedRiders, teamsList, totalCount);
 
     } catch (error) {
     } finally {
@@ -383,9 +454,9 @@ export default function CreateRankingPage() {
   useEffect(() => {
     // Only load data if not already loaded
     if (rankedRiders.length === 0 && !loadingMore) {
-      fetchData({ year });
+      fetchData({ year: YEAR });
     }
-  }, [year]);
+  }, [YEAR, rankedRiders.length, loadingMore]);
 
   useEffect(() => {
     let filtered = rankedRiders;
@@ -462,13 +533,13 @@ export default function CreateRankingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ year, offset: 0 }),
+        body: JSON.stringify({ year: YEAR, offset: 0 }),
       });
 
       const data = await response.json();
 
       // Refresh data after creation
-      await fetchData({ year });
+      await fetchData({ year: YEAR });
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -491,7 +562,7 @@ export default function CreateRankingPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ year, offset: currentOffset }),
+          body: JSON.stringify({ year: YEAR, offset: currentOffset }),
         });
 
         const data = await response.json();
@@ -501,12 +572,51 @@ export default function CreateRankingPage() {
     }
 
     // Refresh data after all rankings are created
-    await fetchData({ year });
+    await fetchData({ year: YEAR });
     setProgress({ current: 0, total: 0, isRunning: false });
     router.refresh();
   };
 
-  console.log('selectedCountries', selectedCountries)
+
+  const updateTeam = async () => {
+    setIsLoading(true);
+
+    // Show loading toast immediately
+    const toastId = toast.loading('Starting update...');
+    setLoadingToastId(toastId);
+    setProcessedStages(new Set()); // Reset for the new update
+
+    try {
+      const response = await fetch('/api/updateTeam', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ year: YEAR, teamName: 'q365-pro-cycling-team-2025' }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.dismiss(toastId);
+        toast.error('Failed to update team');
+      } else {
+        if (data.traceId) {
+          setTraceId(data.traceId);
+        } else {
+          console.warn('No traceId in response');
+          toast.dismiss(toastId);
+        }
+      }
+    } catch (error) {
+      console.error(error)
+      toast.dismiss(toastId);
+      toast.error('An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="bg-gray-300 min-h-[100vh] h-full">
@@ -515,20 +625,23 @@ export default function CreateRankingPage() {
 
 
         <div className="flex items-center justify-start gap-5 my-5">
-          <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={createRanking} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
 
-          <Button onClick={getEnrichedTeams} text="Get Enriched Teams" />
-          <Button onClick={getEnrichedRiders} text="Get Enriched Riders" />
-          <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
-          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: 2024, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
-          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} className="mr-[10px]" />
+          <Button text="update team" onClick={updateTeam} />
+
+          <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={createRanking} disabled={isLoading || progress.isRunning} />
+
+          <Button onClick={() => getEnrichedTeams()} text="Get Enriched Teams" />
+          <Button onClick={() => getEnrichedRiders()} text="Get Enriched Riders" />
+          <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: YEAR, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year: YEAR, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
           <Button
             onClick={() => {
-              clearCache(year);
+              clearCache(YEAR);
               setRankedRiders([]);
               setTeamsList([]);
               setTotalCount(null);
-              fetchData({ year, forceRefresh: true });
+              fetchData({ year: YEAR, forceRefresh: true });
             }}
             disabled={isLoading || progress.isRunning || loadingMore}
             className={`mr-[10px] ${usingCache ? 'bg-red-500' : 'bg-gray-500'}`}
@@ -545,7 +658,7 @@ export default function CreateRankingPage() {
         {!usingCache && rankedRiders.length > 0 && totalCount && rankedRiders.length < totalCount && (
           <div className="mb-2.5 p-2 bg-yellow-100 rounded text-sm">
             ⚠️ Only {rankedRiders.length} of {totalCount} riders loaded.
-            Click <strong>"Load All & Cache"</strong> to load and save all data for later (one-time database cost).
+            Click <strong>&quot;Load All & Cache&quot;</strong> to load and save all data for later (one-time database cost).
           </div>
         )}
 

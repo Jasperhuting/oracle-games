@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const db = getServerFirebase();
 
     // Build update object, excluding undefined values
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     if (result.jerseyImageTeam !== undefined) {
         updateData.teamImage = result.jerseyImageTeam;
     }

@@ -1,5 +1,8 @@
 import * as cheerio from 'cheerio';
 import { KNOWN_RACE_SLUGS, type RaceSlug, type StartlistResult, type Team, type Rider } from './types';
+import process from "process";
+
+const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 export interface GetRidersOptions {
   race: RaceSlug;
@@ -13,7 +16,7 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
 
   const yearNum = Number(year);
   if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 3000) {
-    throw new Error('Year must be a valid year, e.g., 2025');
+    throw new Error(`Year must be a valid year, e.g., ${YEAR}`);
   }
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/startlist`;
@@ -34,6 +37,7 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
   $('.startlist_v4 > li').each((i, el) => {
     const team: Team = {
       image: '',
+      id: '',
       name: '',
       shortName: '',
       riders: []
@@ -50,6 +54,11 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
     ridersCont.find('li').each((_, el) => {
       const rider: Rider = {
         name: '',
+        id: '',
+        nameID: '',
+        rank: 0,
+        points: 0,
+        team: undefined,
         country: '',
         startNumber: '',
         dropout: false
@@ -61,7 +70,7 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
       rider.startNumber = $el.find('.bib').text().trim();
       rider.dropout = Boolean($el.eq(0).hasClass('dropout')) || 
                      (Boolean($(el).text().includes('DNF')) || Boolean($(el).text().includes('DNS')));
-      team.riders.push(rider);
+      team?.riders?.push(rider);
     });
 
     riders.push(team);

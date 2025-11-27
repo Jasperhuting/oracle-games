@@ -1,16 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MyTeamSelectionRow } from "./MyTeamSelectionRow";
 import { ChevronDown, ChevronUp } from "tabler-icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection }: { myTeamSelection: any[], setMyTeamSelection: (myTeamSelection: any[]) => void }) => {
+export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection, removeAble, onCancelBid, hideButton, isOpen: controlledIsOpen }: { myTeamSelection: any[], setMyTeamSelection: (myTeamSelection: any[]) => void, removeAble?: boolean, onCancelBid?: (bidId: string, riderName: string) => void, hideButton?: boolean, isOpen?: boolean }) => {
 
-    const [open, setOpen] = useState(true);
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    // Reset internal state when controlled state becomes true (auto-expand when scrolling down)
+    useEffect(() => {
+        if (controlledIsOpen === true) {
+            setInternalOpen(true);
+        }
+    }, [controlledIsOpen]);
+
+    // When controlled externally, sync with the controlled value
+    // But allow manual override by toggling internalOpen
+    const open = controlledIsOpen !== undefined ? (controlledIsOpen && internalOpen) : internalOpen;
+
+    const handleToggle = () => {
+        setInternalOpen(!internalOpen);
+    };
 
     return (
         <div className={`fixed bottom-0 px-4 pt-4 drop-shadow-header right-5 z-50 w-[calc(100%_-_600px)] max-w-[900px] min-w-[600px] bg-white rounded-t-lg border border-gray-200 transition-transform duration-300 ease-in-out ${open ? 'translate-y-0' : 'translate-y-[calc(100%_-_58px)]'}`}>
-            <div onClick={() => setOpen(!open)} className="flex items-center justify-between pb-2 px-2">
-                <h2 className="text-lg font-bold">Mijn Team</h2>
+            <div onClick={handleToggle} className="flex items-center justify-between pb-2 px-2 cursor-pointer">
+                <h2 className="text-lg font-bold">My Team</h2>
                 <button className="text-gray-500 cursor-pointer">
                     {open ? <ChevronDown /> : <ChevronUp />}
                 </button>
@@ -22,7 +37,7 @@ export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection }: { myTea
                         <motion.div
                             key={rider.id}
                             initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-                            animate={{ 
+                            animate={{
                                 opacity: 1,
                                 height: "auto",
                                 overflow: "visible",
@@ -32,7 +47,7 @@ export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection }: { myTea
                                     overflow: { delay: 0.3 }
                                 }
                             }}
-                            exit={{ 
+                            exit={{
                                 opacity: 0,
                                 height: 0,
                                 overflow: "hidden",
@@ -42,7 +57,13 @@ export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection }: { myTea
                                 }
                             }}
                         >
-                            <MyTeamSelectionRow rider={rider} removeItem={(rider) => setMyTeamSelection(myTeamSelection.filter((p) => p.id !== rider.id))} />
+                            <MyTeamSelectionRow
+                                rider={rider}
+                                removeItem={(rider) => setMyTeamSelection(myTeamSelection.filter((p) => p.id !== rider.id))}
+                                removeAble={removeAble}
+                                onCancelBid={onCancelBid}
+                                hideButton={hideButton}
+                            />
                         </motion.div>
                     ))}
                 </AnimatePresence>

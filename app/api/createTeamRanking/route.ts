@@ -12,14 +12,24 @@ export async function POST(request: NextRequest) {
     try {
       for (const team of result.teams) {
 
-        const teamId = toSlug(team.nameID);
+        let teamId = toSlug(team.nameID);
+
+        if (teamId === 'q365-pro-cycing-team-2025') {
+          teamId = 'q365-pro-cycling-team-2025'
+        }
+
+        let teamSlug = team.nameID;
+
+        if (teamSlug === 'q365-pro-cycing-team-2025') {
+          teamSlug = 'q365-pro-cycling-team-2025'
+        }
 
         await db.collection('teams').doc(teamId).set({
           name: team.name,
           class: team.class,
           country: team.country,
           points: team.points,
-          slug: team.nameID,
+          slug: teamSlug,
         }, { merge: true });
       }
     } catch (error) {

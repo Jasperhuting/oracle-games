@@ -1,57 +1,96 @@
 import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { Minus, Plus } from "tabler-icons-react";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-export const PlayerCard = ({ player, onClick, selected }: { player: any, onClick: (player: any) => void, selected: boolean }) => {
+export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid, bid, hideInfo, className, bidders }: { player: any, onClick: (player: any) => void, selected: boolean, buttonContainer?: ReactNode, showBid?: boolean, bid?: number, hideInfo?: boolean, className?: string, bidders?: Array<{ playername: string, amount: number, bidAt: string }> }) => {
 
     const age = player?.team?.riders?.find((rider: any) => rider.name === player.id)?.age;
     const jerseyImage = player?.team?.teamImage;
     const teamName = player?.team?.name;
 
-    return (
-        <div className="bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]">
+    console.log("bidders:", bidders);
 
-            <div className="flex items-center justify-start gap-5 divide-[#CAC4D0] divide-x-2 pb-2">
-                <span className="pr-5">
-                    <img src={`https://www.procyclingstats.com/${jerseyImage}`} alt={player?.name} style={{ width: '50px' }} />    
+    return (
+        <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", className)}>
+
+            <div className="flex items-center justify-start gap-3 divide-[#CAC4D0] divide-x-2 pb-2">
+                <span className="pr-0 min-w-[55px]">
+                    {jerseyImage ? <img src={`https://www.procyclingstats.com/${jerseyImage}`} alt={player?.name} style={{ width: '50px' }} /> : <img src="/jersey-transparent.png" alt={player?.name} style={{ width: '50px' }} />}
                 </span>
-                <div className="flex flex-col gap-2">
-                    <span className="flex items-end content-end gap-2">
+                <div className="flex flex-col gap-2 min-w-0 flex-1">
+                    <span className="flex items-end content-end gap-2 min-w-0">
                         <span><Flag width={25} countryCode={player.country} /></span>
-                        <span className="font-bold whitespace-nowrap">{player.name}</span>
+                        <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">{player.name}</span>
                     </span>
-                    <span className="whitespace-nowrap text-sm">
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-sm">
                         {teamName}
                     </span>
                 </div>
             </div>
             <div className="flex flex-col gap-2 text-[#969696] font-medium">
-                <div className="flex flex-row gap-2 justify-between mt-2">
-                    <span>
-                        Leeftijd:
+                {!hideInfo && <div className="flex flex-row gap-2 justify-between mt-2">
+                    <span className="font-medium text-gray-700">
+                        Age:
                     </span>
                     <span>
                         {age}
                     </span>
-                </div>
+                </div>}
+                {!hideInfo && <div className="flex flex-row gap-2 justify-between">
+                    <span className="font-medium text-gray-700">
+                        Country:
+                    </span>
+                    <span>
+                        <Flag width={25} countryCode={player.country} />
+                    </span>
+                </div>}
                 <div className="flex flex-row gap-2 justify-between">
-                    <span>
-                        Land:
+                    <span className="font-medium text-gray-700">
+                        Price:
                     </span>
-                    <span>
-                        {player?.country}
-                    </span>
-                </div>
-                <div className="flex flex-row gap-2 justify-between">
-                    <span>
-                        Prijs:
-                    </span>
-                    <span>
-                        {new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(player.points)}
+                    <span className={player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""}>
+                        {formatCurrency(player.effectiveMinBid || player.points)}
+                        {player.effectiveMinBid && player.effectiveMinBid < player.points && (
+                            <span className="text-xs text-gray-500 line-through ml-1">
+                                {formatCurrency(player.points)}
+                            </span>
+                        )}
                     </span>
                 </div>
+                {showBid &&
+                    <div className="flex flex-row gap-2 justify-between">
+                        <span className="font-medium text-gray-700">
+                            Bid:
+                        </span>
+                        <span>
+                            {bid ? formatCurrency(bid) : 'N/A'}
+                        </span>
+                    </div>
+                }
 
-                <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />
+                {bidders && bidders.length > 0 && (
+                    <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-gray-200">
+                        <span className="font-medium text-gray-700 text-sm mb-1">
+                            Bidders ({bidders.length}):
+                        </span>
+                        <div className="max-h-32 overflow-y-auto space-y-1">
+                            {bidders.map((bidder, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 px-2 py-1 rounded">
+                                    <div className="flex flex-col">
+                                    <span className="font-medium text-gray-600">{bidder.playername}</span>
+                                    <span className="text-primary font-bold">{formatCurrency(bidder.amount)}</span>
+                                    </div>
+                                    <span className="text-gray-800">{new Date(bidder.bidAt).toLocaleString()}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />}
             </div>
         </div>
     );

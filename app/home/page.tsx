@@ -1,13 +1,12 @@
 'use client'
+import Image from 'next/image';
 
-import { AuthStatus } from "@/components/AuthStatus";
-import { PasskeySetup } from "@/components/PasskeySetup";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function HomePage() {
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
@@ -39,28 +38,24 @@ export default function HomePage() {
                     {user && (
                         <div className="flex gap-4">
                             {isAdmin && (
-                                <Link href="/admin" className="text-sm text-purple-600 hover:text-purple-900 underline font-medium">
+                                <Link href="/admin" className="text-sm text-primary hover:text-primary underline font-medium">
                                     Admin Dashboard
                                 </Link>
                             )}
-                            <Link href="/account" className="text-sm text-gray-600 hover:text-gray-900 underline">
-                                Mijn Account
-                            </Link>
                         </div>
                     )}
                 </div>
 
                 <h1 className="text-2xl font-bold mb-6">Home</h1>
-
-                <div className="mb-8">
-                    <h2 className="text-xl font-semibold mb-4">Authentication Status</h2>
-                    <AuthStatus />
-                </div>
-
-                <div className="bg-gray-50 p-6 rounded-md">
-                    <h2 className="text-xl font-semibold mb-4">Welkom bij Oracle Games!</h2>
+              
+                <div className="bg-white p-6 border border-gray-200 rounded-md">
+                    <h2 className="text-xl font-semibold mb-4">                        
+                        Welcome to Oracle Games!
+                    </h2>
                     <p className="text-gray-700">
-                        Dit is de home pagina. Hier kun je zien of je ingelogd bent en je account informatie bekijken.
+
+                        
+                        Welcome to the Oracle Games homepage. This page is only visible to logged-in users.                    
                     </p>
                 </div>
             </div>

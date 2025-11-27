@@ -6,10 +6,15 @@ import { GamesTab } from "@/components/GamesTab";
 import { ForumTab } from "@/components/ForumTab";
 import { ActivityLogTab } from "@/components/ActivityLogTab";
 import { AddGameTab } from "@/components/AddGameTab";
+import { CreateGameTab } from "@/components/CreateGameTab";
+import { GamesManagementTab } from "@/components/GamesManagementTab";
+import { RidersManagementTab } from "@/components/RidersManagementTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
+import { ArrowRight } from "tabler-icons-react";
 
 export default function AdminPage() {
     const { user, loading } = useAuth();
@@ -62,27 +67,27 @@ export default function AdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen p-8 bg-gray-50">
-            <div className="max-w-7xl mx-auto w-full">
+            <div className="max-w-8xl mx-auto w-full">
+                
+
+                <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+
                 <div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center bg-white px-6 py-4 rounded-lg">
-                    <Link href="/home">
-                        <img src="/logo.png" alt="" className="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity" />
-                    </Link>
-                    <div className="flex-1 whitespace-nowrap text-3xl ml-4">
-                        Oracle Games - Admin
-                    </div>
                     <Link href="/home" className="text-sm text-gray-600 hover:text-gray-900 underline">
                         Terug naar home
                     </Link>
+                    <ArrowRight className="mx-2" size={16} />
+                    <Link href="/admin" className="text-sm text-gray-600 hover:text-gray-900 underline">
+                        Admin
+                    </Link>
                 </div>
-
-                <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
                 <Tabs
                     defaultTab="users"
                     tabs={[
                         {
                             id: 'users',
-                            label: 'Gebruikers',
+                            label: 'Users',
                             content: <UserList />
                         },
                         {
@@ -92,8 +97,23 @@ export default function AdminPage() {
                         },
                         {
                             id: 'add-game',
-                            label: 'Race Toevoegen',
+                            label: 'Add Race',
                             content: <AddGameTab />
+                        },
+                        {
+                            id: 'create-game',
+                            label: 'Create Game',
+                            content: <CreateGameTab />
+                        },
+                        {
+                            id: 'games-management',
+                            label: 'Manage Games',
+                            content: <GamesManagementTab />
+                        },
+                        {
+                            id: 'riders',
+                            label: 'Manage Riders',
+                            content: <RidersManagementTab />
                         },
                         {
                             id: 'forum',
@@ -102,7 +122,7 @@ export default function AdminPage() {
                         },
                         {
                             id: 'activity',
-                            label: 'Activiteiten Log',
+                            label: 'Activity Log',
                             content: <ActivityLogTab />
                         }
                     ]}

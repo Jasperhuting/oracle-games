@@ -5,6 +5,9 @@ export async function enrichRiders({ year, team }: { year: number, team: string 
 
     const url = `https://www.procyclingstats.com/team/${team}`;
 
+
+    console.log('kom je hier wel?', url);
+
     try {
         const res = await fetch(url, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Node Script)' }

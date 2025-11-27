@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
       checkStatusUrl: `/api/scraper/bulk/${jobId}`,
     });
 
-  } catch (error) {
-    return Response.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+  } catch (_error) {
+    return Response.json({
+      error: _error instanceof Error ? _error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
@@ -128,8 +128,8 @@ async function scrapeAllStagesBackground(job: BulkScrapingJob) {
           dataCount: stageCount
         });
 
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      } catch (_error) {
+        const errorMsg = _error instanceof Error ? _error.message : 'Unknown error';
         job.errors.push({ stage: stageNum, error: errorMsg });
         job.results.push({
           stage: stageNum,
@@ -148,7 +148,7 @@ async function scrapeAllStagesBackground(job: BulkScrapingJob) {
     job.progress.percentage = 100;
     bulkJobs.set(job.id, job);
 
-  } catch (error) {
+  } catch (_error) {
     job.status = 'failed';
     job.completedAt = new Date().toISOString();
     bulkJobs.set(job.id, job);

@@ -5,6 +5,9 @@ import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
+import process from "process";
+
+const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 interface RaceFormData {
   race: string;
@@ -95,7 +98,7 @@ export const AddGameTab = () => {
               {...register('race', {
                 required: 'Race is verplicht'
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Selecteer een race</option>
               {AVAILABLE_RACES.map((race) => (
@@ -113,7 +116,7 @@ export const AddGameTab = () => {
             <TextInput
               type="number"
               label="Jaar"
-              placeholder="Bijv. 2025"
+              placeholder={`Bijv. ${YEAR}`}
               {...register('year', {
                 required: 'Jaar is verplicht',
                 min: {
@@ -142,7 +145,7 @@ export const AddGameTab = () => {
                   message: 'Beschrijving moet minimaal 10 karakters zijn'
                 }
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               rows={4}
               placeholder="Beschrijf de race..."
             />
@@ -164,7 +167,7 @@ export const AddGameTab = () => {
           )}
 
           <Button
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700"
+            className="px-6 py-2 bg-primary hover:bg-primary"
             text={isSubmitting ? "Bezig met toevoegen..." : "Race Toevoegen"}
             type="submit"
             disabled={isSubmitting}

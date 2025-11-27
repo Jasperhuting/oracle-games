@@ -38,7 +38,134 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false; // Only server-side access
     }
-    
+
+    // Rankings - authenticated users can read (matches any rankings_YYYY collection)
+    match /{rankingsCollection}/{riderId} {
+      allow read: if request.auth != null && rankingsCollection.matches('rankings_.*');
+      allow write: if false; // Only server-side access
+    }
+
+    // Teams - authenticated users can read
+    match /teams/{teamId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only server-side access
+    }
+
+    // ========================================================================
+    // GAME MANAGEMENT
+    // ========================================================================
+
+    // Games - admins can create/update, all authenticated users can read
+    match /games/{gameId} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Game Participants - players can join games, read their own data
+    match /gameParticipants/{participantId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Player Teams - players can manage their own teams
+    match /playerTeams/{teamId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Bids - players can create and read bids
+    match /bids/{bidId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if false; // Bids cannot be updated once placed
+      allow delete: if isAdmin(); // Only admins can delete bids
+    }
+
+    // Stage Picks - players can create and update their own picks before lock
+    match /stagePicks/{pickId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                      resource.data.userId == request.auth.uid &&
+                      !resource.data.locked; // Cannot update if locked
+      allow delete: if isAdmin();
+    }
+
+    // Leagues - creators can manage, members can read
+    match /leagues/{leagueId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid;
+      allow update: if request.auth != null &&
+                      (resource.data.createdBy == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null &&
+                      (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+
+    // Race Lineups - admins can manage, all authenticated users can read
+    match /raceLineups/{raceSlug} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Divisions - admins can manage, all authenticated users can read
+    match /divisions/{divisionId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Draft Picks - players can create their own picks during their turn
+    match /draftPicks/{pickId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if false; // Draft picks are immutable once made
+      allow delete: if isAdmin();
+    }
+
+    // Rider Pools - admins can manage, all authenticated users can read
+    match /riderPools/{poolId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // ========================================================================
+    // RACE RESULTS & STAGES
+    // ========================================================================
+
+    // Stage results - nested under races
+    match /races/{raceSlug}/stages/{stageDoc} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+
+      match /results/{resultId} {
+        allow read: if request.auth != null;
+        allow write: if isAdmin();
+      }
+    }
+
+    // Scraper data - only server-side access
+    match /scraper-data/{document=**} {
+      allow read: if isAdmin();
+      allow write: if false; // Only server-side access
+    }
+
+    // Passkey related collections - server-side only
+    match /passkeys/{document=**} {
+      allow read, write: if false; // Only server-side access
+    }
+
+    match /passkeyChallenge/{document=**} {
+      allow read, write: if false; // Only server-side access
+    }
+
     // Default deny all other collections
     match /{document=**} {
       allow read, write: if false;
