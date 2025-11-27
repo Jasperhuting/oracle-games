@@ -9,9 +9,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-const PasskeyLogin = dynamic(() => import("./PasskeyLogin"), {
-    ssr: false,
-});
+const PasskeyLogin = dynamic(
+  () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
+  { ssr: false }
+);
+
 interface LoginFormProps {
     email: string;
     password: string;

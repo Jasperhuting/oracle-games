@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useEffectEvent } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./Button";
 import { GameDetailsModal } from "./GameDetailsModal";
@@ -43,7 +43,7 @@ export const GamesManagementTab = () => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [finalizingGameId, setFinalizingGameId] = useState<string | null>(null);
 
-  const loadGames = useEffectEvent(async () => {
+  const loadGames = (async () => {
     setLoading(true);
     setError(null);
 

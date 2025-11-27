@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useEffectEvent } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
@@ -58,7 +58,7 @@ export const JoinableGamesTab = () => {
   const [leaving, setLeaving] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const loadGames = useEffectEvent(async () => {
+  const loadGames = (async () => {
     setLoading(true);
     setError(null);
 

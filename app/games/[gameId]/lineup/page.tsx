@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useEffectEvent } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,7 +31,7 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
     params.then(p => setGameId(p.gameId));
   }, [params]);
 
-  const loadLineup = useEffectEvent(async () => {
+  const loadLineup = (async () => {
     try {
       setLoading(true);
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useEffectEvent } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -39,7 +39,7 @@ export const DivisionAssignmentModal = ({
   const [saving, setSaving] = useState<string | null>(null);
   const [selectedDivisions, setSelectedDivisions] = useState<Record<string, string>>({});
 
-  const loadData = useEffectEvent(async () => {
+  const loadData = (async () => {
     setLoading(true);
     setError(null);
 

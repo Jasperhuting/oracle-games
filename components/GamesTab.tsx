@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useEffectEvent } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./Button";
@@ -50,7 +50,7 @@ export const GamesTab = () => {
   const [showAllMountains, setShowAllMountains] = useState(false);
   const [activeClassificationTab, setActiveClassificationTab] = useState<'stage' | 'gc' | 'points' | 'mountains' | 'youth' | 'team'>('stage');
 
-  const fetchRaces = useEffectEvent(async () => {
+  const fetchRaces = (async () => {
 
     console.log('userID', userId)
 

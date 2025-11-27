@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useEffectEvent } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
@@ -119,7 +119,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     checkAdmin();
   }, [user]);
 
-  const loadAuctionData = useEffectEvent(async () => {
+  const loadAuctionData = (async () => {
     if (!user) return;
 
     try {
