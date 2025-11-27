@@ -1,34 +1,53 @@
-import { initializeApp as initializeAdminApp, getApps as getAdminApps, getApp as getAdminApp, cert } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
+import {
+  initializeApp as initializeAdminApp,
+  getApps as getAdminApps,
+  getApp as getAdminApp,
+  cert,
+} from "firebase-admin/app";
+import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 
-// Initialize Firebase Admin App
 function initializeFirebaseAdmin() {
-  if (getAdminApps().length === 0) {
-    const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    };
-
-    return initializeAdminApp({
-      credential: cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
+  if (getAdminApps().length > 0) {
+    return getAdminApp();
   }
-  return getAdminApp();
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  // 🚨 Prevent Vercel build from crashing
+  if (!projectId || !clientEmail || !privateKey) {
+    console.warn(
+      "⚠️ Firebase Admin not initialized — missing environment variables."
+    );
+    return;
+  }
+
+  return initializeAdminApp({
+    credential: cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+    projectId,
+  });
 }
 
-// Server-side Firebase Admin - Default Database
 export function getServerFirebase() {
-  initializeFirebaseAdmin();
+  const app = initializeFirebaseAdmin();
+  if (!app) {
+    throw new Error("Firebase Admin not initialized — missing env vars.");
+  }
   return getAdminFirestore();
 }
 
-// Server-side Firebase Admin - Football Database
 export function getServerFirebaseFootball() {
   const app = initializeFirebaseAdmin();
-  return getAdminFirestore(app, 'oracle-games-football');
+  if (!app) {
+    throw new Error("Firebase Admin not initialized — missing env vars.");
+  }
+  return getAdminFirestore(app, "oracle-games-football");
 }
 
-export const adminDb = getServerFirebase(); // Default database
-export const adminFootballDb = getServerFirebaseFootball(); // Football database
+export const adminDb = getServerFirebase();
+export const adminFootballDb = getServerFirebaseFootball();
