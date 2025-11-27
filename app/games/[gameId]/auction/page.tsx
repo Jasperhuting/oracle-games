@@ -81,7 +81,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [cancelConfirmModal, setCancelConfirmModal] = useState<{ bidId: string; riderName: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [_showPlayerCard, _setShowPlayerCard] = useState(true);
+  const [showPlayerCard, setShowPlayerCard] = useState(true);
 
   const { ref, inView } = useInView({
     /* Optional options */
