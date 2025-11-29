@@ -134,7 +134,6 @@ export async function POST(
       status: 'active',
       budget: gameData?.config?.budget || 0,
       spentBudget: 0,
-      teamName: undefined,
       rosterSize: 0,
       rosterComplete: false,
       totalPoints: 0,

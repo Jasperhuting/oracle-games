@@ -67,7 +67,7 @@ export default function AdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen p-8 bg-gray-50">
-            <div className="max-w-8xl mx-auto w-full">
+            <div className="container mx-auto">
                 
 
                 <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>

@@ -27,7 +27,7 @@ export default function HomePage() {
     }, [user]);
     return (
         <div className="flex flex-col min-h-screen p-8">
-            <div className="max-w-4xl mx-auto w-full">
+            <div className="mx-auto container">
                 {isAdmin && (<div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center">
                     {user && (
                         <div className="flex gap-4">
