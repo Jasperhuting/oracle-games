@@ -121,8 +121,6 @@ export const WK2026Page = () => {
         return teams.filter(team => team.poule !== null);
     };
 
-    console.log("Assigned teams:", getAssignedTeams());
-
     const clearAllAssignments = () => {
         setTeams(teams.map(team => ({ ...team, poule: null, position: null })));
     };

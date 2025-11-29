@@ -30,11 +30,14 @@ export default function VerifyEmailPage() {
         try {
             const user = auth.currentUser;
             if (user) {
-                console.log('Attempting to send verification email to:', user.email);
-                await sendEmailVerification(user, {
-                    url: window.location.origin + '/login',
+                const actionCodeSettings = {
+                    url: `${window.location.origin}/login`,
                     handleCodeInApp: false,
-                });
+                };
+
+                console.log('Attempting to send verification email to:', user.email);
+                console.log('Action code settings:', actionCodeSettings);
+                await sendEmailVerification(user, actionCodeSettings);
                 console.log('Verification email sent successfully');
                 setEmailSent(true);
             } else {
@@ -45,6 +48,7 @@ export default function VerifyEmailPage() {
             console.error('Error sending verification email:', error);
             console.error('Error code:', error.code);
             console.error('Error message:', error.message);
+            console.error('Full error:', error);
             if (error.code === 'auth/too-many-requests') {
                 setError('Te veel verzoeken. Wacht even voordat je het opnieuw probeert.');
             } else {

@@ -49,8 +49,6 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
       }
       const data = await response.json();
 
-      console.log('Sample team from API:', data.teams);
-
       // Convert API teams to Team type
       const teams: Team[] = (data.teams || []).map((t: any) => ({
         id: t.id,
@@ -69,8 +67,6 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
       const riders: Rider[] = (data.riders || []).map((r: any) => {
         // Find the team class from the teams array
         const teamData = teams.find(t => t.id === r.teamId || t.name === r.team);
-
-        console.log('teamData: ', teamData)
 
         return {
           id: r.id,

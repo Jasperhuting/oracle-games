@@ -69,15 +69,19 @@ export const RegisterForm = () => {
             
             // Send email verification
             try {
-                await sendEmailVerification(user, {
-                    url: window.location.origin + '/login',
+                const actionCodeSettings = {
+                    url: `${window.location.origin}/login`,
                     handleCodeInApp: false,
-                });
+                };
+
+                console.log('Sending verification email with settings:', actionCodeSettings);
+                await sendEmailVerification(user, actionCodeSettings);
                 console.log('Verification email sent successfully to:', data.email);
             } catch (emailError: any) {
                 console.error('Error sending verification email:', emailError);
                 console.error('Error code:', emailError.code);
                 console.error('Error message:', emailError.message);
+                console.error('Full error:', emailError);
                 // Continue anyway - user can resend from verify page
             }
             

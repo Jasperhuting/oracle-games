@@ -28,13 +28,7 @@ export default function HomePage() {
     return (
         <div className="flex flex-col min-h-screen p-8">
             <div className="max-w-4xl mx-auto w-full">
-                <div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center">
-                    <div>
-                        <img src="/logo.png" alt="" className="w-12 h-12" />
-                    </div>
-                    <div className="flex-1 whitespace-nowrap text-3xl ml-4">
-                        Oracle Games
-                    </div>
+                {isAdmin && (<div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center">
                     {user && (
                         <div className="flex gap-4">
                             {isAdmin && (
@@ -44,7 +38,8 @@ export default function HomePage() {
                             )}
                         </div>
                     )}
-                </div>
+                </div>)}
+                
 
                 <h1 className="text-2xl font-bold mb-6">Home</h1>
               

@@ -25,7 +25,6 @@ export const ClassSelector = ({
                 const response = await fetch('/api/getClasses');
                 const data = await response.json();
 
-                console.log('data', data.classes);
                 setClasses(data.classes || []);
             } catch (error) {
                 console.error('Error fetching classes:', error);

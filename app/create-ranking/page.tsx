@@ -161,8 +161,6 @@ export default function CreateRankingPage() {
 
       const response = await fetch(`/api/setEnrichedRiders?year=${YEAR}&team=${teamSlug}`);
       const data = await response.json();
-
-      console.log('enrichedRiders', data);
     })
 
   };
@@ -179,8 +177,6 @@ export default function CreateRankingPage() {
 
       const response = await fetch(`/api/setEnrichedTeams?year=${YEAR}&team=${teamSlug}`);
       const data = await response.json();
-
-      console.log('enrichedTeams', data);
     })
 
   };

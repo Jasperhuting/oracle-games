@@ -10,9 +10,7 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
     const age = player?.team?.riders?.find((rider: any) => rider.name === player.id)?.age;
     const jerseyImage = player?.team?.teamImage;
     const teamName = player?.team?.name;
-
-    console.log("bidders:", bidders);
-
+    
     return (
         <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", className)}>
 
