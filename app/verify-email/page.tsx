@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
                 setEmailSent(true);
             } else {
                 console.error('No current user found');
-                setError('Geen gebruiker gevonden. Log opnieuw in.');
+                setError('No user found. Please log in again.');
             }
         } catch (error: any) {
             console.error('Error sending verification email:', error);
@@ -50,9 +50,9 @@ export default function VerifyEmailPage() {
             console.error('Error message:', error.message);
             console.error('Full error:', error);
             if (error.code === 'auth/too-many-requests') {
-                setError('Te veel verzoeken. Wacht even voordat je het opnieuw probeert.');
+                setError('Too many requests. Please wait a moment before trying again.');
             } else {
-                setError(`Er is iets misgegaan: ${error.message}`);
+                setError(`Something went wrong: ${error.message}`);
             }
         } finally {
             setIsResending(false);
@@ -75,25 +75,25 @@ export default function VerifyEmailPage() {
                 <div className="max-w-[400px] w-full">
                     <div className="bg-red-50 border border-yellow-200 rounded-md p-6 mb-6">
                         <div className="text-4xl mb-4 text-center">📧</div>
-                        <h1 className="text-2xl font-bold mb-4 text-center">Verifieer je e-mailadres</h1>
+                        <h1 className="text-2xl font-bold mb-4 text-center">Verify your email address</h1>
                         <p className="text-gray-700 mb-4 text-center">
-                            Je moet je e-mailadres verifiëren voordat je kunt inloggen.
+                            You must verify your email address before you can log in.
                         </p>
                         {userEmail && (
                             <p className="text-sm text-gray-600 mb-4 text-center">
-                                We hebben een verificatie email gestuurd naar <strong>{userEmail}</strong>
+                                We have sent a verification email to <strong>{userEmail}</strong>
                             </p>
                         )}
                         <p className="text-sm text-gray-600 text-center">
-                            Controleer je inbox en klik op de verificatielink in de email. 
-                            Daarna kun je inloggen.
+                            Check your inbox and click on the verification link in the email. 
+                            Then you can log in.
                         </p>
                     </div>
 
                     {emailSent && (
                         <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
                             <p className="text-green-800 text-sm">
-                                ✓ Verificatie email opnieuw verstuurd! Controleer je inbox.
+                                ✓ Verification email re-sent! Check your inbox.
                             </p>
                         </div>
                     )}
@@ -107,7 +107,7 @@ export default function VerifyEmailPage() {
                     <div className="space-y-3">
                         <Button 
                             className="w-full justify-center py-2" 
-                            text={isResending ? "Bezig met versturen..." : "Verificatie email opnieuw versturen"}
+                            text={isResending ? "Busy sending..." : "Resend verification email"}
                             onClick={handleResendEmail}
                             disabled={isResending}
                         />
@@ -115,13 +115,13 @@ export default function VerifyEmailPage() {
                         <Link href="/login">
                             <Button 
                                 className="w-full justify-center py-2 bg-white text-primary hover:bg-primary hover:text-white" 
-                                text="Terug naar login"
+                                text="Back to login"
                             />
                         </Link>
                     </div>
 
                     <div className="mt-6 text-center text-xs text-gray-600">
-                        <p>Geen email ontvangen? Controleer je spam folder.</p>
+                        <p>No email received? Check your spam folder.</p>
                     </div>
                 </div>
             </div>

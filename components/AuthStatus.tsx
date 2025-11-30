@@ -26,10 +26,10 @@ export const AuthStatus = () => {
     if (!isAuthenticated) {
         return (
             <div className="p-4 border rounded-md bg-red-50">
-                <p className="font-bold mb-2">Niet ingelogd</p>
-                <p className="text-sm mb-4">Je bent momenteel niet ingelogd.</p>
+                <p className="font-bold mb-2">Not logged in</p>
+                <p className="text-sm mb-4">You are currently not logged in.</p>
                 <Button 
-                    text="Naar login" 
+                    text="Back to login" 
                     onClick={() => router.push('/login')}
                 />
             </div>

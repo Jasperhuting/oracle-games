@@ -164,11 +164,11 @@ export const UserList = () => {
 
     // Prevent changing admin to user
     if (currentUserType === 'admin' && newUserType === 'user') {
-      alert('Het is niet toegestaan om een admin te degraderen naar gebruiker');
+      alert('It is not allowed to downgrade an admin to user');
       return;
     }
 
-    if (!confirm(`Weet je zeker dat je deze gebruiker wilt wijzigen naar ${newUserType}?`)) return;
+    if (!confirm(`Are you sure you want to change this user to ${newUserType}?`)) return;
 
     setChangingUserTypeId(userId);
     try {

@@ -232,7 +232,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold">Select Your Team</h1>
@@ -292,7 +292,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-6 py-6">
+      <div className="container mx-auto py-6">
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
             <span className="text-red-700 text-sm">{error}</span>

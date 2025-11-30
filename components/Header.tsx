@@ -84,7 +84,7 @@ export const Header = () => {
                 <div className="flex flex-1 justify-between py-2">
                     <div className="flex-1 flex items-center">
                        <Link href="/home">
-                        <img src="/logo.png" alt="" className="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity" />
+                        <img src="/logo.png" alt="" className="w-14 h-14 cursor-pointer hover:opacity-80 transition-opacity" />
                     </Link>
                     <div className="flex-1 whitespace-nowrap text-3xl ml-4">
                         Oracle Games

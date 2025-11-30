@@ -168,7 +168,7 @@ export const AddGameTab = () => {
 
           <Button
             className="px-6 py-2 bg-primary hover:bg-primary"
-            text={isSubmitting ? "Bezig met toevoegen..." : "Race Toevoegen"}
+            text={isSubmitting ? "Busy adding..." : "Add Race"}
             type="submit"
             disabled={isSubmitting}
           />

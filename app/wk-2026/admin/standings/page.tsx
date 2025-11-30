@@ -363,9 +363,9 @@ export default function StandingsPage() {
       {!isLoadingPredictions && hasPredictions && (
         <div className="bg-white border-2 border-gray-300 rounded-lg overflow-x-auto mb-8">
           <div className="px-4 pt-4 pb-2">
-            <h2 className="text-xl font-semibold">Stand beste nummers drie</h2>
+            <h2 className="text-xl font-semibold">Stand best third-placed teams</h2>
             <p className="text-xs text-gray-600 mt-1">
-              De eerste 8 nummers drie kwalificeren zich voor de knock-outfase
+              The first 8 third-placed teams qualify for the knockout phase
             </p>
           </div>
           <table className="min-w-full">
@@ -382,7 +382,7 @@ export default function StandingsPage() {
                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">DV</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">DT</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">+/−</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kwalificatie</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Qualification</th>
               </tr>
             </thead>
             <tbody>
@@ -407,7 +407,7 @@ export default function StandingsPage() {
                       {teamStats.goalDifference > 0 ? '+' : ''}{teamStats.goalDifference}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
-                      {qualifies ? 'Naar de knock-outfase' : ''}
+                      {qualifies ? 'To the knock-out phase' : ''}
                     </td>
                   </tr>
                 );
@@ -415,10 +415,10 @@ export default function StandingsPage() {
             </tbody>
           </table>
           <div className="px-4 py-3 text-xs text-gray-600 border-t">
-            <p className="mb-1">De eerste wedstrijd(en) word(t/en) gespeeld op 11 juni 2026.</p>
+            <p className="mb-1">The first match(es) will be played on 11 June 2026.</p>
             <p>
-              <strong>Regels voor de stand:</strong> 1) Meeste punten; 2) Doelsaldo; 3) Doelpunten voor;
-              4) Aantal overwinningen; 5) Lager totaal aantal disciplinaire punten
+              <strong>Stand rules:</strong> 1) Most points; 2) Goal difference; 3) Goals for;
+              4) Number of wins; 5) Lower total number of disciplinary points
             </p>
           </div>
         </div>

@@ -155,9 +155,9 @@ export async function authenticateWithPasskey(): Promise<{
   } catch (error: any) {
     console.error('Error authenticating with passkey:', error);
     if (error.name === 'NotAllowedError') {
-      throw new Error('Passkey authenticatie geannuleerd');
+      throw new Error('Passkey authentication cancelled');
     }
-    throw new Error('Kon niet inloggen met passkey');
+    throw new Error('Could not log in with passkey');
   }
 }
 

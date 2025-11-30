@@ -36,14 +36,14 @@ export const ResetPasswordForm = () => {
         } catch (error: any) {
             console.error('Password reset error:', error.code, error.message);
             
-            // User-friendly error messages in Dutch
-            let errorMessage = 'Er is iets misgegaan bij het versturen van de reset e-mail';
+            // User-friendly error messages in English
+            let errorMessage = 'Something went wrong sending the reset email';
             if (error.code === 'auth/user-not-found') {
-                errorMessage = 'Geen account gevonden met dit e-mailadres';
+                errorMessage = 'No account found with this email address';
             } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Ongeldig e-mailadres';
+                errorMessage = 'Invalid email address';
             } else if (error.code === 'auth/too-many-requests') {
-                errorMessage = 'Te veel verzoeken. Probeer het later opnieuw';
+                errorMessage = 'Too many requests. Try again later';
             }
             
             setError(errorMessage);
@@ -64,12 +64,12 @@ export const ResetPasswordForm = () => {
                         </div>
                         <div className="ml-3">
                             <h3 className="text-sm font-medium text-green-800">
-                                E-mail verzonden!
+                                Email sent!
                             </h3>
                             <div className="mt-2 text-sm text-green-700">
                                 <p>
-                                    We hebben een e-mail gestuurd met instructies om je wachtwoord opnieuw in te stellen. 
-                                    Controleer je inbox en spam folder.
+                                    We have sent an email with instructions to reset your password. 
+                                    Check your inbox and spam folder.
                                 </p>
                             </div>
                         </div>
@@ -79,7 +79,7 @@ export const ResetPasswordForm = () => {
                 <Link href="/login">
                     <Button 
                         className="w-full justify-center py-2" 
-                        text="Terug naar inloggen" 
+                        text="Back to login" 
                     />
                 </Link>
             </div>
@@ -91,13 +91,13 @@ export const ResetPasswordForm = () => {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col mb-4">
                     <TextInput 
-                        label="E-mailadres" 
-                        placeholder="E-mailadres" 
+                        label="Email" 
+                        placeholder="Email" 
                         {...register('email', { 
-                            required: 'E-mailadres is verplicht',
+                            required: 'Email is Mandatory',
                             pattern: {
                                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                message: 'Ongeldig e-mailadres'
+                                message: 'Invalid email address'
                             }
                         })} 
                     />
@@ -114,7 +114,7 @@ export const ResetPasswordForm = () => {
                 
                 <Button 
                     className="w-full justify-center py-2 mb-4" 
-                    text={isSubmitting ? "Bezig met versturen..." : "Verstuur reset link"} 
+                    text={isSubmitting ? "Sending..." : "Send reset link"} 
                     type="submit" 
                     disabled={isSubmitting} 
                 />
@@ -122,7 +122,7 @@ export const ResetPasswordForm = () => {
 
             <div className="text-center">
                 <Link href="/login" className="text-xs underline text-gray-600 hover:text-gray-900">
-                    Terug naar inloggen
+                    Back to login
                 </Link>
             </div>
         </div>

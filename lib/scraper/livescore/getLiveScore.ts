@@ -26,7 +26,7 @@ export async function getLiveScores(): Promise<any[]> {
 
     const getCountryClub = (name: string) => {
 
-        // TESTDATA VOOR WK2026
+        // TESTDATA FOR WK2026
 
         if (name === clubs[0]) {
             return 'united_states'

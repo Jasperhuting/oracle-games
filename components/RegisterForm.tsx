@@ -93,7 +93,7 @@ export const RegisterForm = () => {
             router.push('/verify-email');
         } catch (error: any) {
             console.error('Registration error:', error.code, error.message);
-            setError(error.message || 'Er is iets misgegaan bij het registreren');
+            setError(error.message || 'Something went wrong registering');
             setIsSubmitting(false);
         }
     }
@@ -117,13 +117,13 @@ export const RegisterForm = () => {
         } catch (error: any) {
             console.error('Google signup error:', error);
             if (error.code === 'auth/popup-closed-by-user') {
-                setError('Registratie geannuleerd');
+                setError('Registration cancelled');
             } else if (error.code === 'auth/popup-blocked') {
-                setError('Pop-up geblokkeerd. Sta pop-ups toe voor deze site.');
+                setError('Pop-up blocked. Enable pop-ups for this site.');
             } else if (error.code === 'auth/account-exists-with-different-credential') {
-                setError('Er bestaat al een account met dit e-mailadres');
+                setError('There is already an account with this email address');
             } else {
-                setError('Er is iets misgegaan bij het registreren met Google');
+                setError('Something went wrong registering with Google');
             }
             setIsGoogleLoading(false);
         }
@@ -206,19 +206,19 @@ export const RegisterForm = () => {
         <div className="flex flex-col">
             <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col">
-                <TextInput label="E-mailadres" placeholder="E-mailadres" {...register('email')} onBlur={makeUpPlayerName} />
+                <TextInput label="Email" placeholder="Email" {...register('email')} onBlur={makeUpPlayerName} />
             </div>
             <div className="flex flex-col">
-                <TextInput type="password" label="Wachtwoord" placeholder="Wachtwoord" {...register('password')} />
+                <TextInput type="password" label="Password" placeholder="Password" {...register('password')} />
             </div>
             <div className="flex flex-col">
-                <TextInput type="password" label="Wachtwoord bevestigen" placeholder="Wachtwoord bevestigen" {...register('password_confirmation')} />
+                <TextInput type="password" label="Confirm Password" placeholder="Confirm Password" {...register('password_confirmation')} />
             </div>
              <div className="flex flex-col">
-                <TextInput label="Spelersnaam" placeholder="Spelersnaam" {...register('playername')} disabled={isGenerating} />
+                <TextInput label="Player Name" placeholder="Player Name" {...register('playername')} disabled={isGenerating} />
                 {error && <span className="text-red-500 max-w-[200px] text-xs my-2">{error}</span>}
             </div>
-            <Button className="w-full justify-center py-1 my-4" text={isSubmitting ? "Bezig met registreren..." : "Registreren"} type="submit" disabled={isSubmitting} />
+            <Button className="w-full justify-center py-1 my-4" text={isSubmitting ? "Registering..." : "Register"} type="submit" disabled={isSubmitting} />
             </form>
 
             <div className="relative my-4">
@@ -226,14 +226,14 @@ export const RegisterForm = () => {
                     <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">Of registreer met</span>
+                    <span className="px-2 bg-gray-50 text-gray-500">Or register with</span>
                 </div>
             </div>
 
             <div className="space-y-3">
                 <Button
                     className="w-full justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
-                    text={isGoogleLoading ? "Bezig..." : "Registreren met Google"}
+                    text={isGoogleLoading ? "Loading..." : "Register with Google"}
                     onClick={handleGoogleSignup}
                     disabled={isGoogleLoading || isSubmitting}
                     startIcon={
@@ -248,7 +248,7 @@ export const RegisterForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs">Al een account? Ga naar de <Link className="underline" href="/login">inlogpagina</Link></span>
+                <span className="text-xs">Already have an account? Go to the <Link className="underline" href="/login">login page</Link></span>
             </div>
         </div>
     );

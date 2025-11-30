@@ -15,8 +15,8 @@ export default function RegisterPage() {
                     </div>
                 </div>
                 <div className="flex flex-col items-center mt-4">
-                    <span className="font-bold">Welkom bij Oracle Games</span>
-                    <span className="font-light">Vul je gegevens in</span>
+                    <span className="font-bold">Welcome to Oracle Games</span>
+                    <span className="font-light">Fill in your details</span>
                 </div>
 
                 <div className="my-4 w-[300px]">

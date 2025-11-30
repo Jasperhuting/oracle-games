@@ -613,14 +613,14 @@ export default function AdminKnockoutPage() {
                     {match.team1Score === match.team2Score && match.team1Score !== null && (
                       <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                         <label className="text-sm font-medium text-gray-700 mb-2 block">
-                          Winnaar na penalties:
+                          Winner after penalties:
                         </label>
                         <select
                           value={match.winner || ''}
                           onChange={(e) => handleWinnerSelect(match.id, e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded bg-white"
                         >
-                          <option value="">Selecteer winnaar...</option>
+                          <option value="">Select winner...</option>
                           {match.team1 && <option value={match.team1}>{getTeamName(match.team1)}</option>}
                           {match.team2 && <option value={match.team2}>{getTeamName(match.team2)}</option>}
                         </select>
@@ -629,13 +629,13 @@ export default function AdminKnockoutPage() {
 
                     {match.winner && match.team1Score !== match.team2Score && (
                       <div className="mt-2 text-sm text-green-700 font-semibold">
-                        Winnaar: {getTeamName(match.winner)}
+                        Winner: {getTeamName(match.winner)}
                       </div>
                     )}
 
                     {match.winner && match.team1Score === match.team2Score && match.team1Score !== null && (
                       <div className="mt-2 text-sm text-green-700 font-semibold">
-                        Winnaar na penalties: {getTeamName(match.winner)}
+                        Winner after penalties: {getTeamName(match.winner)}
                       </div>
                     )}
                   </div>)
@@ -650,18 +650,18 @@ export default function AdminKnockoutPage() {
 
       {/* User Predictions Overview */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Gebruikers Voorspellingen</h2>
+        <h2 className="text-2xl font-bold mb-4">User Predictions</h2>
 
         <div className="bg-white border-2 border-gray-300 rounded-lg overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Gebruiker</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">User</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
-                  Correcte Voorspellingen
+                  Correct Predictions
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
-                  Laatst Bijgewerkt
+                  Last Updated
                 </th>
               </tr>
             </thead>

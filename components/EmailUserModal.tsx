@@ -81,7 +81,7 @@ export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUs
           {/* Header */}
           <div className="mb-4">
             <h2 className="text-xl font-bold text-gray-900">
-              Email versturen naar {userName}
+              Email send to {userName}
             </h2>
             <p className="text-sm text-gray-600 mt-1">{userEmail}</p>
           </div>
@@ -89,7 +89,7 @@ export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUs
           {/* Success message */}
           {success && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-700">Email succesvol verstuurd!</p>
+              <p className="text-sm text-green-700">Email successfully sent!</p>
             </div>
           )}
 
@@ -105,29 +105,29 @@ export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUs
             {/* Subject */}
             <div>
               <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                Onderwerp
+                Subject
               </label>
               <input
                 id="subject"
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Onderwerp van je email"
+                placeholder="Subject of your email"
                 disabled={sending || success}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               />
-            </div>
+            </div>  
 
             {/* Message */}
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                Bericht
+                Message
               </label>
               <textarea
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Schrijf hier je bericht..."
+                placeholder="Write your message..."
                 rows={8}
                 disabled={sending || success}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 resize-none"
@@ -142,10 +142,10 @@ export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUs
               disabled={sending}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Annuleren
+              Cancel
             </button>
             <Button
-              text={sending ? 'Versturen...' : 'Verstuur Email'}
+              text={sending ? 'Sending...' : 'Send Email'}
               onClick={handleSend}
               disabled={sending || success}
               className="px-4 py-2 text-sm"

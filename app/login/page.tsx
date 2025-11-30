@@ -17,8 +17,8 @@ export default function LoginPage() {
                     </div>
                 </div>
                 <div className="flex flex-col items-center mt-4">
-                    <span className="font-bold">Welkom terug!</span>
-                    <span className="font-light">Log in met je gegevens</span>
+                    <span className="font-bold">Welcome back!</span>
+                    <span className="font-light">Log in with your details</span>
                 </div>
 
                 <div className="my-4 w-[300px]">

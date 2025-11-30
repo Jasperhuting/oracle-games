@@ -70,18 +70,18 @@ export const LoginForm = () => {
         } catch (error: any) {
             console.error('Login error:', error.code, error.message);
             
-            // User-friendly error messages in Dutch
-            let errorMessage = 'Er is iets misgegaan bij het inloggen';
+            // User-friendly error messages in English
+            let errorMessage = 'Something went wrong logging in';
             if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                errorMessage = 'Onjuist e-mailadres of wachtwoord';
+                errorMessage = 'Invalid email or password';
             } else if (error.code === 'auth/user-not-found') {
-                errorMessage = 'Geen account gevonden met dit e-mailadres';
+                errorMessage = 'No account found with this email address';
             } else if (error.code === 'auth/too-many-requests') {
-                errorMessage = 'Te veel mislukte pogingen. Probeer het later opnieuw';
+                errorMessage = 'Too many failed attempts. Try again later';
             } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Ongeldig e-mailadres';
+                errorMessage = 'Invalid email address';
             } else if (error.code === 'auth/user-disabled') {
-                errorMessage = 'Dit account is geblokkeerd. Neem contact op met de beheerder.';
+                errorMessage = 'This account is disabled. Contact the administrator.';
             }
             
             setError(errorMessage);
@@ -122,11 +122,11 @@ export const LoginForm = () => {
         } catch (error: any) {
             console.error('Google login error:', error);
             if (error.code === 'auth/popup-closed-by-user') {
-                setError('Login geannuleerd');
+                setError('Login cancelled');
             } else if (error.code === 'auth/popup-blocked') {
-                setError('Pop-up geblokkeerd. Sta pop-ups toe voor deze site.');
+                setError('Pop-up blocked. Enable pop-ups for this site.');
             } else {
-                setError('Er is iets misgegaan bij het inloggen met Google');
+                setError('Something went wrong logging in with Google');
             }
             setIsGoogleLoading(false);
         }
@@ -142,7 +142,7 @@ export const LoginForm = () => {
                 body: JSON.stringify({
                     uid: user.uid,
                     email: user.email,
-                    playername: user.displayName || user.email?.split('@')[0] || 'Speler',
+                    playername: user.displayName || user.email?.split('@')[0] || 'Player',
                     userType: 'user',
                     authMethod: 'google',
                 }),
@@ -176,11 +176,11 @@ export const LoginForm = () => {
                 </div>
                 {error && <span className="text-red-500 text-xs my-2">{error}</span>}
                 <div className="text-xs self-end my-2">
-                    <Link href="/reset-password" className="underline">Wachtwoord vergeten?</Link>
+                    <Link href="/reset-password" className="underline">Forgot password?</Link>
                 </div>
                 <Button 
                     className="w-full justify-center py-1 my-4" 
-                    text={isSubmitting ? "Bezig met inloggen..." : "Inloggen"} 
+                    text={isSubmitting ? "Loading..." : "Log in"} 
                     type="submit" 
                     disabled={isSubmitting} 
                 />
@@ -191,7 +191,7 @@ export const LoginForm = () => {
                     <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">Of log in met</span>
+                    <span className="px-2 bg-gray-50 text-gray-500">Or log in with</span>
                 </div>
             </div>
 
@@ -200,7 +200,7 @@ export const LoginForm = () => {
                 
                 <Button
                     className="w-full justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
-                    text={isGoogleLoading ? "Bezig..." : "Inloggen met Google"}
+                    text={isGoogleLoading ? "Loading..." : "Log in with Google"}
                     onClick={handleGoogleLogin}
                     disabled={isGoogleLoading || isSubmitting}
                     startIcon={

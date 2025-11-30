@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const existingRace = await db.collection('races').doc(raceSlug).get();
     if (existingRace.exists) {
       return NextResponse.json(
-        { error: 'Een race met deze naam en jaar bestaat al' },
+        { error: 'A race with this name and year already exists' },
         { status: 409 }
       );
     }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         console.log(`[createRace] Successfully created rankings_${year} with ${totalRiders.length} riders`);
       } catch (rankingsError) {
         console.error(`[createRace] Failed to create rankings_${year}:`, rankingsError);
-        throw new Error(`Kon rankings niet aanmaken voor jaar ${year}: ${rankingsError instanceof Error ? rankingsError.message : 'Unknown error'}`);
+        throw new Error(`Could not create rankings_${year}: ${rankingsError instanceof Error ? rankingsError.message : 'Unknown error'}`);
       }
     } else {
       console.log(`[createRace] rankings_${year} already exists`);
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
 
       // Return error - race will NOT be created
       return NextResponse.json(
-        { error: `Kon startlijst niet laden: ${errorMessage}. Race is niet aangemaakt.` },
+        { error: `Could not load starting list: ${errorMessage}. Race is not created.` },
         { status: 400 }
       );
     }

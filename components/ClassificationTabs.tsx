@@ -95,7 +95,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{result.name || `${result.firstName || ''} ${result.lastName || ''}`.trim() || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.team || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.timeDifference && result.timeDifference !== '-' ? result.timeDifference : (result.place === 1 ? 'Winnaar' : '-')}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{result.timeDifference && result.timeDifference !== '-' ? result.timeDifference : (result.place === 1 ? 'Winner' : '-')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -106,7 +106,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                   onClick={() => setShowAllStageResults(!showAllStageResults)}
                   className="text-sm text-primary hover:text-primary/90 font-medium"
                 >
-                  {showAllStageResults ? '← Toon minder' : `Toon alle ${selectedStage.stageResults.length} renners →`}
+                  {showAllStageResults ? '← Show less' : `Show all ${selectedStage.stageResults.length} riders →`}
                 </button>
               </div>
             )}
@@ -120,10 +120,10 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Foto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Renner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tijd</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -147,7 +147,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {result.timeDifference && result.timeDifference.trim() !== '' && result.timeDifference !== '-' 
                           ? result.timeDifference 
-                          : (result.place === 1 ? 'Leider' : result.gc || '-')}
+                          : (result.place === 1 ? 'Leader' : result.gc || '-')}
                       </td>
                     </tr>
                   );
@@ -160,7 +160,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                   onClick={() => setShowAllGC(!showAllGC)}
                   className="text-sm text-primary hover:text-primary/90 font-medium"
                 >
-                  {showAllGC ? '← Toon minder' : `Toon alle ${selectedStage.generalClassification.length} renners →`}
+                  {showAllGC ? '← Show less' : `Show all ${selectedStage.generalClassification.length} riders →`}
                 </button>
               </div>
             )}
@@ -174,10 +174,10 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Foto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Renner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Punten</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -214,10 +214,10 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Foto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Renner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Punten</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -255,7 +255,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tijd</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

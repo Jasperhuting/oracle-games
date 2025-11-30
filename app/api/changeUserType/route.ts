@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Prevent admins from changing their own user type
     if (adminUserId === targetUserId) {
       return NextResponse.json(
-        { error: 'Je kunt je eigen gebruikerstype niet wijzigen' },
+        { error: 'You cannot change your own user type' },
         { status: 400 }
       );
     }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Prevent changing admin to user
     if (targetUserData?.userType === 'admin' && newUserType === 'user') {
       return NextResponse.json(
-        { error: 'Het is niet toegestaan om een admin te degraderen naar gebruiker' },
+        { error: 'It is not allowed to downgrade an admin to a user' }, 
         { status: 400 }
       );
     }

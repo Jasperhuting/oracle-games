@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { MotiaProvider } from "@/components/MotiaProvider";
 import { Toaster } from 'react-hot-toast';
-import { Header } from "@/components/Header";
+import { LayoutShell } from "@/components/LayoutShell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,10 +29,11 @@ export default function RootLayout({
       >
         <MotiaProvider address={process.env.NEXT_PUBLIC_MOTIA_WS ?? 'ws://localhost:3000'}>
           <Toaster position="top-center" />
-          <Header />
+          <LayoutShell>
           <main>
             {children}
           </main>
+          </LayoutShell>
         </MotiaProvider>
       </body>
     </html>

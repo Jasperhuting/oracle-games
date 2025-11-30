@@ -483,7 +483,7 @@ export default function KnockoutPredictionsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">WK 2026 - Knockout Fase Voorspellingen</h1>
+      <h1 className="text-3xl font-bold mb-6">WK 2026 - Knockout Fase Predictions</h1>
 
       {message && (
         <div
@@ -501,7 +501,7 @@ export default function KnockoutPredictionsPage() {
           disabled={saving}
           className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Opslaan...' : 'Voorspellingen Opslaan'}
+          {saving ? 'Saving...' : 'Save predictions'}
         </button>
       </div>
 
@@ -517,7 +517,7 @@ export default function KnockoutPredictionsPage() {
                 <div key={match.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm text-gray-600">
-                      Wedstrijd {match.matchNumber} - {match.date}
+                      Match {match.matchNumber} - {match.date}
                     </div>
                     <div className="text-xs text-gray-500">
                       {match.stadium}, {match.location}
@@ -567,14 +567,14 @@ export default function KnockoutPredictionsPage() {
                   {match.team1Score === match.team2Score && match.team1Score !== null && (
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                       <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Winnaar na penalties:
+                        Winner after penalties:
                       </label>
                       <select
                         value={match.winner || ''}
                         onChange={(e) => handleWinnerSelect(match.id, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded bg-white"
                       >
-                        <option value="">Selecteer winnaar...</option>
+                        <option value="">Select winner...</option>
                         {match.team1 && (
                           <option value={match.team1}>{getTeamName(match.team1)}</option>
                         )}
@@ -587,13 +587,13 @@ export default function KnockoutPredictionsPage() {
 
                   {match.winner && match.team1Score !== match.team2Score && (
                     <div className="mt-2 text-sm text-green-700 font-semibold">
-                      Winnaar: {getTeamName(match.winner)}
+                      Winner: {getTeamName(match.winner)}
                     </div>
                   )}
 
                   {match.winner && match.team1Score === match.team2Score && match.team1Score !== null && (
                     <div className="mt-2 text-sm text-green-700 font-semibold">
-                      Winnaar na penalties: {getTeamName(match.winner)}
+                      Winner after penalties: {getTeamName(match.winner)}
                     </div>
                   )}
                 </div>
@@ -609,7 +609,7 @@ export default function KnockoutPredictionsPage() {
           disabled={saving}
           className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Opslaan...' : 'Voorspellingen Opslaan'}
+          {saving ? 'Saving...' : 'Save predictions'}
         </button>
       </div>
     </div>

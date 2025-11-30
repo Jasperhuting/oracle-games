@@ -34,7 +34,7 @@ export default function GamesPage() {
             <div className="mx-auto container">
                 <div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center bg-white px-6 py-4 rounded-lg">
                     <Link href="/home" className="text-sm text-gray-600 hover:text-gray-900 underline">
-                        Terug naar home
+                        Back to Home
                     </Link>
                     <ArrowRight className="mx-2" size={16} />
                     <Link href="/admin" className="text-sm text-gray-600 hover:text-gray-900 underline">

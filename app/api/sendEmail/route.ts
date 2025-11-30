@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!apiKey || !fromEmail) {
       console.error('MailerSend API key or from email not configured');
       return NextResponse.json(
-        { error: 'Email service niet geconfigureerd. Neem contact op met de beheerder.' },
+        { error: 'Email service not configured. Please contact the administrator.' },
         { status: 500 }
       );
     }

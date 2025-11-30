@@ -234,16 +234,16 @@ export const GamesTab = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon stage niet opslaan');
+        throw new Error(errorData.error || 'Failed to save stage');
       }
 
       const data = await response.json();
-      alert(`Stage ${stageNumber} succesvol opgeslagen met ${data.ridersCount} renners!`);
+      alert(`Stage ${stageNumber} successfully saved with ${data.ridersCount} riders!`);
       setStageNumber('');
       fetchStages(selectedRace.slug);
     } catch (error: any) {
       console.error('Error saving stage:', error);
-      alert(error.message || 'Er is iets misgegaan bij het opslaan');
+      alert(error.message || 'Something went wrong saving the stage');
     } finally {
       setSavingStage(false);
     }
@@ -253,7 +253,7 @@ export const GamesTab = () => {
     if (!user || !selectedRace) return;
 
     const totalStages = 21;
-    const confirmed = confirm(`Weet je zeker dat je alle ${totalStages} etappes wilt toevoegen? Dit kan enkele minuten duren.`);
+    const confirmed = confirm(`Are you sure you want to add all ${totalStages} stages? This can take a few minutes.`);
     
     if (!confirmed) return;
 
@@ -294,15 +294,15 @@ export const GamesTab = () => {
       }
 
       if (failedStages.length === 0) {
-        alert(`🎉 Alle ${totalStages} etappes succesvol opgeslagen!`);
+        alert(`🎉 All ${totalStages} stages successfully saved!`);
       } else {
-        alert(`✓ ${successCount} etappes opgeslagen\n✗ ${failedStages.length} mislukt: ${failedStages.join(', ')}`);
+        alert(`✓ ${successCount} stages saved\n✗ ${failedStages.length} failed: ${failedStages.join(', ')}`);
       }
 
       fetchStages(selectedRace.slug);
     } catch (error: any) {
       console.error('Error saving all stages:', error);
-      alert(`Er is iets misgegaan. ${successCount} etappes zijn opgeslagen.`);
+      alert(`Something went wrong. ${successCount} stages have been saved.`);
     } finally {
       setSavingStage(false);
     }
@@ -345,7 +345,7 @@ export const GamesTab = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon beschrijving niet updaten');
+        throw new Error(errorData.error || 'Failed to update description');
       }
 
       // Update local state
@@ -359,7 +359,7 @@ export const GamesTab = () => {
       setEditDescription('');
     } catch (error: any) {
       console.error('Error updating description:', error);
-      alert(error.message || 'Er is iets misgegaan bij het updaten');
+      alert(error.message || 'Something went wrong updating the description');
     }
   };
 
@@ -372,7 +372,7 @@ export const GamesTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-600">Races laden...</div>
+        <div className="text-gray-600">Races loading...</div>
       </div>
     );
   }
@@ -394,7 +394,7 @@ export const GamesTab = () => {
           <div className="flex items-center justify-between mb-4">
             <Button
               className="px-4 py-2 "
-              text="← Terug naar overzicht"
+              text="← Back to overview"
               onClick={() => {
                 setSelectedRace(null);
                 setRaceData([]);
@@ -428,7 +428,7 @@ export const GamesTab = () => {
             />
             <Button
               className="px-4 py-2 bg-primary hover:bg-primary/90 ml-auto"
-              text={loadingRaceData ? "🔄 Laden..." : "🔄 Vernieuwen"}
+              text={loadingRaceData ? "🔄 Loading..." : "🔄 Refresh"}
               onClick={() => fetchRaceData(selectedRace, false, true)}
               disabled={loadingRaceData}
             />
@@ -444,32 +444,32 @@ export const GamesTab = () => {
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <Button
                   className="px-4 py-2 "
-                  text="← Terug naar etappes"
+                  text="← Back to stages"
                   onClick={() => setSelectedStage(null)}
                 />
               </div>
 
               {/* Stage Header */}
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h2 className="text-2xl font-semibold">Etappe {selectedStage.stage}</h2>
+                <h2 className="text-2xl font-semibold">Stage {selectedStage.stage}</h2>
                 <div className="flex gap-2">
 
                   <Button
                     className="px-4 py-2"
-                    text={<div className="flex flex-row items-center"><ChevronLeft size={16} /> Vorige etappe</div>}
+                    text={<div className="flex flex-row items-center"><ChevronLeft size={16} /> Previous stage</div>}
                     disabled={selectedStage.stage === 1}
                     onClick={() => setSelectedStage(stages.find(stage => stage.stage === selectedStage.stage - 1))}
                   />
                   <Button
                     className="px-4 py-2"
-                    text={<div className="flex flex-row items-center">Volgende etappe <ChevronRight size={16} /></div>}
+                    text={<div className="flex flex-row items-center">Next stage <ChevronRight size={16} /></div>}
                     disabled={selectedStage.stage === stages.length}
                     onClick={() => setSelectedStage(stages.find(stage => stage.stage === selectedStage.stage + 1))}
                   />
                   
                   </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  Opgeslagen op: {new Date(selectedStage.scrapedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  Saved on: {new Date(selectedStage.scrapedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
 
@@ -481,7 +481,7 @@ export const GamesTab = () => {
             <div className="space-y-4">
               {/* Add Stage Form */}
               <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-3">Etappe Toevoegen</h3>
+                <h3 className="text-lg font-semibold mb-3">Add Stage</h3>
                 <div className="space-y-3">
                   {/* Single stage */}
                   <div className="flex gap-2">
@@ -489,12 +489,12 @@ export const GamesTab = () => {
                       type="number"
                       value={stageNumber}
                       onChange={(e) => setStageNumber(e.target.value)}
-                      placeholder="Etappe nummer (bijv. 1)"
+                      placeholder="Stage number (e.g. 1)"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <Button
                       className="px-6 py-2 bg-primary hover:bg-primary/90"
-                      text={savingStage ? "Bezig..." : "Opslaan"}
+                      text={savingStage ? "Loading..." : "Save"}
                       onClick={handleSaveStage}
                       disabled={savingStage || !stageNumber}
                     />
@@ -506,7 +506,7 @@ export const GamesTab = () => {
                       <div className="w-full border-t border-gray-300"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-white text-gray-500">of</span>
+                      <span className="px-2 bg-white text-gray-500">or</span>
                     </div>
                   </div>
 
@@ -514,13 +514,13 @@ export const GamesTab = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       className="flex-1 px-6 py-2 bg-green-600 hover:bg-green-700 text-white"
-                      text={savingStage ? "Bezig met alle etappes..." : "📦 Voeg alle 21 etappes toe"}
+                      text={savingStage ? "Busy adding all stages..." : "📦 Add all 21 stages"}
                       onClick={handleSaveAllStages}
                       disabled={savingStage}
                     />
                   </div>
                   <p className="text-xs text-gray-500 text-center">
-                    Dit kan enkele minuten duren. Etappes worden één voor één opgeslagen.
+                    This can take a few minutes. Stages are saved one by one.
                   </p>
                 </div>
               </div>
@@ -528,7 +528,7 @@ export const GamesTab = () => {
               {/* Stages List */}
               {loadingStages ? (
                 <div className="flex items-center justify-center p-8 bg-white border border-gray-200 rounded-lg">
-                  <div className="text-gray-600">Etappes laden...</div>
+                  <div className="text-gray-600">Loading stages...</div>
                 </div>
               ) : stages.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
@@ -544,25 +544,25 @@ export const GamesTab = () => {
                       onClick={() => setSelectedStage(stage)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="text-lg font-semibold">Etappe {stage.stage}</h4>
+                        <h4 className="text-lg font-semibold">Stage {stage.stage}</h4>
                         <span className="text-xs text-gray-500">
                           {new Date(stage.scrapedAt).toLocaleDateString('nl-NL')}
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-gray-600">
-                        <p>🚴 {stage.stageResults?.length || 0} renners</p>
+                        <p>🚴 {stage.stageResults?.length || 0} riders</p>
                         {stage.generalClassification?.length > 0 && (
-                          <p>🏆 GC Leider: {stage.generalClassification[0]?.name || stage.generalClassification[0]?.firstName + ' ' + stage.generalClassification[0]?.lastName || 'Onbekend'} ({stage.generalClassification[0]?.timeDifference && stage.generalClassification[0]?.timeDifference !== '-' ? stage.generalClassification[0]?.timeDifference : 'Leider'})</p>
+                          <p>🏆 GC Leader: {stage.generalClassification[0]?.name || stage.generalClassification[0]?.firstName + ' ' + stage.generalClassification[0]?.lastName || 'Unknown'} ({stage.generalClassification[0]?.timeDifference && stage.generalClassification[0]?.timeDifference !== '-' ? stage.generalClassification[0]?.timeDifference : 'Leader'})</p>
                         )}
                         {stage.pointsClassification?.length > 0 && (
-                          <p>🟢 Punten Leider: {stage.pointsClassification[0]?.name || stage.pointsClassification[0]?.firstName + ' ' + stage.pointsClassification[0]?.lastName || 'Onbekend'} ({stage.pointsClassification[0]?.pointsTotal || stage.pointsClassification[0]?.points || '-'} ptn)</p>
+                          <p>🟢 Points Leader: {stage.pointsClassification[0]?.name || stage.pointsClassification[0]?.firstName + ' ' + stage.pointsClassification[0]?.lastName || 'Unknown'} ({stage.pointsClassification[0]?.pointsTotal || stage.pointsClassification[0]?.points || '-'} ptn)</p>
                         )}
                         {stage.mountainsClassification?.length > 0 && (
-                          <p>⛰️ Bergen Leider: {stage.mountainsClassification[0]?.name || stage.mountainsClassification[0]?.firstName + ' ' + stage.mountainsClassification[0]?.lastName || 'Onbekend'} ({stage.mountainsClassification[0]?.pointsTotal || stage.mountainsClassification[0]?.points || '-'} ptn)</p>
+                          <p>⛰️ Mountains Leader: {stage.mountainsClassification[0]?.name || stage.mountainsClassification[0]?.firstName + ' ' + stage.mountainsClassification[0]?.lastName || 'Unknown'} ({stage.mountainsClassification[0]?.pointsTotal || stage.mountainsClassification[0]?.points || '-'} ptn)</p>
                         )}
                       </div>
                       <div className="mt-3 text-xs text-primary font-medium">
-                        Klik voor details →
+                        Click for details →
                       </div>
                     </div>
                   ))}
@@ -575,17 +575,17 @@ export const GamesTab = () => {
           <>
             {loadingRaceData ? (
               <div className="flex items-center justify-center p-8 bg-white border border-gray-200 rounded-lg">
-                <div className="text-gray-600">Race data laden...</div>
+                <div className="text-gray-600">Loading race data...</div>
               </div>
             ) : raceData.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-gray-600">Geen data gevonden in deze race collectie</p>
+                <p className="text-gray-600">No data found in this race collection</p>
               </div>
             ) : (() => {
           // Group riders by team
           const ridersByTeam = raceData.reduce((acc, doc) => {
             const rider = doc.rider || {};
-            const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name || 'Geen team';
+            const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name || 'No team';
             if (!acc[teamName]) {
               acc[teamName] = [];
             }
@@ -618,7 +618,7 @@ export const GamesTab = () => {
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{teamName}</h3>
                           <p className="text-xs text-gray-500">
-                            {teamRiders.length} renner{teamRiders.length !== 1 ? 's' : ''}
+                            {teamRiders.length} rider{teamRiders.length !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
@@ -630,19 +630,19 @@ export const GamesTab = () => {
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                              Foto
+                              Photo
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Naam
+                              Name
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Land
+                              Country
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Rang
+                              Rank
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Punten
+                              Points
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Status
@@ -703,7 +703,7 @@ export const GamesTab = () => {
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      Actief
+                                      Active
                                     </span>
                                   )}
                                 </td>
@@ -748,13 +748,13 @@ export const GamesTab = () => {
           <div>
             <h2 className="text-xl font-semibold">Races Overzicht</h2>
             <p className="text-sm text-gray-600">
-              {races.length} race{races.length !== 1 ? 's' : ''} beschikbaar
+              {races.length} race{races.length !== 1 ? 's' : ''} available
             </p>
           </div>
           {races.length === 0 && (
             <Button
               className="px-4 py-2 bg-primary hover:bg-primary/90"
-              text={initializing ? "Bezig..." : "Initialiseer Bestaande Races"}
+              text={initializing ? "Loading..." : "Initialize Existing Races"}
               onClick={handleInitializeRaces}
               disabled={initializing}
             />
@@ -789,10 +789,10 @@ export const GamesTab = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Naam
+                        Name
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Beschrijving
+                        Description
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Slug
@@ -801,7 +801,7 @@ export const GamesTab = () => {
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Aangemaakt
+                        Added
                       </th>
                     </tr>
                   </thead>
@@ -823,7 +823,7 @@ export const GamesTab = () => {
                                 value={editDescription}
                                 onChange={(e) => setEditDescription(e.target.value)}
                                 className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary"
-                                placeholder="Beschrijving..."
+                                placeholder="Description..."
                                 autoFocus
                               />
                               <button
@@ -862,7 +862,7 @@ export const GamesTab = () => {
                               ? 'bg-green-100 text-white' 
                               : 'bg-gray-100 text-gray-800'
                           }`}>
-                            {race.active ? 'Actief' : 'Inactief'}
+                            {race.active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

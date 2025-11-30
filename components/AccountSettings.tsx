@@ -137,12 +137,12 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <TextInput
-                  label="Voornaam"
-                  placeholder="Voornaam"
+                  label="First name"
+                  placeholder="First name"
                   {...register('firstName', {
                     maxLength: {
                       value: 50,
-                      message: 'Voornaam mag maximaal 50 karakters zijn'
+                      message: 'First name may not exceed 50 characters'
                     }
                   })}
                 />
@@ -153,12 +153,12 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
               <div>
                 <TextInput
-                  label="Achternaam"
-                  placeholder="Achternaam"
+                  label="Last name"
+                  placeholder="Last name"
                   {...register('lastName', {
                     maxLength: {
                       value: 50,
-                      message: 'Achternaam mag maximaal 50 karakters zijn'
+                      message: 'Last name may not exceed 50 characters'
                     }
                   })}
                 />
@@ -170,17 +170,17 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
             <div className="mt-4">
               <TextInput
-                label="Spelersnaam"
-                placeholder="Spelersnaam"
+                label="Player name"
+                placeholder="Player name"
                 {...register('playername', {
-                  required: 'Spelersnaam is verplicht',
+                  required: 'Player name is required',
                   minLength: {
                     value: 2,
-                    message: 'Spelersnaam moet minimaal 2 karakters zijn'
+                    message: 'Player name must be at least 2 characters long'
                   },
                   maxLength: {
                     value: 50,
-                    message: 'Spelersnaam mag maximaal 50 karakters zijn'
+                    message: 'Player name may not exceed 50 characters'
                   }
                 })}
               />
@@ -192,16 +192,16 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
             <div className="mt-4">
               <TextInput
                 type="date"
-                label="Geboortedatum"
-                placeholder="Geboortedatum"
+                label="Date of birth"
+                placeholder="Date of birth"
                 {...register('dateOfBirth', {
                   validate: (value) => {
                     if (!value) return true; // Optional field
                     const date = new Date(value);
                     const today = new Date();
                     const age = today.getFullYear() - date.getFullYear();
-                    if (age < 13) return 'Je moet minimaal 13 jaar oud zijn';
-                    if (age > 120) return 'Ongeldige geboortedatum';
+                    if (age < 13) return 'You must be at least 13 years old';
+                    if (age > 120) return 'Invalid birthdate';
                     return true;
                   }
                 })}
@@ -225,7 +225,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
             <Button
               className="mt-4 px-6 py-2"
-              text={isSubmitting ? "Bezig met opslaan..." : "Opslaan"}
+              text={isSubmitting ? "Busy saving..." : "Save"}
               type="submit"
               disabled={isSubmitting}
             />
@@ -235,7 +235,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
       {/* Passkey Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Beveiliging</h2>
+        <h2 className="text-xl font-semibold mb-4">Security</h2>
         
         {passkeyInfo.hasPasskey ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
@@ -247,13 +247,13 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-green-800">
-                  Passkey actief 🔑
+                  Passkey active 🔑
                 </h3>
                 <div className="mt-2 text-sm text-green-700">
-                  <p>Je hebt een passkey ingesteld voor sneller en veiliger inloggen.</p>
+                  <p>You have a passkey set up for faster and safer login.</p>
                   {passkeyInfo.lastUsedAt && (
                     <p className="mt-1 text-xs">
-                      Laatst gebruikt: {new Date(passkeyInfo.lastUsedAt).toLocaleDateString('nl-NL', {
+                      Last used: {new Date(passkeyInfo.lastUsedAt).toLocaleDateString('nl-NL', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
