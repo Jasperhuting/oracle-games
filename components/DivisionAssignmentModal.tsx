@@ -8,6 +8,7 @@ interface Participant {
   id: string;
   playername: string;
   userId: string;
+  userEmail?: string;
   assignedDivision?: string;
   divisionAssigned?: boolean;
   status: string;
@@ -37,6 +38,7 @@ export const DivisionAssignmentModal = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [selectedDivisions, setSelectedDivisions] = useState<Record<string, string>>({});
 
   const loadData = (async () => {
@@ -115,11 +117,29 @@ export const DivisionAssignmentModal = ({
         new Map(allParticipants.map(p => [p.userId, p])).values()
       );
 
-      setParticipants(uniqueParticipants);
+      // For participants without email, fetch from users collection
+      const participantsWithEmails = await Promise.all(
+        uniqueParticipants.map(async (participant) => {
+          if (!participant.userEmail && participant.userId) {
+            try {
+              const userResponse = await fetch(`/api/getUser?userId=${participant.userId}`);
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                return { ...participant, userEmail: userData.email };
+              }
+            } catch (error) {
+              console.error('Error fetching user email:', error);
+            }
+          }
+          return participant;
+        })
+      );
+
+      setParticipants(participantsWithEmails);
 
       // Initialize selected divisions with current assignments
       const divisions: Record<string, string> = {};
-      uniqueParticipants.forEach((p: Participant) => {
+      participantsWithEmails.forEach((p: Participant) => {
         if (p.assignedDivision) {
           divisions[p.id] = p.assignedDivision;
         }
@@ -178,6 +198,36 @@ export const DivisionAssignmentModal = ({
       setError(error.message || 'Failed to assign division');
     } finally {
       setSaving(null);
+    }
+  };
+
+  const handleRemoveParticipant = async (participantId: string, participantName: string) => {
+    if (!user) return;
+
+    if (!confirm(`Are you sure you want to remove ${participantName} from this game?`)) {
+      return;
+    }
+
+    setRemoving(participantId);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/gameParticipants/${participantId}/assignDivision?adminUserId=${user.uid}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove participant');
+      }
+
+      // Remove from local state
+      setParticipants(prev => prev.filter(p => p.id !== participantId));
+    } catch (error: any) {
+      console.error('Error removing participant:', error);
+      setError(error.message || 'Failed to remove participant');
+    } finally {
+      setRemoving(null);
     }
   };
 
@@ -282,7 +332,12 @@ export const DivisionAssignmentModal = ({
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
+                          {participant.userEmail && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {participant.userEmail}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-500 mt-0.5">
                             Joined: {new Date(participant.joinedAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -302,7 +357,7 @@ export const DivisionAssignmentModal = ({
                                 }));
                               }}
                               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                              disabled={saving === participant.id}
+                              disabled={saving === participant.id || removing === participant.id}
                             >
                               <option value="">Select division...</option>
                               {getDivisionOptions().map((div) => (
@@ -313,7 +368,7 @@ export const DivisionAssignmentModal = ({
                             </select>
                           </div>
 
-                          <div className="pt-5">
+                          <div className="pt-5 flex gap-2">
                             <Button
                               text={saving === participant.id ? "Saving..." : "Assign"}
                               onClick={() => {
@@ -325,10 +380,17 @@ export const DivisionAssignmentModal = ({
                               disabled={
                                 !selectedDivisions[participant.id] ||
                                 saving === participant.id ||
+                                removing === participant.id ||
                                 (participant.divisionAssigned &&
                                   selectedDivisions[participant.id] === participant.assignedDivision)
                               }
                               className="px-4 py-2 bg-primary hover:bg-primary"
+                            />
+                            <Button
+                              text={removing === participant.id ? "Removing..." : "Remove"}
+                              onClick={() => handleRemoveParticipant(participant.id, participant.playername)}
+                              disabled={saving === participant.id || removing === participant.id}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700"
                             />
                           </div>
                         </div>

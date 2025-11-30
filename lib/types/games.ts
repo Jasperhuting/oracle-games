@@ -179,6 +179,7 @@ export interface GameParticipant {
   gameId: string;
   userId: string;
   playername: string;
+  userEmail?: string;               // User's email address
 
   joinedAt: Timestamp | Date;
   status: ParticipantStatus;

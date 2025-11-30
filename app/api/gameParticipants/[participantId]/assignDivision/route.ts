@@ -145,3 +145,95 @@ export async function POST(
     );
   }
 }
+
+// DELETE - Remove a participant from a game (admin only)
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ participantId: string }> }
+) {
+  try {
+    const { participantId } = await context.params;
+    const { searchParams } = new URL(request.url);
+    const adminUserId = searchParams.get('adminUserId');
+
+    if (!adminUserId) {
+      return NextResponse.json(
+        { error: 'Admin user ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const db = getServerFirebase();
+
+    // Verify the requesting user is an admin
+    const adminDoc = await db.collection('users').doc(adminUserId).get();
+    if (!adminDoc.exists || adminDoc.data()?.userType !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Get participant before deletion
+    const participantDoc = await db.collection('gameParticipants').doc(participantId).get();
+    if (!participantDoc.exists) {
+      return NextResponse.json(
+        { error: 'Participant not found' },
+        { status: 404 }
+      );
+    }
+
+    const participantData = participantDoc.data();
+    const gameId = participantData?.gameId || '';
+    const isPending = gameId.endsWith('-pending');
+
+    // Get game data
+    const baseGameId = isPending ? gameId.replace(/-pending$/, '') : gameId;
+    const gameDoc = await db.collection('games').doc(baseGameId).get();
+
+    if (gameDoc.exists && !isPending) {
+      // Decrement player count for non-pending participants
+      const gameData = gameDoc.data();
+      await gameDoc.ref.update({
+        playerCount: Math.max(0, (gameData?.playerCount || 1) - 1),
+      });
+    }
+
+    // Delete participant
+    await participantDoc.ref.delete();
+
+    // Log the activity
+    const adminData = adminDoc.data();
+    await db.collection('activityLogs').add({
+      action: 'PARTICIPANT_REMOVED',
+      userId: adminUserId,
+      userEmail: adminData?.email,
+      userName: adminData?.playername || adminData?.email,
+      targetUserId: participantData?.userId,
+      targetUserName: participantData?.playername,
+      targetUserEmail: participantData?.userEmail,
+      details: {
+        participantId: participantId,
+        gameId: baseGameId,
+        gameName: gameDoc.exists ? gameDoc.data()?.name : 'Unknown',
+        playerName: participantData?.playername,
+        assignedDivision: participantData?.assignedDivision,
+        wasPending: isPending,
+      },
+      timestamp: new Date().toISOString(),
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Participant removed successfully',
+    });
+  } catch (error) {
+    console.error('Error removing participant:', error);
+    return NextResponse.json(
+      { error: 'Failed to remove participant', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}

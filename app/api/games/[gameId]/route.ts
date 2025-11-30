@@ -81,6 +81,16 @@ export async function PATCH(
       );
     }
 
+    // Get current game data BEFORE update for comparison
+    const currentGameDoc = await db.collection('games').doc(gameId).get();
+    if (!currentGameDoc.exists) {
+      return NextResponse.json(
+        { error: 'Game not found' },
+        { status: 404 }
+      );
+    }
+    const currentGameData = currentGameDoc.data();
+
     // Remove adminUserId from updates
     delete updates.adminUserId;
 
@@ -97,6 +107,17 @@ export async function PATCH(
     const updatedGame = await db.collection('games').doc(gameId).get();
     const data = updatedGame.data();
 
+    // Build detailed change log
+    const changes: Record<string, { before: unknown; after: unknown }> = {};
+    for (const key in cleanedUpdates) {
+      if (key !== 'updatedAt') {
+        changes[key] = {
+          before: currentGameData?.[key],
+          after: cleanedUpdates[key],
+        };
+      }
+    }
+
     // Log the activity
     const adminData = adminDoc.data();
     await db.collection('activityLogs').add({
@@ -107,7 +128,10 @@ export async function PATCH(
       details: {
         gameId,
         gameName: data?.name,
-        updatedFields: Object.keys(updates),
+        gameType: data?.gameType,
+        gameYear: data?.year,
+        updatedFields: Object.keys(cleanedUpdates).filter(k => k !== 'updatedAt'),
+        changes,
       },
       timestamp: new Date().toISOString(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',

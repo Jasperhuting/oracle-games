@@ -130,6 +130,7 @@ export async function POST(
       gameId: isMultiDivision ? `${gameId}-pending` : gameId, // Use temporary gameId for multi-division
       userId,
       playername: userData?.playername || userData?.email,
+      userEmail: userData?.email,
       joinedAt: now,
       status: 'active',
       budget: gameData?.config?.budget || 0,
