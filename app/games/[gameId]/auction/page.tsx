@@ -724,7 +724,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         )}
 
         {/* Riders List */}
-        <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
           <div className="grid grid-cols-12 gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
             <div className="col-span-1">Riders</div>
           </div>

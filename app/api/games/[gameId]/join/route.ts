@@ -193,6 +193,40 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error joining game:', error);
+
+    // Log the error to activity log
+    try {
+      const { gameId } = await params;
+      const body = await request.json().catch(() => ({}));
+      const { userId } = body;
+
+      if (userId) {
+        const db = getServerFirebase();
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+
+        await db.collection('activityLogs').add({
+          action: 'ERROR',
+          userId,
+          userEmail: userData?.email,
+          userName: userData?.playername || userData?.email,
+          details: {
+            operation: 'Join Game',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error joining game',
+            errorDetails: error instanceof Error ? error.stack : undefined,
+            gameId,
+            endpoint: `/api/games/${gameId}/join`,
+          },
+          timestamp: new Date().toISOString(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+      }
+    } catch (logError) {
+      // Silently fail if we can't log the error
+      console.error('Failed to log error to activity log:', logError);
+    }
+
     return NextResponse.json(
       { error: 'Failed to join game', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -300,6 +334,40 @@ export async function DELETE(
     });
   } catch (error) {
     console.error('Error leaving game:', error);
+
+    // Log the error to activity log
+    try {
+      const { gameId } = await params;
+      const { searchParams } = new URL(request.url);
+      const userId = searchParams.get('userId');
+
+      if (userId) {
+        const db = getServerFirebase();
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+
+        await db.collection('activityLogs').add({
+          action: 'ERROR',
+          userId,
+          userEmail: userData?.email,
+          userName: userData?.playername || userData?.email,
+          details: {
+            operation: 'Leave Game',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error leaving game',
+            errorDetails: error instanceof Error ? error.stack : undefined,
+            gameId,
+            endpoint: `/api/games/${gameId}/join`,
+          },
+          timestamp: new Date().toISOString(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+      }
+    } catch (logError) {
+      // Silently fail if we can't log the error
+      console.error('Failed to log error to activity log:', logError);
+    }
+
     return NextResponse.json(
       { error: 'Failed to leave game', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

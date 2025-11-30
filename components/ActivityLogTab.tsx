@@ -86,6 +86,7 @@ export const ActivityLogTab = () => {
       'DIVISION_ASSIGNED': 'Division Assigned',
       'PARTICIPANT_REMOVED': 'Participant Removed',
       'GAME_STATUS_CHANGED': 'Game Status Changed',
+      'ERROR': 'Error',
     };
     return labels[action] || action;
   };
@@ -106,6 +107,7 @@ export const ActivityLogTab = () => {
       'DIVISION_ASSIGNED': 'bg-indigo-100 text-indigo-800',
       'PARTICIPANT_REMOVED': 'bg-red-100 text-red-800',
       'GAME_STATUS_CHANGED': 'bg-yellow-100 text-yellow-800',
+      'ERROR': 'bg-red-100 text-red-800',
     };
     return colors[action] || 'bg-gray-100 text-gray-800';
   };
@@ -228,6 +230,39 @@ export const ActivityLogTab = () => {
       );
     }
 
+    // ERROR details
+    if (log.action === 'ERROR') {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="text-sm font-medium text-red-900">
+            {log.details.operation && (
+              <span className="text-xs text-red-700">Operation: {log.details.operation}</span>
+            )}
+          </div>
+          {log.details.errorMessage && (
+            <div className="text-sm text-red-800 bg-red-50 p-2 rounded border border-red-200">
+              {log.details.errorMessage}
+            </div>
+          )}
+          {log.details.errorDetails && (
+            <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 font-mono">
+              {log.details.errorDetails}
+            </div>
+          )}
+          {log.details.gameId && (
+            <div className="text-xs text-gray-600">
+              Game ID: {log.details.gameId}
+            </div>
+          )}
+          {log.details.endpoint && (
+            <div className="text-xs text-gray-600">
+              Endpoint: {log.details.endpoint}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // For other details, show them in a cleaner way
     if (log.details.reason) {
       return (
@@ -310,6 +345,9 @@ export const ActivityLogTab = () => {
               <optgroup label="Bids">
                 <option value="BID_PLACED">Bid Placed</option>
                 <option value="BID_CANCELLED">Bid Cancelled</option>
+              </optgroup>
+              <optgroup label="System">
+                <option value="ERROR">Errors</option>
               </optgroup>
             </select>
           </div>

@@ -223,6 +223,42 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error placing bid:', error);
+
+    // Log the error to activity log
+    try {
+      const { gameId } = await params;
+      const body = await request.json().catch(() => ({}));
+      const { userId, riderNameId, amount } = body;
+
+      if (userId) {
+        const db = getServerFirebase();
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+
+        await db.collection('activityLogs').add({
+          action: 'ERROR',
+          userId,
+          userEmail: userData?.email,
+          userName: userData?.playername || userData?.email,
+          details: {
+            operation: 'Place Bid',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error placing bid',
+            errorDetails: error instanceof Error ? error.stack : undefined,
+            gameId,
+            endpoint: `/api/games/${gameId}/bids/place`,
+            riderNameId,
+            attemptedAmount: amount,
+          },
+          timestamp: new Date().toISOString(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+      }
+    } catch (logError) {
+      // Silently fail if we can't log the error
+      console.error('Failed to log error to activity log:', logError);
+    }
+
     return NextResponse.json(
       { error: 'Failed to place bid', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

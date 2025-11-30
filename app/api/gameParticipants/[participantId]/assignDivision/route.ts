@@ -139,6 +139,38 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error assigning division:', error);
+
+    // Log the error to activity log
+    try {
+      const body = await request.json().catch(() => ({}));
+      const { adminUserId } = body;
+
+      if (adminUserId) {
+        const db = getServerFirebase();
+        const adminDoc = await db.collection('users').doc(adminUserId).get();
+        const adminData = adminDoc.data();
+
+        await db.collection('activityLogs').add({
+          action: 'ERROR',
+          userId: adminUserId,
+          userEmail: adminData?.email,
+          userName: adminData?.playername || adminData?.email,
+          details: {
+            operation: 'Assign Division',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error assigning division',
+            errorDetails: error instanceof Error ? error.stack : undefined,
+            endpoint: '/api/gameParticipants/[participantId]/assignDivision',
+          },
+          timestamp: new Date().toISOString(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+      }
+    } catch (logError) {
+      // Silently fail if we can't log the error
+      console.error('Failed to log error to activity log:', logError);
+    }
+
     return NextResponse.json(
       { error: 'Failed to assign division', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -231,6 +263,38 @@ export async function DELETE(
     });
   } catch (error) {
     console.error('Error removing participant:', error);
+
+    // Log the error to activity log
+    try {
+      const { searchParams } = new URL(request.url);
+      const adminUserId = searchParams.get('adminUserId');
+
+      if (adminUserId) {
+        const db = getServerFirebase();
+        const adminDoc = await db.collection('users').doc(adminUserId).get();
+        const adminData = adminDoc.data();
+
+        await db.collection('activityLogs').add({
+          action: 'ERROR',
+          userId: adminUserId,
+          userEmail: adminData?.email,
+          userName: adminData?.playername || adminData?.email,
+          details: {
+            operation: 'Remove Participant',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error removing participant',
+            errorDetails: error instanceof Error ? error.stack : undefined,
+            endpoint: '/api/gameParticipants/[participantId]/assignDivision',
+          },
+          timestamp: new Date().toISOString(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+      }
+    } catch (logError) {
+      // Silently fail if we can't log the error
+      console.error('Failed to log error to activity log:', logError);
+    }
+
     return NextResponse.json(
       { error: 'Failed to remove participant', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
