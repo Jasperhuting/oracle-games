@@ -196,8 +196,9 @@ export const FeedbackTab = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-medium text-gray-900">{item.userEmail}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 flex gap-2 items-center">
                       {new Date(item.createdAt).toLocaleString()}
+                      <span title={item.currentPage} className="text-xs text-gray-500 cursor-pointer">Current Page</span>
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
@@ -233,7 +234,7 @@ export const FeedbackTab = () => {
                       text="Mark as Resolved"
                       onClick={() => updateStatus(item.id!, 'resolved')}
                       className="px-3 py-1 text-sm"
-                      variant="primary"
+                      variant="success"
                       ghost
                     />
                   )}
@@ -242,7 +243,7 @@ export const FeedbackTab = () => {
                       text="Delete"
                       onClick={() => deleteFeedback(item.id!)}
                       className="px-3 py-1 text-sm"
-                      variant="primary"
+                      variant="danger"
                       ghost
                     />
                   

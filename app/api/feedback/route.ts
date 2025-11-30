@@ -37,8 +37,9 @@ export async function GET(request: NextRequest) {
         id: doc.id,
         userId: data.userId,
         userEmail: data.userEmail,
+        currentPage: data.currentPage,
         message: data.message,
-        createdAt: data.createdAt?.toDate() || new Date(),
+        createdAt: data.createdAt || new Date(),
         status: data.status || 'new',
       });
     });
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, message } = body;
+    const { userId, message, currentPage } = body;
 
     if (!userId || !message) {
       return NextResponse.json(
@@ -87,11 +88,14 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data();
     const userEmail = userData?.email || 'unknown';
 
+    
+    
     const feedbackData: Omit<Feedback, 'id'> = {
       userId,
       userEmail,
+      currentPage,
       message: message.trim(),
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
       status: 'new',
     };
 
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, feedbackId, status } = body;
+    const { userId, feedbackId, status, currentPage } = body;
 
     if (!userId || !feedbackId || !status) {
       return NextResponse.json(
@@ -142,9 +146,15 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    await db.collection('feedback').doc(feedbackId).update({
+    const updateData: { status: 'new' | 'reviewed' | 'resolved'; currentPage?: string } = {
       status,
-    });
+    };
+
+    if (typeof currentPage !== 'undefined') {
+      updateData.currentPage = currentPage;
+    }
+
+    await db.collection('feedback').doc(feedbackId).update(updateData);
 
     return NextResponse.json({
       success: true,

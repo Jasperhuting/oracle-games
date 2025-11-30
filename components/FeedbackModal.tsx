@@ -31,6 +31,7 @@ export const FeedbackModal = ({ onClose }: { onClose: () => void }) => {
         body: JSON.stringify({
           userId: user.uid,
           message: message.trim(),
+          currentPage: window.location.href,
         }),
       });
 

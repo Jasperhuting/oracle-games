@@ -469,6 +469,7 @@ export interface Feedback {
   id?: string;
   userId: string;
   userEmail: string;
+  currentPage: string;
   message: string;
   createdAt: string;
   status?: 'new' | 'reviewed' | 'resolved';
