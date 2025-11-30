@@ -95,23 +95,11 @@ export async function POST(
         isUpdatingOwnBid = true;
         currentUserBidOnThisRider = highestBidData.amount || 0;
 
-        // When updating own bid, just check if new amount is higher
-        if (amount <= currentUserBidOnThisRider) {
-          return NextResponse.json(
-            { error: `New bid must be higher than your current bid of ${currentUserBidOnThisRider}` },
-            { status: 400 }
-          );
-        }
+        // Allow users to update their bid to any amount (increase or decrease)
+        // No restrictions on the new amount
       } else {
         // Someone else has the highest bid
-        // Allow equal or higher bids from other users
-        if (amount < highestBidData.amount) {
-          return NextResponse.json(
-            { error: `Bid must be at least ${highestBidData.amount}` },
-            { status: 400 }
-          );
-        }
-
+        // Allow any bid amount - users can bid lower than the current highest bid
         // Only mark previous highest bid as outbid if new bid is higher
         if (amount > highestBidData.amount) {
           await highestBidDoc.ref.update({ status: 'outbid' });

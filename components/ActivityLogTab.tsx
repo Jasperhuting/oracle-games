@@ -232,6 +232,8 @@ export const ActivityLogTab = () => {
 
     // ERROR details
     if (log.action === 'ERROR') {
+      const [showTrace, setShowTrace] = useState(false);
+
       return (
         <div className="mt-2 space-y-1">
           <div className="text-sm font-medium text-red-900">
@@ -244,11 +246,6 @@ export const ActivityLogTab = () => {
               {log.details.errorMessage}
             </div>
           )}
-          {log.details.errorDetails && (
-            <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 font-mono">
-              {log.details.errorDetails}
-            </div>
-          )}
           {log.details.gameId && (
             <div className="text-xs text-gray-600">
               Game ID: {log.details.gameId}
@@ -257,6 +254,21 @@ export const ActivityLogTab = () => {
           {log.details.endpoint && (
             <div className="text-xs text-gray-600">
               Endpoint: {log.details.endpoint}
+            </div>
+          )}
+          {log.details.errorDetails && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowTrace(!showTrace)}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                {showTrace ? 'Hide' : 'Show'} Stack Trace
+              </button>
+              {showTrace && (
+                <div className="mt-1 text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 font-mono whitespace-pre-wrap overflow-x-auto">
+                  {log.details.errorDetails}
+                </div>
+              )}
             </div>
           )}
         </div>
