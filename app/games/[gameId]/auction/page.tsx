@@ -563,7 +563,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-      <div className="bg-white border-b border-gray-200  z-10">
+      <div className="bg-white border-b border-gray-200 z-10 p-8">
         <div className="container mx-auto py-4">
           <div className="flex justify-between items-center">
             <div>
@@ -586,7 +586,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       </div>
       <div className={`sticky top-[100px] z-20 transition-shadow duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}>
         {/* Stats Bar */}
-        <div className="bg-white border-b border-gray-200 z-10">
+        <div className="bg-white border-b border-gray-200 z-10 p-8">
           <div className="container mx-auto py-3">
             <div className="flex gap-6 items-center flex-wrap">
               <div>
@@ -634,7 +634,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         </div>
 
         {/* Search and Price Filter */}
-        <div className="bg-white w-full">
+        <div className="bg-white w-full p-8">
           <div className="container mx-auto">
             <div className="mb-4 bg-white py-4 flex flex-row gap-4">
 
@@ -668,96 +668,137 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       </div>
 
       {/* Content */}
-      <div className="container mx-auto">
-        {!auctionActive && (
-          <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
-            }`}>
-            <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
+      <div className="p-8">
+        <div className="container mx-auto">
+          {!auctionActive && (
+            <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
               }`}>
-              {auctionClosed
-                ? 'The auction has ended. No more bids can be placed.'
-                : 'The auction has not started yet. Bidding will open soon.'}
-            </p>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-            <span className="text-red-700 text-sm">{error}</span>
-          </div>
-        )}
-
-        {/* My Team Section - Only show when auction is closed */}
-        {auctionClosed && (
-          <div ref={ref}>
-            <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200">
-              <h1 className="text-2xl font-bold">My Team</h1>
+              <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
+                }`}>
+                {auctionClosed
+                  ? 'The auction has ended. No more bids can be placed.'
+                  : 'The auction has not started yet. Bidding will open soon.'}
+              </p>
             </div>
+          )}
 
-            <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
-              {myBids
-                .filter(bid => bid.status === 'won')
-                .map((myBidRider) => {
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+              <span className="text-red-700 text-sm">{error}</span>
+            </div>
+          )}
+
+          {/* My Team Section - Only show when auction is closed */}
+          {auctionClosed && (
+            <div ref={ref}>
+              <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200">
+                <h1 className="text-2xl font-bold">My Team</h1>
+              </div>
+
+              <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
+                {myBids
+                  .filter(bid => bid.status === 'won')
+                  .map((myBidRider) => {
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                    return rider ? (
+                      <div key={myBidRider.id}>
+                        <PlayerCard
+                          showBid={true}
+                          className="border-2 rounded-md border-green-500 bg-green-50"
+                          hideInfo={true}
+                          bid={myBidRider.amount || 0}
+                          player={rider}
+                          onClick={() => { }}
+                          selected={false}
+                          buttonContainer={
+                            <div className="w-full text-center py-2 text-green-700 font-semibold">
+                              ✓ Won!
+                            </div>
+                          }
+                        />
+                      </div>
+                    ) : null;
+                  })}
+              </div>
+            </div>
+          )}
+          {/* My Bids Section - Only show when auction is active */}
+          {!auctionClosed && (
+            <div ref={myBidRef}>
+              <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
+                <h1 className="text-2xl font-bold mt-1">My Bids</h1>
+                <span className="flex flex-row gap-2">
+                  <Button ghost onClick={() => setMyTeamView('list')}><span className="flex flex-row gap-2 items-center"><List />Listview</span></Button>
+                  <Button ghost onClick={() => setMyTeamView('card')}><span className="flex flex-row gap-2 items-center"><GridDots />Cardview</span></Button>
+                </span>
+              </div>
+
+
+              {myTeamView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
+                {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
+                {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                  const isLost = myBidRider.status === 'lost' || myBidRider.status === 'outbid';
+
                   return rider ? (
                     <div key={myBidRider.id}>
                       <PlayerCard
                         showBid={true}
-                        className="border-2 rounded-md border-green-500 bg-green-50"
+                        className={`border-2 rounded-md ${isLost ? 'border-red-300 bg-red-50 opacity-60' : 'border-gray-200'
+                          }`}
                         hideInfo={true}
-                        bid={myBidRider.amount || 0}
+                        bid={rider?.myBid || myBidRider.amount || 0}
                         player={rider}
                         onClick={() => { }}
                         selected={false}
                         buttonContainer={
-                          <div className="w-full text-center py-2 text-green-700 font-semibold">
-                            ✓ Won!
-                          </div>
+                          <>
+                            {isLost && (
+                              <div className="w-full text-center py-2 text-red-600 font-medium text-sm">
+                                Lost
+                              </div>
+                            )}
+                            {!isLost && rider && (
+                              <Button
+                                type="button"
+                                text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
+                                onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                disabled={cancellingBid === rider.myBidId}
+                                className="px-2 py-1 text-sm w-full"
+                                ghost
+                                title="Cancel bid"
+                                variant="danger"
+                              />
+                            )}
+                          </>
                         }
                       />
                     </div>
                   ) : null;
                 })}
-            </div>
-          </div>
-        )}
-        {/* My Bids Section - Only show when auction is active */}
-        {!auctionClosed && (
-          <div ref={myBidRef}>
-            <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
-              <h1 className="text-2xl font-bold mt-1">My Bids</h1>
-              <span className="flex flex-row gap-2">
-                <Button ghost onClick={() => setMyTeamView('list')}><span className="flex flex-row gap-2 items-center"><List />Listview</span></Button>
-                <Button ghost onClick={() => setMyTeamView('card')}><span className="flex flex-row gap-2 items-center"><GridDots />Cardview</span></Button>
-              </span>
-            </div>
+              </div>) : (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
+                {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
+                {myBids.length > 0 && (
+                  <div className="flex flex-row w-full p-2">
+                    <span className="font-bold basis-[90px]">Price</span>
+                    <span className="font-bold basis-[90px]">Bid</span>
+                    <span className="font-bold flex-1">Name</span>
+                    <span className="font-bold basis-[300px]">Team</span>
+                    <span className="font-bold basis-[100px]"></span>
+                  </div>
+                )}
+                <div className="divide-gray-300 divide-y">
+                  {myBids.map((myBidRider) => {
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
 
-
-            {myTeamView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
-              {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
-              {myBids.map((myBidRider) => {
-                const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
-                const isLost = myBidRider.status === 'lost' || myBidRider.status === 'outbid';
-
-                return rider ? (
-                  <div key={myBidRider.id}>
-                    <PlayerCard
-                      showBid={true}
-                      className={`border-2 rounded-md ${isLost ? 'border-red-300 bg-red-50 opacity-60' : 'border-gray-200'
-                        }`}
-                      hideInfo={true}
-                      bid={rider?.myBid || myBidRider.amount || 0}
-                      player={rider}
-                      onClick={() => { }}
-                      selected={false}
-                      buttonContainer={
-                        <>
-                          {isLost && (
-                            <div className="w-full text-center py-2 text-red-600 font-medium text-sm">
-                              Lost
-                            </div>
-                          )}
-                          {!isLost && rider && (
+                    return rider ? (
+                      <div key={myBidRider.id} className="bg-white px-2">
+                        <div className="flex flex-row w-full py-1">
+                          <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
+                          <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.myBid || 0)}</span>
+                          <span className="flex-1 flex items-center">{rider.name}</span>
+                          <span className="basis-[300px] flex items-center">{rider.team?.name || 'Unknown'}</span>
+                          <span className="basis-[100px] flex items-center">
                             <Button
                               type="button"
                               text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
@@ -765,213 +806,174 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                               disabled={cancellingBid === rider.myBidId}
                               className="px-2 py-1 text-sm w-full"
                               ghost
+                              size="sm"
                               title="Cancel bid"
                               variant="danger"
                             />
-                          )}
-                        </>
-                      }
-                    />
-                  </div>
-                ) : null;
-              })}
-            </div>) : (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
-              {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
-              {myBids.length > 0 && (
-                <div className="flex flex-row w-full p-2">
-                  <span className="font-bold basis-[90px]">Price</span>
-                  <span className="font-bold basis-[90px]">Bid</span>
-                  <span className="font-bold flex-1">Name</span>
-                  <span className="font-bold basis-[300px]">Team</span>
-                  <span className="font-bold basis-[100px]"></span>
-                </div>
-              )}
-              <div className="divide-gray-300 divide-y">
-                {myBids.map((myBidRider) => {
-                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
-
-                  return rider ? (
-                    <div key={myBidRider.id} className="bg-white px-2">
-                      <div className="flex flex-row w-full py-1">
-                        <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
-                        <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.myBid || 0)}</span>
-                        <span className="flex-1 flex items-center">{rider.name}</span>
-                        <span className="basis-[300px] flex items-center">{rider.team?.name || 'Unknown'}</span>
-                        <span className="basis-[100px] flex items-center">
-                          <Button
-                            type="button"
-                            text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
-                            onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
-                            disabled={cancellingBid === rider.myBidId}
-                            className="px-2 py-1 text-sm w-full"
-                            ghost
-                            size="sm"
-                            title="Cancel bid"
-                            variant="danger"
-                          />
-                        </span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>)}
+                    ) : null;
+                  })}
+                </div>
+              </div>)}
 
 
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Riders List */}
-        <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
-          <div className="grid grid-cols-12 gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
-            <div className="col-span-1">Riders</div>
-          </div>
-
-
-          <div className="overflow-y-auto">
+          {/* Riders List */}
+          <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
+            <div className="grid grid-cols-12 gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
+              <div className="col-span-1">Riders</div>
+            </div>
 
 
+            <div className="overflow-y-auto">
 
 
-            <div className={`w-full ${showPlayerCard ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
-
-              {/* it should sort when there is a myBid */}
-              {filteredRiders.sort((a, b) => {
-                if (a.myBid && b.myBid) {
-                  return b.myBid - a.myBid;
-                } else if (a.myBid) {
-                  return -1;
-                } else if (b.myBid) {
-                  return 1;
-                } else {
-                  return a.rank - b.rank;
-                }
-              }).filter((rider) => !myBids.some(bid => bid.riderName === rider.name)).map((rider, index) => {
-                const riderNameId = rider.nameID || rider.id || '';
-                const isOutbid = rider.myBidStatus === 'outbid';
-                const isWinning = rider.myBid && rider.myBid === rider.highestBid;
-
-                // Get all bidders for this rider (admin only)
-                const riderBidders = isAdmin
-                  ? allBids
-                    .filter((b: Bid) => (b.riderNameId === rider.nameID || b.riderNameId === rider.id) && b.status === 'active')
-                    .sort((a: Bid, b: Bid) => b.amount - a.amount)
-                    .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
-                    .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
-                  : undefined;
-
-                return (
-                  <React.Fragment key={rider.id || index}>
-
-                    <div className="flex w-full">
-
-                      {showPlayerCard ?
-
-                        <PlayerCard showBid={true} bid={rider.highestBid} player={rider} onClick={() => { }} selected={false} bidders={riderBidders} buttonContainer={<>
-                          <div className="flex flex-row gap-2">
 
 
-                            <div className="flex-1">
-                              {auctionActive ? (<>
-                                <CurrencyInput
-                                  id="input-example"
-                                  name="input-name"
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                                  placeholder={`Min: ${rider.effectiveMinBid || rider.points}`}
-                                  defaultValue={rider.effectiveMinBid || rider.points}
-                                  prefix="€"
-                                  decimalsLimit={0}
-                                  disabled={placingBid === riderNameId}
-                                  value={bidAmounts[riderNameId] || ''}
-                                  onValueChange={(value, name, values) => {
-                                    const newValue = value || '0';
-                                    setBidAmounts(prev => ({
-                                      ...prev,
-                                      [riderNameId]: newValue
-                                    }));
-                                  }}
-                                />
-                              </>
-                              ) : (
+              <div className={`w-full ${showPlayerCard ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
 
-                                rider.myBid ? (
-                                  <div>
-                                    <div className={`font-bold text-sm ${isOutbid ? 'text-red-600' : 'text-green-600'}`}>
-                                      {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {isOutbid ? 'Outbid' : isWinning ? 'Winning' : rider.myBidStatus}
-                                    </div>
-                                  </div>
+                {/* it should sort when there is a myBid */}
+                {filteredRiders.sort((a, b) => {
+                  if (a.myBid && b.myBid) {
+                    return b.myBid - a.myBid;
+                  } else if (a.myBid) {
+                    return -1;
+                  } else if (b.myBid) {
+                    return 1;
+                  } else {
+                    return a.rank - b.rank;
+                  }
+                }).filter((rider) => !myBids.some(bid => bid.riderName === rider.name)).map((rider, index) => {
+                  const riderNameId = rider.nameID || rider.id || '';
+                  const isOutbid = rider.myBidStatus === 'outbid';
+                  const isWinning = rider.myBid && rider.myBid === rider.highestBid;
+
+                  // Get all bidders for this rider (admin only)
+                  const riderBidders = isAdmin
+                    ? allBids
+                      .filter((b: Bid) => (b.riderNameId === rider.nameID || b.riderNameId === rider.id) && b.status === 'active')
+                      .sort((a: Bid, b: Bid) => b.amount - a.amount)
+                      .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
+                      .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
+                    : undefined;
+
+                  return (
+                    <React.Fragment key={rider.id || index}>
+
+                      <div className="flex w-full">
+
+                        {showPlayerCard ?
+
+                          <PlayerCard showBid={true} bid={rider.highestBid} player={rider} onClick={() => { }} selected={false} bidders={riderBidders} buttonContainer={<>
+                            <div className="flex flex-row gap-2">
+
+
+                              <div className="flex-1">
+                                {auctionActive ? (<>
+                                  <CurrencyInput
+                                    id="input-example"
+                                    name="input-name"
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                    placeholder={`Min: ${rider.effectiveMinBid || rider.points}`}
+                                    defaultValue={rider.effectiveMinBid || rider.points}
+                                    prefix="€"
+                                    decimalsLimit={0}
+                                    disabled={placingBid === riderNameId}
+                                    value={bidAmounts[riderNameId] || ''}
+                                    onValueChange={(value, name, values) => {
+                                      const newValue = value || '0';
+                                      setBidAmounts(prev => ({
+                                        ...prev,
+                                        [riderNameId]: newValue
+                                      }));
+                                    }}
+                                  />
+                                </>
                                 ) : (
-                                  <span className="text-xs text-gray-400">No bid</span>
-                                )
-                              )}
-                            </div>
-                            {auctionActive && (
-                              <>
-                                {rider.myBid && rider.myBidId && (
+
+                                  rider.myBid ? (
+                                    <div>
+                                      <div className={`font-bold text-sm ${isOutbid ? 'text-red-600' : 'text-green-600'}`}>
+                                        {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {isOutbid ? 'Outbid' : isWinning ? 'Winning' : rider.myBidStatus}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">No bid</span>
+                                  )
+                                )}
+                              </div>
+                              {auctionActive && (
+                                <>
+                                  {rider.myBid && rider.myBidId && (
+                                    <Button
+                                      type="button"
+                                      text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
+                                      onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                      disabled={cancellingBid === rider.myBidId}
+                                      className="px-2 py-1 text-sm"
+                                      title="Cancel bid"
+                                      variant="danger"
+                                    />
+                                  )}
                                   <Button
                                     type="button"
-                                    text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
-                                    onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
-                                    disabled={cancellingBid === rider.myBidId}
-                                    className="px-2 py-1 text-sm"
-                                    title="Cancel bid"
-                                    variant="danger"
+                                    text={placingBid === riderNameId ? "..." : "Bid"}
+                                    onClick={() => handlePlaceBid(rider)}
+                                    disabled={placingBid === riderNameId || !bidAmounts[riderNameId]}
+                                    className="px-3 py-1 text-sm"
+                                    variant="primary"
                                   />
-                                )}
-                                <Button
-                                  type="button"
-                                  text={placingBid === riderNameId ? "..." : "Bid"}
-                                  onClick={() => handlePlaceBid(rider)}
-                                  disabled={placingBid === riderNameId || !bidAmounts[riderNameId]}
-                                  className="px-3 py-1 text-sm"
-                                  variant="primary"
-                                />
-                              </>
-                            )}
-                          </div>
+                                </>
+                              )}
+                            </div>
 
-                        </>} />
-                        :
-                        <PlayerRow player={rider} selectPlayer={() => { }} index={index} />}
-                    </div>
+                          </>} />
+                          :
+                          <PlayerRow player={rider} selectPlayer={() => { }} index={index} />}
+                      </div>
 
 
-                  </React.Fragment>
-                );
-              })}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
           </div>
+
+
+          {!auctionClosed && (
+            <MyTeamSelection
+              myTeamSelection={availableRiders.filter(r => r.myBid)}
+              setMyTeamSelection={() => { }}
+              onCancelBid={handleCancelBidClick}
+              hideButton={!auctionActive}
+            />
+          )}
+
+          {auctionClosed && (
+            <MyTeamSelection
+              myTeamSelection={availableRiders.filter(rider => rider.myBid && myBids.some(bid => bid.id === rider.myBidId && bid.status === 'won'))}
+              setMyTeamSelection={() => { }}
+              onCancelBid={handleCancelBidClick}
+              hideButton={!auctionActive}
+            />
+          )}
+
+
+
+          {filteredRiders.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No riders found matching your search.
+            </div>
+          )}
         </div>
-
-
-        {!auctionClosed && (
-          <MyTeamSelection
-            myTeamSelection={availableRiders.filter(r => r.myBid)}
-            setMyTeamSelection={() => { }}
-            onCancelBid={handleCancelBidClick}
-            hideButton={!auctionActive}
-          />
-        )}
-
-        {auctionClosed && (
-          <MyTeamSelection
-            myTeamSelection={availableRiders.filter(rider => rider.myBid && myBids.some(bid => bid.id === rider.myBidId && bid.status === 'won'))}
-            setMyTeamSelection={() => { }}
-            onCancelBid={handleCancelBidClick}
-            hideButton={!auctionActive}
-          />
-        )}
-
-
-
-        {filteredRiders.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No riders found matching your search.
-          </div>
-        )}
       </div>
 
       {/* Cancel Bid Confirmation Modal */}
