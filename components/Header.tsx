@@ -95,7 +95,7 @@ export const Header = () => {
                         {/* it should show the admin only if isAdmin is true */}
                         {MenuItems.filter((item) => !isAdmin ? item.name !== 'admin' : true).filter(item => item.display).map((item) => (
                             <div key={item.name} className="gap-1 flex flex-col items-center px-3 hover:[text-shadow:0_0_0.4px_currentColor] group">
-                            <Link key={item.name} href={item.href} className={`text-gray-900 ${item.href === pathname ? 'text-primary font-bold' : ''}`}>
+                            <Link key={item.name} href={item.href} className={`text-gray-900 whitespace-nowrap ${item.href === pathname ? 'text-primary font-bold' : ''}`}>
                                 {item.name}
                             </Link>
                             <span className={`w-full h-[2px]   group-hover:bg-primary ${item.href === pathname ? 'bg-primary' : 'bg-white'}`}></span>
@@ -104,10 +104,10 @@ export const Header = () => {
                     </div>
                     <div className="flex divide-solid divide-[#CAC4D0] divide-x my-3 justify-center align-middle">
                         <div key={'account'} className="gap-1 flex flex-col items-center px-3 hover:[text-shadow:0_0_0.4px_currentColor] group">
-                            {user?.displayName || user?.email ? (<Link href={'/account'} className={`text-gray-900 ${'/account' === pathname ? 'text-primary font-bold' : ''}`}>
+                            {user?.displayName || user?.email ? (<Link href={'/account'} className={`text-gray-900 whitespace-nowrap ${'/account' === pathname ? 'text-primary font-bold' : ''}`}>
                                 {loading ? '...loading' : user?.displayName || user?.email || 'Account'}
                             </Link>) : (
-                                <Link href={'/login'} className={`text-gray-900 ${'/login' === pathname ? 'text-primary font-bold' : ''}`}>
+                                <Link href={'/login'} className={`text-gray-900 whitespace-nowrap ${'/login' === pathname ? 'text-primary font-bold' : ''}`}>
                                     Login
                                 </Link>
                             )}
@@ -116,7 +116,7 @@ export const Header = () => {
 
                         
                         {user?.displayName || user?.email ? (<div key={'logout'} className="gap-1 flex flex-col items-center px-3 hover:[text-shadow:0_0_0.4px_currentColor] group">
-                            <span onClick={handleLogout} className={`text-gray-900 cursor-pointer ${'account' === pathname ? 'text-primary font-bold' : ''}`}>
+                            <span onClick={handleLogout} className={`text-gray-900 whitespace-nowrap cursor-pointer ${'account' === pathname ? 'text-primary font-bold' : ''}`}>
                                 Logout
                             </span>
                             <span className={`w-full h-[2px]   group-hover:bg-primary ${'account' === pathname ? 'bg-primary' : 'bg-white'}`}></span>

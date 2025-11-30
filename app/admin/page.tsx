@@ -10,6 +10,7 @@ import { CreateGameTab } from "@/components/CreateGameTab";
 import { GamesManagementTab } from "@/components/GamesManagementTab";
 import { RidersManagementTab } from "@/components/RidersManagementTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
+import { FeedbackTab } from "@/components/FeedbackTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -120,6 +121,11 @@ export default function AdminPage() {
                             id: 'game-rules',
                             label: 'Game Rules',
                             content: <GameRulesTab />
+                        },
+                        {
+                            id: 'feedback',
+                            label: 'Feedback',
+                            content: <FeedbackTab />
                         },
                         {
                             id: 'forum',

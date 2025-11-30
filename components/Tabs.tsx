@@ -41,12 +41,13 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
     <div className="w-full">
       {/* Tab Headers */}
       <div className="border-b border-gray-200 bg-white rounded-t-lg">
-        <nav className="flex space-x-8 px-6" aria-label="Tabs">
+        <nav className="flex space-x-8 px-6 overflow-y-scroll" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={`
+                whitespace-nowrap
                 py-4 px-1 border-b-2 font-medium text-sm transition-colors
                 cursor-pointer
                 ${activeTab === tab.id

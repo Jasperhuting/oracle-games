@@ -1,0 +1,26 @@
+/* Custom styles for react-range-slider-input to use primary color */
+
+/* Range track fill (the colored part between the two thumbs) */
+.range-slider__range {
+  background-color: #02554D !important;
+}
+
+/* Thumb (the draggable handles) */
+.range-slider__thumb {
+  background-color: #357771 !important;
+  border-color: #357771 !important;
+}
+
+/* Thumb hover state */
+.range-slider__thumb:hover {
+  background-color: #013d37 !important;
+  border-color: #013d37 !important;
+}
+
+/* Thumb active/focus state */
+.range-slider__thumb:active,
+.range-slider__thumb:focus {
+  background-color: #013d37 !important;
+  border-color: #013d37 !important;
+  box-shadow: 0 0 0 3px rgba(2, 85, 77, 0.2) !important;
+}

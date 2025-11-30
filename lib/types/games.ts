@@ -462,6 +462,23 @@ export type ClientGameRule = Omit<GameRule, 'updatedAt'> & {
 };
 
 // ============================================================================
+// FEEDBACK
+// ============================================================================
+
+export interface Feedback {
+  id?: string;
+  userId: string;
+  userEmail: string;
+  message: string;
+  createdAt: string;
+  status?: 'new' | 'reviewed' | 'resolved';
+}
+
+export type ClientFeedback = Omit<Feedback, 'createdAt'> & {
+  createdAt: string;
+};
+
+// ============================================================================
 // UTILITY TYPES
 // ============================================================================
 
