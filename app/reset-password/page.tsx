@@ -16,9 +16,9 @@ export default function ResetPasswordPage() {
                 </div>
                 
                 <div className="flex flex-col items-center mt-4 mb-6">
-                    <span className="font-bold">Wachtwoord vergeten?</span>
+                    <span className="font-bold">Forget password?</span>
                     <span className="font-light text-sm text-gray-600 text-center max-w-[300px] mt-2">
-                        Geen probleem! Vul je e-mailadres in en we sturen je een link om je wachtwoord opnieuw in te stellen.
+                        No problem! Enter your email address and we will send you a link to reset your password.
                     </span>
                 </div>
 

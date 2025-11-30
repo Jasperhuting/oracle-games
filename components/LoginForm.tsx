@@ -161,16 +161,16 @@ export const LoginForm = () => {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col">
                     <TextInput 
-                        label="E-mailadres" 
-                        placeholder="E-mailadres" 
+                        label="Email" 
+                        placeholder="Email" 
                         {...register('email', { required: true })} 
                     />
                 </div>
                 <div className="flex flex-col">
                     <TextInput 
                         type="password" 
-                        label="Wachtwoord" 
-                        placeholder="Wachtwoord" 
+                        label="Password" 
+                        placeholder="Password" 
                         {...register('password', { required: true })} 
                     />
                 </div>
