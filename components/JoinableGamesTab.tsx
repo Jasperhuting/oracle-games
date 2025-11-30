@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
+import { GameRulesModal } from "./GameRulesModal";
+import { GameType } from "@/lib/types/games";
 import process from "process";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
@@ -57,6 +59,9 @@ export const JoinableGamesTab = () => {
   const [joining, setJoining] = useState<string | null>(null);
   const [leaving, setLeaving] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
+  const [selectedGameForRules, setSelectedGameForRules] = useState<{ type: GameType; name: string } | null>(null);
+  const [availableRules, setAvailableRules] = useState<Set<GameType>>(new Set());
 
   const loadGames = (async () => {
     setLoading(true);
@@ -120,6 +125,30 @@ export const JoinableGamesTab = () => {
   useEffect(() => {
     loadGames();
   }, [user, filterYear, filterStatus]);
+
+  // Fetch available game rules
+  useEffect(() => {
+    const fetchAvailableRules = async () => {
+      try {
+        const response = await fetch('/api/gameRules');
+        if (response.ok) {
+          const rules = await response.json();
+          const rulesSet = new Set<GameType>(
+            rules.filter((r: any) => r.rules).map((r: any) => r.gameType as GameType)
+          );
+          setAvailableRules(rulesSet);
+        }
+      } catch (error) {
+        console.error('Error fetching available rules:', error);
+      }
+    };
+    fetchAvailableRules();
+  }, []);
+
+  const handleShowRules = (gameType: string, gameName: string) => {
+    setSelectedGameForRules({ type: gameType as GameType, name: gameName });
+    setRulesModalOpen(true);
+  };
 
   const handleJoinGame = async (gameId: string) => {
     if (!user) {
@@ -412,8 +441,17 @@ export const JoinableGamesTab = () => {
                     )}
 
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <span className="font-medium">Type:</span> {getGameTypeLabel(game.gameType)}
+                        {availableRules.has(game.gameType as GameType) && (
+                          <Button
+                            variant="text"
+                            size="text"
+                            onClick={() => handleShowRules(game.gameType, group.baseName)}
+                          >
+                            Rules
+                          </Button>
+                        )}
                       </div>
                       <div>
                         <span className="font-medium">Year:</span> {game.year}
@@ -499,21 +537,21 @@ export const JoinableGamesTab = () => {
                         text={joining === game.id ? "Joining..." : "Join Game"}
                         onClick={() => handleJoinGame(game.id)}
                         disabled={joining === game.id}
-                        className="px-4 py-2 bg-primary hover:bg-primary whitespace-nowrap"
+                        className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
                     {isJoined && !isWaitingForDivision && joinedGame && (game.gameType === 'auction' || game.gameType === 'auctioneer') && (
                       <Button
                         text="Auction"
                         onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+                        className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
                     {isJoined && !isWaitingForDivision && joinedGame && game.gameType !== 'auction' && game.gameType !== 'auctioneer' && (
                       <Button
                         text="Select Team"
                         onClick={() => router.push(`/games/${joinedGame.id}/team`)}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 whitespace-nowrap"
+                        className="px-4 py-2 bg-green-600 hover:bg-green-600/80 whitespace-nowrap"
                       />
                     )}
                     {leaveable && joinedGame && (
@@ -536,6 +574,19 @@ export const JoinableGamesTab = () => {
             );
           })}
         </div>
+      )}
+
+      {/* Game Rules Modal */}
+      {selectedGameForRules && (
+        <GameRulesModal
+          isOpen={rulesModalOpen}
+          onClose={() => {
+            setRulesModalOpen(false);
+            setSelectedGameForRules(null);
+          }}
+          gameType={selectedGameForRules.type}
+          gameName={selectedGameForRules.name}
+        />
       )}
     </div>
   );

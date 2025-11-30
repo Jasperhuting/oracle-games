@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "@motiadev/stream-client-react": "^0.8.4-beta.141",
+    "@tiptap/extension-link": "^3.11.1",
+    "@tiptap/extension-underline": "^3.11.1",
+    "@tiptap/react": "^3.11.1",
+    "@tiptap/starter-kit": "^3.11.1",
     "@uidotdev/usehooks": "^2.4.1",
     "ai": "^5.0.87",
     "cheerio": "^1.1.2",

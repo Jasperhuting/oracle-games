@@ -11,10 +11,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     className?: string;
     disabled?: boolean;
     children?: React.ReactNode;
-    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning';
+    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'text';
     outline?: boolean;
     ghost?: boolean;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'text';
 }
 
 // Color styles for each variant
@@ -24,6 +24,7 @@ const solidStyles = {
     success: 'bg-green-600 text-white hover:bg-green-700 border-green-600',
     danger: 'bg-red-600 text-white hover:bg-red-700 border-red-600',
     warning: 'bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500',
+    text: 'bg-transparent text-primary border-none underline hover:text-primary/80',
 };
 
 const outlineStyles = {
@@ -32,6 +33,7 @@ const outlineStyles = {
     success: 'bg-transparent text-green-600 border-green-600 hover:bg-green-600 hover:text-white',
     danger: 'bg-transparent text-red-600 border-red-600 hover:bg-red-600 hover:text-white',
     warning: 'bg-transparent text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white',
+    text: 'bg-transparent text-primary border-none hover:text-primary/80',
 };
 
 const ghostStyles = {
@@ -40,6 +42,7 @@ const ghostStyles = {
     success: 'bg-transparent text-green-600 border-green-600/30 hover:bg-green-50 hover:border-green-600',
     danger: 'bg-transparent text-red-600 border-red-600/30 hover:bg-red-50 hover:border-red-600',
     warning: 'bg-transparent text-yellow-600 border-yellow-600/30 hover:bg-yellow-50 hover:border-yellow-600',
+    text: 'bg-transparent text-primary border-none hover:text-primary/80',
 };
 
 // Size styles
@@ -47,6 +50,7 @@ const sizeStyles = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-3 py-2 text-sm',
     lg: 'px-4 py-3 text-base',
+    text: 'text-sm'
 };
 
 export const Button = ({

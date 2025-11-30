@@ -446,6 +446,22 @@ export interface PoolSelection {
 }
 
 // ============================================================================
+// GAME RULES
+// ============================================================================
+
+export interface GameRule {
+  id?: string;                      // Document ID (same as gameType)
+  gameType: GameType;
+  rules: string;                    // HTML content from WYSIWYG editor
+  updatedAt: Timestamp | Date;
+  updatedBy: string;                // Admin UID
+}
+
+export type ClientGameRule = Omit<GameRule, 'updatedAt'> & {
+  updatedAt: string;
+};
+
+// ============================================================================
 // UTILITY TYPES
 // ============================================================================
 
