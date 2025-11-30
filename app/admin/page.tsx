@@ -74,7 +74,7 @@ export default function AdminPage() {
 
                 <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-                <div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center bg-white px-6 py-4 rounded-lg">
+                <div className="flex flex-row border border-gray-200 pb-4 mb-8 items-center bg-white px-6 py-4 rounded-lg">
                     <Link href="/home" className="text-sm text-gray-600 hover:text-gray-900 underline">
                         Back to Home
                     </Link>

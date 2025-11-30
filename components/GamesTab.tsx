@@ -44,11 +44,6 @@ export const GamesTab = () => {
   const [stageNumber, setStageNumber] = useState<string>('');
   const [selectedStage, setSelectedStage] = useState<any | null>(null);
   const [manuallyDeselected, setManuallyDeselected] = useState(false);
-  const [showAllStageResults, setShowAllStageResults] = useState(false);
-  const [showAllGC, setShowAllGC] = useState(false);
-  const [showAllPoints, setShowAllPoints] = useState(false);
-  const [showAllMountains, setShowAllMountains] = useState(false);
-  const [activeClassificationTab, setActiveClassificationTab] = useState<'stage' | 'gc' | 'points' | 'mountains' | 'youth' | 'team'>('stage');
 
   const fetchRaces = (async () => {
 
@@ -84,6 +79,8 @@ export const GamesTab = () => {
   useEffect(() => {
     const raceSlug = searchParams.get('race');
 
+    console.log('raceSlug', raceSlug)
+
     if (raceSlug && races.length > 0) {
       // Only load if it's a different race than currently selected
       if (!selectedRace || selectedRace.slug !== raceSlug) {
@@ -93,12 +90,6 @@ export const GamesTab = () => {
           fetchRaceData(race, false); // false = don't update URL
         }
       }
-    } else if (!raceSlug && races.length > 0 && !selectedRace && !manuallyDeselected) {
-      // Auto-load most recent race (highest year) - only if not manually deselected
-      const mostRecentRace = races.reduce((latest, current) =>
-        current.year > latest.year ? current : latest
-      );
-      fetchRaceData(mostRecentRace, true); // true = update URL
     }
   }, [searchParams, races, manuallyDeselected, selectedRace]);
 
@@ -702,7 +693,7 @@ export const GamesTab = () => {
                                       DNS #{doc.dns}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-800 text-green-800/80">
                                       Active
                                     </span>
                                   )}
@@ -859,8 +850,8 @@ export const GamesTab = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             race.active 
-                              ? 'bg-green-100 text-white' 
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-green-800 text-white' 
+                              : 'bg-gray-800 text-gray-800/80'
                           }`}>
                             {race.active ? 'Active' : 'Inactive'}
                           </span>

@@ -135,7 +135,7 @@ export const GameRulesTab = () => {
                 key={gameType}
                 onClick={() => setSelectedGameType(gameType)}
                 className={`
-                  px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium
+                  px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium cursor-pointer
                   ${selectedGameType === gameType
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'

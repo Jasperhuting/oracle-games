@@ -40,7 +40,7 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
   return (
     <div className="w-full">
       {/* Tab Headers */}
-      <div className="border-b border-gray-200 bg-white rounded-t-lg">
+      <div className="border border-gray-200 bg-white rounded-t-lg">
         <nav className="flex space-x-8 px-6 overflow-y-scroll" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
@@ -63,7 +63,7 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-b-lg p-6">
+      <div className="bg-white rounded-b-lg p-6 border border-gray-200 -mt-[1px]">
         {activeTabContent}
       </div>
     </div>

@@ -232,28 +232,6 @@ export const GamesManagementTab = () => {
     };
   }).sort((a, b) => a.baseName.localeCompare(b.baseName));
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-200 text-gray-800';
-      case 'registration': return 'bg-blue-200 text-blue-800';
-      case 'bidding': return 'bg-yellow-200 text-yellow-800';
-      case 'active': return 'bg-green-200 text-green-800';
-      case 'finished': return 'bg-primary text-primary';
-      default: return 'bg-gray-200 text-gray-800';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'draft': return 'Draft';
-      case 'registration': return 'Registration';
-      case 'bidding': return 'Bidding';
-      case 'active': return 'Active';
-      case 'finished': return 'Finished';
-      default: return status;
-    }
-  };
-
   const getGameTypeLabel = (gameType: string) => {
     const labels: Record<string, string> = {
       'auctioneer': 'Auctioneer',
