@@ -1,25 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MyTeamSelectionRow } from "./MyTeamSelectionRow";
 import { ChevronDown, ChevronUp } from "tabler-icons-react";
-import { motion, AnimatePresence } from "framer-motion";
 
-export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection, removeAble, onCancelBid, hideButton, isOpen: controlledIsOpen }: { myTeamSelection: any[], setMyTeamSelection: (myTeamSelection: any[]) => void, removeAble?: boolean, onCancelBid?: (bidId: string, riderName: string) => void, hideButton?: boolean, isOpen?: boolean }) => {
+export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection, removeAble, onCancelBid, hideButton }: { myTeamSelection: any[], setMyTeamSelection: (myTeamSelection: any[]) => void, removeAble?: boolean, onCancelBid?: (bidId: string, riderName: string) => void, hideButton?: boolean }) => {
 
-    const [internalOpen, setInternalOpen] = useState(false);
-
-    // Reset internal state when controlled state becomes true (auto-expand when scrolling down)
-    useEffect(() => {
-        if (controlledIsOpen === true) {
-            setInternalOpen(true);
-        }
-    }, [controlledIsOpen]);
-
-    // When controlled externally, sync with the controlled value
-    // But allow manual override by toggling internalOpen
-    const open = controlledIsOpen !== undefined ? (controlledIsOpen && internalOpen) : internalOpen;
+    const [open, setOpen] = useState(false);
 
     const handleToggle = () => {
-        setInternalOpen(!internalOpen);
+        setOpen(!open);
     };
 
     return (
@@ -31,42 +19,17 @@ export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection, removeAbl
                 </button>
             </div>
 
-            <div className="flex flex-col w-full divide-y divide-[#CAC4D0] max-h-[400px] overflow-y-auto">
-                <AnimatePresence initial={false} mode="sync">
-                    {myTeamSelection?.map((rider) => (
-                        <motion.div
-                            key={rider.id}
-                            initial={{ opacity: 0, height: 0, overflow: "hidden" }}
-                            animate={{
-                                opacity: 1,
-                                height: "auto",
-                                overflow: "visible",
-                                transition: {
-                                    height: { duration: 0.3, ease: "easeOut" },
-                                    opacity: { duration: 0.2, delay: 0.1 },
-                                    overflow: { delay: 0.3 }
-                                }
-                            }}
-                            exit={{
-                                opacity: 0,
-                                height: 0,
-                                overflow: "hidden",
-                                transition: {
-                                    height: { duration: 0.3, ease: "easeIn", delay: 0.1 },
-                                    opacity: { duration: 0.2 }
-                                }
-                            }}
-                        >
-                            <MyTeamSelectionRow
-                                rider={rider}
-                                removeItem={(rider) => setMyTeamSelection(myTeamSelection.filter((p) => p.id !== rider.id))}
-                                removeAble={removeAble}
-                                onCancelBid={onCancelBid}
-                                hideButton={hideButton}
-                            />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
+            <div className="flex flex-col w-full divide-y divide-[#CAC4D0] max-h-[50vh] overflow-y-auto">
+                {myTeamSelection?.map((rider) => (
+                    <MyTeamSelectionRow
+                        key={rider.id}
+                        rider={rider}
+                        removeItem={(rider) => setMyTeamSelection(myTeamSelection.filter((p) => p.id !== rider.id))}
+                        removeAble={removeAble}
+                        onCancelBid={onCancelBid}
+                        hideButton={hideButton}
+                    />
+                ))}
             </div>
 
         </div>
