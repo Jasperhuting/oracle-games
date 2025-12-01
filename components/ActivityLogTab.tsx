@@ -175,6 +175,14 @@ export const ActivityLogTab = () => {
 
     // GAME_UPDATED details
     if (log.action === 'GAME_UPDATED' && log.details.changes) {
+      // Filter to only show fields where values actually changed
+      const actualChanges = Object.entries(log.details.changes).filter(([_, change]: [string, any]) => {
+        return JSON.stringify(change.before) !== JSON.stringify(change.after);
+      });
+
+      // Don't render anything if no actual changes
+      if (actualChanges.length === 0) return null;
+
       return (
         <div className="mt-2 space-y-1">
           <div className="text-sm font-medium text-gray-900">
@@ -184,7 +192,7 @@ export const ActivityLogTab = () => {
             )}
           </div>
           <div className="space-y-1 pl-2 border-l-2 border-gray-200">
-            {Object.entries(log.details.changes).map(([field, change]: [string, any]) => (
+            {actualChanges.map(([field, change]: [string, any]) => (
               <div key={field} className="text-xs text-gray-600 flex items-start gap-2">
                 <span className="font-medium min-w-[100px]">{field}:</span>
                 <div className="flex items-center gap-2">

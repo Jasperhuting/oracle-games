@@ -234,7 +234,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
       </div>
 
       {/* Passkey Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mt-5">
         <h2 className="text-xl font-semibold mb-4">Security</h2>
         
         {passkeyInfo.hasPasskey ? (
