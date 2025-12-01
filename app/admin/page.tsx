@@ -68,7 +68,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen p-8 bg-gray-50">
+        <div className="flex flex-col min-h-screen p-8 mt-[36px] bg-gray-50">
             <div className="container mx-auto">
                 
 

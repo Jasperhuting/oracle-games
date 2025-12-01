@@ -26,7 +26,7 @@ export default function HomePage() {
         checkAdminStatus();
     }, [user]);
     return (
-        <div className="flex flex-col min-h-screen p-8">
+        <div className="flex flex-col min-h-screen p-8 mt-[36px]">
             <div className="mx-auto container">
                 {isAdmin && (<div className="flex flex-row border-b border-gray-200 pb-4 mb-8 items-center">
                     {user && (

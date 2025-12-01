@@ -29,7 +29,7 @@ export default function AccountPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen p-8 bg-gray-50">
+        <div className="flex flex-col min-h-screen p-8 mt-[36px] bg-gray-50">
             <div className="mx-auto container">
                 <div className="flex flex-row border border-gray-200 pb-4 mb-8 items-center bg-white px-6 py-4 rounded-lg">
                     <Link href="/home" className="text-sm text-gray-600 hover:text-gray-900 underline">
