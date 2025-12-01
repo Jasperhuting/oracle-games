@@ -27,8 +27,8 @@ export default function ResetPasswordPage() {
                 </div>
 
             </div>
-            <div className="w-0 md:flex-1 bg-red-500">
-                rechterkant
+            <div className="w-0 md:flex-1">
+                <img src="/homepage_picture_3.jpg" className="w-full h-full object-cover object-[25%_50%]" alt="" />
             </div>
         </div>
     );

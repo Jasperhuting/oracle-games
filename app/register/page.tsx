@@ -26,7 +26,7 @@ export default function RegisterPage() {
 
             </div>
             <div className="w-0 md:flex-1 bg-red-500">
-                rechterkant
+                <img src="/homepage_picture_2.jpg" className="w-full h-full object-cover object-[25%_50%]" alt="" />
             </div>
         </div>
     );
