@@ -47,32 +47,32 @@ export const Header = () => {
 
     const MenuItems =  [
         {
-            name: "home",
+            name: "Home",
             href: "/home",
             display: true
         },
         {
-            name: "games",
+            name: "Games",
             href: "/games",
             display: true
         },
         {
-            name: "forum",
+            name: "Forum",
             href: "/forum",
             display: false
         },
         {
-            name: "gameCalendar",
+            name: "GameCalendar",
             href: "/gameCalendar",
             display: false
         },
         {
-            name: "myGames",
+            name: "MyGames",
             href: "/myGames",
             display: false
         },
         {
-            name: "admin",
+            name: "Admin",
             href: "/admin",
             display: true
         }
