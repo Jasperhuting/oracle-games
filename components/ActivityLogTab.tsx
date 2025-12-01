@@ -17,6 +17,51 @@ interface ActivityLog {
   ipAddress?: string;
 }
 
+// Separate component for error details to avoid hook violation
+const ErrorDetails = ({ details }: { details: Record<string, any> }) => {
+  const [showTrace, setShowTrace] = useState(false);
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="text-sm font-medium text-red-900">
+        {details.operation && (
+          <span className="text-xs text-red-700">Operation: {details.operation}</span>
+        )}
+      </div>
+      {details.errorMessage && (
+        <div className="text-sm text-red-800 bg-red-50 p-2 rounded border border-red-200">
+          {details.errorMessage}
+        </div>
+      )}
+      {details.gameId && (
+        <div className="text-xs text-gray-600">
+          Game ID: {details.gameId}
+        </div>
+      )}
+      {details.endpoint && (
+        <div className="text-xs text-gray-600">
+          Endpoint: {details.endpoint}
+        </div>
+      )}
+      {details.errorDetails && (
+        <div className="mt-2">
+          <button
+            onClick={() => setShowTrace(!showTrace)}
+            className="text-xs text-blue-600 hover:text-blue-800 underline"
+          >
+            {showTrace ? 'Hide' : 'Show'} Stack Trace
+          </button>
+          {showTrace && (
+            <div className="mt-1 text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 font-mono whitespace-pre-wrap overflow-x-auto">
+              {details.errorDetails}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ActivityLogTab = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -240,47 +285,7 @@ export const ActivityLogTab = () => {
 
     // ERROR details
     if (log.action === 'ERROR') {
-      const [showTrace, setShowTrace] = useState(false);
-
-      return (
-        <div className="mt-2 space-y-1">
-          <div className="text-sm font-medium text-red-900">
-            {log.details.operation && (
-              <span className="text-xs text-red-700">Operation: {log.details.operation}</span>
-            )}
-          </div>
-          {log.details.errorMessage && (
-            <div className="text-sm text-red-800 bg-red-50 p-2 rounded border border-red-200">
-              {log.details.errorMessage}
-            </div>
-          )}
-          {log.details.gameId && (
-            <div className="text-xs text-gray-600">
-              Game ID: {log.details.gameId}
-            </div>
-          )}
-          {log.details.endpoint && (
-            <div className="text-xs text-gray-600">
-              Endpoint: {log.details.endpoint}
-            </div>
-          )}
-          {log.details.errorDetails && (
-            <div className="mt-2">
-              <button
-                onClick={() => setShowTrace(!showTrace)}
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
-              >
-                {showTrace ? 'Hide' : 'Show'} Stack Trace
-              </button>
-              {showTrace && (
-                <div className="mt-1 text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 font-mono whitespace-pre-wrap overflow-x-auto">
-                  {log.details.errorDetails}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      );
+      return <ErrorDetails details={log.details} />;
     }
 
     // For other details, show them in a cleaner way
