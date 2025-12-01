@@ -584,7 +584,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           </div>
         </div>
       </div>
-      <div className={`sticky top-[100px] z-20 transition-shadow duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}>
+      <div className={`sticky top-[86px] z-20 transition-shadow duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}>
         {/* Stats Bar */}
         <div className="bg-white border-b border-gray-200 z-10 p-8">
           <div className="container mx-auto py-3">
@@ -634,7 +634,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         </div>
 
         {/* Search and Price Filter */}
-        <div className="bg-white w-full p-8">
+        <div className="bg-white w-full px-8">
           <div className="container mx-auto">
             <div className="mb-4 bg-white py-4 flex flex-row gap-4">
 

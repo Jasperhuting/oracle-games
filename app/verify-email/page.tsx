@@ -126,7 +126,7 @@ export default function VerifyEmailPage() {
                 </div>
             </div>
             <div className="w-0 md:flex-1">
-                <img src="/homepage_picture_4.jpg" className="w-full h-full object-cover object-[25%_50%]" alt="" />
+                <img src="/homepage_picture_3.jpg" className="w-full h-full object-cover object-[25%_50%]" alt="" />
             </div>
         </div>
     );

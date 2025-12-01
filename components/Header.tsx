@@ -79,7 +79,7 @@ export const Header = () => {
     ]
 
     return (
-        <header className="sticky top-0 w-full bg-white drop-shadow-header z-50 h-[100px] px-8">
+        <header className="sticky top-0 w-full bg-white drop-shadow-header z-50 h-[86px] px-8">
             <div className="container mx-auto">
                 <div className="flex flex-1 justify-between py-2">
                     <div className="flex-1 flex items-center">
