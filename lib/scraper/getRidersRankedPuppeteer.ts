@@ -51,13 +51,19 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
 
     const getName = (el: DomElement) => {
       const name = $(el).find('td:nth-child(4) > a').text();
-      // Match the all-caps last name at the start
-      const lastNameUppercase = String(name.match(/^[\p{Lu}\s']+(?=\s\p{Lu}\p{L})/u)?.[0] || '').toLowerCase();
-      const lastName = lastNameUppercase.charAt(0).toUpperCase() + lastNameUppercase.slice(1);
+      // Match the all-caps last name at the start (handles special chars like Ž, Š, ß, etc.)
+      // Include ß which is technically lowercase but appears in uppercase contexts
+      const lastNameMatch = name.match(/^[\p{Lu}ß\s'-]+(?=\s+\p{Lu}\p{L})/u);
+      const lastNameUppercase = String(lastNameMatch?.[0] || '').trim();
+
+      // Capitalize first letter, rest lowercase (preserves special chars)
+      // Special handling for ß: keep it as ß in output (not convert to ss)
+      const lastName = lastNameUppercase.charAt(0).toUpperCase() +
+                       lastNameUppercase.slice(1).toLowerCase();
 
       // Extract everything after the last name (the first name part)
       const afterLastName = name.substring(lastNameUppercase.length).trim();
-      // Match words that start with uppercase followed by lowercase letters
+      // Match words that start with uppercase followed by any letters (handles Ž, É, etc.)
       const firstName = String(afterLastName.match(/\p{Lu}\p{L}*/gu) || '').replace(/,/g, ' ');
 
       return {

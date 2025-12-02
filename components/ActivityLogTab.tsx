@@ -306,7 +306,7 @@ export const ActivityLogTab = () => {
             </span>
           )}
           {log.details.userType && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary text-primary">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary text-white">
               {log.details.userType}
             </span>
           )}

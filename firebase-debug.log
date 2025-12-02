@@ -2284,3 +2284,267 @@
 [debug] [2025-12-02T10:12:20.017Z] > authorizing via signed-in user (jasper.huting@gmail.com)
 [debug] [2025-12-02T10:12:20.023Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
 [debug] [2025-12-02T10:12:20.023Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:57.619Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.622Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.623Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.624Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.625Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.625Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.625Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.626Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:57.626Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:57.626Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:57.626Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:57.626Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.629Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.629Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.629Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.630Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.630Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.635Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.635Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.635Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.635Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.635Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.636Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.636Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.636Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.636Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.636Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.636Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.636Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.636Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.636Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.637Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.637Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.638Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.638Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.638Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.638Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.638Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.638Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.638Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.638Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.639Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.639Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.639Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:57.639Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:57.639Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.639Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.640Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.640Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.640Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.640Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.641Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.641Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.641Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.641Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.641Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.641Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.641Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.641Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.642Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.642Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.624Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.626Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.626Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.627Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.627Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.627Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:57.628Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:57.628Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:57.628Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:57.628Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.630Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.630Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.631Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.631Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.631Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.636Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.636Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.636Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.636Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.636Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.637Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.637Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.637Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.637Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.637Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.637Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.637Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.638Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.638Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.638Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.638Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.639Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.639Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.639Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.639Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.639Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.639Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.639Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.639Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.639Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.639Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.640Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:57.640Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:57.640Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:57.640Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.640Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.640Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.640Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.641Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.642Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.642Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.642Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.642Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.642Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.642Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.642Z] Checked if tokens are valid: false, expires at: 1764673938141
+[debug] [2025-12-02T21:29:57.643Z] > refreshing access token with scopes: []
+[debug] [2025-12-02T21:29:57.643Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-12-02T21:29:57.643Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.730Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.737Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.730Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.748Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.748Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.737Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.753Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.753Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.756Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.751Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.751Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.768Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [none]
+[debug] [2025-12-02T21:29:57.768Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.770Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.770Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.789Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.789Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.756Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.774Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [none]
+[debug] [2025-12-02T21:29:57.774Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.775Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.775Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.793Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.793Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.794Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.794Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.815Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.815Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.791Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.791Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.810Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.811Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.811Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.811Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.829Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [none]
+[debug] [2025-12-02T21:29:57.829Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.816Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.816Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.834Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.834Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.832Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.832Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.848Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.848Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.836Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.836Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.853Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [none]
+[debug] [2025-12-02T21:29:57.853Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.854Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.854Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.872Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.872Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.876Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.876Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.890Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [none]
+[debug] [2025-12-02T21:29:57.890Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.851Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.851Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.867Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.867Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.868Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.868Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.885Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.885Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.886Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.886Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.905Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [none]
+[debug] [2025-12-02T21:29:57.905Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:57.892Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-12-02T21:29:57.892Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-12-02T21:29:57.909Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-02T21:29:57.909Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oracle-games-b6af6
+[debug] [2025-12-02T21:29:58.552Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com 403
+[debug] [2025-12-02T21:29:58.552Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com 403
+[debug] [2025-12-02T21:29:58.552Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [omitted]
+[debug] [2025-12-02T21:29:58.552Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [omitted]
+[debug] [2025-12-02T21:29:58.609Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com 403
+[debug] [2025-12-02T21:29:58.609Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [omitted]
+[debug] [2025-12-02T21:29:58.610Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com 403
+[debug] [2025-12-02T21:29:58.610Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [omitted]
+[debug] [2025-12-02T21:29:58.619Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com 403
+[debug] [2025-12-02T21:29:58.619Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [omitted]
+[debug] [2025-12-02T21:29:58.644Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-02T21:29:58.644Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.673Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com 403
+[debug] [2025-12-02T21:29:58.673Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseio.com [omitted]
+[debug] [2025-12-02T21:29:58.708Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-02T21:29:58.708Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.708Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-02T21:29:58.709Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-02T21:29:58.709Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.708Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.709Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.710Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-02T21:29:58.710Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.712Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.714Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-02T21:29:58.714Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.712Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.713Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.713Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.713Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.714Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.714Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.714Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.725Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-02T21:29:58.725Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.727Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-02T21:29:58.728Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-02T21:29:58.728Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.727Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.728Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.732Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.732Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.733Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.733Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.733Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.733Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.733Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.733Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.738Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-02T21:29:58.738Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.738Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.742Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.743Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.743Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.743Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.743Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.743Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.743Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.743Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.747Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-02T21:29:58.747Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-02T21:29:58.748Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.752Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.752Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.752Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.752Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.752Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.753Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"mailersend-email"}
+[debug] [2025-12-02T21:29:58.753Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-02T21:29:58.753Z] > authorizing via signed-in user (jasper.huting@gmail.com)
+[debug] [2025-12-02T21:29:58.759Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-02T21:29:58.759Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oracle-games-b6af6/services/firebasedataconnect.googleapis.com [omitted]

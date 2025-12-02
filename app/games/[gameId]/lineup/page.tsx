@@ -27,6 +27,36 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
   const [gameName, setGameName] = useState<string>('');
   const [raceType, setRaceType] = useState<string>('');
 
+ const [showBanner, setShowBanner] = useState(true);
+
+useEffect(() => {
+  const checkBannerCookie = () => {
+    // Clear any localStorage value (legacy)
+    if (typeof window !== 'undefined' && localStorage.getItem('hide-beta-banner') !== null) {
+      localStorage.removeItem('hide-beta-banner');
+    }
+
+    const cookies = document.cookie.split('; ');
+    const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
+
+    if (hideBannerCookie) {
+      // Extract the value after 'hide-beta-banner='
+      const value = hideBannerCookie.split('=')[1];
+      setShowBanner(value !== 'true');
+    } else {
+      setShowBanner(true);
+    }
+  };
+
+  // Check initially
+  checkBannerCookie();
+
+  // Poll for cookie changes (since cookies don't trigger events)
+  const interval = setInterval(checkBannerCookie, 100);
+
+  return () => clearInterval(interval);
+}, []);
+
   useEffect(() => {
     params.then(p => setGameId(p.gameId));
   }, [params]);
@@ -218,7 +248,7 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${showBanner ? 'mt-[36px]' : 'mt-0'} `}>
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto py-4">

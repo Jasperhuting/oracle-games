@@ -23,6 +23,8 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
   const { user } = useAuth();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleDeleteDivision = async (gameId: string, gameName: string) => {
     if (!user) return;
@@ -58,6 +60,44 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
       setError(error.message || 'Failed to delete division');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleRecalculatePlayerCounts = async () => {
+    if (!user) return;
+
+    setRecalculating(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const results = [];
+
+      // Recalculate for each division game
+      for (const game of games) {
+        const response = await fetch(`/api/games/${game.id}/recalculatePlayerCount?adminUserId=${user.uid}`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to recalculate for ${game.name}`);
+        }
+
+        const data = await response.json();
+        results.push(data);
+      }
+
+      setSuccessMessage(`Successfully recalculated player counts for ${games.length} division(s)`);
+
+      // Refresh the parent to show updated counts
+      setTimeout(() => {
+        onSuccess();
+      }, 1000);
+    } catch (error: any) {
+      console.error('Error recalculating player counts:', error);
+      setError(error.message || 'Failed to recalculate player counts');
+    } finally {
+      setRecalculating(false);
     }
   };
 
@@ -110,6 +150,12 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
             </div>
           )}
 
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+              <span className="text-green-700 text-sm">{successMessage}</span>
+            </div>
+          )}
+
           <div className="space-y-3">
             {sortedGames.map((game) => (
               <div
@@ -140,7 +186,24 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
             ))}
           </div>
 
-          <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-blue-900 mb-1">Player Count Issues?</p>
+                <p className="text-sm text-blue-800">
+                  If player counts don't match the actual participants, click this button to recalculate them based on actual data.
+                </p>
+              </div>
+              <Button
+                text={recalculating ? "Recalculating..." : "Fix Counts"}
+                onClick={handleRecalculatePlayerCounts}
+                disabled={recalculating || deleting !== null}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800">
               <strong>Note:</strong> Deleting a division will permanently remove all data associated with it,
               including player registrations and bids. This action cannot be undone.

@@ -66,26 +66,67 @@ export async function POST(
     // Find the specific division game based on the assigned division
     // The division name is like "Division 1", we need to find the game with that division
     const gameName = gameData?.name || '';
-    const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+
+    // Extract base name by removing any division suffix (handles various formats)
+    // Examples: "Game Name - Division 1" -> "Game Name"
+    //           "Game Name - Custom Division 2" -> "Game Name"
+    const baseName = gameName.replace(/\s*-\s*.*Division\s+\d+\s*$/i, '').trim();
     const targetGameName = `${baseName} - ${assignedDivision}`;
 
     // Find the target division game
+    // Try multiple strategies to find the game:
+    // 1. Exact name match
+    // 2. Match by division field (more reliable for multi-division games)
     const divisionGamesSnapshot = await db.collection('games')
       .where('year', '==', gameData?.year)
       .where('gameType', '==', gameData?.gameType)
       .get();
 
     let targetGameId: string | null = null;
+    const availableGames: { name: string; division?: string; divisionCount?: number }[] = [];
+
     divisionGamesSnapshot.forEach(doc => {
       const docData = doc.data();
-      if (docData?.name === targetGameName) {
+      const docName = docData?.name || '';
+      availableGames.push({
+        name: docName,
+        division: docData?.division,
+        divisionCount: docData?.divisionCount,
+      });
+
+      // Strategy 1: Exact name match
+      if (docName === targetGameName) {
         targetGameId = doc.id;
+      }
+
+      // Strategy 2: Match by division field (fallback)
+      // Check if the game has the same base name pattern and matching division field
+      if (!targetGameId && docData?.division === assignedDivision && docData?.divisionCount === divisionCount) {
+        const docBaseName = docName.replace(/\s*-\s*.*Division\s+\d+\s*$/i, '').trim();
+        if (docBaseName === baseName) {
+          targetGameId = doc.id;
+        }
       }
     });
 
     if (!targetGameId) {
+      console.error('Division game search failed:', {
+        targetGameName,
+        baseName,
+        assignedDivision,
+        availableGames,
+        year: gameData?.year,
+        gameType: gameData?.gameType,
+      });
+
       return NextResponse.json(
-        { error: `Could not find division game for ${assignedDivision}` },
+        {
+          error: `Could not find division game for ${assignedDivision}`,
+          details: {
+            searchedFor: targetGameName,
+            availableGames: availableGames,
+          }
+        },
         { status: 404 }
       );
     }
