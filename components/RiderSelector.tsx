@@ -3,6 +3,7 @@
 import { PlayerRow } from "./PlayerRow";
 import { Rider } from "@/lib/scraper";
 import { Selector } from "./Selector";
+import { normalizeString } from "@/lib/utils/stringUtils";
 
 export const RiderSelector = ({
     setSelectedRiders,
@@ -27,14 +28,11 @@ export const RiderSelector = ({
             placeholder={multiSelect ? "Filter on riders..." : "Filter on rider..."}
             getItemLabel={(rider) => rider.name || ''}
             searchFilter={(rider, searchTerm) => {
+                const normalizedSearch = normalizeString(searchTerm);
                 const lowerSearch = searchTerm.toLowerCase();
-                console.log('hier?', rider?.team?.nameID?.split('-')[0]?.toLowerCase());
 
-
-                return !!(rider?.name?.toLowerCase().includes(lowerSearch) ||
-                         rider?.team?.name?.toLowerCase().includes(lowerSearch) ||
-                         rider?.team?.nameID?.split('-')[0]?.toLowerCase().includes(lowerSearch) ||
-                         rider?.team?.nameID?.split('-')[1]?.toLowerCase().includes(lowerSearch) ||
+                return !!(normalizeString(rider?.name || '').includes(normalizedSearch) ||
+                         normalizeString(rider?.team?.name || '').includes(normalizedSearch) ||
                          rider?.country?.toLowerCase().includes(lowerSearch));
             }}
             isEqual={(r1, r2) => r1.name === r2.name && r1.rank === r2.rank}
