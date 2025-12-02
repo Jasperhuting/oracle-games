@@ -89,6 +89,35 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [showPlayerCard, setShowPlayerCard] = useState(true);
   const [myTeamView, setMyTeamView] = useState('list');
   const [isSticky, setIsSticky] = useState(false);
+  const [showBanner, setShowBanner] = useState(true);
+
+useEffect(() => {
+  const checkBannerCookie = () => {
+    // Clear any localStorage value (legacy)
+    if (typeof window !== 'undefined' && localStorage.getItem('hide-beta-banner') !== null) {
+      localStorage.removeItem('hide-beta-banner');
+    }
+
+    const cookies = document.cookie.split('; ');
+    const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
+
+    if (hideBannerCookie) {
+      // Extract the value after 'hide-beta-banner='
+      const value = hideBannerCookie.split('=')[1];
+      setShowBanner(value !== 'true');
+    } else {
+      setShowBanner(true);
+    }
+  };
+
+  // Check initially
+  checkBannerCookie();
+
+  // Poll for cookie changes (since cookies don't trigger events)
+  const interval = setInterval(checkBannerCookie, 100);
+
+  return () => clearInterval(interval);
+}, []);
 
   const { ref, inView } = useInView({
     /* Optional options */
@@ -562,7 +591,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const maxRiderPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className={`min-h-screen bg-gray-50 relative ${showBanner ? 'mt-[36px]' : 'mt-0'} `}>
       <div className="bg-white border-b border-gray-200 z-10 px-8">
         <div className="container mx-auto py-4">
           <div className="flex justify-between items-center">
@@ -584,7 +613,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           </div>
         </div>
       </div>
-      <div className={`sticky top-[86px] z-20 transition-shadow duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}>
+      
+      <div className={`sticky ${showBanner ? 'top-[121px]' : 'top-[86px]'} z-20 transition-all duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}>
         {/* Stats Bar */}
         <div className="bg-white border-b border-gray-200 z-10 px-8">
           <div className="container mx-auto py-3">

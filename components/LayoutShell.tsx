@@ -15,12 +15,26 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
     // Check if user has previously hidden the banner
     useEffect(() => {
-        const cookies = document.cookie.split('; ');
-        const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
+        const checkBannerCookie = () => {
+            const cookies = document.cookie.split('; ');
+            const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
 
-        if (hideBannerCookie) {
-            setShowBanner(false);
-        }
+            if (hideBannerCookie) {
+                // Extract the value after 'hide-beta-banner='
+                const value = hideBannerCookie.split('=')[1];
+                setShowBanner(value !== 'true');
+            } else {
+                setShowBanner(true);
+            }
+        };
+
+        // Check initially
+        checkBannerCookie();
+
+        // Poll for cookie changes (since cookies don't trigger events)
+        const interval = setInterval(checkBannerCookie, 100);
+
+        return () => clearInterval(interval);
     }, []);
 
 
