@@ -24,17 +24,24 @@ export const LoginForm = () => {
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [stayLoggedIn, setStayLoggedIn] = useState(true);
     const router = useRouter();
 
     const onSubmit: SubmitHandler<LoginFormProps> = async (data) => {
         if (isSubmitting) return;
-        
+
         setIsSubmitting(true);
         setError(null);
 
         try {
-            const { signInWithEmailAndPassword } = await import ("firebase/auth");
+            const { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } = await import ("firebase/auth");
             const { auth } = await import ("@/lib/firebase/client");
+
+            // Set persistence based on "Stay logged in" checkbox
+            const persistenceMode = stayLoggedIn ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistenceMode);
+            console.log('Firebase persistence set to:', stayLoggedIn ? 'LOCAL (stays logged in)' : 'SESSION (logs out when browser closes)');
+
             // Sign in with Firebase Auth
             const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
             const user = userCredential.user;
@@ -94,8 +101,14 @@ export const LoginForm = () => {
         setError(null);
 
         try {
-            const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+            const { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, browserSessionPersistence } = await import("firebase/auth");
             const { auth } = await import("@/lib/firebase/client");
+
+            // Set persistence based on "Stay logged in" checkbox
+            const persistenceMode = stayLoggedIn ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistenceMode);
+            console.log('Firebase persistence set to:', stayLoggedIn ? 'LOCAL (stays logged in)' : 'SESSION (logs out when browser closes)');
+
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
@@ -175,14 +188,25 @@ export const LoginForm = () => {
                     />
                 </div>
                 {error && <span className="text-red-500 text-xs my-2">{error}</span>}
-                <div className="text-xs self-end my-2">
-                    <Link href="/reset-password" className="underline">Forgot password?</Link>
+                <div className="flex justify-between items-center my-2">
+                    <label className="flex items-center text-xs cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={stayLoggedIn}
+                            onChange={(e) => setStayLoggedIn(e.target.checked)}
+                            className="mr-2 cursor-pointer"
+                        />
+                        Stay logged in
+                    </label>
+                    <div className="text-xs">
+                        <Link href="/reset-password" className="underline">Forgot password?</Link>
+                    </div>
                 </div>
-                <Button 
-                    className="w-full justify-center py-1 my-4" 
-                    text={isSubmitting ? "Loading..." : "Log in"} 
-                    type="submit" 
-                    disabled={isSubmitting} 
+                <Button
+                    className="w-full justify-center py-1 my-4"
+                    text={isSubmitting ? "Loading..." : "Log in"}
+                    type="submit"
+                    disabled={isSubmitting}
                 />
             </form>
 
