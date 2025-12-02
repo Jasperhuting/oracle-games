@@ -7,6 +7,7 @@ import { TeamSelector } from "./TeamSelector";
 import { Team } from "@/lib/scraper/types";
 import { Flag } from "./Flag";
 import process from "process";
+import { normalizeString } from "@/lib/utils/stringUtils";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -169,10 +170,12 @@ export const RidersManagementTab = () => {
 
 
   const filteredRiders = riders.filter(rider => {
-    // Search filter
-    const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rider.team?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rider.country?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Search filter with normalization
+    const normalizedSearch = normalizeString(searchTerm);
+    const lowerSearch = searchTerm.toLowerCase();
+    const matchesSearch = normalizeString(rider.name).includes(normalizedSearch) ||
+      normalizeString(rider.team || '').includes(normalizedSearch) ||
+      rider.country?.toLowerCase().includes(lowerSearch);
 
     // Team filter
     const matchesTeamFilter = !showOnlyWithoutTeam || !rider.team || rider.team === '';
