@@ -28,8 +28,13 @@ export const RiderSelector = ({
             getItemLabel={(rider) => rider.name || ''}
             searchFilter={(rider, searchTerm) => {
                 const lowerSearch = searchTerm.toLowerCase();
+                console.log('hier?', rider?.team?.nameID?.split('-')[0]?.toLowerCase());
+
+
                 return !!(rider?.name?.toLowerCase().includes(lowerSearch) ||
                          rider?.team?.name?.toLowerCase().includes(lowerSearch) ||
+                         rider?.team?.nameID?.split('-')[0]?.toLowerCase().includes(lowerSearch) ||
+                         rider?.team?.nameID?.split('-')[1]?.toLowerCase().includes(lowerSearch) ||
                          rider?.country?.toLowerCase().includes(lowerSearch));
             }}
             isEqual={(r1, r2) => r1.name === r2.name && r1.rank === r2.rank}

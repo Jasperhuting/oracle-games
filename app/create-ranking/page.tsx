@@ -561,9 +561,27 @@ export default function CreateRankingPage() {
           body: JSON.stringify({ year: YEAR, offset: currentOffset }),
         });
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Error response for offset ${currentOffset} (${response.status}):`, errorText);
+          throw new Error(`API returned ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log(`Successfully processed offset ${currentOffset}:`, data.result?.riders?.length || 0, 'riders');
+
+        // Add delay between requests to avoid rate limiting (2 seconds)
+        if (i < offsetOptions.length - 1) {
+          console.log(`Waiting 2 seconds before next request to avoid rate limiting...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       } catch (error) {
         console.error(`Error creating rankings for offset ${currentOffset}:`, error);
+        // Wait longer after an error (5 seconds) before retrying next offset
+        if (i < offsetOptions.length - 1) {
+          console.log(`Error occurred, waiting 5 seconds before next request...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
       }
     }
 

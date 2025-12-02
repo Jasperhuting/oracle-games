@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import { Rider } from "@/lib/scraper/types";
 import { PlayerRow } from "./PlayerRow";
+import { normalizeString } from "@/lib/utils/stringUtils";
 
 interface TeamGroup {
   teamName: string;
@@ -64,19 +65,23 @@ export const TeamGroupedRiderSelector = ({
   const filteredTeamGroups = useMemo(() => {
     if (!debouncedSearchTerm) return teamGroups;
 
+    const normalizedSearch = normalizeString(debouncedSearchTerm);
     const lowerSearch = debouncedSearchTerm.toLowerCase();
+
     return teamGroups
       .map(group => ({
         ...group,
-        riders: group.riders.filter(rider =>
-          rider.name?.toLowerCase().includes(lowerSearch) ||
-          rider.team?.name?.toLowerCase().includes(lowerSearch) ||
-          rider.country?.toLowerCase().includes(lowerSearch)
-        ),
+        riders: group.riders.filter(rider => {
+          return (
+            normalizeString(rider.name || '').includes(normalizedSearch) ||
+            normalizeString(rider.team?.name || '').includes(normalizedSearch) ||
+            rider.country?.toLowerCase().includes(lowerSearch)
+          )
+        }),
       }))
       .filter(group =>
         group.riders.length > 0 ||
-        group.teamName.toLowerCase().includes(lowerSearch)
+        normalizeString(group.teamName).includes(normalizedSearch)
       );
   }, [teamGroups, debouncedSearchTerm]);
 
@@ -209,9 +214,6 @@ export const TeamGroupedRiderSelector = ({
             filteredTeamGroups.map((group, groupIndex) => {
               const teamState = getTeamState(group);
               const isExpanded = expandedTeams.has(group.teamId);
-
-              console.log('group', group);
-
 
               return (
                 <div
