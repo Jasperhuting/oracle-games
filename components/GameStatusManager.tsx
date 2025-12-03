@@ -158,6 +158,25 @@ export const GameStatusManager = ({
           </div>,
           document.body
         )}
+
+        {/* Status Change Confirmation Dialog for compact mode */}
+        <ConfirmDialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleStatusChange}
+          title="Change Game Status"
+          description={
+            pendingStatus ? (
+              <>
+                <p>Are you sure you want to change the game status from <strong>"{STATUS_LABELS[currentStatus]}"</strong> to <strong>"{STATUS_LABELS[pendingStatus]}"</strong>?</p>
+                <p className="mt-2 text-sm text-gray-600">This will affect player access and game functionality.</p>
+              </>
+            ) : ''
+          }
+          confirmText="Change Status"
+          cancelText="Cancel"
+          variant="primary"
+        />
       </>
     );
   }

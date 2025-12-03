@@ -464,23 +464,21 @@ export const GamesManagementTab = () => {
                               {finalizingGameId === game.id ? '...' : 'Finalize'}
                             </Button>
                           )}
+                          <Button
+                            onClick={() => handleManageDivisions(game.id)}
+                            variant="primary"
+                            ghost
+                          >
+                            Assign Players
+                          </Button>
                           {group.hasDivisions && (
-                            <>
-                              <Button
-                                onClick={() => handleManageDivisions(game.id)}
-                                variant="primary"
-                                ghost
-                              >
-                                Assign Players
-                              </Button>
-                              <Button
-                                onClick={() => handleManageDivisionGames(group.games)}
-                                variant="secondary"
-                                ghost
-                              >
-                                Manage Divisions
-                              </Button>
-                            </>
+                            <Button
+                              onClick={() => handleManageDivisionGames(group.games)}
+                              variant="secondary"
+                              ghost
+                            >
+                              Manage Divisions
+                            </Button>
                           )}
                           {!group.hasDivisions && (
                             <Button
