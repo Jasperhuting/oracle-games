@@ -31,6 +31,14 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
             <div className="flex flex-col gap-2 text-[#969696] font-medium">
                 {!hideInfo && <div className="flex flex-row gap-2 justify-between mt-2">
                     <span className="font-medium text-gray-700">
+                        Rank:
+                    </span>
+                    <span>
+                        {player.rank}
+                    </span>
+                </div>}
+                {!hideInfo && <div className="flex flex-row gap-2 justify-between">
+                    <span className="font-medium text-gray-700">
                         Age:
                     </span>
                     <span>

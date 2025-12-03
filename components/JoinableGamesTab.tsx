@@ -274,7 +274,7 @@ export const JoinableGamesTab = () => {
 
     if (openDate && openDate > now) return false;
     if (closeDate && closeDate < now) return false;
-    return game.status === 'registration' || game.status === 'draft';
+    return game.status === 'registration' || game.status === 'draft' || game.status === 'active';
   };
 
   const canJoin = (game: Game) => {

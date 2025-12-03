@@ -42,7 +42,7 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game is accepting registrations
-    if (gameData?.status !== 'registration' && gameData?.status !== 'draft') {
+    if (gameData?.status !== 'registration' && gameData?.status !== 'draft' && gameData?.status !== 'active') {
       return NextResponse.json(
         { error: 'Game is not accepting registrations' },
         { status: 400 }

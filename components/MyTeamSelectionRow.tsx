@@ -23,12 +23,12 @@ export const MyTeamSelectionRow = ({ rider, removeItem, showStage, stageText, re
             </div>
 
             <div className="flex flex-row items-center gap-4">
-                {/* Show bid and cost information for auction games */}
+                {/* Show bid and cost information for auction games (without revealing outbid status live) */}
                 {rider.myBid !== undefined && (
                     <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500">Bid:</span>
-                            <span className={`font-bold text-sm ${rider.myBidStatus === 'outbid' ? 'text-red-600' : 'text-green-600'}`}>
+                            <span className="font-bold text-sm text-green-600">
                                 {formatCurrency(rider.myBid)}
                             </span>
                         </div>
@@ -43,9 +43,6 @@ export const MyTeamSelectionRow = ({ rider, removeItem, showStage, stageText, re
                                 )}
                             </span>
                         </div>
-                        {rider.myBidStatus === 'outbid' && (
-                            <span className="text-xs text-red-600 font-medium">Outbid!</span>
-                        )}
                     </div>
                 )}
 

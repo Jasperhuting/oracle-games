@@ -807,8 +807,8 @@ useEffect(() => {
               <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
                 <h1 className="text-2xl font-bold mt-1">My Bids</h1>
                 <span className="flex flex-row gap-2">
-                  <Button ghost onClick={() => setMyTeamView('list')}><span className="flex flex-row gap-2 items-center"><List />Listview</span></Button>
-                  <Button ghost onClick={() => setMyTeamView('card')}><span className="flex flex-row gap-2 items-center"><GridDots />Cardview</span></Button>
+                  <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+                  <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
                 </span>
               </div>
 
@@ -817,14 +817,12 @@ useEffect(() => {
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
                 {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
-                  const isLost = myBidRider.status === 'lost' || myBidRider.status === 'outbid';
 
                   return rider ? (
                     <div key={myBidRider.id}>
                       <PlayerCard
                         showBid={true}
-                        className={`border-2 rounded-md ${isLost ? 'border-red-300 bg-red-50 opacity-60' : 'border-gray-200'
-                          }`}
+                        className="border-2 rounded-md border-gray-200"
                         hideInfo={true}
                         bid={rider?.myBid || myBidRider.amount || 0}
                         player={rider}
@@ -832,12 +830,7 @@ useEffect(() => {
                         selected={false}
                         buttonContainer={
                           <>
-                            {isLost && (
-                              <div className="w-full text-center py-2 text-red-600 font-medium text-sm">
-                                Lost
-                              </div>
-                            )}
-                            {!isLost && rider && (
+                            {rider && (
                               <Button
                                 type="button"
                                 text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
