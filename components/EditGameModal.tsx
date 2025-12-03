@@ -414,7 +414,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                                   className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary"
                                 />
                                 <span className="text-sm text-gray-700">
-                                  Alleen top 200 renners (gebruikers kunnen alleen bieden op renners in top 200)
+                                  Only top 200 riders (users can only bid on riders in top 200)
                                 </span>
                               </label>
                             </div>
