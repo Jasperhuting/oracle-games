@@ -44,7 +44,7 @@ const ProfileMenuButton = ({ user, loading, pathname }: { user: any, loading: bo
         <MenuItem className="bg-white! hover:bg-white!" render={<MenuButton />}>
             {user?.displayName || user?.email ? (
                 loading ? '...loading' : (
-                    <span className="flex items-center gap-2 cursor-pointer hover:[text-shadow:0_0_0.4px_currentColor]">
+                    <span className="flex items-center gap-2 cursor-pointer whitespace-nowrap hover:[text-shadow:0_0_0.4px_currentColor]">
                         {user?.displayName || user?.email || 'Account'}
                         <ChevronDown
                             className={`transition-transform duration-400 ${isOpen ? 'rotate-180' : 'rotate-0'}`}

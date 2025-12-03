@@ -11,6 +11,7 @@ import { GamesManagementTab } from "@/components/GamesManagementTab";
 import { RidersManagementTab } from "@/components/RidersManagementTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
 import { FeedbackTab } from "@/components/FeedbackTab";
+import { PageEditor } from "@/components/PageEditor";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -121,6 +122,11 @@ export default function AdminPage() {
                             id: 'game-rules',
                             label: 'Game Rules',
                             content: <GameRulesTab />
+                        },
+                        {
+                            id: 'pages-editor',
+                            label: 'pages editor',
+                            content: <PageEditor />
                         },
                         {
                             id: 'feedback',
