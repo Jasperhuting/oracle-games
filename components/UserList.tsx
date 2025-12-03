@@ -24,6 +24,8 @@ interface User {
   blocked?: boolean;
   blockedAt?: string;
   blockedBy?: string;
+  deletedAt?: string;
+  deletedBy?: string;
 }
 
 export const UserList = () => {
@@ -33,9 +35,10 @@ export const UserList = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
+  const [showDeleted, setShowDeleted] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [blockingUserId, setBlockingUserId] = useState<string | null>(null);
   const [changingUserTypeId, setChangingUserTypeId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ email: string; name: string } | null>(null);
 
@@ -97,12 +100,12 @@ export const UserList = () => {
     return () => unsubscribe();
   }, [user, isAdmin]);
 
-  const blockUser = async (userId: string) => {
-    if (!user || !confirm('Weet je zeker dat je deze gebruiker wilt blokkeren?')) return;
+  const deleteUser = async (userId: string) => {
+    if (!user || !confirm('Weet je zeker dat je deze gebruiker wilt verwijderen? De gebruiker wordt gemarkeerd als verwijderd maar niet permanent gewist.')) return;
 
-    setBlockingUserId(userId);
+    setDeletingUserId(userId);
     try {
-      const response = await fetch('/api/blockUser', {
+      const response = await fetch('/api/deleteUser', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,30 +113,30 @@ export const UserList = () => {
         body: JSON.stringify({
           adminUserId: user.uid,
           targetUserId: userId,
-          block: true,
+          deleteUser: true,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon gebruiker niet blokkeren');
+        throw new Error(errorData.error || 'Kon gebruiker niet verwijderen');
       }
 
       // Success - the realtime listener will update the UI automatically
     } catch (error: any) {
-      console.error('Error blocking user:', error);
-      alert(error.message || 'Er is iets misgegaan bij het blokkeren');
+      console.error('Error deleting user:', error);
+      alert(error.message || 'Er is iets misgegaan bij het verwijderen');
     } finally {
-      setBlockingUserId(null);
+      setDeletingUserId(null);
     }
   };
 
-  const unblockUser = async (userId: string) => {
-    if (!user || !confirm('Weet je zeker dat je deze gebruiker wilt deblokkeren?')) return;
+  const restoreUser = async (userId: string) => {
+    if (!user || !confirm('Weet je zeker dat je deze gebruiker wilt herstellen?')) return;
 
-    setBlockingUserId(userId);
+    setDeletingUserId(userId);
     try {
-      const response = await fetch('/api/blockUser', {
+      const response = await fetch('/api/deleteUser', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,21 +144,21 @@ export const UserList = () => {
         body: JSON.stringify({
           adminUserId: user.uid,
           targetUserId: userId,
-          block: false,
+          deleteUser: false,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon gebruiker niet deblokkeren');
+        throw new Error(errorData.error || 'Kon gebruiker niet herstellen');
       }
 
       // Success - the realtime listener will update the UI automatically
     } catch (error: any) {
-      console.error('Error unblocking user:', error);
-      alert(error.message || 'Er is iets misgegaan bij het deblokkeren');
+      console.error('Error restoring user:', error);
+      alert(error.message || 'Er is iets misgegaan bij het herstellen');
     } finally {
-      setBlockingUserId(null);
+      setDeletingUserId(null);
     }
   };
 
@@ -210,7 +213,7 @@ export const UserList = () => {
 
   // Filter users based on search term and type
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
+    const matchesSearch =
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.playername.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -218,7 +221,9 @@ export const UserList = () => {
 
     const matchesType = filterType === "all" || user.userType === filterType;
 
-    return matchesSearch && matchesType;
+    const matchesDeletedFilter = showDeleted || !user.deletedAt;
+
+    return matchesSearch && matchesType && matchesDeletedFilter;
   });
 
   const formatDate = (dateString: string) => {
@@ -263,7 +268,16 @@ export const UserList = () => {
               {filteredUsers.length} van {users.length} gebruikers
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showDeleted}
+                onChange={(e) => setShowDeleted(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              Toon verwijderde gebruikers
+            </label>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
@@ -326,16 +340,16 @@ export const UserList = () => {
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.uid} className={`hover:bg-gray-50 transition-colors ${user.blocked ? 'bg-red-50' : ''}`}>
+                  <tr key={user.uid} className={`hover:bg-gray-50 transition-colors ${user.deletedAt ? 'bg-gray-100 opacity-60' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <div className="flex flex-col items-start gap-2">
                           <div className="text-sm font-medium text-gray-900">
                             <Link href={`/user/${user.uid}`}>{user.playername}</Link>
                           </div>
-                          {user.blocked && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                              Geblokkeerd
+                          {user.deletedAt && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-500 text-white">
+                              Verwijderd
                             </span>
                           )}
                         </div>
@@ -391,26 +405,19 @@ export const UserList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex gap-2">
-                        {/* <button
-                          onClick={() => openEmailModal(user.email, user.playername)}
-                          className="py-1 px-3 text-sm text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 rounded transition-colors"
-                          title="Stuur email"
-                        >
-                          Email
-                        </button> */}
-                        {user.blocked ? (
+                        {user.deletedAt ? (
                           <Button
                             className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700"
-                            text={blockingUserId === user.uid ? "busy..." : "Deblock"}
-                            onClick={() => unblockUser(user.uid)}
-                            disabled={blockingUserId === user.uid}
+                            text={deletingUserId === user.uid ? "busy..." : "Restore"}
+                            onClick={() => restoreUser(user.uid)}
+                            disabled={deletingUserId === user.uid}
                           />
                         ) : (
                           <Button
-                            className="py-1 px-3 text-sm "
-                            text={blockingUserId === user.uid ? "busy..." : "Block"}
-                            onClick={() => blockUser(user.uid)}
-                            disabled={blockingUserId === user.uid}
+                            className="py-1 px-3 text-sm bg-gray-600 hover:bg-gray-700"
+                            text={deletingUserId === user.uid ? "busy..." : "Delete"}
+                            onClick={() => deleteUser(user.uid)}
+                            disabled={deletingUserId === user.uid}
                           />
                         )}
                       </div>
@@ -424,7 +431,7 @@ export const UserList = () => {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-sm text-gray-600">Totaal Gebruikers</div>
           <div className="text-2xl font-bold text-gray-900">{users.length}</div>
@@ -439,6 +446,12 @@ export const UserList = () => {
           <div className="text-sm text-gray-600">Reguliere Gebruikers</div>
           <div className="text-2xl font-bold text-blue-600">
             {users.filter(u => u.userType === 'user').length}
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-sm text-gray-600">Verwijderde Gebruikers</div>
+          <div className="text-2xl font-bold text-gray-600">
+            {users.filter(u => u.deletedAt).length}
           </div>
         </div>
       </div>

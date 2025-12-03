@@ -4,9 +4,9 @@ import { getAuth } from 'firebase-admin/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const { adminUserId, targetUserId, block } = await request.json();
+    const { adminUserId, targetUserId, deleteUser } = await request.json();
 
-    if (!adminUserId || !targetUserId || block === undefined) {
+    if (!adminUserId || !targetUserId || deleteUser === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -33,32 +33,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prevent admins from blocking themselves
+    // Prevent admins from deleting themselves
     if (adminUserId === targetUserId) {
       return NextResponse.json(
-        { error: 'Je kunt jezelf niet blokkeren' },
+        { error: 'Je kunt jezelf niet verwijderen' },
         { status: 400 }
       );
     }
 
-    // Prevent blocking other admins
+    // Prevent deleting other admins
     if (targetUserDoc.data()?.userType === 'admin') {
       return NextResponse.json(
-        { error: 'Je kunt geen andere admins blokkeren' },
+        { error: 'Je kunt geen andere admins verwijderen' },
         { status: 400 }
       );
     }
 
-    // Update user's blocked status
+    // Update user's deleted status
     const updateData: Record<string, unknown> = {
-      blocked: block,
       updatedAt: new Date().toISOString(),
     };
 
-    if (block) {
-      updateData.blockedAt = new Date().toISOString();
-      updateData.blockedBy = adminUserId;
-      
+    if (deleteUser) {
+      updateData.deletedAt = new Date().toISOString();
+      updateData.deletedBy = adminUserId;
+
       // Also disable the user in Firebase Auth
       try {
         const auth = getAuth();
@@ -70,19 +69,22 @@ export async function POST(request: NextRequest) {
         // Continue anyway - Firestore update is more important
       }
     } else {
-      // Remove blocked fields when unblocking
-      updateData.blockedAt = null;
-      updateData.blockedBy = null;
-      
-      // Re-enable the user in Firebase Auth
-      try {
-        const auth = getAuth();
-        await auth.updateUser(targetUserId, {
-          disabled: false,
-        });
-      } catch (authError) {
-        console.error('Error enabling user in Firebase Auth:', authError);
-        // Continue anyway - Firestore update is more important
+      // Remove deleted fields when restoring
+      updateData.deletedAt = null;
+      updateData.deletedBy = null;
+
+      // Re-enable the user in Firebase Auth (only if not blocked)
+      const targetData = targetUserDoc.data();
+      if (!targetData?.blocked) {
+        try {
+          const auth = getAuth();
+          await auth.updateUser(targetUserId, {
+            disabled: false,
+          });
+        } catch (authError) {
+          console.error('Error enabling user in Firebase Auth:', authError);
+          // Continue anyway - Firestore update is more important
+        }
       }
     }
 
@@ -91,9 +93,9 @@ export async function POST(request: NextRequest) {
     // Log the activity
     const adminData = adminDoc.data();
     const targetData = targetUserDoc.data();
-    
+
     await db.collection('activityLogs').add({
-      action: block ? 'USER_BLOCKED' : 'USER_UNBLOCKED',
+      action: deleteUser ? 'USER_DELETED' : 'USER_RESTORED',
       userId: adminUserId,
       userEmail: adminData?.email,
       userName: adminData?.playername || adminData?.email,
@@ -101,19 +103,19 @@ export async function POST(request: NextRequest) {
       targetUserEmail: targetData?.email,
       targetUserName: targetData?.playername || targetData?.email,
       details: {
-        reason: block ? 'Admin blocked user' : 'Admin unblocked user',
+        reason: deleteUser ? 'Admin soft-deleted user' : 'Admin restored deleted user',
       },
       timestamp: new Date().toISOString(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: block ? 'User blocked successfully' : 'User unblocked successfully'
+      message: deleteUser ? 'User deleted successfully' : 'User restored successfully'
     });
   } catch (error) {
-    console.error('Error blocking/unblocking user:', error);
+    console.error('Error deleting/restoring user:', error);
     return NextResponse.json(
       { error: 'Failed to update user status', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
