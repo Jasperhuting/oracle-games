@@ -1,4 +1,4 @@
-import { getTeamsRanked } from "@/lib/scraper/getTeamsRanked";
+import { getTeamsRankedPuppeteer } from "@/lib/scraper/getTeamsRankedPuppeteer";
 import { getServerFirebase } from "@/lib/firebase/server";
 import type { NextRequest } from "next/server";
 import { toSlug } from "@/lib/firebase/utils";
@@ -6,7 +6,7 @@ import { toSlug } from "@/lib/firebase/utils";
 export async function POST(request: NextRequest) {
     const { year } = await request.json();
 
-    const result = await getTeamsRanked({ year: Number(year) });
+    const result = await getTeamsRankedPuppeteer({ year: Number(year) });
     const db = getServerFirebase();
 
     try {
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
           country: team.country,
           points: team.points,
           slug: teamSlug,
+          pcsRank: team.rank,
         }, { merge: true });
       }
     } catch (error) {

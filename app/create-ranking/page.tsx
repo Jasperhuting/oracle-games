@@ -15,6 +15,7 @@ import countriesList from '@/lib/country.json';
 import toast from "react-hot-toast";
 import process from "process";
 import { useStreamGroup } from "@motiadev/stream-client-react";
+import Link from "next/link";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -150,35 +151,71 @@ export default function CreateRankingPage() {
 
 
   const getEnrichedRiders = async () => {
+    console.log(`Starting to enrich riders for ${teamsArray.length} teams...`);
 
-    teamsArray.forEach(async (team: any) => {
-
+    for (let i = 0; i < teamsArray.length; i++) {
+      const team: any = teamsArray[i];
       let teamSlug = team.slug;
 
       if (teamSlug === 'q365-pro-cycing-team-2025') {
         teamSlug = 'q365-pro-cycling-team-2025'
       }
 
-      const response = await fetch(`/api/setEnrichedRiders?year=${YEAR}&team=${teamSlug}`);
-      const data = await response.json();
-    })
+      try {
+        console.log(`[${i + 1}/${teamsArray.length}] Enriching riders for team: ${teamSlug}`);
+        const response = await fetch(`/api/setEnrichedRiders?year=${YEAR}&team=${teamSlug}`);
+        const data = await response.json();
 
+        if (!response.ok) {
+          console.error(`Failed to enrich riders for ${teamSlug}:`, data);
+        } else {
+          console.log(`✓ Successfully enriched riders for ${teamSlug}`);
+        }
+
+        // Add delay between requests to avoid overwhelming the server
+        if (i < teamsArray.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`Error enriching riders for ${teamSlug}:`, error);
+      }
+    }
+
+    console.log('Finished enriching riders for all teams!');
   };
 
   const getEnrichedTeams = async () => {
+    console.log(`Starting to enrich teams for ${teamsArray.length} teams...`);
 
-    teamsArray.forEach(async (team: any) => {
-
+    for (let i = 0; i < teamsArray.length; i++) {
+      const team: any = teamsArray[i];
       let teamSlug = team.slug;
 
       if (teamSlug === 'q365-pro-cycing-team-2025') {
         teamSlug = 'q365-pro-cycling-team-2025'
       }
 
-      const response = await fetch(`/api/setEnrichedTeams?year=${YEAR}&team=${teamSlug}`);
-      const data = await response.json();
-    })
+      try {
+        console.log(`[${i + 1}/${teamsArray.length}] Enriching team: ${teamSlug}`);
+        const response = await fetch(`/api/setEnrichedTeams?year=${YEAR}&team=${teamSlug}`);
+        const data = await response.json();
 
+        if (!response.ok) {
+          console.error(`Failed to enrich team ${teamSlug}:`, data);
+        } else {
+          console.log(`✓ Successfully enriched team ${teamSlug}`);
+        }
+
+        // Add delay between requests to avoid overwhelming the server
+        if (i < teamsArray.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`Error enriching team ${teamSlug}:`, error);
+      }
+    }
+
+    console.log('Finished enriching teams!');
   };
 
   const [progress, setProgress] = useState({ current: 0, total: 0, isRunning: false });
@@ -888,7 +925,9 @@ export default function CreateRankingPage() {
                               </span>
                             )}
                           </div>}
-                          <div title={team.name} className="whitespace-nowrap max-w-[300px] overflow-hidden text-ellipsis">{team.name}</div>
+                          <div title={team.name} className="whitespace-nowrap max-w-[300px] overflow-hidden text-ellipsis">
+                            <Link href={`https://www.procyclingstats.com/team/${team.id}`}>{team.name}</Link>
+                          </div>
                           {viewPoints && <div>{team.points}</div>}
                           {viewCountry && <div>{team?.country && <div
                             onClick={() => {

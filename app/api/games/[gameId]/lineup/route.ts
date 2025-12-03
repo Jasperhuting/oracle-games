@@ -76,8 +76,15 @@ export async function GET(
       points: doc.data().points || 0,
     }));
 
-    // Fetch ALL available riders from rankings_{year}
-    const allRidersSnapshot = await db.collection(`rankings_${year}`).orderBy('rank').get();
+    // Fetch available riders from rankings_{year} (limit to top 1000 to avoid quota issues)
+    const allRidersSnapshot = await db.collection(`rankings_${year}`)
+      .orderBy('rank')
+      .limit(1000)
+      .get();
+
+    // Cache team data to avoid duplicate reads
+    const teamCache = new Map<string, any>();
+
     const allRiders = await Promise.all(
       allRidersSnapshot.docs
         .filter(doc => {
@@ -90,12 +97,24 @@ export async function GET(
           let teamData = null;
 
           if (data.team) {
-            if (typeof data.team.get === 'function') {
-              const teamDoc = await data.team.get();
-              teamData = teamDoc.exists ? teamDoc.data() : null;
+            let teamPath: string | null = null;
+
+            if (typeof data.team.get === 'function' && data.team.path) {
+              teamPath = data.team.path;
             } else if (data.team.path) {
-              const teamDoc = await db.doc(data.team.path).get();
-              teamData = teamDoc.exists ? teamDoc.data() : null;
+              teamPath = data.team.path;
+            }
+
+            if (teamPath) {
+              // Check cache first
+              if (teamCache.has(teamPath)) {
+                teamData = teamCache.get(teamPath);
+              } else {
+                // Fetch and cache
+                const teamDoc = await db.doc(teamPath).get();
+                teamData = teamDoc.exists ? teamDoc.data() : null;
+                teamCache.set(teamPath, teamData);
+              }
             }
           }
 
@@ -113,11 +132,24 @@ export async function GET(
         })
     );
 
-    // Fetch CURRENT riders in the race lineup (only if raceSlug exists)
+    // Fetch CURRENT riders in the race lineup
     const currentRiderIds = new Set<string>();
     const currentTeamIds = new Set<string>();
 
-    if (raceSlug) {
+    if (raceType === 'season') {
+      // For season games, load from eligibleRiders and eligibleTeams in the game document
+      const eligibleRiders = gameData?.eligibleRiders || [];
+      const eligibleTeams = gameData?.eligibleTeams || [];
+
+      eligibleRiders.forEach((riderId: string) => {
+        currentRiderIds.add(riderId);
+      });
+
+      eligibleTeams.forEach((teamId: string) => {
+        currentTeamIds.add(teamId);
+      });
+    } else if (raceSlug) {
+      // For race games, load from the race collection
       const raceRidersSnapshot = await db.collection(raceSlug).get();
 
       raceRidersSnapshot.forEach((doc) => {

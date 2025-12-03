@@ -225,19 +225,32 @@ useEffect(() => {
   };
 
   const handleSelectAllRiders = () => {
-    setSelectedRiders(allRiders);
+    // Select all riders from the filtered list (respecting team and class filters)
+    setSelectedRiders(filteredRiders);
   };
 
-  // Filter riders based on selected classes
+  // Filter riders based on selected classes and teams
   const filteredRiders = useMemo(() => {
-    if (selectedClasses.length === 0) {
-      return allRiders;
-    }
-    return allRiders.filter(rider => {
+    let filtered = allRiders;
 
-      return selectedClasses.includes(rider.team?.class || '')
-    });
-  }, [allRiders, selectedClasses]);
+    // Filter by selected teams (if any teams are selected)
+    if (selectedTeams.length > 0) {
+      const selectedTeamIds = new Set(selectedTeams.map(t => t.id || t.slug));
+      filtered = filtered.filter(rider => {
+        const riderTeamId = rider.team?.slug || rider.team?.nameID || '';
+        return selectedTeamIds.has(riderTeamId);
+      });
+    }
+
+    // Filter by selected classes (if any classes are selected)
+    if (selectedClasses.length > 0) {
+      filtered = filtered.filter(rider => {
+        return selectedClasses.includes(rider.team?.class || '');
+      });
+    }
+
+    return filtered;
+  }, [allRiders, selectedClasses, selectedTeams]);
 
   if (authLoading || loading) {
     return (
@@ -309,15 +322,24 @@ useEffect(() => {
                 {raceType === 'season' && (
                   <Button
                     type="button"
-                    text="Select All Riders"
+                    text={
+                      selectedTeams.length > 0 || selectedClasses.length > 0
+                        ? `Select All Filtered Riders (${filteredRiders.length})`
+                        : "Select All Riders"
+                    }
                     onClick={handleSelectAllRiders}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 text-sm"
                   />
                 )}
               </div>
               <p className="text-sm text-gray-600 mb-3">
-                Select teams to add all riders, or select individual riders. Teams with partial selection show an indeterminate checkbox.
-                {raceType === 'season' && ' For season games, you can also select all riders at once.'}
+                {selectedTeams.length > 0 ? (
+                  <>Showing riders from {selectedTeams.length} selected team{selectedTeams.length > 1 ? 's' : ''}. Go to the Teams tab to change team selection.</>
+                ) : (
+                  <>No teams selected - showing all riders. Use the Teams tab to filter riders by team.</>
+                )}
+                {selectedClasses.length > 0 && ` Filtered by ${selectedClasses.length} class${selectedClasses.length > 1 ? 'es' : ''}.`}
+                {raceType === 'season' && selectedTeams.length === 0 && selectedClasses.length === 0 && ' You can select all riders at once using the button above.'}
               </p>
               <div className="flex space-x-2">
               <ClassSelector
@@ -394,9 +416,10 @@ useEffect(() => {
         {viewMode === 'teams' && (
           <div>
             <div className="mb-4 bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold mb-3">Add/Remove Teams</h3>
+              <h3 className="text-lg font-semibold mb-3">Select Teams to Filter Riders</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Search and click teams to add or remove from the race lineup. Selected teams are highlighted.
+                Select teams to filter which riders are available in the Riders tab. Only riders from selected teams will be shown.
+                If no teams are selected, all riders are available.
               </p>
               <TeamSelector
                 selectedTeams={selectedTeams}

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { enrichRiders } from "@/lib/scraper/enrichRiders";
+import { enrichRidersPuppeteer } from "@/lib/scraper/enrichRidersPuppeteer";
 import { getServerFirebase } from "@/lib/firebase/server";
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
         return Response.json({ error: 'Missing year or team parameter' }, { status: 400 });
     }
 
-    const result = await enrichRiders({ year: Number(year), team });
+    const result = await enrichRidersPuppeteer({ year: Number(year), team });
 
     const db = getServerFirebase();
 

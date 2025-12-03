@@ -4,11 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 3210",
+    "dev:staging": "dotenv -e .env.staging -- next dev --turbopack --port 3210",
+    "prod": "next dev --turbopack --port 3210",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "echo 'skipping eslint: eslint'"
   },
   "dependencies": {
+    "@ariakit/react": "^0.4.20",
     "@motiadev/stream-client-react": "^0.8.4-beta.141",
     "@tiptap/extension-link": "^3.11.1",
     "@tiptap/extension-underline": "^3.11.1",
@@ -47,6 +50,7 @@
     "@types/node": "^20",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
