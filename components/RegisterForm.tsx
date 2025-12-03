@@ -45,7 +45,6 @@ export const RegisterForm = () => {
                 userType: 'user',
                 authMethod: 'email',
             };
-            console.log('Sending payload:', payload);
             
             const response = await fetch('/api/createUser', {
                 method: 'POST',

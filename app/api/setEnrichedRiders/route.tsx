@@ -15,10 +15,6 @@ export async function GET(request: NextRequest) {
 
     const db = getServerFirebase();
 
-
-    console.log(result);
-
-
     if (result?.riders && Object.keys(result.riders).length > 0) {
         for (const rider of result.riders) {
             await db.collection(`rankings_${year}`).doc(rider.name).set({

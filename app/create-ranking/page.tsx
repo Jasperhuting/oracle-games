@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import process from "process";
 import { useStreamGroup } from "@motiadev/stream-client-react";
 import Link from "next/link";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -49,6 +50,7 @@ export default function CreateRankingPage() {
   // Filtered lists based on selected countries and players
   const [filteredRiders, setFilteredRiders] = useState<unknown[]>([]);
   const [filteredTeams, setFilteredTeams] = useState<unknown[]>([]);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   // Close editor when clicking outside
   useEffect(() => {
@@ -334,7 +336,10 @@ export default function CreateRankingPage() {
       setEditingTeamId(null);
     } catch (error) {
       console.error('Error updating team class:', error);
-      alert('Failed to update team class');
+      setInfoDialog({
+        title: 'Error',
+        description: 'Failed to update team class',
+      });
     }
   };
 
@@ -364,7 +369,10 @@ export default function CreateRankingPage() {
       setEditingRiderTeam(null);
     } catch (error) {
       console.error('Error updating rider team:', error);
-      alert('Failed to update rider team');
+      setInfoDialog({
+        title: 'Error',
+        description: 'Failed to update rider team',
+      });
     }
   };
 
@@ -951,6 +959,19 @@ export default function CreateRankingPage() {
             )}
           </div>
         </div>
+
+        {/* Info Dialog for messages previously shown with alert() */}
+        {infoDialog && (
+          <ConfirmDialog
+            open={true}
+            onClose={() => setInfoDialog(null)}
+            onConfirm={() => setInfoDialog(null)}
+            title={infoDialog.title}
+            description={infoDialog.description}
+            confirmText="OK"
+            cancelText="Close"
+          />
+        )}
       </div>
     </div>
 

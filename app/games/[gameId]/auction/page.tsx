@@ -18,6 +18,7 @@ import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
 import { GridDots, List } from "tabler-icons-react";
 import './range-slider-custom.css';
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -90,6 +91,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [myTeamView, setMyTeamView] = useState('list');
   const [isSticky, setIsSticky] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
 useEffect(() => {
   const checkBannerCookie = () => {
@@ -488,7 +490,10 @@ useEffect(() => {
       console.error('Error placing bid:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to place bid';
       setError(errorMsg);
-      alert(errorMsg);
+      setInfoDialog({
+        title: 'Error placing bid',
+        description: errorMsg,
+      });
     } finally {
       setPlacingBid(null);
     }
@@ -555,7 +560,10 @@ useEffect(() => {
       console.error('Error cancelling bid:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to cancel bid';
       setError(errorMsg);
-      alert(errorMsg);
+      setInfoDialog({
+        title: 'Error cancelling bid',
+        description: errorMsg,
+      });
     } finally {
       setCancellingBid(null);
     }
@@ -1072,6 +1080,19 @@ useEffect(() => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
       )}
     </div>
   );

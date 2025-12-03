@@ -45,6 +45,7 @@ export const GamesManagementTab = () => {
   const [finalizingGameId, setFinalizingGameId] = useState<string | null>(null);
   const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
   const [pendingFinalizeGame, setPendingFinalizeGame] = useState<{id: string; name: string} | null>(null);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   const loadGames = (async () => {
     setLoading(true);
@@ -176,14 +177,20 @@ export const GamesManagementTab = () => {
 
       const data = await response.json();
 
-      alert(`Auction finalized successfully!\n\nWinners assigned: ${data.results.winnersAssigned}\nLosers refunded: ${data.results.losersRefunded}\nTotal riders: ${data.results.totalRiders}`);
+      setInfoDialog({
+        title: 'Auction finalized',
+        description: `Winners assigned: ${data.results.winnersAssigned}\nLosers refunded: ${data.results.losersRefunded}\nTotal riders: ${data.results.totalRiders}`,
+      });
 
       // Reload games list to show updated state
       await loadGames();
     } catch (error) {
       console.error('Error finalizing auction:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to finalize auction';
-      alert(errorMsg);
+      setInfoDialog({
+        title: 'Error',
+        description: errorMsg,
+      });
     } finally {
       setFinalizingGameId(null);
     }
@@ -689,6 +696,19 @@ export const GamesManagementTab = () => {
         cancelText="Cancel"
         variant="danger"
       />
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
+      )}
     </div>
   );
 }

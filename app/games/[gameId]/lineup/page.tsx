@@ -10,6 +10,7 @@ import { ClassSelector } from "@/components/ClassSelector";
 import { Team, Rider } from "@/lib/scraper/types";
 import { Flag } from "@/components/Flag";
 import { ArrowUp } from "tabler-icons-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function LineupPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
   const [raceType, setRaceType] = useState<string>('');
 
  const [showBanner, setShowBanner] = useState(true);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
 useEffect(() => {
   const checkBannerCookie = () => {
@@ -183,9 +185,18 @@ useEffect(() => {
       const result = await response.json();
 
       if (result.gamesUpdated && result.gamesUpdated > 1) {
-        alert(`Lineup saved successfully for ${result.gamesUpdated} games sharing this race!\n\nRiders added: ${result.ridersAdded}\nRiders removed: ${result.ridersRemoved}`);
+        setInfoDialog({
+          title: 'Lineup saved',
+          description: `Lineup saved successfully for ${result.gamesUpdated} games sharing this race!
+
+Riders added: ${result.ridersAdded}
+Riders removed: ${result.ridersRemoved}`,
+        });
       } else {
-        alert('Lineup saved successfully!');
+        setInfoDialog({
+          title: 'Lineup saved',
+          description: 'Lineup saved successfully!',
+        });
       }
     } catch (error: any) {
       console.error('Error saving lineup:', error);
@@ -501,6 +512,19 @@ useEffect(() => {
           </Button>
         </div>
       </div>
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
+      )}
     </div>
   );
 }

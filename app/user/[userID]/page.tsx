@@ -11,8 +11,6 @@ export default function UserPage({ params }: { params: Promise<{ userID: string 
         
         const [_isAdmin, setIsAdmin] = useState(false);
         const [_checking, setChecking] = useState(true);
-
-        console.log(user);
     
         useEffect(() => {
             const checkAdminStatus = async () => {

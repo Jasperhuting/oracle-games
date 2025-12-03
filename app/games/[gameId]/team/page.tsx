@@ -8,6 +8,7 @@ import { PlayerSelector } from "@/components/PlayerSelector";
 import { MyTeamSelection } from "@/components/MyTeamSelection";
 import { Rider } from "@/lib/scraper/types";
 import process from "process";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -46,6 +47,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
   const [selectedRiders, setSelectedRiders] = useState<Rider[]>([]);
   const [budget, setBudget] = useState<number>(0);
   const [spentBudget, setSpentBudget] = useState<number>(0);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   useEffect(() => {
     params.then(p => setGameId(p.gameId));
@@ -160,7 +162,10 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
         throw new Error(errorData.error || 'Failed to save team');
       }
 
-      alert('Team saved successfully!');
+      setInfoDialog({
+        title: 'Team saved',
+        description: 'Team saved successfully!',
+      });
       router.push('/games');
     } catch (error) {
       console.error('Error saving team:', error);
@@ -396,6 +401,19 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
         <MyTeamSelection
           myTeamSelection={selectedRiders}
           setMyTeamSelection={setSelectedRiders}
+        />
+      )}
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
         />
       )}
     </div>

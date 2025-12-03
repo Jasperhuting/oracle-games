@@ -13,7 +13,6 @@ export const FeedbackTab = () => {
   const [filter, setFilter] = useState<'all' | 'new' | 'reviewed' | 'resolved'>('all');
 
   useEffect(() => {
-    console.log('kom je hier wel?')
     fetchFeedback();
   }, [user]);
 
@@ -26,7 +25,6 @@ export const FeedbackTab = () => {
     try {
       const response = await fetch(`/api/feedback?userId=${user.uid}`);
 
-      console.log(response);
       if (response.ok) {
         const data: Feedback[] = await response.json();
         setFeedback(data);

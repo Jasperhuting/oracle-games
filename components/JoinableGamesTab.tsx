@@ -65,6 +65,7 @@ export const JoinableGamesTab = () => {
   const [availableRules, setAvailableRules] = useState<Set<GameType>>(new Set());
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [pendingLeaveGameId, setPendingLeaveGameId] = useState<string | null>(null);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   const loadGames = (async () => {
     setLoading(true);
@@ -155,7 +156,10 @@ export const JoinableGamesTab = () => {
 
   const handleJoinGame = async (gameId: string) => {
     if (!user) {
-      alert('Please log in to join a game');
+      setInfoDialog({
+        title: 'Login required',
+        description: 'Please log in to join a game.',
+      });
       return;
     }
 
@@ -180,11 +184,17 @@ export const JoinableGamesTab = () => {
 
       // Reload games to update the state
       await loadGames();
-      alert('Successfully joined the game!');
+      setInfoDialog({
+        title: 'Game joined',
+        description: 'You have successfully joined the game.',
+      });
     } catch (error: any) {
       console.error('Error joining game:', error);
       setError(error.message || 'Failed to join game');
-      alert(error.message || 'Failed to join game');
+      setInfoDialog({
+        title: 'Join failed',
+        description: error.message || 'Failed to join game.',
+      });
     } finally {
       setJoining(null);
     }
@@ -213,11 +223,17 @@ export const JoinableGamesTab = () => {
 
       // Reload games to update the state
       await loadGames();
-      alert('Successfully left the game');
+      setInfoDialog({
+        title: 'Game left',
+        description: 'You have successfully left the game.',
+      });
     } catch (error: any) {
       console.error('Error leaving game:', error);
       setError(error.message || 'Failed to leave game');
-      alert(error.message || 'Failed to leave game');
+      setInfoDialog({
+        title: 'Leave failed',
+        description: error.message || 'Failed to leave game.',
+      });
     } finally {
       setLeaving(null);
     }
@@ -604,6 +620,19 @@ export const JoinableGamesTab = () => {
         cancelText="Cancel"
         variant="danger"
       />
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
+      )}
     </div>
   );
 };

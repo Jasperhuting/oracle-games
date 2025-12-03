@@ -8,6 +8,7 @@ import { Team } from "@/lib/scraper/types";
 import { Flag } from "./Flag";
 import process from "process";
 import { normalizeString } from "@/lib/utils/stringUtils";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -36,6 +37,7 @@ export const RidersManagementTab = () => {
 
   // Inline editing state
   const [editingRiderTeam, setEditingRiderTeam] = useState<string | null>(null);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   // Close editor when clicking outside
   useEffect(() => {
@@ -134,7 +136,10 @@ export const RidersManagementTab = () => {
       setEditingRiderTeam(null);
     } catch (error: any) {
       console.error('Error updating rider team:', error);
-      alert(error.message || 'Failed to update rider team');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Failed to update rider team.',
+      });
     }
   };
 
@@ -164,7 +169,10 @@ export const RidersManagementTab = () => {
       ));
     } catch (error: any) {
       console.error('Error updating rider status:', error);
-      alert(error.message || 'Failed to update rider status');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Failed to update rider status.',
+      });
     }
   };
 
@@ -324,6 +332,19 @@ export const RidersManagementTab = () => {
           Showing {filteredRiders.length} of {riders.length} riders loaded
         </div>
       </div>
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
+      )}
     </div>
   );
 };

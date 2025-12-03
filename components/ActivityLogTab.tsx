@@ -102,13 +102,14 @@ export const ActivityLogTab = () => {
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleString('en-US', {
-        day: 'numeric',
-        month: 'short',
+      return new Date(dateString).toLocaleString('nl-NL', {
+        day: '2-digit',
+        month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit'
+        second: '2-digit',
+        hour12: false,
       });
     } catch {
       return dateString;

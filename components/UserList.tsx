@@ -48,6 +48,7 @@ export const UserList = () => {
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [changeTypeDialogOpen, setChangeTypeDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<{userId: string; newUserType?: string} | null>(null);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   // Check if user is admin
   useEffect(() => {
@@ -138,7 +139,10 @@ export const UserList = () => {
       // Success - the realtime listener will update the UI automatically
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      alert(error.message || 'Er is iets misgegaan bij het verwijderen');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Something went wrong deleting the user.',
+      });
     } finally {
       setDeletingUserId(null);
     }
@@ -175,7 +179,10 @@ export const UserList = () => {
       // Success - the realtime listener will update the UI automatically
     } catch (error: any) {
       console.error('Error restoring user:', error);
-      alert(error.message || 'Er is iets misgegaan bij het herstellen');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Something went wrong restoring the user.',
+      });
     } finally {
       setDeletingUserId(null);
     }
@@ -186,7 +193,10 @@ export const UserList = () => {
 
     // Prevent changing admin to user
     if (currentUserType === 'admin' && newUserType === 'user') {
-      alert('It is not allowed to downgrade an admin to user');
+      setInfoDialog({
+        title: 'Not allowed',
+        description: 'It is not allowed to downgrade an admin to user.',
+      });
       return;
     }
 
@@ -219,7 +229,10 @@ export const UserList = () => {
       // Success - the realtime listener will update the UI automatically
     } catch (error: any) {
       console.error('Error changing user type:', error);
-      alert(error.message || 'Could not change user type');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Could not change user type.',
+      });
     } finally {
       setChangingUserTypeId(null);
     }
@@ -521,6 +534,19 @@ export const UserList = () => {
         confirmText="Change"
         cancelText="Cancel"
       />
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
+      )}
     </div>
   );
 }

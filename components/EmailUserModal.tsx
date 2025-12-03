@@ -72,7 +72,7 @@ export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUs
       <div className="flex min-h-screen items-center justify-center p-4">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 bg-black/50 bg-opacity-50 transition-opacity"
           onClick={handleClose}
         />
 

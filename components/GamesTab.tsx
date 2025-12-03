@@ -47,10 +47,9 @@ export const GamesTab = () => {
   const [manuallyDeselected, setManuallyDeselected] = useState(false);
   const [initializeConfirmOpen, setInitializeConfirmOpen] = useState(false);
   const [saveAllStagesConfirmOpen, setSaveAllStagesConfirmOpen] = useState(false);
+  const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   const fetchRaces = (async () => {
-
-    console.log('userID', userId)
 
     if (!userId) return;
 
@@ -81,8 +80,6 @@ export const GamesTab = () => {
   // Check URL for race parameter and load race data
   useEffect(() => {
     const raceSlug = searchParams.get('race');
-
-    console.log('raceSlug', raceSlug)
 
     if (raceSlug && races.length > 0) {
       // Only load if it's a different race than currently selected
@@ -120,11 +117,17 @@ export const GamesTab = () => {
         throw new Error(errorData.error || 'Kon races niet initialiseren');
       }
 
-      alert('Races succesvol geïnitialiseerd!');
+      setInfoDialog({
+        title: 'Races initialized',
+        description: 'Races are successfully initialized.',
+      });
       fetchRaces();
     } catch (error: any) {
       console.error('Error initializing races:', error);
-      alert(error.message || 'Er is iets misgegaan bij het initialiseren');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Something went wrong initializing the races.',
+      });
     } finally {
       setInitializing(false);
     }
@@ -176,7 +179,10 @@ export const GamesTab = () => {
       fetchStages(race.slug, forceRefresh);
     } catch (error: any) {
       console.error('Error fetching race data:', error);
-      alert(error.message || 'Kon race data niet laden');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Something went wrong fetching the race data.',
+      });
     } finally {
       setLoadingRaceData(false);
     }
@@ -241,7 +247,10 @@ export const GamesTab = () => {
       fetchStages(selectedRace.slug);
     } catch (error: any) {
       console.error('Error saving stage:', error);
-      alert(error.message || 'Something went wrong saving the stage');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Something went wrong saving the stage.',
+      });
     } finally {
       setSavingStage(false);
     }
@@ -278,10 +287,10 @@ export const GamesTab = () => {
 
           if (response.ok) {
             successCount++;
-            console.log(`✓ Stage ${stage} opgeslagen`);
+            console.log(`✓ Stage ${stage} saved`);
           } else {
             failedStages.push(stage);
-            console.error(`✗ Stage ${stage} mislukt`);
+            console.error(`✗ Stage ${stage} failed`);
           }
         } catch (error) {
           failedStages.push(stage);
@@ -293,15 +302,24 @@ export const GamesTab = () => {
       }
 
       if (failedStages.length === 0) {
-        alert(`🎉 All ${totalStages} stages successfully saved!`);
+        setInfoDialog({
+          title: 'Stages saved',
+          description: `All ${totalStages} stages were saved successfully.`,
+        });
       } else {
-        alert(`✓ ${successCount} stages saved\n✗ ${failedStages.length} failed: ${failedStages.join(', ')}`);
+        setInfoDialog({
+          title: 'Partial success',
+          description: `✓ ${successCount} stages saved. ${failedStages.length} failed: ${failedStages.join(', ')}.`,
+        });
       }
 
       fetchStages(selectedRace.slug);
     } catch (error: any) {
       console.error('Error saving all stages:', error);
-      alert(`Something went wrong. ${successCount} stages have been saved.`);
+      setInfoDialog({
+        title: 'Error',
+        description: `Something went wrong. ${successCount} stages have been saved.`,
+      });
     } finally {
       setSavingStage(false);
     }
@@ -358,7 +376,10 @@ export const GamesTab = () => {
       setEditDescription('');
     } catch (error: any) {
       console.error('Error updating description:', error);
-      alert(error.message || 'Something went wrong updating the description');
+      setInfoDialog({
+        title: 'Error',
+        description: error.message || 'Something went wrong updating the description.',
+      });
     }
   };
 
@@ -907,6 +928,19 @@ export const GamesTab = () => {
         cancelText="Cancel"
         variant="primary"
       />
+
+      {/* Info Dialog for messages previously shown with alert() */}
+      {infoDialog && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => setInfoDialog(null)}
+          onConfirm={() => setInfoDialog(null)}
+          title={infoDialog.title}
+          description={infoDialog.description}
+          confirmText="OK"
+          cancelText="Close"
+        />
+      )}
     </div>
   );
 }
