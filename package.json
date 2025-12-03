@@ -12,9 +12,12 @@
   },
   "dependencies": {
     "@ariakit/react": "^0.4.20",
+    "@floating-ui/dom": "^1.7.4",
     "@motiadev/stream-client-react": "^0.8.4-beta.141",
+    "@tiptap/core": "^3.12.1",
     "@tiptap/extension-link": "^3.11.1",
     "@tiptap/extension-underline": "^3.11.1",
+    "@tiptap/pm": "^3.12.1",
     "@tiptap/react": "^3.11.1",
     "@tiptap/starter-kit": "^3.11.1",
     "@uidotdev/usehooks": "^2.4.1",
@@ -42,7 +45,8 @@
     "react-virtualized-auto-sizer": "^1.0.26",
     "react-window": "^2.2.1",
     "tabler-icons-react": "^1.56.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
