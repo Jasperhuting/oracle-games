@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Participant {
   id: string;
@@ -40,6 +41,8 @@ export const DivisionAssignmentModal = ({
   const [saving, setSaving] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [selectedDivisions, setSelectedDivisions] = useState<Record<string, string>>({});
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<{id: string; name: string} | null>(null);
 
   const loadData = (async () => {
     setLoading(true);
@@ -201,18 +204,19 @@ export const DivisionAssignmentModal = ({
     }
   };
 
-  const handleRemoveParticipant = async (participantId: string, participantName: string) => {
-    if (!user) return;
+  const confirmRemoveParticipant = (participantId: string, participantName: string) => {
+    setPendingRemove({ id: participantId, name: participantName });
+    setRemoveConfirmOpen(true);
+  };
 
-    if (!confirm(`Are you sure you want to remove ${participantName} from this game?`)) {
-      return;
-    }
+  const handleRemoveParticipant = async () => {
+    if (!user || !pendingRemove) return;
 
-    setRemoving(participantId);
+    setRemoving(pendingRemove.id);
     setError(null);
 
     try {
-      const response = await fetch(`/api/gameParticipants/${participantId}/assignDivision?adminUserId=${user.uid}`, {
+      const response = await fetch(`/api/gameParticipants/${pendingRemove.id}/assignDivision?adminUserId=${user.uid}`, {
         method: 'DELETE',
       });
 
@@ -222,7 +226,7 @@ export const DivisionAssignmentModal = ({
       }
 
       // Remove from local state
-      setParticipants(prev => prev.filter(p => p.id !== participantId));
+      setParticipants(prev => prev.filter(p => p.id !== pendingRemove.id));
     } catch (error: any) {
       console.error('Error removing participant:', error);
       setError(error.message || 'Failed to remove participant');
@@ -244,7 +248,7 @@ export const DivisionAssignmentModal = ({
   const assignedCount = participants.filter(p => p.divisionAssigned).length;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="border-b border-gray-200 px-6 py-4">
@@ -388,7 +392,7 @@ export const DivisionAssignmentModal = ({
                             />
                             <Button
                               text={removing === participant.id ? "Removing..." : "Remove"}
-                              onClick={() => handleRemoveParticipant(participant.id, participant.playername)}
+                              onClick={() => confirmRemoveParticipant(participant.id, participant.playername)}
                               disabled={saving === participant.id || removing === participant.id}
                               className="px-4 py-2 bg-red-600 hover:bg-red-700"
                             />
@@ -423,6 +427,22 @@ export const DivisionAssignmentModal = ({
           </div>
         </div>
       </div>
+
+      {/* Remove Participant Confirmation Dialog */}
+      <ConfirmDialog
+        open={removeConfirmOpen}
+        onClose={() => setRemoveConfirmOpen(false)}
+        onConfirm={handleRemoveParticipant}
+        title="Remove Participant"
+        description={
+          pendingRemove ? (
+            <p>Are you sure you want to remove <strong>{pendingRemove.name}</strong> from this game?</p>
+          ) : ''
+        }
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase/client";
 import { Button } from "./Button";
 import Link from "next/link";
 import { EmailUserModal } from "./EmailUserModal";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface User {
   uid: string;
@@ -41,6 +42,12 @@ export const UserList = () => {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ email: string; name: string } | null>(null);
+
+  // Confirm dialog states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [changeTypeDialogOpen, setChangeTypeDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{userId: string; newUserType?: string} | null>(null);
 
   // Check if user is admin
   useEffect(() => {
@@ -100,10 +107,16 @@ export const UserList = () => {
     return () => unsubscribe();
   }, [user, isAdmin]);
 
-  const deleteUser = async (userId: string) => {
-    if (!user || !confirm('Weet je zeker dat je deze gebruiker wilt verwijderen? De gebruiker wordt gemarkeerd als verwijderd maar niet permanent gewist.')) return;
+  const confirmDeleteUser = (userId: string) => {
+    if (!user) return;
+    setPendingAction({ userId });
+    setDeleteDialogOpen(true);
+  };
 
-    setDeletingUserId(userId);
+  const deleteUser = async () => {
+    if (!user || !pendingAction) return;
+
+    setDeletingUserId(pendingAction.userId);
     try {
       const response = await fetch('/api/deleteUser', {
         method: 'POST',
@@ -112,7 +125,7 @@ export const UserList = () => {
         },
         body: JSON.stringify({
           adminUserId: user.uid,
-          targetUserId: userId,
+          targetUserId: pendingAction.userId,
           deleteUser: true,
         }),
       });
@@ -131,10 +144,16 @@ export const UserList = () => {
     }
   };
 
-  const restoreUser = async (userId: string) => {
-    if (!user || !confirm('Weet je zeker dat je deze gebruiker wilt herstellen?')) return;
+  const confirmRestoreUser = (userId: string) => {
+    if (!user) return;
+    setPendingAction({ userId });
+    setRestoreDialogOpen(true);
+  };
 
-    setDeletingUserId(userId);
+  const restoreUser = async () => {
+    if (!user || !pendingAction) return;
+
+    setDeletingUserId(pendingAction.userId);
     try {
       const response = await fetch('/api/deleteUser', {
         method: 'POST',
@@ -143,7 +162,7 @@ export const UserList = () => {
         },
         body: JSON.stringify({
           adminUserId: user.uid,
-          targetUserId: userId,
+          targetUserId: pendingAction.userId,
           deleteUser: false,
         }),
       });
@@ -162,7 +181,7 @@ export const UserList = () => {
     }
   };
 
-  const changeUserType = async (userId: string, currentUserType: string, newUserType: string) => {
+  const confirmChangeUserType = (userId: string, currentUserType: string, newUserType: string) => {
     if (!user) return;
 
     // Prevent changing admin to user
@@ -171,9 +190,14 @@ export const UserList = () => {
       return;
     }
 
-    if (!confirm(`Are you sure you want to change this user to ${newUserType}?`)) return;
+    setPendingAction({ userId, newUserType });
+    setChangeTypeDialogOpen(true);
+  };
 
-    setChangingUserTypeId(userId);
+  const changeUserType = async () => {
+    if (!user || !pendingAction || !pendingAction.newUserType) return;
+
+    setChangingUserTypeId(pendingAction.userId);
     try {
       const response = await fetch('/api/changeUserType', {
         method: 'POST',
@@ -182,20 +206,20 @@ export const UserList = () => {
         },
         body: JSON.stringify({
           adminUserId: user.uid,
-          targetUserId: userId,
-          newUserType: newUserType,
+          targetUserId: pendingAction.userId,
+          newUserType: pendingAction.newUserType,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon gebruikerstype niet wijzigen');
+        throw new Error(errorData.error || 'Could not change user type');
       }
 
       // Success - the realtime listener will update the UI automatically
     } catch (error: any) {
       console.error('Error changing user type:', error);
-      alert(error.message || 'Er is iets misgegaan bij het wijzigen van het gebruikerstype');
+      alert(error.message || 'Could not change user type');
     } finally {
       setChangingUserTypeId(null);
     }
@@ -367,7 +391,7 @@ export const UserList = () => {
                       {isAdmin ? (
                         <select
                           value={user.userType}
-                          onChange={(e) => changeUserType(user.uid, user.userType, e.target.value)}
+                          onChange={(e) => confirmChangeUserType(user.uid, user.userType, e.target.value)}
                           disabled={changingUserTypeId === user.uid || user.userType === 'admin'}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             user.userType === 'admin'
@@ -409,14 +433,14 @@ export const UserList = () => {
                           <Button
                             className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700"
                             text={deletingUserId === user.uid ? "busy..." : "Restore"}
-                            onClick={() => restoreUser(user.uid)}
+                            onClick={() => confirmRestoreUser(user.uid)}
                             disabled={deletingUserId === user.uid}
                           />
                         ) : (
                           <Button
                             className="py-1 px-3 text-sm bg-gray-600 hover:bg-gray-700"
                             text={deletingUserId === user.uid ? "busy..." : "Delete"}
-                            onClick={() => deleteUser(user.uid)}
+                            onClick={() => confirmDeleteUser(user.uid)}
                             disabled={deletingUserId === user.uid}
                           />
                         )}
@@ -465,6 +489,38 @@ export const UserList = () => {
           userName={selectedUser.name}
         />
       )}
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={deleteUser}
+        title="Gebruiker verwijderen"
+        description="Weet je zeker dat je deze gebruiker wilt verwijderen? De gebruiker wordt gemarkeerd als verwijderd maar niet permanent gewist."
+        confirmText="Verwijderen"
+        cancelText="Cancel"
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        open={restoreDialogOpen}
+        onClose={() => setRestoreDialogOpen(false)}
+        onConfirm={restoreUser}
+        title="Gebruiker herstellen"
+        description="Weet je zeker dat je deze gebruiker wilt herstellen?"
+        confirmText="Herstellen"
+        cancelText="Cancel"
+      />
+
+      <ConfirmDialog
+        open={changeTypeDialogOpen}
+        onClose={() => setChangeTypeDialogOpen(false)}
+        onConfirm={changeUserType}
+        title="Change user type"
+        description={`Are you sure you want to change this user to ${pendingAction?.newUserType}?`}
+        confirmText="Change"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

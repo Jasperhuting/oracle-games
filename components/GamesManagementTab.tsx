@@ -9,6 +9,7 @@ import { DivisionAssignmentModal } from "./DivisionAssignmentModal";
 import { ManageDivisionsModal } from "./ManageDivisionsModal";
 import { GameStatusManager } from "./GameStatusManager";
 import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Game {
   id: string;
@@ -42,6 +43,8 @@ export const GamesManagementTab = () => {
   const [deleting, setDeleting] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [finalizingGameId, setFinalizingGameId] = useState<string | null>(null);
+  const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
+  const [pendingFinalizeGame, setPendingFinalizeGame] = useState<{id: string; name: string} | null>(null);
 
   const loadGames = (async () => {
     setLoading(true);
@@ -149,14 +152,17 @@ export const GamesManagementTab = () => {
     loadGames();
   };
 
-  const handleFinalizeAuction = async (gameId: string, gameName: string) => {
-    if (!confirm(`Are you sure you want to finalize the auction for "${gameName}"?\n\nThis will:\n- Assign riders to winning bidders\n- Return budget to losing bidders\n- This action cannot be undone!`)) {
-      return;
-    }
+  const confirmFinalizeAuction = (gameId: string, gameName: string) => {
+    setPendingFinalizeGame({ id: gameId, name: gameName });
+    setFinalizeConfirmOpen(true);
+  };
 
-    setFinalizingGameId(gameId);
+  const handleFinalizeAuction = async () => {
+    if (!pendingFinalizeGame) return;
+
+    setFinalizingGameId(pendingFinalizeGame.id);
     try {
-      const response = await fetch(`/api/games/${gameId}/bids/finalize`, {
+      const response = await fetch(`/api/games/${pendingFinalizeGame.id}/bids/finalize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -450,7 +456,7 @@ export const GamesManagementTab = () => {
                           </Button>
                           {game.gameType === 'auctioneer' && game.status === 'bidding' && (
                             <Button
-                              onClick={() => handleFinalizeAuction(game.id, game.name)}
+                              onClick={() => confirmFinalizeAuction(game.id, game.name)}
                               disabled={finalizingGameId === game.id}
                               variant="warning"
                               ghost
@@ -545,7 +551,7 @@ export const GamesManagementTab = () => {
                             </Button>
                             {divisionGame.gameType === 'auctioneer' && divisionGame.status === 'bidding' && (
                               <Button
-                                onClick={() => handleFinalizeAuction(divisionGame.id, divisionGame.name)}
+                                onClick={() => confirmFinalizeAuction(divisionGame.id, divisionGame.name)}
                                 disabled={finalizingGameId === divisionGame.id}
                                 variant="warning"
                                 ghost
@@ -635,7 +641,7 @@ export const GamesManagementTab = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && deleteGameId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
             <p className="text-gray-700 mb-6">
@@ -661,6 +667,30 @@ export const GamesManagementTab = () => {
           </div>
         </div>
       )}
+
+      {/* Finalize Auction Confirmation Dialog */}
+      <ConfirmDialog
+        open={finalizeConfirmOpen}
+        onClose={() => setFinalizeConfirmOpen(false)}
+        onConfirm={handleFinalizeAuction}
+        title="Finalize Auction"
+        description={
+          pendingFinalizeGame ? (
+            <>
+              <p>Are you sure you want to finalize the auction for <strong>"{pendingFinalizeGame.name}"</strong>?</p>
+              <p className="mt-2">This will:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Assign riders to winning bidders</li>
+                <li>Return budget to losing bidders</li>
+              </ul>
+              <p className="mt-2 font-semibold text-red-600">This action cannot be undone!</p>
+            </>
+          ) : ''
+        }
+        confirmText="Finalize Auction"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

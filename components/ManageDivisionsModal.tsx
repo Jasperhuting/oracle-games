@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Game {
   id: string;
@@ -25,21 +26,22 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{id: string; name: string} | null>(null);
 
-  const handleDeleteDivision = async (gameId: string, gameName: string) => {
-    if (!user) return;
+  const confirmDeleteDivision = (gameId: string, gameName: string) => {
+    setPendingDelete({ id: gameId, name: gameName });
+    setDeleteConfirmOpen(true);
+  };
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${gameName}"?\n\nThis will permanently delete this division and all its data. This action cannot be undone.`
-    );
+  const handleDeleteDivision = async () => {
+    if (!user || !pendingDelete) return;
 
-    if (!confirmed) return;
-
-    setDeleting(gameId);
+    setDeleting(pendingDelete.id);
     setError(null);
 
     try {
-      const response = await fetch(`/api/games/${gameId}?adminUserId=${user.uid}`, {
+      const response = await fetch(`/api/games/${pendingDelete.id}?adminUserId=${user.uid}`, {
         method: 'DELETE',
       });
 
@@ -134,7 +136,7 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold">Manage Divisions</h2>
@@ -177,7 +179,7 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
                   </div>
                   <Button
                     text={deleting === game.id ? "Deleting..." : "Delete"}
-                    onClick={() => handleDeleteDivision(game.id, game.name)}
+                    onClick={() => confirmDeleteDivision(game.id, game.name)}
                     disabled={deleting === game.id}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
                   />
@@ -219,6 +221,24 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
           />
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteDivision}
+        title="Delete Division"
+        description={
+          pendingDelete ? (
+            <>
+              <p>Are you sure you want to delete <strong>"{pendingDelete.name}"</strong>?</p>
+              <p className="mt-2 font-semibold text-red-600">This will permanently delete this division and all its data. This action cannot be undone.</p>
+            </>
+          ) : ''
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

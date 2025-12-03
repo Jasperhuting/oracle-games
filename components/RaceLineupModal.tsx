@@ -187,7 +187,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">

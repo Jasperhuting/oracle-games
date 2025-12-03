@@ -8,6 +8,7 @@ import { EnrichedRider } from "@/lib/scraper";
 import { Flag } from "@/components/Flag";
 import ClassificationTabs from "./ClassificationTabs";
 import { ChevronLeft, ChevronRight } from "tabler-icons-react";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Race {
   id: string;
@@ -44,6 +45,8 @@ export const GamesTab = () => {
   const [stageNumber, setStageNumber] = useState<string>('');
   const [selectedStage, setSelectedStage] = useState<any | null>(null);
   const [manuallyDeselected, setManuallyDeselected] = useState(false);
+  const [initializeConfirmOpen, setInitializeConfirmOpen] = useState(false);
+  const [saveAllStagesConfirmOpen, setSaveAllStagesConfirmOpen] = useState(false);
 
   const fetchRaces = (async () => {
 
@@ -93,8 +96,12 @@ export const GamesTab = () => {
     }
   }, [searchParams, races, manuallyDeselected, selectedRace]);
 
+  const confirmInitializeRaces = () => {
+    setInitializeConfirmOpen(true);
+  };
+
   const handleInitializeRaces = async () => {
-    if (!user || !confirm('Weet je zeker dat je de bestaande races wilt initialiseren?')) return;
+    if (!user) return;
 
     setInitializing(true);
     try {
@@ -240,13 +247,14 @@ export const GamesTab = () => {
     }
   };
 
+  const confirmSaveAllStages = () => {
+    setSaveAllStagesConfirmOpen(true);
+  };
+
   const handleSaveAllStages = async () => {
     if (!user || !selectedRace) return;
 
     const totalStages = 21;
-    const confirmed = confirm(`Are you sure you want to add all ${totalStages} stages? This can take a few minutes.`);
-    
-    if (!confirmed) return;
 
     setSavingStage(true);
     let successCount = 0;
@@ -506,7 +514,7 @@ export const GamesTab = () => {
                     <Button
                       className="flex-1 px-6 py-2 bg-green-600 hover:bg-green-700 text-white"
                       text={savingStage ? "Busy adding all stages..." : "📦 Add all 21 stages"}
-                      onClick={handleSaveAllStages}
+                      onClick={confirmSaveAllStages}
                       disabled={savingStage}
                     />
                   </div>
@@ -746,7 +754,7 @@ export const GamesTab = () => {
             <Button
               className="px-4 py-2 bg-primary hover:bg-primary/90"
               text={initializing ? "Loading..." : "Initialize Existing Races"}
-              onClick={handleInitializeRaces}
+              onClick={confirmInitializeRaces}
               disabled={initializing}
             />
           )}
@@ -870,6 +878,35 @@ export const GamesTab = () => {
           ))}
         </div>
       )}
+
+      {/* Initialize Races Confirmation Dialog */}
+      <ConfirmDialog
+        open={initializeConfirmOpen}
+        onClose={() => setInitializeConfirmOpen(false)}
+        onConfirm={handleInitializeRaces}
+        title="Initialize Existing Races"
+        description="Weet je zeker dat je de bestaande races wilt initialiseren?"
+        confirmText="Initialize"
+        cancelText="Cancel"
+        variant="primary"
+      />
+
+      {/* Save All Stages Confirmation Dialog */}
+      <ConfirmDialog
+        open={saveAllStagesConfirmOpen}
+        onClose={() => setSaveAllStagesConfirmOpen(false)}
+        onConfirm={handleSaveAllStages}
+        title="Add All Stages"
+        description={
+          <>
+            <p>Are you sure you want to add all 21 stages?</p>
+            <p className="mt-2 text-sm text-gray-600">This can take a few minutes. Stages are saved one by one.</p>
+          </>
+        }
+        confirmText="Add All Stages"
+        cancelText="Cancel"
+        variant="primary"
+      />
     </div>
   );
 }

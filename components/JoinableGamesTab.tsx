@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { GameRulesModal } from "./GameRulesModal";
 import { GameType } from "@/lib/types/games";
 import process from "process";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -62,6 +63,8 @@ export const JoinableGamesTab = () => {
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [selectedGameForRules, setSelectedGameForRules] = useState<{ type: GameType; name: string } | null>(null);
   const [availableRules, setAvailableRules] = useState<Set<GameType>>(new Set());
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [pendingLeaveGameId, setPendingLeaveGameId] = useState<string | null>(null);
 
   const loadGames = (async () => {
     setLoading(true);
@@ -187,18 +190,19 @@ export const JoinableGamesTab = () => {
     }
   };
 
-  const handleLeaveGame = async (gameId: string) => {
-    if (!user) return;
+  const confirmLeaveGame = (gameId: string) => {
+    setPendingLeaveGameId(gameId);
+    setLeaveConfirmOpen(true);
+  };
 
-    if (!confirm('Are you sure you want to leave this game?')) {
-      return;
-    }
+  const handleLeaveGame = async () => {
+    if (!user || !pendingLeaveGameId) return;
 
-    setLeaving(gameId);
+    setLeaving(pendingLeaveGameId);
     setError(null);
 
     try {
-      const response = await fetch(`/api/games/${gameId}/join?userId=${user.uid}`, {
+      const response = await fetch(`/api/games/${pendingLeaveGameId}/join?userId=${user.uid}`, {
         method: 'DELETE',
       });
 
@@ -557,7 +561,7 @@ export const JoinableGamesTab = () => {
                     {leaveable && joinedGame && (
                       <Button
                         text={leaving === joinedGame.id ? "Leaving..." : "Leave Game"}
-                        onClick={() => handleLeaveGame(joinedGame.id)}
+                        onClick={() => confirmLeaveGame(joinedGame.id)}
                         disabled={leaving === joinedGame.id}
                         className="px-4 py-2 bg-red-600 hover:bg-red-700 whitespace-nowrap"
                       />
@@ -588,6 +592,18 @@ export const JoinableGamesTab = () => {
           gameName={selectedGameForRules.name}
         />
       )}
+
+      {/* Leave Game Confirmation Dialog */}
+      <ConfirmDialog
+        open={leaveConfirmOpen}
+        onClose={() => setLeaveConfirmOpen(false)}
+        onConfirm={handleLeaveGame}
+        title="Leave Game"
+        description="Are you sure you want to leave this game?"
+        confirmText="Leave Game"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

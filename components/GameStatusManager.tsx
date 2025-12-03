@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GAME_STATUSES, GameStatus } from '@/lib/types/games';
+import { Button } from '@ariakit/react';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface GameStatusManagerProps {
   gameId: string;
@@ -38,6 +40,8 @@ export const GameStatusManager = ({
   const [error, setError] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<GameStatus | null>(null);
 
   useEffect(() => {
     if (showDropdown && buttonRef.current) {
@@ -50,20 +54,19 @@ export const GameStatusManager = ({
     }
   }, [showDropdown]);
 
-  const handleStatusChange = async (newStatus: GameStatus) => {
+  const confirmStatusChange = (newStatus: GameStatus) => {
     if (newStatus === currentStatus) {
       setShowDropdown(false);
       return;
     }
 
-    const confirmed = confirm(
-      `Are you sure you want to change the game status from "${STATUS_LABELS[currentStatus]}" to "${STATUS_LABELS[newStatus]}"?\n\nThis will affect player access and game functionality.`
-    );
+    setPendingStatus(newStatus);
+    setConfirmOpen(true);
+    setShowDropdown(false);
+  };
 
-    if (!confirmed) {
-      setShowDropdown(false);
-      return;
-    }
+  const handleStatusChange = async () => {
+    if (!pendingStatus) return;
 
     setUpdating(true);
     setError(null);
@@ -74,7 +77,7 @@ export const GameStatusManager = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: pendingStatus }),
       });
 
       if (!response.ok) {
@@ -126,7 +129,7 @@ export const GameStatusManager = ({
               {GAME_STATUSES.map((status) => (
                 <button
                   key={status}
-                  onClick={() => handleStatusChange(status)}
+                  onClick={() => confirmStatusChange(status)}
                   disabled={updating}
                   className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
                     status === currentStatus ? 'bg-gray-50 font-semibold' : ''
@@ -170,9 +173,9 @@ export const GameStatusManager = ({
 
       <div className="flex flex-wrap gap-2">
         {GAME_STATUSES.map((status) => (
-          <button
+          <Button
             key={status}
-            onClick={() => handleStatusChange(status)}
+            onClick={() => confirmStatusChange(status)}
             disabled={updating || status === currentStatus}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               status === currentStatus
@@ -181,7 +184,7 @@ export const GameStatusManager = ({
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {STATUS_LABELS[status]}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -207,6 +210,25 @@ export const GameStatusManager = ({
           <li><strong>Finished:</strong> Game has ended</li>
         </ul>
       </div>
+
+      {/* Status Change Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleStatusChange}
+        title="Change Game Status"
+        description={
+          pendingStatus ? (
+            <>
+              <p>Are you sure you want to change the game status from <strong>"{STATUS_LABELS[currentStatus]}"</strong> to <strong>"{STATUS_LABELS[pendingStatus]}"</strong>?</p>
+              <p className="mt-2 text-sm text-gray-600">This will affect player access and game functionality.</p>
+            </>
+          ) : ''
+        }
+        confirmText="Change Status"
+        cancelText="Cancel"
+        variant="primary"
+      />
     </div>
   );
 };

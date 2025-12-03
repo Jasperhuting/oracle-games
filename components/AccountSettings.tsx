@@ -120,17 +120,17 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   return (
     <div className="w-full">
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Account Informatie</h2>
+        <h2 className="text-xl font-semibold mb-4">Account Information</h2>
         
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              E-mailadres
+              Email address
             </label>
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
               {email}
             </div>
-            <p className="text-xs text-gray-500 mt-1">Je e-mailadres kan niet worden gewijzigd</p>
+            <p className="text-xs text-gray-500 mt-1">Your email address cannot be changed</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
