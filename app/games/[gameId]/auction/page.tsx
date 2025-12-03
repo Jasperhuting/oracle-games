@@ -345,12 +345,57 @@ useEffect(() => {
     return riderPoints;
   };
 
+  // Determine if the current auction period is restricted to top 200 riders
+  const isTop200Restricted = (() => {
+    if (!game || game.gameType !== 'auctioneer') return false;
+
+    const config: any = game.config;
+    if (!config || !Array.isArray(config.auctionPeriods)) return false;
+
+    const toDate = (value: any): Date | null => {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      if (typeof value === 'string') return new Date(value);
+      if (typeof value.toDate === 'function') return value.toDate();
+      return null;
+    };
+
+    const now = new Date();
+
+    // Try to find an active period based on time window and status
+    let activePeriod = config.auctionPeriods.find((p: any) => {
+      const start = toDate(p.startDate);
+      const end = toDate(p.endDate);
+      if (!start || !end) return false;
+
+      const inWindow = now >= start && now <= end;
+      const statusActive = p.status === 'active' || game.status === 'bidding';
+      return inWindow && statusActive;
+    });
+
+    // Fallback: if nothing matches, use the first period as the "current" one
+    if (!activePeriod && config.auctionPeriods.length > 0) {
+      activePeriod = config.auctionPeriods[0];
+    }
+
+    return !!activePeriod?.top200Only;
+  })();
+
   const handlePlaceBid = async (rider: RiderWithBid) => {
     if (!user || !participant) return;
 
     const riderNameId = rider.nameID || rider.id || '';
     const bidAmount = parseFloat(bidAmounts[riderNameId] || '0');
     const effectiveMinBid = getEffectiveMinimumBid(rider.points);
+
+    // When top-200 restriction is active, block bids on riders outside top 200
+    if (isTop200Restricted) {
+      const riderRank = (rider as any).rank;
+      if (typeof riderRank !== 'number' || riderRank > 200) {
+        setError('Tijdens deze biedronde kun je alleen bieden op renners uit de top 200.');
+        return;
+      }
+    }
 
     if (Number(bidAmount) < effectiveMinBid) {
       setError(`Bid must be at least ${effectiveMinBid}`);
@@ -552,7 +597,11 @@ useEffect(() => {
     const riderPrice = rider.effectiveMinBid || rider.points;
     const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
 
-    return matchesSearch && matchesPrice;
+    // Apply top-200 restriction at list level: only show riders in top 200 when enabled
+    const riderRank = (rider as any).rank;
+    const withinTop200 = !isTop200Restricted || (typeof riderRank === 'number' && riderRank <= 200);
+
+    return matchesSearch && matchesPrice && withinTop200;
   });
 
   if (authLoading || loading) {

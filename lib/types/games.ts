@@ -49,6 +49,7 @@ export interface AuctionPeriod {
   startDate: Timestamp;
   endDate: Timestamp;
   status: AuctionStatus;
+  top200Only?: boolean;             // Only allow bidding on top 200 riders for this period
 }
 
 export interface AuctioneerConfig {

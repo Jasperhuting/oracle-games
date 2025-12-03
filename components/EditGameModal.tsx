@@ -12,6 +12,7 @@ interface AuctionPeriodInput {
   startDate: string;
   endDate: string;
   status: string;
+  top200Only?: boolean;
 }
 
 interface GameFormData {
@@ -73,6 +74,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
             startDate: p.startDate ? new Date(p.startDate).toISOString().slice(0, 16) : '',
             endDate: p.endDate ? new Date(p.endDate).toISOString().slice(0, 16) : '',
             status: p.status,
+            top200Only: p.top200Only || false,
           })));
         }
       } catch (error: any) {
@@ -87,14 +89,18 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
   }, [gameId, reset]);
 
   const addAuctionPeriod = () => {
-    setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', status: 'pending' }]);
+    setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', status: 'pending', top200Only: false }]);
   };
 
   const removeAuctionPeriod = (index: number) => {
     setAuctionPeriods(auctionPeriods.filter((_, i) => i !== index));
   };
 
-  const updateAuctionPeriod = (index: number, field: keyof AuctionPeriodInput, value: string) => {
+  const updateAuctionPeriod = <K extends keyof AuctionPeriodInput>(
+    index: number,
+    field: K,
+    value: AuctionPeriodInput[K]
+  ) => {
     const updated = [...auctionPeriods];
     updated[index][field] = value;
     setAuctionPeriods(updated);
@@ -139,6 +145,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
             startDate: new Date(period.startDate).toISOString(),
             endDate: new Date(period.endDate).toISOString(),
             status: period.status,
+            top200Only: period.top200Only || false,
           })),
           auctionStatus: auctionPeriods.some(p => p.status === 'active') ? 'active' :
                         auctionPeriods.every(p => p.status === 'closed') ? 'closed' : 'pending',
@@ -395,6 +402,21 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                                   ))}
                                 </select>
                               </div>
+                            </div>
+
+                            {/* Top 200 Only Checkbox */}
+                            <div className="mt-3">
+                              <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={period.top200Only || false}
+                                  onChange={(e) => updateAuctionPeriod(index, 'top200Only', e.target.checked)}
+                                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary"
+                                />
+                                <span className="text-sm text-gray-700">
+                                  Alleen top 200 renners (gebruikers kunnen alleen bieden op renners in top 200)
+                                </span>
+                              </label>
                             </div>
                           </div>
                         </div>
