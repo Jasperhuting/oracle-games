@@ -58,8 +58,17 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
 
       // Capitalize first letter, rest lowercase (preserves special chars)
       // Special handling for ß: keep it as ß in output (not convert to ss)
-      const lastName = lastNameUppercase.charAt(0).toUpperCase() +
-                       lastNameUppercase.slice(1).toLowerCase();
+      // Keep particles like "van", "de", "der", "von", "di", "da", "le", "la" lowercase
+      const particles = ['van', 'de', 'der', 'den', 'von', 'di', 'da', 'le', 'la', 'del', 'della', 'dos', 'das', 'ten', 'ter', 'te'];
+      const lastNameParts = lastNameUppercase.split(/\s+/);
+      const lastName = lastNameParts.map(part => {
+        const lowerPart = part.toLowerCase();
+        // Keep particles lowercase, capitalize others
+        if (particles.includes(lowerPart)) {
+          return lowerPart;
+        }
+        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+      }).join(' ');
 
       // Extract everything after the last name (the first name part)
       const afterLastName = name.substring(lastNameUppercase.length).trim();

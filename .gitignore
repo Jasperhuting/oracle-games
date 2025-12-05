@@ -43,6 +43,7 @@ next-env.d.ts
 # Firebase service account credentials
 *firebase-adminsdk*.json
 serviceAccountKey.json
+service-account-key.json
 
 # Firebase Emulator data
 emulator-data/
