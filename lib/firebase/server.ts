@@ -47,8 +47,8 @@ function initializeFirebaseAdmin() {
 function configureEmulatorsIfNeeded() {
   if (emulatorsConfigured) return;
   
-  // Only use emulators in development
-  if (process.env.NODE_ENV === 'development') {
+  // Only use emulators in development AND if explicitly enabled via env var
+  if (process.env.NODE_ENV === 'development' && process.env.USE_FIREBASE_EMULATORS === 'true') {
     // Set emulator environment variables for Firebase Admin SDK
     process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
     process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';

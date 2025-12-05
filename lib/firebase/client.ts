@@ -37,8 +37,9 @@ function connectToEmulatorsIfNeeded() {
   // Only connect once
   if (emulatorsConnected) return;
   
-  // Check if we should use emulators (localhost development)
+  // Check if we should use emulators - only if explicitly enabled via env var
   const useEmulators = 
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' &&
     process.env.NODE_ENV === 'development' && 
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   

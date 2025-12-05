@@ -4,12 +4,20 @@ import Image from 'next/image';
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [isAdmin, setIsAdmin] = useState(false);
     const [pageContent, setPageContent] = useState<string>('');
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -44,6 +52,19 @@ export default function HomePage() {
         };
         loadPageContent();
     }, []);
+
+    if (authLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-gray-600">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null;
+    }
+
     return (
         <div className="flex flex-col min-h-screen p-8 mt-[36px]">
             <div className="mx-auto container">

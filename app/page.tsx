@@ -2,15 +2,25 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    router.push('/home');
-  }, [router]);
+    if (!loading) {
+      if (user) {
+        router.push('/home');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [user, loading, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">...loading</div>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-gray-600">Loading...</div>
+    </div>
   );
 }
