@@ -1,4 +1,4 @@
-import { Country } from "@/lib/scraper";
+import { Country } from "@/lib/scraper/types";
 import { Flag } from "./Flag";
 import { Row } from "./Row";
 

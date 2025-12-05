@@ -1,5 +1,6 @@
-import { StageRider, ClassificationRider } from "@/lib/firebase/utils";
-import { StageRider, ClassificationRider } from "@/lib/scraper";
+import { iso2ToFlag, isTTTTeamResult } from "@/lib/firebase/utils";
+import { getStageResult } from "@/lib/scraper";
+import { type RaceSlug, type StageRider, type ClassificationRider } from "@/lib/scraper/types";
 
 export default async function StagePage({ params }: { params: { race: RaceSlug; year: number; stage: string } }) {
 

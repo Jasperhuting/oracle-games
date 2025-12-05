@@ -1,4 +1,4 @@
-import { Country } from "@/lib/scraper";
+import { Country } from "@/lib/scraper/types";
 import { CountryRow } from "./CountryRow";
 import { Selector } from "./Selector";
 import countriesList from '@/lib/country.json';

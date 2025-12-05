@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./Button";
-import { EnrichedRider } from "@/lib/scraper";
+import { EnrichedRider } from "@/lib/scraper/types";
 import { Flag } from "@/components/Flag";
 import ClassificationTabs from "./ClassificationTabs";
 import { ChevronLeft, ChevronRight } from "tabler-icons-react";

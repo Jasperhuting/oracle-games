@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { KNOWN_RACE_SLUGS } from '@/lib/scraper';
+import { KNOWN_RACE_SLUGS } from '@/lib/scraper/types';
 
 interface ScraperFormProps {
   onSubmit?: (data: ScraperFormData) => void;

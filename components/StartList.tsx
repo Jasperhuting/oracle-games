@@ -1,5 +1,5 @@
 import { iso2ToFlag } from "@/lib/firebase/utils";
-import { StartlistResult } from "@/lib/scraper";
+import { StartlistResult } from "@/lib/scraper/types";
 import Link from "next/link";
 
 export const StartList = ({ year, race, startList }: { year: number, race: string, startList: StartlistResult }) => {
