@@ -779,7 +779,7 @@ useEffect(() => {
                 <span className="ml-2 text-lg font-bold text-primary">
                   {auctionClosed
                     ? myBids.filter(b => b.status === 'won').length
-                    : myBids.filter(b => b.status === 'active').length
+                    : myBids.length
                   }
                 </span>
               </div>
