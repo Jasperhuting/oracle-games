@@ -6,6 +6,9 @@ import {
 } from "firebase-admin/app";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 
+// Track if emulators have been configured
+let emulatorsConfigured = false;
+
 function initializeFirebaseAdmin() {
   if (getAdminApps().length > 0) {
     return getAdminApp();
@@ -14,6 +17,14 @@ function initializeFirebaseAdmin() {
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  // In development, allow initialization without credentials for emulator use
+  if (process.env.NODE_ENV === 'development' && (!projectId || !clientEmail || !privateKey)) {
+    console.log('🔧 Initializing Firebase Admin for emulator use (no credentials needed)');
+    return initializeAdminApp({
+      projectId: 'oracle-games-b6af6', // Default project ID for emulators
+    });
+  }
 
   // 🚨 Prevent Vercel build from crashing
   if (!projectId || !clientEmail || !privateKey) {
@@ -33,7 +44,22 @@ function initializeFirebaseAdmin() {
   });
 }
 
+function configureEmulatorsIfNeeded() {
+  if (emulatorsConfigured) return;
+  
+  // Only use emulators in development
+  if (process.env.NODE_ENV === 'development') {
+    // Set emulator environment variables for Firebase Admin SDK
+    process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+    
+    emulatorsConfigured = true;
+    console.log('🔧 Server-side Firebase configured to use emulators');
+  }
+}
+
 export function getServerFirebase() {
+  configureEmulatorsIfNeeded();
   const app = initializeFirebaseAdmin();
   if (!app) {
     throw new Error("Firebase Admin not initialized — missing env vars.");
@@ -42,6 +68,7 @@ export function getServerFirebase() {
 }
 
 export function getServerFirebaseFootball() {
+  configureEmulatorsIfNeeded();
   const app = initializeFirebaseAdmin();
   if (!app) {
     throw new Error("Firebase Admin not initialized — missing env vars.");

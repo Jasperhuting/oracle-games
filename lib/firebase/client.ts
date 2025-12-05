@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,22 +19,72 @@ function initializeFirebaseApp() {
   return getApp();
 }
 
+const app = initializeFirebaseApp();
+
+// Initialize services
+const auth = getAuth(app);
+const db = getFirestore(app);
+const footballDb = getFirestore(app, 'oracle-games-football');
+
+// Track if emulators have been connected
+let emulatorsConnected = false;
+
+// Connect to emulators - must be called on client side only
+function connectToEmulatorsIfNeeded() {
+  // Only run on client side
+  if (typeof window === 'undefined') return;
+  
+  // Only connect once
+  if (emulatorsConnected) return;
+  
+  // Check if we should use emulators (localhost development)
+  const useEmulators = 
+    process.env.NODE_ENV === 'development' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
+  if (useEmulators) {
+    try {
+      // Connect Auth emulator
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+      
+      // Connect Firestore emulators
+      connectFirestoreEmulator(db, '127.0.0.1', 8080);
+      connectFirestoreEmulator(footballDb, '127.0.0.1', 8080);
+      
+      emulatorsConnected = true;
+      console.log('🔧 Connected to Firebase Emulators');
+      console.log('   - Auth: http://127.0.0.1:9099');
+      console.log('   - Firestore: http://127.0.0.1:8080');
+      console.log('   - UI: http://127.0.0.1:4000');
+    } catch (error: any) {
+      // Already connected or connection failed
+      if (error.code === 'auth/emulator-config-failed') {
+        emulatorsConnected = true; // Already connected
+      } else {
+        console.error('Failed to connect to emulators:', error);
+        console.log('📡 Using production Firebase');
+      }
+    }
+  } else {
+    console.log('📡 Using production Firebase');
+  }
+}
+
+// Try to connect immediately if on client
+connectToEmulatorsIfNeeded();
+
 // Client-side Firebase
 export function getClientFirebase() {
-  initializeFirebaseApp();
-  return getFirestore(); // Returns the default database
+  return db;
 }
 
 export function getClientFirebaseFootball() {
-  const app = initializeFirebaseApp();
-  return getFirestore(app, 'oracle-games-football');
+  return footballDb;
 }
 
 export function getClientAuth() {
-  initializeFirebaseApp();
-  return getAuth();
+  return auth;
 }
 
-export const db = getClientFirebase(); // Default database
-export const footballDb = getClientFirebaseFootball(); // Football database
-export const auth = getClientAuth();
+// Export instances directly
+export { db, footballDb, auth };
