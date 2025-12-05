@@ -1,4 +1,4 @@
-import { KNOWN_RACE_SLUGS } from "@/lib/scraper";
+import { KNOWN_RACE_SLUGS } from "@/lib/scraper/types";
 import Link from "next/link";
 
 export default async function RacesPage() {

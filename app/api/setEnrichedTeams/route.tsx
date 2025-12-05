@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { enrichTeamsPuppeteer } from "@/lib/scraper/enrichTeamsPuppeteer";
 import { getServerFirebase } from "@/lib/firebase/server";
-import { EnrichedRider } from "@/lib/scraper";
+import { EnrichedRider } from "@/lib/scraper/types";
 
 
 export async function GET(request: NextRequest) {

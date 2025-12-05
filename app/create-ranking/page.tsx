@@ -6,7 +6,7 @@ import { Button } from "@/components/Button";
 import { Toggle } from "@/components/Toggle";
 import { TeamSelector } from "@/components/TeamSelector";
 import { ClassSelector } from "@/components/ClassSelector";
-import { Country, Team, Rider } from "@/lib/scraper";
+import { Country, Team, Rider } from "@/lib/scraper/types";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { List } from 'react-window';
