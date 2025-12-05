@@ -29,15 +29,46 @@ export async function POST(
       );
     }
 
-    // Get all active bids for this game
-    const activeBidsSnapshot = await db.collection('bids')
+    // Get all bids for this game (without status filter to avoid index requirement)
+    console.log(`[FINALIZE] Querying all bids for gameId: ${gameId}`);
+    const allBidsForGameSnapshot = await db.collection('bids')
       .where('gameId', '==', gameId)
-      .where('status', '==', 'active')
       .get();
 
+    console.log(`[FINALIZE] Found ${allBidsForGameSnapshot.size} total bids for game`);
+
+    // Filter for active bids in memory
+    const activeBidsDocs = allBidsForGameSnapshot.docs.filter(doc => doc.data().status === 'active');
+    console.log(`[FINALIZE] Found ${activeBidsDocs.length} active bids after filtering`);
+
+    // Create a snapshot-like object for compatibility with existing code
+    const activeBidsSnapshot = {
+      empty: activeBidsDocs.length === 0,
+      size: activeBidsDocs.length,
+      docs: activeBidsDocs
+    };
+
+    // If no active bids, provide detailed error
     if (activeBidsSnapshot.empty) {
+      if (allBidsForGameSnapshot.size > 0) {
+        const statusCounts: Record<string, number> = {};
+        allBidsForGameSnapshot.docs.forEach(doc => {
+          const status = doc.data().status || 'unknown';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        });
+        console.log(`[FINALIZE] Bid status breakdown:`, statusCounts);
+        
+        return NextResponse.json(
+          { 
+            error: 'No active bids found', 
+            details: `Found ${allBidsForGameSnapshot.size} total bids with statuses: ${JSON.stringify(statusCounts)}` 
+          },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'No active bids found' },
+        { error: 'No bids found for this game' },
         { status: 400 }
       );
     }
@@ -149,7 +180,44 @@ export async function POST(
           await participantDoc.ref.update({
             team: newTeam,
             spentBudget: newSpentBudget,
+            rosterSize: newTeam.length,
           });
+
+          // IMPORTANT: Also create PlayerTeam documents for each won rider
+          // This is required for the points calculation system
+          console.log(`[FINALIZE] Creating ${wins.length} PlayerTeam documents for user ${userId}`);
+          for (const { riderNameId, bid } of wins) {
+            try {
+              await db.collection('playerTeams').add({
+                gameId: gameId,
+                userId: userId,
+                riderNameId: riderNameId,
+                
+                // Acquisition info
+                acquiredAt: new Date(),
+                acquisitionType: 'auction',
+                pricePaid: bid.amount,
+                
+                // Rider info (denormalized)
+                riderName: bid.riderName,
+                riderTeam: bid.riderTeam,
+                riderCountry: bid.riderCountry || '',
+                jerseyImage: bid.jerseyImage || '',
+                
+                // Status
+                active: true,
+                benched: false,
+                
+                // Performance (initialized to 0)
+                pointsScored: 0,
+                stagesParticipated: 0,
+              });
+              console.log(`[FINALIZE]   - Created PlayerTeam document for ${bid.riderName}`);
+            } catch (error) {
+              console.error(`[FINALIZE]   - ERROR creating PlayerTeam for ${bid.riderName}:`, error);
+              results.errors.push(`Failed to create PlayerTeam for ${bid.riderName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+          }
 
           results.winnersAssigned += wins.length;
 

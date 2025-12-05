@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 
-// Helper to remove undefined values from object
+// Helper to remove undefined values from object (recursively)
 function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Partial<T> {
   const cleaned: Partial<T> = {};
   for (const key in obj) {
-    if (obj[key] !== undefined) {
-      cleaned[key] = obj[key];
+    const value = obj[key];
+    if (value !== undefined) {
+      // Recursively clean nested objects
+      if (value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+        cleaned[key] = removeUndefinedFields(value as Record<string, unknown>) as T[Extract<keyof T, string>];
+      } else {
+        cleaned[key] = value;
+      }
     }
   }
   return cleaned;
@@ -120,7 +126,7 @@ export async function PATCH(
 
     // Log the activity
     const adminData = adminDoc.data();
-    await db.collection('activityLogs').add({
+    const activityLogData = removeUndefinedFields({
       action: 'GAME_UPDATED',
       userId: adminUserId,
       userEmail: adminData?.email,
@@ -137,6 +143,7 @@ export async function PATCH(
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
+    await db.collection('activityLogs').add(activityLogData);
 
     return NextResponse.json({
       success: true,
@@ -198,8 +205,95 @@ export async function DELETE(
       );
     }
 
-    // Delete game
+    console.log(`[DELETE_GAME] Starting deletion of game ${gameId} and all related data`);
+
+    // Track what we delete for logging
+    const deletionStats = {
+      bids: 0,
+      participants: 0,
+      playerTeams: 0,
+      leagues: 0,
+      stagePicks: 0,
+      draftPicks: 0,
+    };
+
+    // 1. Delete all bids for this game
+    console.log(`[DELETE_GAME] Deleting bids...`);
+    const bidsSnapshot = await db.collection('bids')
+      .where('gameId', '==', gameId)
+      .get();
+    
+    for (const bidDoc of bidsSnapshot.docs) {
+      await bidDoc.ref.delete();
+      deletionStats.bids++;
+    }
+    console.log(`[DELETE_GAME] Deleted ${deletionStats.bids} bids`);
+
+    // 2. Delete all game participants
+    console.log(`[DELETE_GAME] Deleting participants...`);
+    const participantsSnapshot = await db.collection('gameParticipants')
+      .where('gameId', '==', gameId)
+      .get();
+    
+    for (const participantDoc of participantsSnapshot.docs) {
+      await participantDoc.ref.delete();
+      deletionStats.participants++;
+    }
+    console.log(`[DELETE_GAME] Deleted ${deletionStats.participants} participants`);
+
+    // 3. Delete all player teams
+    console.log(`[DELETE_GAME] Deleting player teams...`);
+    const playerTeamsSnapshot = await db.collection('playerTeams')
+      .where('gameId', '==', gameId)
+      .get();
+    
+    for (const teamDoc of playerTeamsSnapshot.docs) {
+      await teamDoc.ref.delete();
+      deletionStats.playerTeams++;
+    }
+    console.log(`[DELETE_GAME] Deleted ${deletionStats.playerTeams} player teams`);
+
+    // 4. Delete all leagues for this game
+    console.log(`[DELETE_GAME] Deleting leagues...`);
+    const leaguesSnapshot = await db.collection('leagues')
+      .where('gameId', '==', gameId)
+      .get();
+    
+    for (const leagueDoc of leaguesSnapshot.docs) {
+      await leagueDoc.ref.delete();
+      deletionStats.leagues++;
+    }
+    console.log(`[DELETE_GAME] Deleted ${deletionStats.leagues} leagues`);
+
+    // 5. Delete all stage picks (for Carry Me Home, Fan Flandrien, etc.)
+    console.log(`[DELETE_GAME] Deleting stage picks...`);
+    const stagePicksSnapshot = await db.collection('stagePicks')
+      .where('gameId', '==', gameId)
+      .get();
+    
+    for (const pickDoc of stagePicksSnapshot.docs) {
+      await pickDoc.ref.delete();
+      deletionStats.stagePicks++;
+    }
+    console.log(`[DELETE_GAME] Deleted ${deletionStats.stagePicks} stage picks`);
+
+    // 6. Delete all draft picks (for Poisoned Cup, Rising Stars, etc.)
+    console.log(`[DELETE_GAME] Deleting draft picks...`);
+    const draftPicksSnapshot = await db.collection('draftPicks')
+      .where('gameId', '==', gameId)
+      .get();
+    
+    for (const draftDoc of draftPicksSnapshot.docs) {
+      await draftDoc.ref.delete();
+      deletionStats.draftPicks++;
+    }
+    console.log(`[DELETE_GAME] Deleted ${deletionStats.draftPicks} draft picks`);
+
+    // 7. Finally, delete the game itself
+    console.log(`[DELETE_GAME] Deleting game document...`);
     await db.collection('games').doc(gameId).delete();
+
+    console.log(`[DELETE_GAME] Deletion complete:`, deletionStats);
 
     // Log the activity
     const adminData = adminDoc.data();
@@ -212,6 +306,7 @@ export async function DELETE(
         gameId,
         gameName: gameData?.name,
         gameType: gameData?.gameType,
+        deletionStats,
       },
       timestamp: new Date().toISOString(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
@@ -220,7 +315,8 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Game deleted successfully',
+      message: 'Game and all related data deleted successfully',
+      deletionStats,
     });
   } catch (error) {
     console.error('Error deleting game:', error);

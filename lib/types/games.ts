@@ -52,6 +52,15 @@ export interface AuctionPeriod {
   top200Only?: boolean;             // Only allow bidding on top 200 riders for this period
 }
 
+export interface CountingRace {
+  raceId: string;                   // e.g., "tour-de-france_2025"
+  raceSlug: string;                 // e.g., "tour-de-france"
+  raceName: string;                 // e.g., "Tour de France"
+  restDays?: number[];              // Stage numbers that are rest days (e.g., [9, 16])
+  mountainPointsMultiplier?: number; // Multiplier for mountain points (default: 4 for Tour, 2 for Giro)
+  sprintPointsMultiplier?: number;  // Multiplier for sprint points (default: 2)
+}
+
 export interface AuctioneerConfig {
   budget: number;                   // e.g., 100 credits
   maxRiders: number;                // e.g., 8
@@ -60,6 +69,8 @@ export interface AuctioneerConfig {
   maxMinimumBid?: number;           // Optional cap on minimum bid (e.g., 3000 - even if rider is worth 4921, minimum bid is capped at 3000)
   allowSharedRiders?: boolean;      // Allow multiple users to buy the same rider (default: false)
   maxOwnersPerRider?: number;       // Maximum number of users who can own the same rider (only applies if allowSharedRiders is true, default: unlimited)
+  countingRaces?: CountingRace[];   // Specific races that count for points
+  countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])
 }
 
 export interface CarryMeHomeConfig {
@@ -244,6 +255,23 @@ export interface PlayerTeam {
   // Performance
   pointsScored: number;
   stagesParticipated: number;
+
+  // Race-specific performance tracking
+  racePoints?: Record<string, {    // Key: raceSlug (e.g., "tour-de-france_2025")
+    totalPoints: number;            // Total points for this race
+    stagePoints: Record<string, {   // Key: stage number (e.g., "1", "2")
+      stageResult?: number;         // Points from stage result
+      gcPoints?: number;            // Points from GC
+      pointsClass?: number;         // Points from points classification
+      mountainsClass?: number;      // Points from mountains classification
+      youthClass?: number;          // Points from youth classification
+      mountainPoints?: number;      // Points from mountain points during stage
+      sprintPoints?: number;        // Points from sprint points during stage
+      combativityBonus?: number;    // Combativity bonus
+      teamPoints?: number;          // Team classification points
+      total: number;                // Total points for this stage
+    }>;
+  }>;
 
   // For Carry Me Home (track which stages this rider was used)
   usedInStages?: string[];          // Stage IDs

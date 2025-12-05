@@ -15,6 +15,26 @@ interface AuctionPeriodInput {
   top200Only?: boolean;
 }
 
+interface CountingRaceInput {
+  raceId: string;
+  raceSlug: string;
+  raceName: string;
+  restDays?: number[];
+  mountainPointsMultiplier?: number;
+  sprintPointsMultiplier?: number;
+}
+
+interface Race {
+  id: string;
+  slug: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  classification: string;
+  country: string;
+  year: number;
+}
+
 interface GameFormData {
   name: string;
   status: string;
@@ -39,7 +59,12 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameType, setGameType] = useState<GameType | ''>('');
+  const [gameYear, setGameYear] = useState<number>(2025);
   const [auctionPeriods, setAuctionPeriods] = useState<AuctionPeriodInput[]>([]);
+  const [countingRaces, setCountingRaces] = useState<CountingRaceInput[]>([]);
+  const [countingClassifications, setCountingClassifications] = useState<string[]>([]);
+  const [availableRaces, setAvailableRaces] = useState<Race[]>([]);
+  const [loadingRaces, setLoadingRaces] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<GameFormData>();
 
@@ -53,8 +78,9 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         const data = await response.json();
         const game = data.game;
 
-        // Set game type
+        // Set game type and year
         setGameType(game.gameType);
+        setGameYear(game.year || 2025);
 
         // Populate form
         reset({
@@ -77,6 +103,16 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
             top200Only: p.top200Only || false,
           })));
         }
+
+        // Load counting races if auctioneer game
+        if (game.gameType === 'auctioneer' && game.config?.countingRaces) {
+          setCountingRaces(game.config.countingRaces);
+        }
+
+        // Load counting classifications if auctioneer game
+        if (game.gameType === 'auctioneer' && game.config?.countingClassifications) {
+          setCountingClassifications(game.config.countingClassifications);
+        }
       } catch (error: any) {
         console.error('Error loading game:', error);
         setError(error.message || 'Failed to load game');
@@ -87,6 +123,28 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
     loadGame();
   }, [gameId, reset]);
+
+  // Load available races when year changes
+  useEffect(() => {
+    const loadRaces = async () => {
+      if (!gameYear || gameType !== 'auctioneer') return;
+      
+      setLoadingRaces(true);
+      try {
+        const response = await fetch(`/api/scraper/races?year=${gameYear}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableRaces(data.races || []);
+        }
+      } catch (error) {
+        console.error('Error loading races:', error);
+      } finally {
+        setLoadingRaces(false);
+      }
+    };
+
+    loadRaces();
+  }, [gameYear, gameType]);
 
   const addAuctionPeriod = () => {
     setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', status: 'pending', top200Only: false }]);
@@ -104,6 +162,48 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
     const updated = [...auctionPeriods];
     updated[index][field] = value;
     setAuctionPeriods(updated);
+  };
+
+  const addCountingRace = (raceId: string) => {
+    const race = availableRaces.find(r => r.id === raceId);
+    if (!race) return;
+
+    // Check if race is already added
+    if (countingRaces.some(r => r.raceId === raceId)) {
+      setError('This race is already added');
+      return;
+    }
+
+    // Set default multipliers based on race slug
+    let mountainMultiplier = 4; // Default for Tour
+    let sprintMultiplier = 2;
+    
+    if (race.slug.includes('giro')) {
+      mountainMultiplier = 2; // Giro uses 2x
+    }
+
+    setCountingRaces([...countingRaces, {
+      raceId: race.id,
+      raceSlug: race.slug,
+      raceName: race.name,
+      restDays: [],
+      mountainPointsMultiplier: mountainMultiplier,
+      sprintPointsMultiplier: sprintMultiplier,
+    }]);
+  };
+
+  const removeCountingRace = (index: number) => {
+    setCountingRaces(countingRaces.filter((_, i) => i !== index));
+  };
+
+  const updateCountingRace = <K extends keyof CountingRaceInput>(
+    index: number,
+    field: K,
+    value: CountingRaceInput[K]
+  ) => {
+    const updated = [...countingRaces];
+    updated[index][field] = value;
+    setCountingRaces(updated);
   };
 
   const onSubmit: SubmitHandler<GameFormData> = async (data) => {
@@ -149,6 +249,8 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           })),
           auctionStatus: auctionPeriods.some(p => p.status === 'active') ? 'active' :
                         auctionPeriods.every(p => p.status === 'closed') ? 'closed' : 'pending',
+          countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
+          countingClassifications: countingClassifications.length > 0 ? countingClassifications : undefined,
         };
       }
 
@@ -419,6 +521,196 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                               </label>
                             </div>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Counting Races */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Counting Races (optional)
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Select which races count for points. All stages of selected races will count. Leave empty to count all races.
+                    </p>
+
+                    {loadingRaces && (
+                      <p className="text-sm text-gray-500 mb-2">Loading races...</p>
+                    )}
+
+                    {!loadingRaces && availableRaces.length === 0 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                        <p className="text-sm text-yellow-800">
+                          No races found for {gameYear}. Please scrape races first from the admin panel.
+                        </p>
+                      </div>
+                    )}
+
+                    {!loadingRaces && availableRaces.length > 0 && (
+                      <div className="mb-3">
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              addCountingRace(e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">+ Add Race</option>
+                          {availableRaces
+                            .filter(race => !countingRaces.some(cr => cr.raceId === race.id))
+                            .map((race) => (
+                              <option key={race.id} value={race.id}>
+                                {race.name} ({race.classification}) - {new Date(race.startDate).toLocaleDateString()}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {countingRaces.length === 0 && (
+                      <p className="text-sm text-gray-500 mb-2">
+                        No races selected. All races will count for points.
+                      </p>
+                    )}
+
+                    <div className="space-y-3">
+                      {countingRaces.map((race, index) => (
+                        <div key={index} className="border border-gray-300 rounded-md p-4 bg-gray-50">
+                          <div className="flex justify-between items-start mb-3">
+                            <span className="text-sm font-medium text-gray-700">{race.raceName}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeCountingRace(index)}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          {/* Rest Days */}
+                          <div className="mb-3">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Rustdagen (stage numbers, comma separated)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g., 9, 16"
+                              value={race.restDays?.join(', ') || ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const restDays = value
+                                  .split(',')
+                                  .map(s => parseInt(s.trim()))
+                                  .filter(n => !isNaN(n));
+                                updateCountingRace(index, 'restDays', restDays);
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              GC punten worden toegekend op rustdagen (1x eerste, 2x tweede) en eindstand (3x)
+                            </p>
+                          </div>
+
+                          {/* Multipliers */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">
+                                Berg Multiplier
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                placeholder="4"
+                                value={race.mountainPointsMultiplier || ''}
+                                onChange={(e) => updateCountingRace(index, 'mountainPointsMultiplier', parseInt(e.target.value) || 4)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Tour: 4x, Giro: 2x
+                              </p>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">
+                                Sprint Multiplier
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                placeholder="2"
+                                value={race.sprintPointsMultiplier || ''}
+                                onChange={(e) => updateCountingRace(index, 'sprintPointsMultiplier', parseInt(e.target.value) || 2)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Standaard: 2x
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Counting Classifications */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Race Classifications (optional)
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Select race classifications to automatically include all races with those classifications. Works together with specific race selection above.
+                    </p>
+
+                    <div className="mb-3">
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value && !countingClassifications.includes(e.target.value)) {
+                            setCountingClassifications([...countingClassifications, e.target.value]);
+                            e.target.value = '';
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">+ Add Classification</option>
+                        <option value="wc">World Championship (wc)</option>
+                        <option value="cc">Continental Championship (cc)</option>
+                        <option value="nc">National Championship (nc)</option>
+                        <option value="1.uwt">1.UWT</option>
+                        <option value="2.uwt">2.UWT</option>
+                        <option value="1.pro">1.Pro</option>
+                        <option value="2.pro">2.Pro</option>
+                        <option value="1.1">1.1</option>
+                        <option value="1.2">1.2</option>
+                        <option value="2.1">2.1</option>
+                        <option value="2.2">2.2</option>
+                      </select>
+                    </div>
+
+                    {countingClassifications.length === 0 && (
+                      <p className="text-sm text-gray-500 mb-2">
+                        No classifications selected.
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {countingClassifications.map((classification, index) => (
+                        <div key={index} className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                          <span className="font-medium">{classification}</span>
+                          <button
+                            type="button"
+                            onClick={() => setCountingClassifications(countingClassifications.filter((_, i) => i !== index))}
+                            className="ml-2 text-blue-600 hover:text-blue-800"
+                          >
+                            ×
+                          </button>
                         </div>
                       ))}
                     </div>

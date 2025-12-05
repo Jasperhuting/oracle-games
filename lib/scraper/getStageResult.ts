@@ -28,15 +28,44 @@ export async function getStageResult({ race, year, stage, riders }: GetStageResu
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/stage-${stage}`;
   
-  const res = await fetch(url, { 
-    headers: { 'User-Agent': 'Mozilla/5.0 (Node Script)' } 
+  // Use Puppeteer to avoid being blocked
+  const puppeteer = await import('puppeteer');
+
+  const browser = await puppeteer.default.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ]
   });
-  
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+
+  let html: string;
+  try {
+    const page = await browser.newPage();
+
+    // Set viewport and user agent
+    await page.setViewport({ width: 1920, height: 1080 });
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    console.log(`[getStageResult] Navigating to: ${url}`);
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
+
+    // Wait for the page content to load
+    await page.waitForSelector('.page-title', { timeout: 30000 });
+
+    html = await page.content();
+  } finally {
+    await browser.close();
   }
   
-  const html = await res.text();
   const $ = cheerio.load(html);
 
   const stageTitle = $('.page-title > .imob').eq(0).text().trim();

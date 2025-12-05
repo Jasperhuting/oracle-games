@@ -67,6 +67,47 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
+    // Automatically join the test game (only for regular users, not admins)
+    if (userType === 'user') {
+      const TEST_GAME_ID = 'Yq936aY6fTXzbkQ1KBUO';
+      try {
+        // Get the test game to retrieve budget config
+        const testGameDoc = await db.collection('games').doc(TEST_GAME_ID).get();
+        const testGameData = testGameDoc.data();
+        
+        if (testGameDoc.exists && testGameData) {
+          // Add user to test game
+          await db.collection('gameParticipants').add({
+            gameId: TEST_GAME_ID,
+            userId: uid,
+            playername: playername,
+            userEmail: email,
+            joinedAt: new Date(),
+            status: 'active',
+            budget: testGameData.config?.budget || 7000,
+            spentBudget: 0,
+            rosterSize: 0,
+            rosterComplete: false,
+            totalPoints: 0,
+            ranking: 0,
+            leagueIds: [],
+            divisionAssigned: true,
+            assignedDivision: 'Main',
+          });
+
+          // Increment player count
+          await db.collection('games').doc(TEST_GAME_ID).update({
+            playerCount: (testGameData.playerCount || 0) + 1,
+          });
+
+          console.log(`[AUTO_JOIN] User ${uid} (${playername}) automatically joined test game ${TEST_GAME_ID}`);
+        }
+      } catch (autoJoinError) {
+        // Don't fail user creation if auto-join fails, just log it
+        console.error('[AUTO_JOIN] Failed to auto-join test game:', autoJoinError);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error creating user:', error);

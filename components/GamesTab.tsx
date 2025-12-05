@@ -242,7 +242,10 @@ export const GamesTab = () => {
       }
 
       const data = await response.json();
-      alert(`Stage ${stageNumber} successfully saved with ${data.ridersCount} riders!`);
+      setInfoDialog({
+        title: 'Stage Saved',
+        description: `Stage ${stageNumber} successfully saved with ${data.ridersCount} riders!`
+      });
       setStageNumber('');
       fetchStages(selectedRace.slug);
     } catch (error: any) {
@@ -722,7 +725,7 @@ export const GamesTab = () => {
                                       DNS #{doc.dns}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-800 text-green-800/80">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-800 text-white">
                                       Active
                                     </span>
                                   )}

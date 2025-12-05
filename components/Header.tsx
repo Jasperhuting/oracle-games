@@ -67,6 +67,11 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
     const { user, loading } = useAuth();
     const [isAdmin, setIsAdmin] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -80,6 +85,8 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                 } catch (error) {
                     console.error('Error checking admin status:', error);
                 }
+            } else {
+                setIsAdmin(false);
             }
         };
         checkAdminStatus();
@@ -124,6 +131,11 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             display: true
         },
         {
+            name: "Rider Points",
+            href: "/rider-points",
+            display: false
+        },
+        {
             name: "Forum",
             href: "/forum",
             display: false
@@ -160,7 +172,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                     <div className="menu-container flex flex-1 justify-end my-2 divide-solid divide-[#CAC4D0] divide-x">
                         <div className="flex divide-solid divide-[#CAC4D0] divide-x my-3 justify-center align-middle">
                             {/* it should show the admin only if isAdmin is true */}
-                            {MenuItems.filter((item) => !isAdmin ? item.name !== 'Admin' : true).filter(item => item.display).map((item) => (
+                            {mounted && MenuItems.filter((item) => !isAdmin ? item.name !== 'Admin' : true).filter(item => item.display).map((item) => (
                                 <div key={item.name} className="gap-1 flex flex-col items-center px-3 hover:[text-shadow:0_0_0.4px_currentColor] group">
                                     <Link key={item.name} href={item.href} className={`text-gray-900 whitespace-nowrap ${item.href === pathname ? 'text-primary font-bold' : ''}`}>
                                         {item.name}

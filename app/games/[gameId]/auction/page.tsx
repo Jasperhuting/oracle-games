@@ -22,6 +22,29 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
+// Helper functions for sessionStorage cache
+const getCachedRankings = (year: number): Rider[] | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = sessionStorage.getItem(`rankings_${year}`);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (error) {
+    console.error('Error reading from cache:', error);
+  }
+  return null;
+};
+
+const setCachedRankings = (year: number, riders: Rider[]): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(`rankings_${year}`, JSON.stringify(riders));
+  } catch (error) {
+    console.error('Error writing to cache:', error);
+  }
+};
+
 interface GameData {
   id: string;
   name: string;
@@ -222,13 +245,39 @@ useEffect(() => {
         setParticipant(participantData.participants[0]);
       }
 
-      // Load eligible riders
+      // Load eligible riders - use cache if available
       const year = gameData.game.year || YEAR;
-      const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=500`);
-      if (!ridersResponse.ok) throw new Error('Failed to load riders');
-      const ridersData = await ridersResponse.json();
+      const cached = getCachedRankings(year);
+      let riders: Rider[] = [];
 
-      let riders = ridersData.riders;
+      // Use cache if available, otherwise fetch
+      if (cached) {
+        console.log('Using cached rankings data from sessionStorage');
+        riders = cached;
+      } else {
+        console.log('Fetching fresh rankings data');
+        // Fetch all riders in batches
+        let offset = 0;
+        const limit = 500;
+        let hasMore = true;
+
+        while (hasMore) {
+          const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=${limit}&offset=${offset}`);
+          if (!ridersResponse.ok) throw new Error('Failed to load riders');
+          const ridersData = await ridersResponse.json();
+          
+          riders = riders.concat(ridersData.riders);
+          
+          // Check if there are more riders to fetch
+          hasMore = ridersData.riders.length === limit;
+          offset += limit;
+        }
+
+        // Store in sessionStorage (persists across page refreshes)
+        setCachedRankings(year, riders);
+      }
+
+      // Filter by eligible riders if specified
       if (gameData.game.eligibleRiders && gameData.game.eligibleRiders.length > 0) {
         const eligibleSet = new Set(gameData.game.eligibleRiders);
         riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
@@ -239,21 +288,47 @@ useEffect(() => {
       let userBids: Bid[] = [];
 
       if (userIsAdmin) {
-        // Admin: Load all bids
-        const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=1000`);
-        if (bidsResponse.ok) {
-          const bidsData = await bidsResponse.json();
-          allBidsData = bidsData.bids || [];
-          userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
+        // Admin: Load all bids with pagination
+        let bidsOffset = 0;
+        const bidsLimit = 1000;
+        let hasMoreBids = true;
+
+        while (hasMoreBids) {
+          const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${bidsLimit}&offset=${bidsOffset}`);
+          if (bidsResponse.ok) {
+            const bidsData = await bidsResponse.json();
+            const fetchedBids = bidsData.bids || [];
+            allBidsData = allBidsData.concat(fetchedBids);
+            
+            // Check if there are more bids to fetch
+            hasMoreBids = fetchedBids.length === bidsLimit;
+            bidsOffset += bidsLimit;
+          } else {
+            hasMoreBids = false;
+          }
         }
+        userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
       } else {
-        // Regular user: Load only their own bids
-        const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?userId=${user.uid}&limit=1000`);
-        if (bidsResponse.ok) {
-          const bidsData = await bidsResponse.json();
-          userBids = bidsData.bids || [];
-          allBidsData = userBids; // For non-admins, allBids is just their bids
+        // Regular user: Load only their own bids with pagination
+        let bidsOffset = 0;
+        const bidsLimit = 1000;
+        let hasMoreBids = true;
+
+        while (hasMoreBids) {
+          const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?userId=${user.uid}&limit=${bidsLimit}&offset=${bidsOffset}`);
+          if (bidsResponse.ok) {
+            const bidsData = await bidsResponse.json();
+            const fetchedBids = bidsData.bids || [];
+            userBids = userBids.concat(fetchedBids);
+            
+            // Check if there are more bids to fetch
+            hasMoreBids = fetchedBids.length === bidsLimit;
+            bidsOffset += bidsLimit;
+          } else {
+            hasMoreBids = false;
+          }
         }
+        allBidsData = userBids; // For non-admins, allBids is just their bids
       }
 
       setAllBids(allBidsData);

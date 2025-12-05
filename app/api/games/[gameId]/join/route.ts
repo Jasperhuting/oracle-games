@@ -299,7 +299,42 @@ export async function DELETE(
     const participantData = participantDoc.data();
     const isPendingParticipant = participantData?.gameId?.endsWith('-pending');
 
-    // Delete participant
+    console.log(`[LEAVE_GAME] User ${userId} leaving game ${gameId}`);
+
+    // Track what we delete for logging
+    const deletionStats = {
+      bids: 0,
+      playerTeams: 0,
+    };
+
+    // 1. Delete all bids from this user for this game
+    console.log(`[LEAVE_GAME] Deleting bids...`);
+    const bidsSnapshot = await db.collection('bids')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .get();
+    
+    for (const bidDoc of bidsSnapshot.docs) {
+      await bidDoc.ref.delete();
+      deletionStats.bids++;
+    }
+    console.log(`[LEAVE_GAME] Deleted ${deletionStats.bids} bids`);
+
+    // 2. Delete all player teams from this user for this game
+    console.log(`[LEAVE_GAME] Deleting player teams...`);
+    const playerTeamsSnapshot = await db.collection('playerTeams')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .get();
+    
+    for (const teamDoc of playerTeamsSnapshot.docs) {
+      await teamDoc.ref.delete();
+      deletionStats.playerTeams++;
+    }
+    console.log(`[LEAVE_GAME] Deleted ${deletionStats.playerTeams} player teams`);
+
+    // 3. Delete participant
+    console.log(`[LEAVE_GAME] Deleting participant...`);
     await participantDoc.ref.delete();
 
     // Only decrement player count if it's not a pending participant
@@ -309,6 +344,8 @@ export async function DELETE(
         playerCount: Math.max(0, (gameData?.playerCount || 1) - 1),
       });
     }
+
+    console.log(`[LEAVE_GAME] User ${userId} successfully left game ${gameId}:`, deletionStats);
 
     // Log the activity
     const userDoc = await db.collection('users').doc(userId).get();
@@ -322,6 +359,7 @@ export async function DELETE(
         gameId,
         gameName: gameData?.name,
         participantId: participantDoc.id,
+        deletionStats,
       },
       timestamp: new Date().toISOString(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
@@ -330,7 +368,8 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: 'Successfully left the game',
+      message: 'Successfully left the game and removed all related data',
+      deletionStats,
     });
   } catch (error) {
     console.error('Error leaving game:', error);

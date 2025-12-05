@@ -9,6 +9,7 @@ import { AddGameTab } from "@/components/AddGameTab";
 import { CreateGameTab } from "@/components/CreateGameTab";
 import { GamesManagementTab } from "@/components/GamesManagementTab";
 import { RidersManagementTab } from "@/components/RidersManagementTab";
+import { RacesScraperTab } from "@/components/RacesScraperTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
 import { FeedbackTab } from "@/components/FeedbackTab";
 import { PageEditor } from "@/components/PageEditor";
@@ -117,6 +118,11 @@ export default function AdminPage() {
                             id: 'riders',
                             label: 'Manage Riders',
                             content: <RidersManagementTab />
+                        },
+                        {
+                            id: 'scrape-races',
+                            label: 'Scrape Races',
+                            content: <RacesScraperTab />
                         },
                         {
                             id: 'game-rules',

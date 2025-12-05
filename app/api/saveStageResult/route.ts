@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { getStageResult } from '@/lib/scraper/getStageResult';
 import { KNOWN_RACE_SLUGS, type RaceSlug } from '@/lib/scraper/types';
+import { POST as calculatePoints } from '@/app/api/games/calculate-points/route';
 
 // Helper function to remove undefined values from objects
 function cleanData(obj: any): any {
@@ -93,9 +94,24 @@ export async function POST(request: NextRequest) {
 
     // Verify the requesting user is an admin
     const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc.exists || userDoc.data()?.userType !== 'admin') {
+    const userDataCheck = userDoc.data();
+    
+    console.log('[saveStageResult] Admin check:', {
+      userId,
+      userExists: userDoc.exists,
+      userType: userDataCheck?.userType,
+      isAdmin: userDataCheck?.userType === 'admin'
+    });
+    
+    if (!userDoc.exists || userDataCheck?.userType !== 'admin') {
       return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
+        { 
+          error: 'Unauthorized - Admin access required',
+          debug: {
+            userExists: userDoc.exists,
+            userType: userDataCheck?.userType
+          }
+        },
         { status: 403 }
       );
     }
@@ -168,6 +184,32 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
+
+    // Trigger points calculation for all affected games
+    console.log(`[saveStageResult] Triggering points calculation for ${raceSlug} stage ${stage}`);
+    try {
+      // Create a mock request for the calculate-points endpoint
+      const mockRequest = new NextRequest('http://localhost:3000/api/games/calculate-points', {
+        method: 'POST',
+        body: JSON.stringify({
+          raceSlug,
+          stage,
+          year,
+        }),
+      });
+
+      const calculatePointsResponse = await calculatePoints(mockRequest);
+      const pointsResult = await calculatePointsResponse.json();
+      
+      if (calculatePointsResponse.status === 200) {
+        console.log('[saveStageResult] Points calculation completed:', pointsResult);
+      } else {
+        console.error('[saveStageResult] Failed to calculate points:', pointsResult);
+      }
+    } catch (error) {
+      console.error('[saveStageResult] Error triggering points calculation:', error);
+      // Don't fail the whole request if points calculation fails
+    }
 
     return NextResponse.json({ 
       success: true,
