@@ -414,6 +414,10 @@ export const ActivityLogTab = () => {
                 <option value="BID_PLACED">Bid Placed</option>
                 <option value="BID_CANCELLED">Bid Cancelled</option>
               </optgroup>
+              <optgroup label="Messaging">
+                <option value="message_sent">Messages Sent</option>
+                <option value="message_broadcast">Broadcast Messages</option>
+              </optgroup>
               <optgroup label="System">
                 <option value="ERROR">Errors</option>
               </optgroup>

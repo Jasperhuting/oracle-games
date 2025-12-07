@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           subject,
           recipientCount: messageCount,
         },
-        timestamp: Timestamp.now(),
+        timestamp: new Date().toISOString(),
       });
 
       return NextResponse.json({
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           subject,
           messageId: messageRef.id,
         },
-        timestamp: Timestamp.now(),
+        timestamp: new Date().toISOString(),
       });
 
       return NextResponse.json({
