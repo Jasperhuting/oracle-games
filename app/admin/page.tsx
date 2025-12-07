@@ -131,7 +131,7 @@ export default function AdminPage() {
                         },
                         {
                             id: 'pages-editor',
-                            label: 'Pages editor',
+                            label: 'Pages Editor',
                             content: <PageEditor />
                         },
                         {
