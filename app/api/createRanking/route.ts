@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
                 firstName: rider.firstName,
                 lastName: rider.lastName,
                 ...(teamRef && { team: teamRef }),
-            });
+            }, { merge: true });
         }
 
         console.log(`Successfully created ${result.riders.length} rankings for offset ${offset}`);

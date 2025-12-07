@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import process from "process";
 
-const YEAR = process.env.NEXT_PUBLIC_PLAYING_YEAR;
+const DEFAULT_YEAR = process.env.NEXT_PUBLIC_PLAYING_YEAR;
 
 // PATCH - Update a rider
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { adminUserId, riderId, country, teamId, teamName, jerseyImage, retired } = body;
+    const { adminUserId, riderId, country, teamId, teamName, jerseyImage, retired, year } = body;
+    const YEAR = year || DEFAULT_YEAR;
 
     if (!adminUserId) {
       return NextResponse.json(

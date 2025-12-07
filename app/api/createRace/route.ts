@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
             points: rider.points,
             country: rider.country,
             ...(teamRef && { team: teamRef }),
-          });
+          }, { merge: true });
         }
         
         console.log(`[createRace] Successfully created rankings_${year} with ${totalRiders.length} riders`);

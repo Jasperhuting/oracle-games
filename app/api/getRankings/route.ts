@@ -47,6 +47,11 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // Debug logging for retired field
+        if (data.retired !== undefined) {
+          console.log(`[getRankings] Rider ${data.name} (${doc.id}) has retired=${data.retired}`);
+        }
+
         return {
           id: doc.id,
           rank: data.rank,

@@ -120,6 +120,7 @@ export const RidersManagementTab = () => {
           riderId,
           teamId,
           teamName,
+          year: YEAR,
         }),
       });
 
@@ -155,6 +156,7 @@ export const RidersManagementTab = () => {
           adminUserId: user.uid,
           riderId,
           retired: !currentRetired,
+          year: YEAR,
         }),
       });
 
