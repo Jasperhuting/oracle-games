@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { PasskeySetup } from "./PasskeySetup";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface AccountSettingsProps {
   userId: string;
@@ -33,7 +35,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AccountFormData>();
+  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<AccountFormData>();
 
   // Fetch user data and passkey info
   useEffect(() => {
@@ -190,11 +192,13 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
             </div>
 
             <div className="mt-4">
-              <TextInput
-                type="date"
-                label="Date of birth"
-                placeholder="Date of birth"
-                {...register('dateOfBirth', {
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date of birth
+              </label>
+              <Controller
+                name="dateOfBirth"
+                control={control}
+                rules={{
                   validate: (value) => {
                     if (!value) return true; // Optional field
                     const date = new Date(value);
@@ -204,7 +208,31 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
                     if (age > 120) return 'Invalid birthdate';
                     return true;
                   }
-                })}
+                }}
+                render={({ field }) => (
+                  <DatePicker
+                    selected={field.value ? new Date(field.value) : null}
+                    onChange={(date) => {
+                      if (date) {
+                        // Format date as YYYY-MM-DD
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        field.onChange(`${year}-${month}-${day}`);
+                      } else {
+                        field.onChange('');
+                      }
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    showYearDropdown
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={100}
+                    maxDate={new Date()}
+                    placeholderText="Select date of birth"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    wrapperClassName="w-full"
+                  />
+                )}
               />
               {errors.dateOfBirth && (
                 <span className="text-red-500 text-xs mt-1 block">{errors.dateOfBirth.message}</span>

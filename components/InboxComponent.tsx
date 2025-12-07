@@ -12,6 +12,35 @@ export default function InboxComponent() {
   const [messages, setMessages] = useState<ClientMessage[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<ClientMessage | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showBanner, setShowBanner] = useState(true);
+
+  useEffect(() => {
+    const checkBannerCookie = () => {
+      // Clear any localStorage value (legacy)
+      if (typeof window !== 'undefined' && localStorage.getItem('hide-beta-banner') !== null) {
+        localStorage.removeItem('hide-beta-banner');
+      }
+  
+      const cookies = document.cookie.split('; ');
+      const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
+  
+      if (hideBannerCookie) {
+        // Extract the value after 'hide-beta-banner='
+        const value = hideBannerCookie.split('=')[1];
+        setShowBanner(value !== 'true');
+      } else {
+        setShowBanner(true);
+      }
+    };
+  
+    // Check initially
+    checkBannerCookie();
+  
+    // Poll for cookie changes (since cookies don't trigger events)
+    const interval = setInterval(checkBannerCookie, 100);
+  
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -150,7 +179,7 @@ export default function InboxComponent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-[36px]">        
+    <div className={`container mx-auto px-4 py-8 ${showBanner ? 'mt-[36px]' : 'mt-0'}`}>        
       <h1 className="text-3xl font-bold mb-6">Inbox</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
