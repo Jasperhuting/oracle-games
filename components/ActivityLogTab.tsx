@@ -132,6 +132,8 @@ export const ActivityLogTab = () => {
       'DIVISION_ASSIGNED': 'Division Assigned',
       'PARTICIPANT_REMOVED': 'Participant Removed',
       'GAME_STATUS_CHANGED': 'Game Status Changed',
+      'message_sent': 'Message Sent',
+      'message_broadcast': 'Broadcast Message',
       'ERROR': 'Error',
     };
     return labels[action] || action;
@@ -153,6 +155,8 @@ export const ActivityLogTab = () => {
       'DIVISION_ASSIGNED': 'bg-indigo-100 text-indigo-800',
       'PARTICIPANT_REMOVED': 'bg-red-100 text-red-800',
       'GAME_STATUS_CHANGED': 'bg-yellow-100 text-yellow-800',
+      'message_sent': 'bg-blue-100 text-blue-800',
+      'message_broadcast': 'bg-purple-100 text-purple-800',
       'ERROR': 'bg-red-100 text-red-800',
     };
     return colors[action] || 'bg-gray-100 text-gray-800';
@@ -224,6 +228,34 @@ export const ActivityLogTab = () => {
                 Was highest bid
               </span>
             )}
+          </div>
+        </div>
+      );
+    }
+
+    // MESSAGE_SENT details
+    if (log.action === 'message_sent') {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="text-sm text-gray-900">
+            <strong>To:</strong> {log.targetUserName || log.targetUserEmail || 'Unknown user'}
+          </div>
+          <div className="text-sm text-gray-700">
+            <strong>Subject:</strong> {log.details.subject}
+          </div>
+        </div>
+      );
+    }
+
+    // MESSAGE_BROADCAST details
+    if (log.action === 'message_broadcast') {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="text-sm text-gray-900">
+            <strong>Subject:</strong> {log.details.subject}
+          </div>
+          <div className="text-xs text-gray-600">
+            Sent to {log.details.recipientCount} users
           </div>
         </div>
       );

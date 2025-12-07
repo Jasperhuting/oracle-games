@@ -291,6 +291,7 @@ export interface Bid {
   amount: number;
   bidAt: Timestamp | Date;
   status: BidStatus;
+  deletedAt?: Timestamp | Date;
 
   // Denormalized rider info
   riderName: string;
@@ -563,4 +564,44 @@ export type ClientRaceLineup = Omit<RaceLineup, 'updatedAt'> & {
 
 export type ClientDraftPick = Omit<DraftPick, 'pickedAt'> & {
   pickedAt: string;
+};
+
+// ============================================================================
+// MESSAGES (Inbox/Communication System)
+// ============================================================================
+
+export const MESSAGE_TYPES = ['broadcast', 'individual'] as const;
+export type MessageType = typeof MESSAGE_TYPES[number];
+
+export interface Message {
+  id?: string;                      // Document ID
+  type: MessageType;                // 'broadcast' or 'individual'
+  
+  // Sender info
+  senderId: string;                 // Admin UID
+  senderName: string;               // Admin display name
+  
+  // Recipient info
+  recipientId?: string;             // For individual messages, the user UID
+  recipientName?: string;           // For individual messages, the user display name
+  
+  // Message content
+  subject: string;
+  message: string;
+  
+  // Timestamps
+  sentAt: Timestamp | Date;
+  
+  // Read status (for individual messages)
+  read?: boolean;
+  readAt?: Timestamp | Date;
+  
+  // Soft delete
+  deletedAt?: Timestamp | Date;
+}
+
+export type ClientMessage = Omit<Message, 'sentAt' | 'readAt' | 'deletedAt'> & {
+  sentAt: string;
+  readAt?: string;
+  deletedAt?: string;
 };

@@ -5,6 +5,7 @@ import { MotiaProvider } from "@/components/MotiaProvider";
 import { Toaster } from 'react-hot-toast';
 import { LayoutShell } from "@/components/LayoutShell";
 import { AuthGuard } from "@/components/AuthGuard";
+import MessageNotification from "@/components/MessageNotification";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
       >
         <MotiaProvider address={process.env.NEXT_PUBLIC_MOTIA_WS ?? 'ws://localhost:3000'}>
           <Toaster position="top-center" />
+          <MessageNotification />
           <AuthGuard>
             <LayoutShell>
               <main>

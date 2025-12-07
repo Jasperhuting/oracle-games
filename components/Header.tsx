@@ -1,11 +1,12 @@
 'use client'
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { auth } from "@/lib/firebase/client";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User, Logout, UserCircle, ArrowDown, ChevronDown } from "tabler-icons-react";
+import { User, Logout, UserCircle, ArrowDown, ChevronDown, Mail } from "tabler-icons-react";
 import { Menu, MenuItem, MenuProvider, MenuSeparator } from "./ProfileMenu";
 import { MotionProps, Variants } from "framer-motion";
 import { Menubar, MenuButton, useMenuContext, useStoreState } from "@ariakit/react";
@@ -36,7 +37,7 @@ const item = {
     transition: { opacity: { duration: 0.2 } },
 } satisfies MotionProps;
 
-const ProfileMenuButton = ({ user, loading, pathname }: { user: any, loading: boolean, pathname: string }) => {
+const ProfileMenuButton = ({ user, loading, pathname, unreadCount }: { user: any, loading: boolean, pathname: string, unreadCount: number }) => {
     const menu = useMenuContext();
     const isOpen = useStoreState(menu, 'open') || false;
 
@@ -45,7 +46,14 @@ const ProfileMenuButton = ({ user, loading, pathname }: { user: any, loading: bo
             {user?.displayName || user?.email ? (
                 loading ? '...loading' : (
                     <span className="flex items-center gap-2 cursor-pointer whitespace-nowrap hover:[text-shadow:0_0_0.4px_currentColor]">
-                        {user?.displayName || user?.email || 'Account'}
+                        <span className="relative">
+                            {user?.displayName || user?.email || 'Account'}
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </span>
                         <ChevronDown
                             className={`transition-transform duration-400 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                         />
@@ -66,6 +74,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     const router = useRouter();
 
     const { user, loading } = useAuth();
+    const { unreadCount } = useUnreadMessages(user?.uid);
     const [isAdmin, setIsAdmin] = useState(false);
     const [mounted, setMounted] = useState(false);
 
@@ -106,6 +115,21 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             name: "Profile",
             href: "/account",
             icon: <UserCircle className="w-6 h-6" />,
+            display: true
+        },
+        {
+            name: "Inbox",
+            href: "/inbox",
+            icon: (
+                <div className="relative">
+                    <Mail className="w-6 h-6" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                </div>
+            ),
             display: true
         },
         {
@@ -185,7 +209,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                             <div key={'account'} className="relative gap-1 flex flex-col items-center px-3 group justify-center align-middle">
                                 <Menubar>
                                     <MenuProvider>
-                                        <ProfileMenuButton user={user} loading={loading} pathname={pathname} />
+                                        <ProfileMenuButton user={user} loading={loading} pathname={pathname} unreadCount={unreadCount} />
                                         <Menu>
                                             {profileItems.map((item) => {
                                                 return <MenuItem key={item.name} onClick={() => item.onClick ? item.onClick() : router.push(item.href)} className={`text-gray-900 whitespace-nowrap py-2 px-3 ${item.href === pathname ? 'text-primary font-bold' : ''}`}>

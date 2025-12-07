@@ -13,6 +13,7 @@ import { RacesScraperTab } from "@/components/RacesScraperTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
 import { FeedbackTab } from "@/components/FeedbackTab";
 import { PageEditor } from "@/components/PageEditor";
+import MessagingTab from "@/components/MessagingTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -138,6 +139,11 @@ export default function AdminPage() {
                             id: 'feedback',
                             label: 'Feedback',
                             content: <FeedbackTab />
+                        },
+                        {
+                            id: 'messaging',
+                            label: 'Messaging',
+                            content: <MessagingTab />
                         },
                         {
                             id: 'forum',
