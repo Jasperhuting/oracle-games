@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
-import { Send, Users, User } from 'tabler-icons-react';
+import { useState, useEffect, useRef } from 'react';
+import { Send, Users, User, Search, X } from 'tabler-icons-react';
 
 interface UserOption {
   id: string;
@@ -20,6 +20,9 @@ export default function MessagingTab() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchInputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Fetch all users for individual messaging
@@ -49,6 +52,41 @@ export default function MessagingTab() {
       fetchUsers();
     }
   }, [messageType, user]);
+
+  // Handle clicking outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter users based on search query
+  const filteredUsers = users.filter((u) =>
+    u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Get selected user display name
+  const selectedUser = users.find((u) => u.id === selectedUserId);
+  const selectedUserDisplay = selectedUser ? (selectedUser.displayName || selectedUser.email) : '';
+
+  // Handle user selection
+  const handleUserSelect = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowDropdown(false);
+    setSearchQuery('');
+  };
+
+  // Clear selection
+  const handleClearSelection = () => {
+    setSelectedUserId('');
+    setSearchQuery('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,20 +194,69 @@ export default function MessagingTab() {
               <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 mb-2">
                 Select Recipient
               </label>
-              <select
-                id="recipient"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                required={messageType === 'individual'}
-              >
-                <option value="">-- Select a user --</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.displayName || u.email}
-                  </option>
-                ))}
-              </select>
+              <div ref={searchInputRef} className="relative">
+                {/* Display selected user or search input */}
+                {selectedUserId ? (
+                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between">
+                    <span className="text-gray-900">{selectedUserDisplay}</span>
+                    <button
+                      type="button"
+                      onClick={handleClearSelection}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="Clear selection"
+                    >
+                      <X className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowDropdown(true);
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      placeholder="Search users by name or email..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                {/* Dropdown list */}
+                {showDropdown && !selectedUserId && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => handleUserSelect(u.id)}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{u.displayName}</div>
+                          {u.email && (
+                            <div className="text-sm text-gray-500">{u.email}</div>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-gray-500 text-center">
+                        {searchQuery ? 'No users found' : 'Start typing to search...'}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Hidden input for form validation */}
+                <input
+                  type="hidden"
+                  value={selectedUserId}
+                  required={messageType === 'individual'}
+                />
+              </div>
             </div>
           )}
 
