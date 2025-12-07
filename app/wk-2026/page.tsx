@@ -13,6 +13,7 @@ export interface TeamInPoule {
     name: string;
     pot: number;
     poule: string | null;
+    possibleTeams?: string[]; 
     position: number | null; // 0, 1, 2, or 3 for positions within a poule
 }
 
@@ -260,7 +261,23 @@ export const WK2026Page = () => {
                                                         {position + 1}
                                                     </div>
                                                     <div className="flex-shrink-0">
-                                                        <Flag countryCode={country?.code || teamAtPosition.id} width={24} />
+                                                        
+                                                        {teamAtPosition.possibleTeams ? (
+                                                            <div className="flex flex-col gap-0">
+                                                                <div className="flex flex-row gap-0">
+                                                                    {teamAtPosition.possibleTeams.slice(0, 2).map((pt, idx) => {
+                                                                        const ptCountry = countriesList.find((c: any) => c.name === pt);
+                                                                        return <Flag key={idx} countryCode={ptCountry?.code || pt} width={24} />;
+                                                                    })}
+                                                                </div>
+                                                                <div className="flex flex-row gap-0">
+                                                                    {teamAtPosition.possibleTeams.slice(2, 4).map((pt, idx) => {
+                                                                        const ptCountry = countriesList.find((c: any) => c.name === pt);
+                                                                        return <Flag key={idx} countryCode={ptCountry?.code || pt} width={24} />;
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                            ) : <Flag countryCode={country?.code || teamAtPosition.id} width={24} />}
                                                     </div>
                                                     <span className="ml-2 text-sm truncate">{teamAtPosition.name}</span>
                                                 </div>

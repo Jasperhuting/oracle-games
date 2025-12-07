@@ -674,7 +674,7 @@ useEffect(() => {
   };
 
   const filteredRiders = availableRiders.filter(rider => {
-    const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) || rider.nameID.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rider.team?.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const riderPrice = rider.effectiveMinBid || rider.points;
