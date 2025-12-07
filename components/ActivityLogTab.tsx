@@ -165,6 +165,11 @@ export const ActivityLogTab = () => {
     if (log.action === 'BID_PLACED') {
       return (
         <div className="mt-2 space-y-1">
+          {log.details.gameName && (
+            <div className="text-xs text-gray-600 font-medium">
+              Game: {log.details.gameName}
+            </div>
+          )}
           <div className="text-sm text-gray-900">
             <strong>{log.details.riderName}</strong>
             {log.details.riderTeam && (
@@ -199,6 +204,11 @@ export const ActivityLogTab = () => {
     if (log.action === 'BID_CANCELLED') {
       return (
         <div className="mt-2 space-y-1">
+          {log.details.gameName && (
+            <div className="text-xs text-gray-600 font-medium">
+              Game: {log.details.gameName}
+            </div>
+          )}
           <div className="text-sm text-gray-900">
             <strong>{log.details.riderName}</strong>
             {log.details.riderTeam && (
@@ -414,10 +424,16 @@ export const ActivityLogTab = () => {
                   {/* User info */}
                   <div className="text-sm text-gray-900">
                     <strong>{log.userName || log.userEmail}</strong>
+                    {log.userEmail && log.userName && (
+                      <span className="text-xs text-gray-500 ml-2">({log.userEmail})</span>
+                    )}
                     {log.targetUserName && (
                       <>
                         {' → '}
                         <strong>{log.targetUserName || log.targetUserEmail}</strong>
+                        {log.targetUserEmail && log.targetUserName && (
+                          <span className="text-xs text-gray-500 ml-2">({log.targetUserEmail})</span>
+                        )}
                       </>
                     )}
                   </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ import 'react-range-slider-input/dist/style.css';
 import { GridDots, List } from "tabler-icons-react";
 import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { PlayerRowBids } from "@/components/PlayerRowBids";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -104,7 +105,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [myBids, setMyBids] = useState<Bid[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
-  const [bidAmounts, setBidAmounts] = useState<Record<string, string>>({});
+  const bidAmountsRef = useRef<Record<string, string>>({});
   const [placingBid, setPlacingBid] = useState<string | null>(null);
   const [cancellingBid, setCancellingBid] = useState<string | null>(null);
   const [cancelConfirmModal, setCancelConfirmModal] = useState<{ bidId: string; riderName: string } | null>(null);
@@ -112,7 +113,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPlayerCard, setShowPlayerCard] = useState(true);
-  const [myTeamView, setMyTeamView] = useState('list');
+  const [myTeamView, setMyTeamView] = useState('card');
+  const [myTeamBidsView, setMyTeamBidsView] = useState('list');
   const [isSticky, setIsSticky] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
@@ -463,7 +465,7 @@ useEffect(() => {
     if (!user || !participant) return;
 
     const riderNameId = rider.nameID || rider.id || '';
-    const bidAmount = parseFloat(bidAmounts[riderNameId] || '0');
+    const bidAmount = parseFloat(bidAmountsRef.current[riderNameId] || '0');
     const effectiveMinBid = getEffectiveMinimumBid(rider.points);
 
     // When top-200 restriction is active, block bids on riders outside top 200
@@ -532,7 +534,7 @@ useEffect(() => {
       const newBid = result.bid;
 
       // Clear bid amount input
-      setBidAmounts(prev => ({ ...prev, [riderNameId]: '' }));
+      bidAmountsRef.current[riderNameId] = '';
 
       // Update state directly instead of reloading
       // When updating a bid, remove any existing bid on this rider by this user
@@ -607,7 +609,7 @@ useEffect(() => {
       await Promise.all(cancelPromises);
 
       // Clear all state
-      setBidAmounts({});
+      bidAmountsRef.current = {};
       setMyBids([]);
       
       // Update available riders to remove bid info
@@ -731,19 +733,37 @@ useEffect(() => {
     }
   };
 
-  const filteredRiders = availableRiders.filter(rider => {
-    const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) || rider.nameID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rider.team?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredRiders = useMemo(() => {
+    return availableRiders.filter(rider => {
+      const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) || rider.nameID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rider.team?.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const riderPrice = rider.effectiveMinBid || rider.points;
-    const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
+      const riderPrice = rider.effectiveMinBid || rider.points;
+      const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
 
-    // Apply top-200 restriction at list level: only show riders in top 200 when enabled
-    const riderRank = (rider as any).rank;
-    const withinTop200 = !isTop200Restricted || (typeof riderRank === 'number' && riderRank <= 200);
+      // Apply top-200 restriction at list level: only show riders in top 200 when enabled
+      const riderRank = (rider as any).rank;
+      const withinTop200 = !isTop200Restricted || (typeof riderRank === 'number' && riderRank <= 200);
 
-    return matchesSearch && matchesPrice && withinTop200;
-  });
+      return matchesSearch && matchesPrice && withinTop200;
+    });
+  }, [availableRiders, searchTerm, priceRange, isTop200Restricted]);
+
+  const sortedAndFilteredRiders = useMemo(() => {
+    return [...filteredRiders]
+      .sort((a, b) => {
+        if (a.myBid && b.myBid) {
+          return b.myBid - a.myBid;
+        } else if (a.myBid) {
+          return -1;
+        } else if (b.myBid) {
+          return 1;
+        } else {
+          return a.rank - b.rank;
+        }
+      })
+      .filter((rider) => !myBids.some(bid => bid.riderName === rider.name));
+  }, [filteredRiders, myBids]);
 
   if (authLoading || loading) {
     return (
@@ -954,13 +974,13 @@ useEffect(() => {
               <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
                 <h1 className="text-2xl font-bold mt-1">My Bids</h1>
                 <span className="flex flex-row gap-2">
-                  <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
-                  <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
+                  <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+                  <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
                 </span>
               </div>
 
 
-              {myTeamView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
+              {myTeamBidsView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
                 {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
@@ -1043,8 +1063,12 @@ useEffect(() => {
 
           {/* Riders List */}
           <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
-            <div className="grid grid-cols-12 gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
+            <div className="flex flex-col gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
               <div className="col-span-1">Riders</div>
+              <span className="flex flex-row gap-2">
+                  <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
+                  <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+                </span>
             </div>
 
 
@@ -1053,20 +1077,10 @@ useEffect(() => {
 
 
 
-              <div className={`w-full ${showPlayerCard ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
+              <div className={`w-full ${myTeamView === 'card' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
 
                 {/* it should sort when there is a myBid */}
-                {filteredRiders.sort((a, b) => {
-                  if (a.myBid && b.myBid) {
-                    return b.myBid - a.myBid;
-                  } else if (a.myBid) {
-                    return -1;
-                  } else if (b.myBid) {
-                    return 1;
-                  } else {
-                    return a.rank - b.rank;
-                  }
-                }).filter((rider) => !myBids.some(bid => bid.riderName === rider.name)).map((rider, index) => {
+                {sortedAndFilteredRiders.map((rider, index) => {
                   const riderNameId = rider.nameID || rider.id || '';
                   const isOutbid = rider.myBidStatus === 'outbid';
                   const isWinning = rider.myBid && rider.myBid === rider.highestBid;
@@ -1083,9 +1097,9 @@ useEffect(() => {
                   return (
                     <React.Fragment key={rider.id || index}>
 
-                      <div className="flex w-full">
+                      <div className={`flex w-full ${myTeamView ==='list' && 'flex-col'}`}>
 
-                        {showPlayerCard ?
+                        {myTeamView === 'card' ?
 
                           <PlayerCard showBid={true} bid={rider.highestBid} player={rider} onClick={() => { }} selected={false} bidders={riderBidders} buttonContainer={<>
                             <div className="flex flex-row gap-2">
@@ -1098,17 +1112,12 @@ useEffect(() => {
                                     name="input-name"
                                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                     placeholder={`Min: ${rider.effectiveMinBid || rider.points}`}
-                                    defaultValue={rider.effectiveMinBid || rider.points}
                                     prefix="€"
                                     decimalsLimit={0}
                                     disabled={placingBid === riderNameId}
-                                    value={bidAmounts[riderNameId] || ''}
+                                    defaultValue={bidAmountsRef.current[riderNameId] || ''}
                                     onValueChange={(value, name, values) => {
-                                      const newValue = value || '0';
-                                      setBidAmounts(prev => ({
-                                        ...prev,
-                                        [riderNameId]: newValue
-                                      }));
+                                      bidAmountsRef.current[riderNameId] = value || '0';
                                     }}
                                   />
                                 </>
@@ -1145,7 +1154,7 @@ useEffect(() => {
                                     type="button"
                                     text={placingBid === riderNameId ? "..." : "Bid"}
                                     onClick={() => handlePlaceBid(rider)}
-                                    disabled={placingBid === riderNameId || !bidAmounts[riderNameId]}
+                                    disabled={placingBid === riderNameId}
                                     className="px-3 py-1 text-sm"
                                     variant="primary"
                                   />
@@ -1155,7 +1164,68 @@ useEffect(() => {
 
                           </>} />
                           :
-                          <PlayerRow player={rider} selectPlayer={() => { }} index={index} />}
+                          <PlayerRowBids player={rider} showPoints showRank fullWidth selectPlayer={() => handlePlaceBid(rider)} index={index} rightContent={<>
+                            <div className="flex flex-row gap-2">
+
+
+                              <div className="flex-1">
+                                {auctionActive ? (<>
+                                  <CurrencyInput
+                                    id="input-example"
+                                    name="input-name"
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                    placeholder={`Min: ${rider.effectiveMinBid || rider.points}`}
+                                    prefix="€"
+                                    decimalsLimit={0}
+                                    disabled={placingBid === riderNameId}
+                                    defaultValue={bidAmountsRef.current[riderNameId] || ''}
+                                    onValueChange={(value, name, values) => {
+                                      bidAmountsRef.current[riderNameId] = value || '0';
+                                    }}
+                                  />
+                                </>
+                                ) : (
+
+                                  rider.myBid ? (
+                                    <div>
+                                      <div className={`font-bold text-sm ${isOutbid ? 'text-red-600' : 'text-green-600'}`}>
+                                        {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {isOutbid ? 'Outbid' : isWinning ? 'Winning' : rider.myBidStatus}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">No bid</span>
+                                  )
+                                )}
+                              </div>
+                              {auctionActive && (
+                                <>
+                                  {rider.myBid && rider.myBidId && (
+                                    <Button
+                                      type="button"
+                                      text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
+                                      onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                      disabled={cancellingBid === rider.myBidId}
+                                      className="px-2 py-1 text-sm"
+                                      title="Cancel bid"
+                                      variant="danger"
+                                    />
+                                  )}
+                                  <Button
+                                    type="button"
+                                    text={placingBid === riderNameId ? "..." : "Bid"}
+                                    onClick={() => handlePlaceBid(rider)}
+                                    disabled={placingBid === riderNameId}
+                                    className="px-3 py-1 text-sm"
+                                    variant="primary"
+                                  />
+                                </>
+                              )}
+                            </div>
+
+                          </>} />}
                       </div>
 
 
