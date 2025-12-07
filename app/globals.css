@@ -7,6 +7,16 @@
   html {
     font-family: Inter, system-ui, sans-serif;
   }
+  
+  body {
+    min-height: 100vh;
+  }
+  
+  /* Prevent layout shift from images */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 @theme {

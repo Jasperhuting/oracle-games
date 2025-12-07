@@ -89,6 +89,8 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                         <img 
                           src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
                           alt={result.name}
+                          width={48}
+                          height={48}
                           className="h-12 w-12 object-cover object-top rounded-full"
                         />
                       )}
@@ -137,7 +139,9 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                         {result.jerseyImage && (
                           <img 
                             src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
-                            alt={result.name} 
+                            alt={result.name}
+                            width={48}
+                            height={48}
                             className="h-12 w-12 object-cover object-top rounded-full"
                           />
                         )}
@@ -191,7 +195,9 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                         {result.jerseyImage && (
                           <img 
                             src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
-                            alt={result.name} 
+                            alt={result.name}
+                            width={48}
+                            height={48}
                             className="h-12 w-12 object-cover object-top rounded-full"
                           />
                         )}
@@ -231,7 +237,9 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                         {result.jerseyImage && (
                           <img 
                             src={`https://www.procyclingstats.com/${result.jerseyImage}`} 
-                            alt={result.name} 
+                            alt={result.name}
+                            width={48}
+                            height={48}
                             className="h-12 w-12 object-cover object-top rounded-full"
                           />
                         )}

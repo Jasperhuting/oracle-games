@@ -8,7 +8,7 @@ export default function RegisterPage() {
                 
                 <div className="flex flex-row border-b border-gray-200 pb-4 max-w-[300px] items-center">
                     <div>
-                        <img src="/logo.png" alt="" />
+                        <Image src="/logo.png" alt="Oracle Games Logo" width={56} height={56} priority />
                     </div>
                     <div className="flex-1 whitespace-nowrap text-3xl">
                         Oracle Games
@@ -25,8 +25,14 @@ export default function RegisterPage() {
 
 
             </div>
-            <div className="w-0 md:flex-1">
-                <img src="/homepage_picture_1.jpg" className="w-full h-full object-cover object-[25%_50%]" alt="" />
+            <div className="w-0 md:flex-1 relative">
+                <Image 
+                    src="/homepage_picture_1.jpg" 
+                    alt="Oracle Games" 
+                    fill
+                    className="object-cover object-[25%_50%]"
+                    priority
+                />
             </div>
         </div>
     );

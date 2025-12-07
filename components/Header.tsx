@@ -4,6 +4,7 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { auth } from "@/lib/firebase/client";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { User, Logout, UserCircle, ArrowDown, ChevronDown, Mail } from "tabler-icons-react";
@@ -187,7 +188,14 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                 <div className="flex flex-1 justify-between py-2">
                     <div className="flex-1 flex items-center">
                         <Link href="/home">
-                            <img src="/logo.png" alt="" className="w-14 h-14 cursor-pointer hover:opacity-80 transition-opacity" />
+                            <Image 
+                                src="/logo.png" 
+                                alt="Oracle Games Logo" 
+                                width={56} 
+                                height={56}
+                                priority
+                                className="cursor-pointer hover:opacity-80 transition-opacity" 
+                            />
                         </Link>
                         <div className="flex-1 whitespace-nowrap text-3xl ml-4">
                             Oracle Games
