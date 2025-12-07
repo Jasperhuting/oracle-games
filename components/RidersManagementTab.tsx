@@ -108,7 +108,7 @@ export const RidersManagementTab = () => {
   }, []);
 
   // Update rider team
-  const handleUpdateRiderTeam = async (riderId: string, teamId: string, teamName: string) => {
+  const handleUpdateRiderTeam = async (riderId: string, teamId: string | null, teamName: string | null) => {
     if (!user) return;
 
     try {
@@ -131,7 +131,7 @@ export const RidersManagementTab = () => {
 
       // Update local state
       setRiders(riders.map(r =>
-        r.id === riderId ? { ...r, team: teamName, teamId } : r
+        r.id === riderId ? { ...r, team: teamName || undefined, teamId: teamId || undefined } : r
       ));
 
       setEditingRiderTeam(null);
@@ -142,6 +142,12 @@ export const RidersManagementTab = () => {
         description: error.message || 'Failed to update rider team.',
       });
     }
+  };
+
+  // Remove team from rider
+  const handleRemoveTeam = async (riderId: string) => {
+    if (!user) return;
+    await handleUpdateRiderTeam(riderId, null, null);
   };
 
   // Toggle rider retired status
@@ -268,13 +274,7 @@ export const RidersManagementTab = () => {
                       </td>
 
                       {/* Team - Inline Editable */}
-                      <td
-                        className="px-4 py-3 text-sm text-gray-600 cursor-pointer relative"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingRiderTeam(rider.id);
-                        }}
-                      >
+                      <td className="px-4 py-3 text-sm text-gray-600">
                         {isEditingTeam ? (
                           <div data-editing className="relative z-50">
                             <TeamSelector
@@ -302,9 +302,29 @@ export const RidersManagementTab = () => {
                             />
                           </div>
                         ) : (
-                          <span className="hover:bg-gray-100 px-2 py-1 rounded">
-                            {rider.team || '-'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span 
+                              className="hover:bg-gray-100 px-2 py-1 rounded cursor-pointer flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingRiderTeam(rider.id);
+                              }}
+                            >
+                              {rider.team || '-'}
+                            </span>
+                            {rider.team && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveTeam(rider.id);
+                                }}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded text-xs font-medium"
+                                title="Remove team"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         )}
                       </td>
 
