@@ -11,6 +11,8 @@ export const FeedbackTab = () => {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'new' | 'reviewed' | 'resolved'>('all');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     fetchFeedback();
@@ -92,6 +94,48 @@ export const FeedbackTab = () => {
     } catch (error) {
       console.error('Error updating feedback status:', error);
       toast.error('Error updating status');
+    }
+  };
+
+  const submitReply = async (feedbackId: string) => {
+    if (!user) return;
+
+    const reply = replyText[feedbackId]?.trim();
+    if (!reply) {
+      toast.error('Please enter a response');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          feedbackId,
+          adminResponse: reply,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Response added successfully');
+        // Update local state
+        setFeedback(prev => prev.map(f =>
+          f.id === feedbackId 
+            ? { ...f, adminResponse: reply, adminResponseDate: new Date().toISOString() } 
+            : f
+        ));
+        setReplyingTo(null);
+        setReplyText(prev => ({ ...prev, [feedbackId]: '' }));
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to add response');
+      }
+    } catch (error) {
+      console.error('Error adding response:', error);
+      toast.error('Error adding response');
     }
   };
 
@@ -208,6 +252,50 @@ export const FeedbackTab = () => {
                   <p className="text-gray-700 whitespace-pre-wrap">{item.message}</p>
                 </div>
 
+                {/* Admin Response Section */}
+                {item.adminResponse && (
+                  <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-sm font-medium text-green-900">Admin Response:</p>
+                      {item.adminResponseDate && (
+                        <p className="text-xs text-green-600">
+                          {formatDate(item.adminResponseDate)}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-sm text-green-800 whitespace-pre-wrap">{item.adminResponse}</p>
+                  </div>
+                )}
+
+                {/* Reply Input Section */}
+                {replyingTo === item.id && (
+                  <div className="mb-4">
+                    <textarea
+                      value={replyText[item.id!] || ''}
+                      onChange={(e) => setReplyText(prev => ({ ...prev, [item.id!]: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
+                      placeholder="Type your response..."
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        text="Send Response"
+                        onClick={() => submitReply(item.id!)}
+                        className="px-3 py-1 text-sm"
+                        variant="primary"
+                      />
+                      <Button
+                        text="Cancel"
+                        onClick={() => {
+                          setReplyingTo(null);
+                          setReplyText(prev => ({ ...prev, [item.id!]: '' }));
+                        }}
+                        className="px-3 py-1 text-sm"
+                        variant="secondary"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   {item.status !== 'new' && (
                     <Button
@@ -233,6 +321,23 @@ export const FeedbackTab = () => {
                       onClick={() => updateStatus(item.id!, 'resolved')}
                       className="px-3 py-1 text-sm"
                       variant="success"
+                      ghost
+                    />
+                  )}
+                  
+                  {!item.adminResponse && (
+                    <Button
+                      text={replyingTo === item.id ? "Cancel Reply" : "Reply"}
+                      onClick={() => {
+                        if (replyingTo === item.id) {
+                          setReplyingTo(null);
+                          setReplyText(prev => ({ ...prev, [item.id!]: '' }));
+                        } else {
+                          setReplyingTo(item.id!);
+                        }
+                      }}
+                      className="px-3 py-1 text-sm"
+                      variant="primary"
                       ghost
                     />
                   )}

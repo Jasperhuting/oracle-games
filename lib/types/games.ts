@@ -502,6 +502,8 @@ export interface Feedback {
   message: string;
   createdAt: string;
   status?: 'new' | 'reviewed' | 'resolved';
+  adminResponse?: string;
+  adminResponseDate?: string;
 }
 
 export type ClientFeedback = Omit<Feedback, 'createdAt'> & {

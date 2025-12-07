@@ -108,6 +108,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [placingBid, setPlacingBid] = useState<string | null>(null);
   const [cancellingBid, setCancellingBid] = useState<string | null>(null);
   const [cancelConfirmModal, setCancelConfirmModal] = useState<{ bidId: string; riderName: string } | null>(null);
+  const [resetConfirmModal, setResetConfirmModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPlayerCard, setShowPlayerCard] = useState(true);
@@ -578,6 +579,63 @@ useEffect(() => {
     setCancelConfirmModal({ bidId, riderName });
   };
 
+  const handleResetBidsClick = () => {
+    setResetConfirmModal(true);
+  };
+
+  const handleResetBidsConfirm = async () => {
+    if (!user) return;
+
+    setResetConfirmModal(false);
+    setError(null);
+
+    try {
+      // Cancel all active bids
+      const cancelPromises = myBids
+        .filter(bid => bid.status === 'active')
+        .map(bid =>
+          fetch(`/api/games/${gameId}/bids/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              bidId: bid.id,
+            }),
+          })
+        );
+
+      await Promise.all(cancelPromises);
+
+      // Clear all state
+      setBidAmounts({});
+      setMyBids([]);
+      
+      // Update available riders to remove bid info
+      setAvailableRiders(prev => prev.map(r => ({
+        ...r,
+        myBid: undefined,
+        myBidStatus: undefined,
+        myBidId: undefined,
+      })));
+
+      // Reload bids to get fresh data
+      const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=1000&offset=0`);
+      if (bidsResponse.ok) {
+        const bidsData = await bidsResponse.json();
+        setAllBids(bidsData.bids || []);
+      }
+
+    } catch (error) {
+      console.error('Error resetting bids:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to reset bids';
+      setError(errorMsg);
+      setInfoDialog({
+        title: 'Error resetting bids',
+        description: errorMsg,
+      });
+    }
+  };
+
   const handleCancelBidConfirm = async () => {
     if (!user || !cancelConfirmModal) return;
 
@@ -822,6 +880,12 @@ useEffect(() => {
                     onInput={(value: number[]) => setPriceRange([value[0], value[1]])}
                   />
                 </div>
+              </span>
+              <span className="flex flex-col flex-1 justify-center">
+                <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
+                  Reset all bids
+                </label>
+               <Button text="Reset all bids" disabled={myBids.length === 0} onClick={handleResetBidsClick} />
               </span>
             </div>
           </div>
@@ -1150,6 +1214,30 @@ useEffect(() => {
                 text={cancellingBid === cancelConfirmModal.bidId ? "Cancelling..." : "Yes, Cancel Bid"}
                 onClick={handleCancelBidConfirm}
                 disabled={cancellingBid !== null}
+                className="px-4 py-2"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset All Bids Confirmation Modal */}
+      {resetConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4">Reset All Bids</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to reset all your bid amounts? This will clear all the amounts you've entered in the input fields.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                text="No, Keep Them"
+                onClick={() => setResetConfirmModal(false)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 hover:text-white"
+              />
+              <Button
+                text="Yes, Reset All"
+                onClick={handleResetBidsConfirm}
                 className="px-4 py-2"
               />
             </div>

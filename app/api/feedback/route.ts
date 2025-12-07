@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
         message: data.message,
         createdAt: data.createdAt || new Date(),
         status: data.status || 'new',
+        adminResponse: data.adminResponse,
+        adminResponseDate: data.adminResponseDate,
       });
     });
 
@@ -115,20 +117,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/feedback - Update feedback status (admin only)
+// PATCH /api/feedback - Update feedback status or add admin response (admin only)
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, feedbackId, status, currentPage } = body;
+    const { userId, feedbackId, status, currentPage, adminResponse } = body;
 
-    if (!userId || !feedbackId || !status) {
+    if (!userId || !feedbackId) {
       return NextResponse.json(
-        { error: 'User ID, feedback ID, and status are required' },
+        { error: 'User ID and feedback ID are required' },
         { status: 400 }
       );
     }
 
-    if (!['new', 'reviewed', 'resolved'].includes(status)) {
+    if (status && !['new', 'reviewed', 'resolved'].includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status' },
         { status: 400 }
@@ -146,19 +148,31 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updateData: { status: 'new' | 'reviewed' | 'resolved'; currentPage?: string } = {
-      status,
-    };
+    const updateData: { 
+      status?: 'new' | 'reviewed' | 'resolved'; 
+      currentPage?: string;
+      adminResponse?: string;
+      adminResponseDate?: string;
+    } = {};
+
+    if (status) {
+      updateData.status = status;
+    }
 
     if (typeof currentPage !== 'undefined') {
       updateData.currentPage = currentPage;
+    }
+
+    if (typeof adminResponse !== 'undefined') {
+      updateData.adminResponse = adminResponse;
+      updateData.adminResponseDate = new Date().toISOString();
     }
 
     await db.collection('feedback').doc(feedbackId).update(updateData);
 
     return NextResponse.json({
       success: true,
-      message: 'Feedback status updated successfully'
+      message: 'Feedback updated successfully'
     });
   } catch (error) {
     console.error('Error updating feedback:', error);
