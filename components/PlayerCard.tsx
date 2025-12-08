@@ -5,7 +5,7 @@ import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid, bid, hideInfo, className, bidders }: { player: any, onClick: (player: any) => void, selected: boolean, buttonContainer?: ReactNode, showBid?: boolean, bid?: number, hideInfo?: boolean, className?: string, bidders?: Array<{ playername: string, amount: number, bidAt: string }> }) => {
+export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid, bid, hideInfo, className, bidders, isNeoProf, showNeoProfBadge }: { player: any, onClick: (player: any) => void, selected: boolean, buttonContainer?: ReactNode, showBid?: boolean, bid?: number, hideInfo?: boolean, className?: string, bidders?: Array<{ playername: string, amount: number, bidAt: string }>, isNeoProf?: boolean, showNeoProfBadge?: boolean }) => {
 
     const age = player?.team?.riders?.find((rider: any) => rider.name === player.id)?.age;
     const jerseyImage = player?.team?.teamImage;
@@ -24,6 +24,11 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
                     <span className="flex items-end content-end gap-2 min-w-0">
                         <span><Flag width={25} countryCode={player.country} /></span>
                         <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis ${isSold ? 'line-through' : ''}`}>{player.name}</span>
+                        {showNeoProfBadge && isNeoProf && (
+                            <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
+                                Neo-prof
+                            </span>
+                        )}
                     </span>
                     <span className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm ${isSold ? 'line-through' : ''}`}>
                         {teamName}

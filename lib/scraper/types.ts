@@ -31,7 +31,7 @@ export interface Rider {
 export interface EnrichedRider {
   jerseyImage: string;
   name: string;
-  age: number;
+  age: number | string; // Can be age number or date of birth string
 }
 
 export interface EnrichedTeam {

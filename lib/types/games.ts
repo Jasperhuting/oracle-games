@@ -50,6 +50,9 @@ export interface AuctionPeriod {
   endDate: Timestamp;
   status: AuctionStatus;
   top200Only?: boolean;             // Only allow bidding on top 200 riders for this period
+  neoProfsRequired?: number;        // Number of neo-professionals required (born after 01-01-2004)
+  neoProfsMaxPoints?: number;       // Maximum points a neo-professional can have (e.g., 250)
+  neoProfsMaxBudget?: number;       // Maximum budget allowed for neo-professionals combined
 }
 
 export interface CountingRace {
@@ -111,10 +114,14 @@ export interface CountryRoadsConfig {
 }
 
 export interface WorldTourManagerConfig {
-  budget: number;
+  budget: number;                   // e.g., 12000 points
   minRiders: number;                // e.g., 27
   maxRiders: number;                // e.g., 32
-  minNeoPros: number;               // e.g., 5
+  minNeoPros: number;               // e.g., 5 (riders max 21 years old)
+  maxNeoProPoints?: number;         // e.g., 250 (max points per neo-pro in current year)
+  maxNeoProAge?: number;            // e.g., 21 (maximum age for neo-professionals)
+  auctionPeriods?: AuctionPeriod[]; // Auction periods with optional neo-pro rules
+  auctionStatus?: AuctionStatus;    // Overall auction status
 }
 
 export interface FanFlandrienConfig {

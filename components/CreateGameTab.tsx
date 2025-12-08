@@ -31,6 +31,14 @@ interface GameFormData {
   maxMinimumBid?: number;
   allowSharedRiders?: boolean;
   maxOwnersPerRider?: number;
+
+  // WorldTour Manager config
+  wtmBudget?: number;
+  wtmMinRiders?: number;
+  wtmMaxRiders?: number;
+  wtmMinNeoPros?: number;
+  wtmMaxNeoProPoints?: number;
+  wtmMaxNeoProAge?: number;
 }
 
 interface Race {
@@ -168,6 +176,36 @@ export const CreateGameTab = () => {
           maxMinimumBid: data.maxMinimumBid ? Number(data.maxMinimumBid) : undefined,
           allowSharedRiders: data.allowSharedRiders || false,
           maxOwnersPerRider: data.allowSharedRiders && data.maxOwnersPerRider ? Number(data.maxOwnersPerRider) : undefined,
+          auctionPeriods: auctionPeriods.map(period => ({
+            name: period.name,
+            startDate: new Date(period.startDate).toISOString(),
+            endDate: new Date(period.endDate).toISOString(),
+            status: 'pending',
+          })),
+          auctionStatus: 'pending',
+        };
+      } else if (data.gameType === 'worldtour-manager') {
+        // Validate auction periods for WorldTour Manager
+        if (auctionPeriods.length === 0) {
+          setError('Please add at least one auction period');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const invalidPeriod = auctionPeriods.find(p => !p.name || !p.startDate || !p.endDate);
+        if (invalidPeriod) {
+          setError('All auction periods must have a name, start date, and end date');
+          setIsSubmitting(false);
+          return;
+        }
+
+        config = {
+          budget: Number(data.wtmBudget) || 12000,
+          minRiders: Number(data.wtmMinRiders) || 27,
+          maxRiders: Number(data.wtmMaxRiders) || 32,
+          minNeoPros: Number(data.wtmMinNeoPros) || 5,
+          maxNeoProPoints: data.wtmMaxNeoProPoints ? Number(data.wtmMaxNeoProPoints) : undefined,
+          maxNeoProAge: data.wtmMaxNeoProAge ? Number(data.wtmMaxNeoProAge) : 21,
           auctionPeriods: auctionPeriods.map(period => ({
             name: period.name,
             startDate: new Date(period.startDate).toISOString(),
@@ -546,6 +584,192 @@ export const CreateGameTab = () => {
                           <input
                             type="text"
                             placeholder="Period name (e.g., Pre-race, Stage 1-5)"
+                            value={period.name}
+                            onChange={(e) => updateAuctionPeriod(index, 'name', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Start Date & Time</label>
+                            <input
+                              type="datetime-local"
+                              value={period.startDate}
+                              onChange={(e) => updateAuctionPeriod(index, 'startDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">End Date & Time</label>
+                            <input
+                              type="datetime-local"
+                              value={period.endDate}
+                              onChange={(e) => updateAuctionPeriod(index, 'endDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* WorldTour Manager Specific Fields */}
+          {selectedGameType === 'worldtour-manager' && (
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">WorldTour Manager Configuration</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Total Budget (points)"
+                    placeholder="E.g. 12000"
+                    defaultValue="12000"
+                    {...register('wtmBudget', {
+                      min: {
+                        value: 1,
+                        message: 'Budget must be at least 1'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Total budget in ranking points (e.g., 12000 points from 2025 ranking)
+                  </p>
+                </div>
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Min Neo-Professionals"
+                    placeholder="E.g. 5"
+                    defaultValue="5"
+                    {...register('wtmMinNeoPros', {
+                      min: {
+                        value: 0,
+                        message: 'Cannot be negative'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Minimum number of neo-professionals required (max 21 years old)
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Min Riders"
+                    placeholder="E.g. 27"
+                    defaultValue="27"
+                    {...register('wtmMinRiders', {
+                      min: {
+                        value: 1,
+                        message: 'At least 1 rider required'
+                      }
+                    })}
+                  />
+                </div>
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Max Riders"
+                    placeholder="E.g. 32"
+                    defaultValue="32"
+                    {...register('wtmMaxRiders', {
+                      min: {
+                        value: 1,
+                        message: 'At least 1 rider required'
+                      }
+                    })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Max Points per Neo-Pro (optional)"
+                    placeholder="E.g. 250"
+                    {...register('wtmMaxNeoProPoints', {
+                      min: {
+                        value: 0,
+                        message: 'Cannot be negative'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Maximum points a neo-professional can have earned in current year (e.g., 250)
+                  </p>
+                </div>
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Max Neo-Pro Age"
+                    placeholder="E.g. 21"
+                    defaultValue="21"
+                    {...register('wtmMaxNeoProAge', {
+                      min: {
+                        value: 18,
+                        message: 'Age must be at least 18'
+                      },
+                      max: {
+                        value: 25,
+                        message: 'Age cannot exceed 25'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Maximum age for neo-professionals (e.g., 21 years old)
+                  </p>
+                </div>
+              </div>
+
+              {/* Auction Periods */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Auction Periods *
+                  </label>
+                  <Button
+                    type="button"
+                    text="+ Add Period"
+                    onClick={addAuctionPeriod}
+                    className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700"
+                  />
+                </div>
+
+                {auctionPeriods.length === 0 && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    No auction periods added. Click "+ Add Period" to add one.
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {auctionPeriods.map((period, index) => (
+                    <div key={index} className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm font-medium text-gray-700">Period {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAuctionPeriod(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Period name (e.g., Pre-season, Mid-season)"
                             value={period.name}
                             onChange={(e) => updateAuctionPeriod(index, 'name', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"

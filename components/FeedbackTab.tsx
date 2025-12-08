@@ -20,8 +20,6 @@ export const FeedbackTab = () => {
 
   const fetchFeedback = async () => {
 
-
-    console.log(user);
     if (!user) return;
 
     try {

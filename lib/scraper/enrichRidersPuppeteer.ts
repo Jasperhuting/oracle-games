@@ -69,6 +69,27 @@ export async function enrichRidersPuppeteer({ year, team }: { year: number, team
             riders.push(rider);
         });
 
+        $('.stab.age.hide.riderlistcont table tbody tr').each((_, el) => {
+            const riderName = $(el).find('td:nth-child(2) a').attr('href')?.split('/')[1];
+            const ageText = $(el).find('td:nth-child(3)').text().trim(); // e.g., "38y + 68d"
+            
+            // Parse years and days from the age string
+            const ageYears = Number(ageText.split('y')[0].trim());
+            const ageDaysMatch = ageText.split('+')[1]; // Get the part after '+'
+            const ageDays = ageDaysMatch ? Number(ageDaysMatch.split('d')[0].trim()) : 0;
+            
+            // Calculate date of birth by subtracting years and days from today
+            const dateOfBirth = new Date();
+            dateOfBirth.setFullYear(dateOfBirth.getFullYear() - ageYears);
+            dateOfBirth.setDate(dateOfBirth.getDate() - ageDays);
+            
+            const rider = riders.find((rider) => rider.name === riderName);
+            if (rider && !isNaN(ageYears)) {
+                // Store date of birth as ISO string (YYYY-MM-DD format)
+                rider.age = dateOfBirth.toISOString().split('T')[0];
+            }            
+        });
+
         // Extract data from the page
         const scrapedName = pageTitle;
         const country = $('.title > .flag').attr('class')?.split(' ')[1] || '';

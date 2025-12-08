@@ -524,7 +524,7 @@ export const JoinableGamesTab = () => {
                         onClick={() => {
                           // Navigate to first division if multi-division, otherwise to the game
                           const targetGame = group.isMultiDivision ? group.games[0] : game;
-                          if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer') {
+                          if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
                             router.push(`/games/${targetGame.id}/auction`);
                           } else {
                             router.push(`/games/${targetGame.id}/team`);
@@ -541,7 +541,7 @@ export const JoinableGamesTab = () => {
                         onClick={() => {
                           // Navigate to first division if multi-division, otherwise stay on current game
                           const targetGame = group.isMultiDivision ? group.games[0] : joinedGame;
-                          if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer') {
+                          if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
                             router.push(`/games/${targetGame.id}/auction`);
                           } else {
                             router.push(`/games/${targetGame.id}/team`);
@@ -560,14 +560,14 @@ export const JoinableGamesTab = () => {
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
-                    {isJoined && !isWaitingForDivision && joinedGame && (game.gameType === 'auction' || game.gameType === 'auctioneer') && (
+                    {isJoined && !isWaitingForDivision && joinedGame && (game.gameType === 'auction' || game.gameType === 'auctioneer' || game.gameType === 'worldtour-manager') && (
                       <Button
                         text="Auction"
                         onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
-                    {isJoined && !isWaitingForDivision && joinedGame && game.gameType !== 'auction' && game.gameType !== 'auctioneer' && (
+                    {isJoined && !isWaitingForDivision && joinedGame && game.gameType !== 'auction' && game.gameType !== 'auctioneer' && game.gameType !== 'worldtour-manager' && (
                       <Button
                         text="Select Team"
                         onClick={() => router.push(`/games/${joinedGame.id}/team`)}

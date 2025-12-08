@@ -8,7 +8,7 @@ import { RichTextEditor } from "./RichTextEditor";
 import toast from "react-hot-toast";
 
 const GAME_TYPE_LABELS: Record<GameType, string> = {
-  'auctioneer': 'Auctioneer',
+  'auctioneer': 'Auction Master',
   'carry-me-home': 'Carry Me Home',
   'last-man-standing': 'Last Man Standing',
   'poisoned-cup': 'Poisoned Cup',

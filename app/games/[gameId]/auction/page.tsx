@@ -16,7 +16,7 @@ import process from "process";
 import { useInView } from "react-intersection-observer";
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
-import { Eye, EyeOff, GridDots, List } from "tabler-icons-react";
+import { Eye, EyeOff, GridDots, List, Star, Users } from "tabler-icons-react";
 import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PlayerRowBids } from "@/components/PlayerRowBids";
@@ -58,6 +58,19 @@ interface GameData {
     minRiders?: number;
     auctionStatus?: 'pending' | 'active' | 'closed' | 'finalized';
     maxMinimumBid?: number;
+    // WorldTour Manager specific
+    minNeoPros?: number;
+    maxNeoProPoints?: number;
+    maxNeoProAge?: number;
+    auctionPeriods?: Array<{
+      name: string;
+      startDate: string;
+      endDate: string;
+      status: string;
+      neoProfsRequired?: number;
+      neoProfsMaxPoints?: number;
+      neoProfsMaxBudget?: number;
+    }>;
   };
   eligibleRiders: string[];
 }
@@ -87,6 +100,7 @@ interface Bid {
 interface RiderWithBid extends Rider {
   highestBid?: number;
   highestBidder?: string;
+  age?: string;
   myBid?: number;
   myBidStatus?: string;
   myBidId?: string;
@@ -122,6 +136,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [showBanner, setShowBanner] = useState(true);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
   const [hideSoldPlayers, setHideSoldPlayers] = useState(false);
+  const [showOnlyNeoPros, setShowOnlyNeoPros] = useState(false);
 
 useEffect(() => {
   const checkBannerCookie = () => {
@@ -224,7 +239,7 @@ useEffect(() => {
       if (!gameResponse.ok) throw new Error('Failed to load game');
       const gameData = await gameResponse.json();
 
-      if (gameData.game.gameType !== 'auction' && gameData.game.gameType !== 'auctioneer') {
+      if (gameData.game.gameType !== 'auction' && gameData.game.gameType !== 'auctioneer' && gameData.game.gameType !== 'worldtour-manager') {
         throw new Error('This game is not an auction game');
       }
 
@@ -460,9 +475,43 @@ useEffect(() => {
     return riderPoints;
   };
 
+  // Helper to calculate rider's age
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  // Helper to check if a rider is a neo-professional
+  const isNeoProf = (rider: RiderWithBid): boolean => {
+
+    if (!game?.config?.maxNeoProAge) return false;
+    if (!rider.age) return false;
+    
+    const age = calculateAge(rider.age);
+    return age <= game.config.maxNeoProAge;
+  };
+
+  // Helper to check if a rider qualifies as a neo-prof based on points
+  const qualifiesAsNeoProf = (rider: RiderWithBid): boolean => {
+    if (!isNeoProf(rider)) return false;
+    
+    const maxPoints = game?.config?.maxNeoProPoints;
+    if (maxPoints === undefined) return true; // No points limit
+    
+    return rider.points <= maxPoints;
+  };
+
   // Determine if the current auction period is restricted to top 200 riders
   const isTop200Restricted = (() => {
-    if (!game || game.gameType !== 'auctioneer') return false;
+    if (!game || (game.gameType !== 'auctioneer' && game.gameType !== 'worldtour-manager')) return false;
 
     const config: any = game.config;
     if (!config || !Array.isArray(config.auctionPeriods)) return false;
@@ -548,6 +597,39 @@ useEffect(() => {
       const highestBid = typeof rider.highestBid === 'number' ? rider.highestBid.toFixed(1) : rider.highestBid;
       setError(`Bid must be higher than current highest bid (${highestBid})`);
       return;
+    }
+
+    // WorldTour Manager: Check neo-prof requirements
+    if (game && game.gameType === 'worldtour-manager' && game.config.minNeoPros) {
+      const currentNeoProfBids = myBids.filter(b => {
+        const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
+        return bidRider && qualifiesAsNeoProf(bidRider);
+      });
+
+      const isThisRiderNeoProf = qualifiesAsNeoProf(rider);
+      const currentNeoProfCount = currentNeoProfBids.length;
+      const minNeoPros = game.config.minNeoPros;
+
+      // If this is NOT a neo-prof, check if we still need more neo-profs
+      if (!isThisRiderNeoProf) {
+        const totalActiveBids = myBids.filter(b => b.status === 'active').length;
+        const maxRiders = game.config.maxRiders || 32;
+        const remainingSlots = maxRiders - totalActiveBids;
+        const neededNeoPros = minNeoPros - currentNeoProfCount;
+
+        if (neededNeoPros > remainingSlots) {
+          const maxAge = game.config.maxNeoProAge || 21;
+          const maxPoints = game.config.maxNeoProPoints || 250;
+          setError(`Je moet nog ${neededNeoPros} neoprofs selecteren. Je hebt maar ${remainingSlots} plekken over. Kies eerst een neoprof (max ${maxAge} jaar oud met max ${maxPoints} punten).`);
+          return;
+        }
+      } else {
+        // This IS a neo-prof - check if they qualify
+        if (game.config.maxNeoProPoints && rider.points > game.config.maxNeoProPoints) {
+          setError(`Deze renner heeft te veel punten (${rider.points}) om als neoprof te kwalificeren. Max toegestaan: ${game.config.maxNeoProPoints} punten.`);
+          return;
+        }
+      }
     }
 
     setPlacingBid(riderNameId);
@@ -804,8 +886,9 @@ useEffect(() => {
         }
       })
       .filter((rider) => !myBids.some(bid => bid.riderName === rider.name))
-      .filter((rider) => !hideSoldPlayers || !rider.isSold);
-  }, [filteredRiders, myBids, hideSoldPlayers]);
+      .filter((rider) => !hideSoldPlayers || !rider.isSold)
+      .filter((rider) => !showOnlyNeoPros || qualifiesAsNeoProf(rider));
+  }, [filteredRiders, myBids, hideSoldPlayers, showOnlyNeoPros]);
 
   if (authLoading || loading) {
     return (
@@ -998,6 +1081,8 @@ useEffect(() => {
                           player={rider}
                           onClick={() => { }}
                           selected={false}
+                          isNeoProf={qualifiesAsNeoProf(rider)}
+                          showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                           buttonContainer={
                             <div className="w-full text-center py-2 text-green-700 font-semibold">
                               ✓ Won!
@@ -1038,6 +1123,8 @@ useEffect(() => {
                         player={rider}
                         onClick={() => { }}
                         selected={false}
+                        isNeoProf={qualifiesAsNeoProf(rider)}
+                        showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                         buttonContainer={
                           <>
                             {rider && canCancel && (
@@ -1122,6 +1209,14 @@ useEffect(() => {
                     {hideSoldPlayers ? <><Eye />Show sold players</> : <><EyeOff />Hide sold players</>}
                   </span>
                 </Button>
+                
+                {game.gameType === 'worldtour-manager' && (
+                  <Button onClick={() => setShowOnlyNeoPros(!showOnlyNeoPros)}>
+                    <span className={`flex flex-row gap-2 items-center`}>
+                      {showOnlyNeoPros ? <><Users />Show all riders</> : <><Star />Show only neo-profs</>}
+                    </span>
+                  </Button>
+                )}
                 </span>
                 
             </div>
@@ -1156,7 +1251,7 @@ useEffect(() => {
 
                         {myTeamView === 'card' ?
 
-                          <PlayerCard showBid={true} bid={rider.highestBid} player={rider} onClick={() => { }} selected={false} bidders={riderBidders} buttonContainer={<>
+                          <PlayerCard showBid={true} bid={rider.highestBid} player={rider} onClick={() => { }} selected={false} bidders={riderBidders} isNeoProf={qualifiesAsNeoProf(rider)} showNeoProfBadge={game?.gameType === 'worldtour-manager'} buttonContainer={<>
                             <div className="flex flex-row gap-2">
 
 
