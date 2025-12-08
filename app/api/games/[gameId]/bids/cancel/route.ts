@@ -45,10 +45,10 @@ export async function POST(
       );
     }
 
-    // Only allow canceling active, outbid, or won bids (won bids can be cancelled before auction closes)
-    if (bidData?.status !== 'active' && bidData?.status !== 'outbid' && bidData?.status !== 'won') {
+    // Only allow canceling active or outbid bids (not won/lost - those are finalized)
+    if (bidData?.status !== 'active' && bidData?.status !== 'outbid') {
       return NextResponse.json(
-        { error: `Cannot cancel a bid with status: ${bidData?.status}` },
+        { error: `Cannot cancel a ${bidData?.status} bid. Only active or outbid bids can be cancelled.` },
         { status: 400 }
       );
     }
@@ -88,34 +88,6 @@ export async function POST(
       // If there was a previous bid, restore it to active
       if (!outbidBidsSnapshot.empty) {
         await outbidBidsSnapshot.docs[0].ref.update({ status: 'active' });
-      }
-    }
-
-    // If this was a won bid, we need to refund the budget and remove the rider from the team
-    if (bidData?.status === 'won') {
-      const participantSnapshot = await db.collection('gameParticipants')
-        .where('gameId', '==', gameId)
-        .where('userId', '==', userId)
-        .limit(1)
-        .get();
-
-      if (!participantSnapshot.empty) {
-        const participantDoc = participantSnapshot.docs[0];
-        const participantData = participantDoc.data();
-        const currentTeam = participantData.team || [];
-        const currentSpentBudget = participantData.spentBudget || 0;
-
-        // Remove the rider from the team
-        const updatedTeam = currentTeam.filter((rider: any) => rider.riderNameId !== bidData?.riderNameId);
-
-        // Refund the bid amount
-        const refundedBudget = currentSpentBudget - bidData.amount;
-
-        // Update the participant
-        await participantDoc.ref.update({
-          team: updatedTeam,
-          spentBudget: Math.max(0, refundedBudget), // Ensure it doesn't go negative
-        });
       }
     }
 

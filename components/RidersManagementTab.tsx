@@ -118,8 +118,7 @@ export const RidersManagementTab = () => {
         body: JSON.stringify({
           adminUserId: user.uid,
           riderId,
-          teamId,
-          teamName,
+          teamId, // Only send team reference ID, not the name
           year: YEAR,
         }),
       });
@@ -129,7 +128,7 @@ export const RidersManagementTab = () => {
         throw new Error(errorData.error || 'Failed to update rider team');
       }
 
-      // Update local state
+      // Update local state - keep teamName for display purposes only
       setRiders(riders.map(r =>
         r.id === riderId ? { ...r, team: teamName || undefined, teamId: teamId || undefined } : r
       ));
@@ -147,7 +146,7 @@ export const RidersManagementTab = () => {
   // Remove team from rider
   const handleRemoveTeam = async (riderId: string) => {
     if (!user) return;
-    await handleUpdateRiderTeam(riderId, null, null);
+    await handleUpdateRiderTeam(riderId, null, null); // Pass null for both teamId and teamName
   };
 
   // Toggle rider retired status

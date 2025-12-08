@@ -6,6 +6,7 @@ interface RowProps<T> {
     index?: number | boolean;
     children: React.ReactNode;
     rightContent?: React.ReactNode;
+    className?: string;
 }
 
 export function Row<T>({ 
@@ -15,7 +16,8 @@ export function Row<T>({
     fullWidth = false, 
     index,
     children,
-    rightContent
+    rightContent,
+    className = ''
 }: RowProps<T>) {
     const getBackgroundClass = () => {
         if (typeof index === 'number') {
@@ -26,7 +28,7 @@ export function Row<T>({
 
     return (
         <div 
-            className={`flex items-center ${rightContent ? 'justify-between' : ''} gap-2 cursor-pointer ${getBackgroundClass()} p-2 ${fullWidth ? 'w-full' : 'w-fit'}`}
+            className={`flex items-center ${rightContent ? 'justify-between' : ''} gap-2 cursor-pointer ${getBackgroundClass()} p-2 ${fullWidth ? 'w-full' : 'w-fit'} ${className}`}
             onMouseDown={() => onSelect(item)}
         >
             <div className="flex items-center gap-2">

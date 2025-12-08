@@ -166,7 +166,7 @@ export async function POST(
               riderName: bid.riderName,
               riderTeam: bid.riderTeam,
               jerseyImage: bid.jerseyImage,
-              amount: bid.amount,
+              pricePaid: bid.amount, // Use pricePaid instead of amount for consistency
               acquiredAt: new Date().toISOString(),
             };
           });

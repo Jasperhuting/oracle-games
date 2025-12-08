@@ -10,20 +10,22 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
     const age = player?.team?.riders?.find((rider: any) => rider.name === player.id)?.age;
     const jerseyImage = player?.team?.teamImage;
     const teamName = player?.team?.name;
+    const isSold = player?.isSold;
+    const soldTo = player?.soldTo;
+    const isSoldFor = player?.pricePaid;
     
     return (
-        <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", className)}>
-
+        <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && "opacity-60 bg-gray-50", className)}>        
             <div className="flex items-center justify-start gap-3 divide-[#CAC4D0] divide-x-2 pb-2">
                 <span className="pr-0 min-w-[55px]">
-                    {jerseyImage ? <img src={`https://www.procyclingstats.com/${jerseyImage}`} alt={player?.name} style={{ width: '50px' }} /> : <img src="/jersey-transparent.png" alt={player?.name} style={{ width: '50px' }} />}
+                    {jerseyImage ? <img src={`https://www.procyclingstats.com/${jerseyImage}`} alt={player?.name} style={{ width: '50px' }} className={isSold ? 'opacity-50' : ''} /> : <img src="/jersey-transparent.png" alt={player?.name} style={{ width: '50px' }} className={isSold ? 'opacity-50' : ''} />}
                 </span>
                 <div className="flex flex-col gap-2 min-w-0 flex-1">
                     <span className="flex items-end content-end gap-2 min-w-0">
                         <span><Flag width={25} countryCode={player.country} /></span>
-                        <span className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">{player.name}</span>
+                        <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis ${isSold ? 'line-through' : ''}`}>{player.name}</span>
                     </span>
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-sm">
+                    <span className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm ${isSold ? 'line-through' : ''}`}>
                         {teamName}
                     </span>
                 </div>
@@ -53,7 +55,23 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
                         <Flag width={25} countryCode={player.country} />
                     </span>
                 </div>}
-                <div className="flex flex-row gap-2 justify-between">
+
+                {isSold ? (
+                    <div className="flex flex-row gap-2 justify-between">
+                    <span className="font-medium text-gray-700">
+                        Price:
+                    </span>
+                    <span className={`${player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""} line-through`}>
+                        {formatCurrency(player.effectiveMinBid || player.points)}
+                        {player.effectiveMinBid && player.effectiveMinBid < player.points && (
+                            <span className="text-xs text-gray-500 line-through ml-1">
+                                {formatCurrency(player.points)}
+                            </span>
+                        )}
+                    </span>
+                </div>
+                ) : (
+                    <div className="flex flex-row gap-2 justify-between">
                     <span className="font-medium text-gray-700">
                         Price:
                     </span>
@@ -66,13 +84,25 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
                         )}
                     </span>
                 </div>
-                {showBid &&
+                )}
+                
+                {showBid && !isSold &&
                     <div className="flex flex-row gap-2 justify-between">
                         <span className="font-medium text-gray-700">
                             Bid:
                         </span>
                         <span>
                             {bid ? formatCurrency(bid) : 'N/A'}
+                        </span>
+                    </div>
+                }
+                {showBid && isSold &&
+                    <div className="flex flex-row gap-2 justify-between">
+                        <span className="font-medium text-gray-700">
+                            Winning bid:
+                        </span>
+                        <span>
+                            {isSoldFor ? formatCurrency(isSoldFor) : 'N/A'}
                         </span>
                     </div>
                 }
@@ -96,7 +126,11 @@ export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid
                     </div>
                 )}
 
-                {buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />}
+                {isSold ? (
+                <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">
+                    Sold to {soldTo}
+                </div>
+                ): (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />)}
             </div>
         </div>
     );

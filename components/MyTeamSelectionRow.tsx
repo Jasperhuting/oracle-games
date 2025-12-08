@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils/formatCurrency";
 
 export const MyTeamSelectionRow = ({ rider, removeItem, showStage, stageText, removeAble, onCancelBid, hideButton }: { rider: any, removeItem: (rider: any) => void, showStage?: boolean, stageText?: string, removeAble?: boolean, onCancelBid?: (bidId: string, riderName: string) => void, hideButton?: boolean }) => {
     const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name;
+    const canCancelBid = rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid';
 
     return (
         <div className="flex flex-row items-center justify-between p-2 min-h-[50px]">
@@ -48,8 +49,8 @@ export const MyTeamSelectionRow = ({ rider, removeItem, showStage, stageText, re
 
                 {showStage && <span>{stageText}</span>}
 
-                {/* Show cancel bid button for auction games */}
-                {rider.myBid !== undefined && onCancelBid && rider.myBidId && !hideButton && (
+                {/* Show cancel bid button for auction games - only for active/outbid bids */}
+                {rider.myBid !== undefined && onCancelBid && rider.myBidId && !hideButton && canCancelBid && (
                     <Button
                         onClick={() => onCancelBid(rider.myBidId, rider.name)}
                         selected={false}

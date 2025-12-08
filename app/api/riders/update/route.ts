@@ -8,7 +8,7 @@ const DEFAULT_YEAR = process.env.NEXT_PUBLIC_PLAYING_YEAR;
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { adminUserId, riderId, country, teamId, teamName, jerseyImage, retired, year } = body;
+    const { adminUserId, riderId, country, teamId, jerseyImage, retired, year } = body;
     const YEAR = year || DEFAULT_YEAR;
 
     if (!adminUserId) {
@@ -62,10 +62,8 @@ export async function PATCH(request: NextRequest) {
     if (teamId) {
       const teamRef = db.collection('teams').doc(teamId);
       updateData.teamRef = teamRef;
-      if (teamName) updateData.team = teamName;
     } else if (teamId === null) {
       updateData.teamRef = null;
-      updateData.team = null;
     }
 
     // Update existing rider
