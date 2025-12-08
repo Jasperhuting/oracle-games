@@ -56,7 +56,7 @@ export const FeedbackModal = ({ onClose }: { onClose: () => void }) => {
       <div className="bg-white rounded-lg max-w-2xl w-full p-6">
         <h2 className="text-2xl font-bold mb-4">Send Feedback</h2>
         <p className="text-gray-600 mb-4">
-          We'd love to hear your thoughts, suggestions, or report any issues you've encountered.
+          We&apos;d love to hear your thoughts, suggestions, or report any issues you&apos;ve encountered.
         </p>
 
         <div className="mb-4">

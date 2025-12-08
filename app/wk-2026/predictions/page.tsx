@@ -51,12 +51,12 @@ export default function PlayerPredictionsPage() {
 
             // Transform poules data into rankings
             const poulesRankings: PouleRanking[] = POULES.map(pouleId => {
-                const pouleData = poulesData.poules?.find((p: any) => p.pouleId === pouleId);
+                const pouleData = poulesData.poules?.find((p: any) => p.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
                 if (pouleData?.teams) {
                     const rankings: (TeamInPoule | null)[] = [null, null, null, null];
 
-                    Object.entries(pouleData.teams).forEach(([teamId, teamData]: [string, any]) => {
+                    Object.entries(pouleData.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         if (teamData.position !== null && teamData.position !== undefined) {
                             rankings[teamData.position] = {
                                 id: teamId,
@@ -98,7 +98,7 @@ export default function PlayerPredictionsPage() {
                         const matchId = `${poule.pouleId}-${teams[i].id}-${teams[j].id}`;
 
                         // Check if player has predicted this match
-                        const predictedMatch = predictionsData.predictions?.matches?.find((m: any) => m.id === matchId);
+                        const predictedMatch = predictionsData.predictions?.matches?.find((m: any) => m.id === matchId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
                         allMatches.push({
                             id: matchId,
@@ -342,7 +342,7 @@ export default function PlayerPredictionsPage() {
                             const teamAtPosition = selectedManualRanking?.rankings[position];
 
                             if (teamAtPosition) {
-                                const country = countriesList.find((c: any) => c.name === teamAtPosition.name);
+                                const country = countriesList.find((c: any) => c.name === teamAtPosition.name); // eslint-disable-line @typescript-eslint/no-explicit-any
                                 return (
                                     <div
                                         key={position}
@@ -404,7 +404,7 @@ export default function PlayerPredictionsPage() {
                         </thead>
                         <tbody>
                             {calculateStandings(selectedPoule).map((stats, index) => {
-                                const country = countriesList.find((c: any) => c.name === stats.team.name);
+                                const country = countriesList.find((c: any) => c.name === stats.team.name); // eslint-disable-line @typescript-eslint/no-explicit-any
                                 const isQualified = index < 2;
 
                                 return (
@@ -455,8 +455,8 @@ export default function PlayerPredictionsPage() {
 
                         if (!team1 || !team2) return null;
 
-                        const country1 = countriesList.find((c: any) => c.name === team1.name);
-                        const country2 = countriesList.find((c: any) => c.name === team2.name);
+                        const country1 = countriesList.find((c: any) => c.name === team1.name); // eslint-disable-line @typescript-eslint/no-explicit-any
+                        const country2 = countriesList.find((c: any) => c.name === team2.name); // eslint-disable-line @typescript-eslint/no-explicit-any
 
                         return (
                             <div key={match.id} className="bg-white border-2 border-gray-300 rounded-lg p-4">

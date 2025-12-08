@@ -49,9 +49,9 @@ export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUs
       setTimeout(() => {
         handleClose();
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error sending email:', error);
-      setError(error.message || 'Er is iets misgegaan bij het versturen van de email');
+      setError(error instanceof Error ? error.message : 'Er is iets misgegaan bij het versturen van de email');
     } finally {
       setSending(false);
     }

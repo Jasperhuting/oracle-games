@@ -58,9 +58,9 @@ export const PasskeyLogin = () => {
 
             console.log('Passkey login successful');
             router.push('/home');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Passkey login error:', error);
-            setError(error.message || 'Something went wrong logging in with passkey');
+            setError(error instanceof Error ? error.message : 'Something went wrong logging in with passkey');
         } finally {
             setIsLoading(false);
         }

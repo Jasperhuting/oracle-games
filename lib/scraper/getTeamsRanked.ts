@@ -1,5 +1,4 @@
 import * as cheerio from 'cheerio';
-import type { Element as DomElement } from 'domhandler';
 import { RankedTeamsResult, RankedTeam } from './types';
 import { toSlug } from '../firebase/utils';
 

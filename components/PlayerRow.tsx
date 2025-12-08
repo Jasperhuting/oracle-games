@@ -3,6 +3,7 @@ import { Flag } from "./Flag";
 import { Row } from "./Row";
 import { Minus, Plus } from "tabler-icons-react";
 
+// TODO: replace any with real type
 export const PlayerRow = ({ 
     player, 
     selectPlayer, 
@@ -13,11 +14,11 @@ export const PlayerRow = ({
     index, 
     showButton 
 }: { 
-    player: any, 
-    selectPlayer: (player: any) => void, 
+    player: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectPlayer: (player: any) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
     showRank?: boolean, 
     showPoints?: boolean, 
-    selectedPlayer?: any, 
+    selectedPlayer?: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     fullWidth?: boolean, 
     index: number | boolean, 
     showButton?: boolean 

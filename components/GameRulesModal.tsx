@@ -27,7 +27,7 @@ export const GameRulesModal = ({ isOpen, onClose, gameType, gameName }: GameRule
       const response = await fetch('/api/gameRules');
       if (response.ok) {
         const allRules = await response.json();
-        const gameRule = allRules.find((r: any) => r.gameType === gameType);
+        const gameRule = allRules.find((r: any) => r.gameType === gameType); // eslint-disable-line @typescript-eslint/no-explicit-any
         setRules(gameRule?.rules || '');
       }
     } catch (error) {

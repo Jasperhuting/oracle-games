@@ -83,6 +83,7 @@ export interface Team {
   id: string;
   image?: string;
   name: string;
+  nameID?: string;
   shortName?: string;
   riders?: Rider[];
   pcsRank?: number;

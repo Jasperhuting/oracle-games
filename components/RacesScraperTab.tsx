@@ -110,7 +110,7 @@ export const RacesScraperTab = () => {
         <ul className="list-disc list-inside space-y-2 text-sm text-gray-600">
           <li>Scrapes all races from ProCyclingStats for the selected year</li>
           <li>Saves race information including: name, slug, dates, classification, and country</li>
-          <li>Races are stored in the database with ID format: slug_year (e.g., "tour-de-france_2025")</li>
+          <li>Races are stored in the database with ID format: slug_year (e.g., &quot;tour-de-france_2025&quot;)</li>
           <li>These races can then be selected when editing an Auctioneer game</li>
           <li>You can specify which stages count and apply points multipliers per race</li>
         </ul>
@@ -121,8 +121,8 @@ export const RacesScraperTab = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-lg font-semibold mb-2 text-blue-900">💡 Save Stage Results</h3>
           <p className="text-sm text-blue-800">
-            To save stage results and calculate points, go to the <strong>"Races"</strong> tab, 
-            select a race, click on <strong>"Etappes"</strong>, and use the "Add Stage" form.
+            To save stage results and calculate points, go to the <strong>&quot;Races&quot;</strong> tab, 
+            select a race, click on <strong>&quot;Etappes&quot;</strong>, and use the &quot;Add Stage&quot; form.
           </p>
           <p className="text-sm text-blue-800 mt-2">
             This will automatically scrape the stage results and calculate points for all affected Auctioneer games.

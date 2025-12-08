@@ -2,7 +2,7 @@
  * Helper to convert Timestamp or Date to ISO string
  * Works with both Firebase client SDK Timestamp and Admin SDK Timestamp
  */
-export function toISOString(date: any): string {
+export function toISOString(date: any): string { // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!date) return '';
   if (date instanceof Date) return date.toISOString();
   if (date.toDate && typeof date.toDate === 'function') return date.toDate().toISOString();
@@ -12,7 +12,7 @@ export function toISOString(date: any): string {
 /**
  * Helper to convert optional Timestamp or Date to ISO string
  */
-export function toISOStringOrUndefined(date: any): string | undefined {
+export function toISOStringOrUndefined(date: any): string | undefined { // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!date) return undefined;
   return toISOString(date);
 }

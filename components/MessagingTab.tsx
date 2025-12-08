@@ -10,6 +10,8 @@ interface UserOption {
   email: string;
 }
 
+// TODO: replace any with real type
+
 export default function MessagingTab() {
   const { user } = useAuth();
   const [messageType, setMessageType] = useState<'broadcast' | 'individual'>('broadcast');
@@ -34,7 +36,7 @@ export default function MessagingTab() {
         if (response.ok) {
           const data = await response.json();
           // Map the data to the correct format
-          const mappedUsers = (data.users || []).map((u: any) => ({
+          const mappedUsers = (data.users || []).map((u: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
             id: u.uid,
             displayName: u.displayName || u.email || 'Unknown User',
             email: u.email || ''
@@ -325,7 +327,7 @@ export default function MessagingTab() {
           <li>• <strong>Broadcast:</strong> Sends the message to all registered users</li>
           <li>• <strong>Individual:</strong> Sends the message to a specific user</li>
           <li>• Users will receive real-time notifications for new messages</li>
-          <li>• Messages can be viewed in the user's inbox</li>
+          <li>• Messages can be viewed in the user&apos;s inbox</li>
         </ul>
       </div>
     </div>

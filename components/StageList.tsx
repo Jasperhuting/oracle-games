@@ -13,7 +13,7 @@ export function StageList({ race, year, maxStages = 21 }: { race: string; year: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openStages, setOpenStages] = useState<Record<number, boolean>>({});
-  const [stageData, setStageData] = useState<Record<number, { loading: boolean; error?: string | null; data?: any }>>({});
+  const [stageData, setStageData] = useState<Record<number, { loading: boolean; error?: string | null; data?: any }>>({});  // eslint-disable-line @typescript-eslint/no-explicit-any
 
   useEffect(() => {
     let cancelled = false;
@@ -32,8 +32,8 @@ export function StageList({ race, year, maxStages = 21 }: { race: string; year: 
             lastModified: s.lastModified ? new Date(s.lastModified).toLocaleString() : null
           })));
         }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? 'Failed to load stages');
+      } catch (e: unknown) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load stages');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -66,8 +66,8 @@ export function StageList({ race, year, maxStages = 21 }: { race: string; year: 
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const json = await res.json();
                     setStageData(prev => ({ ...prev, [s.stage]: { loading: false, data: json.data } }));
-                  } catch (e: any) {
-                    setStageData(prev => ({ ...prev, [s.stage]: { loading: false, error: e?.message ?? 'Failed to load stage' } }));
+                  } catch (e: unknown) {
+                    setStageData(prev => ({ ...prev, [s.stage]: { loading: false, error: e instanceof Error ? e.message : 'Failed to load stage' } }));
                   }
                 }
               }}
@@ -100,7 +100,7 @@ export function StageList({ race, year, maxStages = 21 }: { race: string; year: 
   );
 }
 
-function StageResultView({ data }: { data: any }) {
+function StageResultView({ data }: { data: any }) { // eslint-disable-line @typescript-eslint/no-explicit-any
   // Normalize possible structures
   const results = Array.isArray(data?.results)
     ? data.results
@@ -108,10 +108,10 @@ function StageResultView({ data }: { data: any }) {
     ? data
     : Array.isArray(data?.data)
     ? data.data
-    : Array.isArray((data as any)?.stageResults)
-    ? (data as any).stageResults
-    : Array.isArray((data as any)?.data?.stageResults)
-    ? (data as any).data.stageResults
+    : Array.isArray((data as any)?.stageResults) // eslint-disable-line @typescript-eslint/no-explicit-any
+    ? (data as any).stageResults // eslint-disable-line @typescript-eslint/no-explicit-any
+    : Array.isArray((data as any)?.data?.stageResults) // eslint-disable-line @typescript-eslint/no-explicit-any
+    ? (data as any).data.stageResults // eslint-disable-line @typescript-eslint/no-explicit-any
     : null;
 
   if (!results || results.length === 0) {

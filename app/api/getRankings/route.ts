@@ -1,5 +1,19 @@
 import { getServerFirebase } from "@/lib/firebase/server";
 import type { NextRequest } from "next/server";
+import { Team } from "@/lib/scraper/types";
+
+export interface Ranking {
+  id: string;
+  rank: number;
+  name: string;
+  nameID: string;
+  retired: boolean;
+  points: number;
+  jerseyImage: string;
+  age: number;
+  country: string;
+  team: Team | null;
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -29,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Resolve team references to get actual team data
-    const riders = await Promise.all(
+    const riders: Ranking[] = await Promise.all(
       snapshot.docs.map(async (doc) => {
         const data = doc.data();
         let teamData = null;

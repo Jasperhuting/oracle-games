@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       .orderBy('stage', 'asc')
       .get();
 
-    const stages: any[] = [];
+    const stages: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
     stagesSnapshot.forEach((doc) => {
       stages.push({
         id: doc.id,

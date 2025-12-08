@@ -86,9 +86,9 @@ export async function createPasskey(
     const publicKey = arrayBufferToBase64(response.getPublicKey()!);
 
     return { credentialId, publicKey, challenge: challengeBase64 };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating passkey:', error);
-    if (error.name === 'NotAllowedError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'NotAllowedError') {
       throw new Error('Passkey aanmaken geannuleerd');
     }
     throw new Error('Kon passkey niet aanmaken');
@@ -152,9 +152,9 @@ export async function authenticateWithPasskey(): Promise<{
       challenge: challengeBase64,
       challengeId,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error authenticating with passkey:', error);
-    if (error.name === 'NotAllowedError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'NotAllowedError') {
       throw new Error('Passkey authentication cancelled');
     }
     throw new Error('Could not log in with passkey');

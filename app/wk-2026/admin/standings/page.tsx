@@ -159,12 +159,12 @@ export default function StandingsPage() {
           const matchesData = await matchesResponse.json();
 
           const poulesRankings: PouleRanking[] = POULES.map((pouleId) => {
-            const pouleData = poulesData.poules?.find((p: any) => p.pouleId === pouleId);
+            const pouleData = poulesData.poules?.find((p: any) => p.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
             if (pouleData?.teams) {
               const rankings: (TeamInPoule | null)[] = [null, null, null, null];
 
-              Object.entries(pouleData.teams).forEach(([teamId, teamData]: [string, any]) => {
+              Object.entries(pouleData.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                 if (teamData.position !== null && teamData.position !== undefined) {
                   rankings[teamData.position] = {
                     id: teamId,
@@ -191,7 +191,7 @@ export default function StandingsPage() {
             for (let i = 0; i < teams.length; i++) {
               for (let j = i + 1; j < teams.length; j++) {
                 const matchId = `${poule.pouleId}-${teams[i].id}-${teams[j].id}`;
-                const savedMatch = matchesData.matches?.find((m: any) => m.id === matchId);
+                const savedMatch = matchesData.matches?.find((m: any) => m.id === matchId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
                 allMatches.push({
                   id: matchId,

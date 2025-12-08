@@ -8,6 +8,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { User } from "firebase/auth";
 
 const PasskeyLogin = dynamic(
   () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
@@ -74,21 +75,24 @@ export const LoginForm = () => {
             
             // Redirect to home page
             router.push('/home');
-        } catch (error: any) {
-            console.error('Login error:', error.code, error.message);
+        } catch (error: unknown) {
+            console.error('Login error:', error);
             
             // User-friendly error messages in English
             let errorMessage = 'Something went wrong logging in';
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                errorMessage = 'Invalid email or password';
-            } else if (error.code === 'auth/user-not-found') {
-                errorMessage = 'No account found with this email address';
-            } else if (error.code === 'auth/too-many-requests') {
-                errorMessage = 'Too many failed attempts. Try again later';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Invalid email address';
-            } else if (error.code === 'auth/user-disabled') {
-                errorMessage = 'This account is disabled. Contact the administrator.';
+            if (error && typeof error === 'object' && 'code' in error) {
+                const firebaseError = error as { code: string };
+                if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password') {
+                    errorMessage = 'Invalid email or password';
+                } else if (firebaseError.code === 'auth/user-not-found') {
+                    errorMessage = 'No account found with this email address';
+                } else if (firebaseError.code === 'auth/too-many-requests') {
+                    errorMessage = 'Too many failed attempts. Try again later';
+                } else if (firebaseError.code === 'auth/invalid-email') {
+                    errorMessage = 'Invalid email address';
+                } else if (firebaseError.code === 'auth/user-disabled') {
+                    errorMessage = 'This account is disabled. Contact the administrator.';
+                }
             }
             
             setError(errorMessage);
@@ -132,12 +136,17 @@ export const LoginForm = () => {
             });
             
             router.push('/home');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Google login error:', error);
-            if (error.code === 'auth/popup-closed-by-user') {
-                setError('Login cancelled');
-            } else if (error.code === 'auth/popup-blocked') {
-                setError('Pop-up blocked. Enable pop-ups for this site.');
+            if (error && typeof error === 'object' && 'code' in error) {
+                const firebaseError = error as { code: string };
+                if (firebaseError.code === 'auth/popup-closed-by-user') {
+                    setError('Login cancelled');
+                } else if (firebaseError.code === 'auth/popup-blocked') {
+                    setError('Pop-up blocked. Enable pop-ups for this site.');
+                } else {
+                    setError('Something went wrong logging in with Google');
+                }
             } else {
                 setError('Something went wrong logging in with Google');
             }
@@ -145,7 +154,7 @@ export const LoginForm = () => {
         }
     };
 
-    const ensureUserExists = async (user: any) => {
+    const ensureUserExists = async (user: User) => {
         try {
             const response = await fetch('/api/createUser', {
                 method: 'POST',
@@ -239,7 +248,7 @@ export const LoginForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs">Don't have an account? Go to the <Link className="underline" href="/register">registration page</Link></span>
+                <span className="text-xs">Don&apos;t have an account? Go to the <Link className="underline" href="/register">registration page</Link></span>
             </div>
         </div>
     );

@@ -12,13 +12,13 @@ interface ActivityLog {
   targetUserId?: string;
   targetUserEmail?: string;
   targetUserName?: string;
-  details?: Record<string, any>;
+  details?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   timestamp: string;
   ipAddress?: string;
 }
 
 // Separate component for error details to avoid hook violation
-const ErrorDetails = ({ details }: { details: Record<string, any> }) => {
+const ErrorDetails = ({ details }: { details: Record<string, any> }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
   const [showTrace, setShowTrace] = useState(false);
 
   return (
@@ -84,9 +84,9 @@ export const ActivityLogTab = () => {
         const data = await response.json();
         setLogs(data.logs);
         setError(null);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching activity logs:', error);
-        setError(error.message || 'Failed to load activities');
+        setError(error instanceof Error ? error.message : 'Failed to load activities');
       } finally {
         setLoading(false);
       }
@@ -264,7 +264,7 @@ export const ActivityLogTab = () => {
     // GAME_UPDATED details
     if (log.action === 'GAME_UPDATED' && log.details.changes) {
       // Filter to only show fields where values actually changed
-      const actualChanges = Object.entries(log.details.changes).filter(([_, change]: [string, any]) => {
+      const actualChanges = Object.entries(log.details.changes).filter(([_, change]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         return JSON.stringify(change.before) !== JSON.stringify(change.after);
       });
 
@@ -280,7 +280,7 @@ export const ActivityLogTab = () => {
             )}
           </div>
           <div className="space-y-1 pl-2 border-l-2 border-gray-200">
-            {actualChanges.map(([field, change]: [string, any]) => (
+            {actualChanges.map(([field, change]: [string, any]) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
               <div key={field} className="text-xs text-gray-600 flex items-start gap-2">
                 <span className="font-medium min-w-[100px]">{field}:</span>
                 <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export const ActivityLogTab = () => {
       const changes = log.details.changes;
       return (
         <div className="mt-2 space-y-1">
-          {Object.entries(changes).map(([field, value]: [string, any]) => (
+          {Object.entries(changes).map(([field, value]: [string, any]) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
             <div key={field} className="text-xs text-gray-600 flex items-center gap-2">
               <span className="font-medium capitalize">{field}:</span>
               <span className="text-gray-400">{value.old || '(empty)'}</span>

@@ -32,7 +32,7 @@ export function useUnreadMessages(userId: string | undefined) {
         setUnreadCount(unreadMessages.length);
         setLoading(false);
       },
-      (error) => {
+      () => {
         // Silently handle permission errors - user might not have messages yet
         console.log('Unable to listen to messages (this is normal if no messages exist yet)');
         setUnreadCount(0);

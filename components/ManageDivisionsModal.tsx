@@ -57,9 +57,9 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
         // Refresh the parent to update the list
         onSuccess();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting division:', error);
-      setError(error.message || 'Failed to delete division');
+      setError(error instanceof Error ? error.message : 'Failed to delete division');
     } finally {
       setDeleting(null);
     }
@@ -95,9 +95,9 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
       setTimeout(() => {
         onSuccess();
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error recalculating player counts:', error);
-      setError(error.message || 'Failed to recalculate player counts');
+      setError(error instanceof Error ? error.message : 'Failed to recalculate player counts');
     } finally {
       setRecalculating(false);
     }
@@ -193,7 +193,7 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
               <div>
                 <p className="text-sm font-semibold text-blue-900 mb-1">Player Count Issues?</p>
                 <p className="text-sm text-blue-800">
-                  If player counts don't match the actual participants, click this button to recalculate them based on actual data.
+                  If player counts don&apos;t match the actual participants, click this button to recalculate them based on actual data.
                 </p>
               </div>
               <Button
@@ -230,7 +230,7 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
         description={
           pendingDelete ? (
             <>
-              <p>Are you sure you want to delete <strong>"{pendingDelete.name}"</strong>?</p>
+              <p>Are you sure you want to delete <strong>&quot;{pendingDelete.name}&quot;</strong>?</p>
               <p className="mt-2 font-semibold text-red-600">This will permanently delete this division and all its data. This action cannot be undone.</p>
             </>
           ) : ''

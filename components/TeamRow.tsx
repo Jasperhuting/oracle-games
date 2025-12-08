@@ -5,9 +5,9 @@ export const TeamRow = ({
     selectTeam, 
     selectedTeam 
 }: { 
-    team: any, 
-    selectTeam: (team: any) => void, 
-    selectedTeam?: any 
+    team: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectTeam: (team: any) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectedTeam?: any // eslint-disable-line @typescript-eslint/no-explicit-any 
 }) => {
     return (
         <Row
@@ -27,4 +27,4 @@ export const TeamRow = ({
             <span className="break-keep whitespace-nowrap">{team?.name}</span>
         </Row>
     );
-};
+}

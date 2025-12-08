@@ -5,7 +5,7 @@
  * Usage: node scripts/seed-emulator.js
  */
 
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 // Initialize Firebase Admin with emulator
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';

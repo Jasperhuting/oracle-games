@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
   const race = searchParams.get('race');
 
   try {
-    if (race && RACES.includes(race as any)) {
+    if (race && RACES.includes(race as typeof RACES[number])) {
       // Check specific race
-      const metadata = await getFileMetadata(race);
+      const metadata = await getFileMetadata(race as typeof RACES[number]);
       return Response.json({ race, ...metadata });
     }
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function getFileMetadata(race: string) {
+async function getFileMetadata(race: typeof RACES[number]) {
   const url = `${BASE}/startlist-${race}-${YEAR}.json`;
   
   try {

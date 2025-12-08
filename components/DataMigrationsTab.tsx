@@ -8,7 +8,7 @@ export const DataMigrationsTab = () => {
   const { user } = useAuth();
   const [gameId, setGameId] = useState('');
   const [migrating, setMigrating] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [error, setError] = useState<string | null>(null);
 
   const handleMigrateParticipantTeams = async () => {
@@ -34,9 +34,9 @@ export const DataMigrationsTab = () => {
       }
 
       setResult(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error running migration:', error);
-      setError(error.message || 'Failed to run migration');
+      setError(error instanceof Error ? error.message : 'Failed to run migration');
     } finally {
       setMigrating(false);
     }
@@ -55,7 +55,7 @@ export const DataMigrationsTab = () => {
           <h3 className="text-lg font-semibold mb-2">Fix Participant Team Data</h3>
           <p className="text-sm text-gray-600 mb-4">
             Migrates participant team arrays to use <code className="bg-gray-100 px-1 rounded">pricePaid</code> instead of <code className="bg-gray-100 px-1 rounded">amount</code>.
-            This fixes the issue where sold rider prices don't display correctly in the auction page.
+            This fixes the issue where sold rider prices don&apos;t display correctly in the auction page.
           </p>
 
           <div className="space-y-3">
@@ -120,7 +120,7 @@ export const DataMigrationsTab = () => {
         <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
           <li>Find the game ID from the URL or games list</li>
           <li>Enter the game ID in the field above</li>
-          <li>Click "Run Migration" to update all participants in that game</li>
+          <li>Click &quot;Run Migration&quot; to update all participants in that game</li>
           <li>The migration will rename the <code className="bg-blue-100 px-1 rounded">amount</code> field to <code className="bg-blue-100 px-1 rounded">pricePaid</code> in team arrays</li>
           <li>Refresh the auction page to see the updated prices</li>
         </ol>

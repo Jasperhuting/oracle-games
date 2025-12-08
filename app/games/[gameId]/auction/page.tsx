@@ -363,9 +363,9 @@ useEffect(() => {
       // Build a map of sold riders: riderNameId -> { ownerName, pricePaid }
       const soldRidersMap = new Map<string, { ownerName: string; pricePaid: number }>();
       if (allParticipantsData.participants) {
-        allParticipantsData.participants.forEach((p: any) => {
+        allParticipantsData.participants.forEach((p: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           if (p.team && Array.isArray(p.team)) {
-            p.team.forEach((teamRider: any) => {
+            p.team.forEach((teamRider: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
               if (teamRider.riderNameId) {
                 // Get player name from participant
                 const ownerName = p.playername || p.userName || p.email || 'Unknown Player';
@@ -513,10 +513,10 @@ useEffect(() => {
   const isTop200Restricted = (() => {
     if (!game || (game.gameType !== 'auctioneer' && game.gameType !== 'worldtour-manager')) return false;
 
-    const config: any = game.config;
+    const config: any = game.config; // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!config || !Array.isArray(config.auctionPeriods)) return false;
 
-    const toDate = (value: any): Date | null => {
+    const toDate = (value: any): Date | null => { // eslint-disable-line @typescript-eslint/no-explicit-any
       if (!value) return null;
       if (value instanceof Date) return value;
       if (typeof value === 'string') return new Date(value);
@@ -527,7 +527,7 @@ useEffect(() => {
     const now = new Date();
 
     // Try to find an active period based on time window and status
-    let activePeriod = config.auctionPeriods.find((p: any) => {
+    let activePeriod = config.auctionPeriods.find((p: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const start = toDate(p.startDate);
       const end = toDate(p.endDate);
       if (!start || !end) return false;
@@ -560,7 +560,7 @@ useEffect(() => {
 
     // When top-200 restriction is active, block bids on riders outside top 200
     if (isTop200Restricted) {
-      const riderRank = (rider as any).rank;
+      const riderRank = (rider as any).rank; // eslint-disable-line @typescript-eslint/no-explicit-any
       if (typeof riderRank !== 'number' || riderRank > 200) {
         setError('Tijdens deze biedronde kun je alleen bieden op renners uit de top 200.');
         return;
@@ -865,7 +865,7 @@ useEffect(() => {
       const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
 
       // Apply top-200 restriction at list level: only show riders in top 200 when enabled
-      const riderRank = (rider as any).rank;
+      const riderRank = (rider as any).rank; // eslint-disable-line @typescript-eslint/no-explicit-any
       const withinTop200 = !isTop200Restricted || (typeof riderRank === 'number' && riderRank <= 200);
 
       return matchesSearch && matchesPrice && withinTop200;
@@ -1070,7 +1070,7 @@ useEffect(() => {
                 {myBids
                   .filter(bid => bid.status === 'won')
                   .map((myBidRider) => {
-                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                     return rider ? (
                       <div key={myBidRider.id}>
                         <PlayerCard
@@ -1110,7 +1110,7 @@ useEffect(() => {
               {myTeamBidsView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
                 {myBids.map((myBidRider) => {
-                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                   const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
 
                   return rider ? (
@@ -1158,7 +1158,7 @@ useEffect(() => {
                 )}
                 <div className="divide-gray-300 divide-y">
                   {myBids.map((myBidRider) => {
-                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                     const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
 
                     return rider ? (
@@ -1451,7 +1451,7 @@ useEffect(() => {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">Reset All Bids</h2>
             <p className="text-gray-700 mb-6">
-              Are you sure you want to reset all your bid amounts? This will clear all the amounts you've entered in the input fields.
+              Are you sure you want to reset all your bid amounts? This will clear all the amounts you&apos;ve entered in the input fields.
             </p>
             <div className="flex justify-end space-x-3">
               <Button

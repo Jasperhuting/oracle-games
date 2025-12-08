@@ -1,10 +1,8 @@
 import { useState } from 'react';
 
-interface ClassificationTabsProps {
-  selectedStage: any;
-}
 
-export default function ClassificationTabs({ selectedStage }: ClassificationTabsProps) {
+
+export default function ClassificationTabs({ selectedStage }: { selectedStage: any }) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const [activeTab, setActiveTab] = useState<'stage' | 'gc' | 'points' | 'mountains' | 'team'>('stage');
   const [showAllStageResults, setShowAllStageResults] = useState(false);
   const [showAllGC, setShowAllGC] = useState(false);
@@ -81,7 +79,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {selectedStage.stageResults.slice(0, showAllStageResults ? undefined : 20).map((result: any, idx: number) => (
+                {selectedStage.stageResults.slice(0, showAllStageResults ? undefined : 20).map((result: any, idx: number) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium w-8">{result.place || idx + 1}</td>
                     <td className="px-2 py-4 whitespace-nowrap w-20">
@@ -129,7 +127,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {selectedStage.generalClassification.slice(0, showAllGC ? undefined : 20).map((result: any, idx: number) => {
+                {selectedStage.generalClassification.slice(0, showAllGC ? undefined : 20).map((result: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                   const teamName = typeof result.team === 'string' ? result.team : result.team?.name || '-';
                   
                   return (
@@ -185,7 +183,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {selectedStage.pointsClassification.slice(0, 20).map((result: any, idx: number) => {
+                {selectedStage.pointsClassification.slice(0, 20).map((result: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                   const teamName = typeof result.team === 'string' ? result.team : result.team?.name || '-';
                   
                   return (
@@ -227,7 +225,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {selectedStage.mountainsClassification.slice(0, 20).map((result: any, idx: number) => {
+                {selectedStage.mountainsClassification.slice(0, 20).map((result: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                   const teamName = typeof result.team === 'string' ? result.team : result.team?.name || '-';
                   
                   return (
@@ -267,7 +265,7 @@ export default function ClassificationTabs({ selectedStage }: ClassificationTabs
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {selectedStage.teamClassification.slice(0, 20).map((result: any, idx: number) => {
+                {selectedStage.teamClassification.slice(0, 20).map((result: any, idx: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                   const formatTime = (seconds: number) => {
                     if (!seconds || seconds === 0) return '-';
                     const mins = Math.floor(seconds / 60);

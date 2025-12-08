@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       const stagesSnapshot = await raceDoc.ref.collection('stages').get();
       const stageMap = new Map<number, { date: Date; raceName: string }>();
 
-      stagesSnapshot.forEach((stageDoc: any) => {
+      stagesSnapshot.forEach((stageDoc: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         const stageData = stageDoc.data();
         const stageNum = stageData.stage;
         const scrapedAt = stageData.scrapedAt?.toDate() || new Date();
@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Build rider points data
-    const ridersMap = new Map<string, any>();
+    const ridersMap = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    playerTeamsSnapshot.forEach((doc: any) => {
+    playerTeamsSnapshot.forEach((doc: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const data = doc.data();
       
       if (!data.racePoints) return;
@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
       const riderData = ridersMap.get(riderId);
 
       // Process race points
-      Object.entries(data.racePoints).forEach(([raceSlug, raceData]: [string, any]) => {
-        Object.entries(raceData.stagePoints).forEach(([stageNum, stageData]: [string, any]) => {
+      Object.entries(data.racePoints).forEach(([raceSlug, raceData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        Object.entries(raceData.stagePoints).forEach(([stageNum, stageData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           const stageNumber = parseInt(stageNum);
           
           // Get actual stage date
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Sort by date
-      riderData.pointsByDate.sort((a: any, b: any) => 
+      riderData.pointsByDate.sort((a: any, b: any) =>  // eslint-disable-line @typescript-eslint/no-explicit-any
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
     });

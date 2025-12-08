@@ -5,13 +5,13 @@ import { KNOWN_RACE_SLUGS, type RaceSlug } from '@/lib/scraper/types';
 import { POST as calculatePoints } from '@/app/api/games/calculate-points/route';
 
 // Helper function to remove undefined values from objects
-function cleanData(obj: any): any {
+function cleanData(obj: any): any { // eslint-disable-line @typescript-eslint/no-explicit-any
   if (Array.isArray(obj)) {
     return obj.map(cleanData).filter(item => item !== undefined);
   }
   
   if (obj && typeof obj === 'object') {
-    const cleaned: any = {};
+    const cleaned: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
     for (const [key, value] of Object.entries(obj)) {
       if (value !== undefined) {
         cleaned[key] = cleanData(value);
@@ -32,7 +32,7 @@ function toSlug(str: string): string {
 }
 
 // Helper function to enrich riders with data from rankings
-async function enrichRiders(riders: any[], year: number, db: any) {
+async function enrichRiders(riders: any[], year: number, db: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const enrichedRiders = [];
   
   for (const rider of riders) {
@@ -52,7 +52,7 @@ async function enrichRiders(riders: any[], year: number, db: any) {
         
         // Preserve original points field (e.g., points gained on stage) if it exists
         // Only add ranking points if there's no existing points field
-        const enrichedRider: any = {
+        const enrichedRider: any = { // eslint-disable-line @typescript-eslint/no-explicit-any
           ...rider,
           nameID: riderData.nameID || rider.shortName,
           rank: riderData.rank,

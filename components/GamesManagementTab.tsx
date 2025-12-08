@@ -63,9 +63,9 @@ export const GamesManagementTab = () => {
 
       const data = await response.json();
       setGames(data.games || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading games:', error);
-      setError(error.message || 'Something went wrong loading games');
+      setError(error instanceof Error ? error.message : 'Something went wrong loading games');
     } finally {
       setLoading(false);
     }
@@ -107,9 +107,9 @@ export const GamesManagementTab = () => {
       await loadGames();
       setDeleteConfirmOpen(false);
       setDeleteGameId(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting game:', error);
-      setError(error.message || 'Failed to delete game');
+      setError(error instanceof Error ? error.message : 'Failed to delete game');
     } finally {
       setDeleting(false);
     }
@@ -414,7 +414,7 @@ export const GamesManagementTab = () => {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <GameStatusManager
                             gameId={game.id}
-                            currentStatus={game.status as any}
+                            currentStatus={game.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
                             onStatusChange={loadGames}
                             compact
                           />
@@ -516,7 +516,7 @@ export const GamesManagementTab = () => {
                           <td className="px-4 py-2 whitespace-nowrap">
                             <GameStatusManager
                               gameId={divisionGame.id}
-                              currentStatus={divisionGame.status as any}
+                              currentStatus={divisionGame.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
                               onStatusChange={loadGames}
                               compact
                             />
@@ -682,7 +682,7 @@ export const GamesManagementTab = () => {
         description={
           pendingFinalizeGame ? (
             <>
-              <p>Are you sure you want to finalize the auction for <strong>"{pendingFinalizeGame.name}"</strong>?</p>
+              <p>Are you sure you want to finalize the auction for <strong>&quot;{pendingFinalizeGame.name}&quot;</strong>?</p>
               <p className="mt-2">This will:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Assign riders to winning bidders</li>

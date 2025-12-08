@@ -44,15 +44,22 @@ export default function VerifyEmailPage() {
                 console.error('No current user found');
                 setError('No user found. Please log in again.');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error sending verification email:', error);
-            console.error('Error code:', error.code);
-            console.error('Error message:', error.message);
-            console.error('Full error:', error);
-            if (error.code === 'auth/too-many-requests') {
-                setError('Too many requests. Please wait a moment before trying again.');
+            
+            // Type guard for Firebase Auth errors
+            const isFirebaseError = (err: unknown): err is { code: string; message: string } => {
+                return typeof err === 'object' && err !== null && 'code' in err && 'message' in err;
+            };
+            
+            if (isFirebaseError(error)) {
+                if (error.code === 'auth/too-many-requests') {
+                    setError('Too many requests. Please wait a moment before trying again.');
+                } else {
+                    setError(`Something went wrong: ${error.message}`);
+                }
             } else {
-                setError(`Something went wrong: ${error.message}`);
+                setError('An unexpected error occurred. Please try again.');
             }
         } finally {
             setIsResending(false);

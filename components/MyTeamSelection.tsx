@@ -2,7 +2,21 @@ import { useState } from "react";
 import { MyTeamSelectionRow } from "./MyTeamSelectionRow";
 import { ChevronDown, ChevronUp } from "tabler-icons-react";
 
-export const MyTeamSelection = ({ myTeamSelection, setMyTeamSelection, removeAble, onCancelBid, hideButton }: { myTeamSelection: any[], setMyTeamSelection: (myTeamSelection: any[]) => void, removeAble?: boolean, onCancelBid?: (bidId: string, riderName: string) => void, hideButton?: boolean }) => {
+// TODO: replace any with real type
+export const MyTeamSelection = (
+    { 
+        myTeamSelection, 
+        setMyTeamSelection, 
+        removeAble, 
+        onCancelBid, 
+        hideButton 
+    }: { 
+        myTeamSelection: any[],  // eslint-disable-line @typescript-eslint/no-explicit-any
+        setMyTeamSelection: (myTeamSelection: any[]) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        removeAble?: boolean, 
+        onCancelBid?: (bidId: string, riderName: string) => void, 
+        hideButton?: boolean 
+    }) => {
 
     const [open, setOpen] = useState(false);
 

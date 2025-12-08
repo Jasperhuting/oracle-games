@@ -17,15 +17,15 @@ export const ActionPanel = ({
     availablePlayers = []
 }: {
     toggle?: ReactNode,
-    selectedPlayers?: any[],
-    setSelectedPlayers?: (selectedPlayers: any[]) => void,
-    selectedCountries?: any[],
-    setSelectedCountries?: (selectedCountries: any[]) => void,
-    selectedTeams?: any[],
-    setSelectedTeams?: (selectedTeams: any[]) => void,
-    selectedClasses?: any[],
-    setSelectedClasses?: (selectedClasses: any[]) => void,
-    availablePlayers?: any[]
+    selectedPlayers?: any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+    setSelectedPlayers?: (selectedPlayers: any[]) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectedCountries?: any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+    setSelectedCountries?: (selectedCountries: any[]) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectedTeams?: any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+    setSelectedTeams?: (selectedTeams: any[]) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectedClasses?: any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+    setSelectedClasses?: (selectedClasses: any[]) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
+    availablePlayers?: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
 }) => {
     return (
         <div className="flex bg-white rounded-md flex-row items-center gap-4 p-4">
@@ -36,4 +36,4 @@ export const ActionPanel = ({
             {setSelectedTeams && selectedTeams && <TeamSelector setSelectedTeams={setSelectedTeams} selectedTeams={selectedTeams} multiSelect={true} multiSelectShowSelected={false} />}
         </div>
     );
-};
+}

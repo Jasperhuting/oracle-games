@@ -37,7 +37,8 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
         console.log('data.teams', data.teams);
 
         // Convert API teams to Team type
-        const teams: Team[] = (data.teams || []).map((t: any) => ({
+        // TODO: Remove any
+        const teams: Team[] = (data.teams || []).map((t: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
           id: t.id,
           name: t.name,
           shortName: t.shortName,
@@ -51,7 +52,8 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
         }));
 
         // Convert API riders to Rider type
-        const riders: Rider[] = (data.riders || []).map((r: any) => ({
+        // TODO: Remove any
+        const riders: Rider[] = (data.riders || []).map((r: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
           id: r.id,
           name: r.name,
           firstName: r.firstName,
@@ -85,9 +87,9 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
         const currentRiderIdSet = new Set(data.currentRiderIds || []);
         const preSelectedRiders = riders.filter(r => currentRiderIdSet.has(r.id));
         setSelectedRiders(preSelectedRiders);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error loading lineup:', error);
-        setError(error.message || 'Failed to load race lineup');
+        setError(error instanceof Error ? error.message : 'Failed to load race lineup');
       } finally {
         setLoading(false);
       }
@@ -124,9 +126,9 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving lineup:', error);
-      setError(error.message || 'Failed to save lineup');
+      setError(error instanceof Error ? error.message : 'Failed to save lineup');
     } finally {
       setSaving(false);
     }

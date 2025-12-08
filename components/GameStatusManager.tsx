@@ -89,9 +89,9 @@ export const GameStatusManager = ({
       if (onStatusChange) {
         onStatusChange();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating status:', error);
-      setError(error.message || 'Failed to update status');
+      setError(error instanceof Error ? error.message : 'Failed to update status');
       setTimeout(() => setError(null), 3000);
     } finally {
       setUpdating(false);
@@ -168,7 +168,7 @@ export const GameStatusManager = ({
           description={
             pendingStatus ? (
               <>
-                <p>Are you sure you want to change the game status from <strong>"{STATUS_LABELS[currentStatus]}"</strong> to <strong>"{STATUS_LABELS[pendingStatus]}"</strong>?</p>
+                <p>Are you sure you want to change the game status from <strong>&quot;{STATUS_LABELS[currentStatus]}&quot;</strong> to <strong>&quot;{STATUS_LABELS[pendingStatus]}&quot;</strong>?</p>
                 <p className="mt-2 text-sm text-gray-600">This will affect player access and game functionality.</p>
               </>
             ) : ''
@@ -239,7 +239,7 @@ export const GameStatusManager = ({
         description={
           pendingStatus ? (
             <>
-              <p>Are you sure you want to change the game status from <strong>"{STATUS_LABELS[currentStatus]}"</strong> to <strong>"{STATUS_LABELS[pendingStatus]}"</strong>?</p>
+              <p>Are you sure you want to change the game status from <strong>&quot;{STATUS_LABELS[currentStatus]}&quot;</strong> to <strong>&quot;{STATUS_LABELS[pendingStatus]}&quot;</strong>?</p>
               <p className="mt-2 text-sm text-gray-600">This will affect player access and game functionality.</p>
             </>
           ) : ''

@@ -3,7 +3,7 @@ import { useMotia } from '@/components/MotiaProvider';
 
 interface StreamMessage {
   type: string;
-  [key: string]: any;
+  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 interface UseMotiaStreamOptions {
@@ -29,7 +29,7 @@ export function useMotiaStream(options: UseMotiaStreamOptions = {}) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
   const [error, setError] = useState<Error | null>(null);
 
-  const execute = useCallback(async (endpoint: string, body: any) => {
+  const execute = useCallback(async (endpoint: string, body: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     setLoading(true);
     setError(null);
     setMessages([]);

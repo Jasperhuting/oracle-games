@@ -5,9 +5,10 @@ import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { useState } from "react";
-import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
+import { FirebaseError } from "firebase/app";
 
 interface RegisterFormProps {
     email: string;
@@ -76,11 +77,13 @@ export const RegisterForm = () => {
                 console.log('Sending verification email with settings:', actionCodeSettings);
                 await sendEmailVerification(user, actionCodeSettings);
                 console.log('Verification email sent successfully to:', data.email);
-            } catch (emailError: any) {
-                console.error('Error sending verification email:', emailError);
-                console.error('Error code:', emailError.code);
-                console.error('Error message:', emailError.message);
-                console.error('Full error:', emailError);
+            } catch (emailError: unknown) { 
+                if (emailError instanceof FirebaseError) {
+                    console.error('Error sending verification email:', emailError);
+                    console.error('Error code:', emailError.code);
+                    console.error('Error message:', emailError.message);
+                    console.error('Full error:', emailError);
+                }
                 // Continue anyway - user can resend from verify page
             }
             
@@ -90,9 +93,9 @@ export const RegisterForm = () => {
             // Sign out user and redirect to verify email page
             await auth.signOut();
             router.push('/verify-email');
-        } catch (error: any) {
-            console.error('Registration error:', error.code, error.message);
-            setError(error.message || 'Something went wrong registering');
+        } catch (error: unknown) {
+            console.error('Registration error:', error);
+            setError(error instanceof Error ? error.message : 'Something went wrong registering');
             setIsSubmitting(false);
         }
     }
@@ -113,14 +116,19 @@ export const RegisterForm = () => {
             
             // Google accounts are pre-verified, go directly to home
             router.push('/home');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Google signup error:', error);
-            if (error.code === 'auth/popup-closed-by-user') {
-                setError('Registration cancelled');
-            } else if (error.code === 'auth/popup-blocked') {
-                setError('Pop-up blocked. Enable pop-ups for this site.');
-            } else if (error.code === 'auth/account-exists-with-different-credential') {
-                setError('There is already an account with this email address');
+            if (error && typeof error === 'object' && 'code' in error) {
+                const firebaseError = error as { code: string };
+                if (firebaseError.code === 'auth/popup-closed-by-user') {
+                    setError('Registration cancelled');
+                } else if (firebaseError.code === 'auth/popup-blocked') {
+                    setError('Pop-up blocked. Enable pop-ups for this site.');
+                } else if (firebaseError.code === 'auth/account-exists-with-different-credential') {
+                    setError('There is already an account with this email address');
+                } else {
+                    setError('Something went wrong registering with Google');
+                }
             } else {
                 setError('Something went wrong registering with Google');
             }
@@ -128,7 +136,7 @@ export const RegisterForm = () => {
         }
     };
 
-    const ensureUserExists = async (user: any) => {
+    const ensureUserExists = async (user: User) => {
         try {
             const response = await fetch('/api/createUser', {
                 method: 'POST',

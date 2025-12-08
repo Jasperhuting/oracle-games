@@ -43,13 +43,13 @@ export default function AdminKnockoutPage() {
 
   // Calculate standings for a poule (same logic as user predictions page)
   const calculateStandings = (pouleId: string, poules: unknown[], allMatches: unknown[]) => {
-    const pouleData = poules.find((p: any) => p.pouleId === pouleId);
+    const pouleData = poules.find((p: any) => p.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!pouleData || !pouleData.teams) return [];
 
     const teams = Object.keys(pouleData.teams);
-    const pouleMatches = allMatches.filter((m: any) => m.pouleId === pouleId);
+    const pouleMatches = allMatches.filter((m: any) => m.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    const stats: any = {};
+    const stats: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
     teams.forEach(teamId => {
       stats[teamId] = {
         teamId,
@@ -64,7 +64,7 @@ export default function AdminKnockoutPage() {
       };
     });
 
-    pouleMatches.forEach((match: any) => {
+    pouleMatches.forEach((match: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       if (match.team1Score !== null && match.team2Score !== null) {
         const team1Stats = stats[match.team1Id];
         const team2Stats = stats[match.team2Id];
@@ -98,7 +98,7 @@ export default function AdminKnockoutPage() {
       }
     });
 
-    return Object.values(stats).sort((a: any, b: any) => {
+    return Object.values(stats).sort((a: any, b: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
       return b.goalsFor - a.goalsFor;
@@ -107,11 +107,11 @@ export default function AdminKnockoutPage() {
 
   // Calculate all qualified teams based on group standings
   const calculateQualifiedTeams = (poules: unknown[], allMatches: unknown[]) => {
-    const qualified: any = {};
+    const qualified: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Get winners and runners-up from each group
     POULES.forEach(pouleId => {
-      const standings: any = calculateStandings(pouleId, poules, allMatches);
+      const standings: any = calculateStandings(pouleId, poules, allMatches); // eslint-disable-line @typescript-eslint/no-explicit-any
       if (standings.length >= 2) {
         qualified[`1${pouleId.toUpperCase()}`] = standings[0].teamId;
         qualified[`2${pouleId.toUpperCase()}`] = standings[1].teamId;
@@ -121,7 +121,7 @@ export default function AdminKnockoutPage() {
     // Get best third-placed teams
     const allThirdPlaced: unknown[] = [];
     POULES.forEach(pouleId => {
-      const standings: any = calculateStandings(pouleId, poules, allMatches);
+      const standings: any = calculateStandings(pouleId, poules, allMatches); // eslint-disable-line @typescript-eslint/no-explicit-any
       if (standings.length >= 3) {
         allThirdPlaced.push({
           ...standings[2],
@@ -163,7 +163,7 @@ export default function AdminKnockoutPage() {
   };
 
   // Initialize knockout matches with qualified teams
-  const initializeKnockoutMatches = (qualifiedTeams: any): KnockoutMatch[] => {
+  const initializeKnockoutMatches = (qualifiedTeams: any): KnockoutMatch[] => { // eslint-disable-line @typescript-eslint/no-explicit-any
     return KNOCKOUT_MATCHES.map(m => {
       const team1 = qualifiedTeams[m.team1Source] || null;
       const team2 = qualifiedTeams[m.team2Source] || null;
@@ -425,7 +425,7 @@ export default function AdminKnockoutPage() {
 
     for (const poule of actualPoules) {
       if (poule.teams && poule.teams[teamId]) {
-        const country = countriesList.find((c: any) => c.name.toLowerCase() === contenders.find((team) => team.id === teamId)?.name.toLowerCase());
+        const country = countriesList.find((c: any) => c.name.toLowerCase() === contenders.find((team) => team.id === teamId)?.name.toLowerCase()); // eslint-disable-line @typescript-eslint/no-explicit-any
         return country?.code || teamId;
       }
     }

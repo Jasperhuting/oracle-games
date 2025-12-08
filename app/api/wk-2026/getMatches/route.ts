@@ -9,13 +9,13 @@ export async function GET() {
         // Fetch all poule documents which contain matches
         const poulesSnapshot = await db.collection('poules').get();
 
-        const allMatches: any[] = [];
+        const allMatches: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
 
         poulesSnapshot.docs.forEach(doc => {
             const data = doc.data();
             if (data.matches) {
                 // Convert matches object to array
-                Object.entries(data.matches).forEach(([matchId, matchData]: [string, any]) => {
+                Object.entries(data.matches).forEach(([matchId, matchData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     allMatches.push({
                         id: matchId,
                         pouleId: data.pouleId,

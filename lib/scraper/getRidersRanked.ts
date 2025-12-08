@@ -36,9 +36,6 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
   
   const html = await res.text();
   const $ = cheerio.load(html);
-
-  const title = $('title').text();
-
     
     const getName = (el: DomElement) => {
 

@@ -3,7 +3,25 @@ import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 
-export const MyTeamSelectionRow = ({ rider, removeItem, showStage, stageText, removeAble, onCancelBid, hideButton }: { rider: any, removeItem: (rider: any) => void, showStage?: boolean, stageText?: string, removeAble?: boolean, onCancelBid?: (bidId: string, riderName: string) => void, hideButton?: boolean }) => {
+// TODO: replace any with real type
+export const MyTeamSelectionRow = (
+    { 
+        rider, 
+        removeItem, 
+        showStage, 
+        stageText, 
+        removeAble, 
+        onCancelBid, 
+        hideButton 
+    }: { 
+        rider: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        removeItem: (rider: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        showStage?: boolean, 
+        stageText?: string, 
+        removeAble?: boolean, 
+        onCancelBid?: (bidId: string, riderName: string) => void, 
+        hideButton?: boolean 
+    }) => {
     const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name;
     const canCancelBid = rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid';
 

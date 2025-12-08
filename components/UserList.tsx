@@ -137,11 +137,11 @@ export const UserList = () => {
       }
 
       // Success - the realtime listener will update the UI automatically
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting user:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Something went wrong deleting the user.',
+        description: error instanceof Error ? error.message : 'Something went wrong deleting the user.',
       });
     } finally {
       setDeletingUserId(null);
@@ -177,11 +177,11 @@ export const UserList = () => {
       }
 
       // Success - the realtime listener will update the UI automatically
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error restoring user:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Something went wrong restoring the user.',
+        description: error instanceof Error ? error.message : 'Something went wrong restoring the user.',
       });
     } finally {
       setDeletingUserId(null);
@@ -227,20 +227,15 @@ export const UserList = () => {
       }
 
       // Success - the realtime listener will update the UI automatically
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error changing user type:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Could not change user type.',
+        description: error instanceof Error ? error.message : 'Could not change user type.',
       });
     } finally {
       setChangingUserTypeId(null);
     }
-  };
-
-  const openEmailModal = (email: string, name: string) => {
-    setSelectedUser({ email, name });
-    setEmailModalOpen(true);
   };
 
   const closeEmailModal = () => {

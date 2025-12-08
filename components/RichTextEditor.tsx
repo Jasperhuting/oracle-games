@@ -317,7 +317,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
           }`}
           title="Quote"
         >
-          "
+          &quot;
         </button>
 
         <button
@@ -330,7 +330,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
           }`}
           title="Code Block"
         >
-          {'</>'}
+          &lt;/&gt;
         </button>
 
         <div className="w-px bg-gray-300 mx-1" />

@@ -47,6 +47,8 @@ interface Participant {
   divisionAssigned?: boolean;
 }
 
+// TODO: Remove any
+
 export const JoinableGamesTab = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -118,9 +120,9 @@ export const JoinableGamesTab = () => {
           participantMap && setMyParticipants(participantMap);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading games:', error);
-      setError(error.message || 'Something went wrong loading games');
+      setError(error instanceof Error ? error.message : 'Something went wrong loading games');
     } finally {
       setLoading(false);
     }
@@ -138,7 +140,7 @@ export const JoinableGamesTab = () => {
         if (response.ok) {
           const rules = await response.json();
           const rulesSet = new Set<GameType>(
-            rules.filter((r: any) => r.rules).map((r: any) => r.gameType as GameType)
+            rules.filter((r: any) => r.rules).map((r: any) => r.gameType as GameType) // eslint-disable-line @typescript-eslint/no-explicit-any
           );
           setAvailableRules(rulesSet);
         }
@@ -188,12 +190,13 @@ export const JoinableGamesTab = () => {
         title: 'Game joined',
         description: 'You have successfully joined the game.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error joining game:', error);
-      setError(error.message || 'Failed to join game');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to join game';
+      setError(errorMessage);
       setInfoDialog({
         title: 'Join failed',
-        description: error.message || 'Failed to join game.',
+        description: errorMessage + '.',
       });
     } finally {
       setJoining(null);
@@ -227,12 +230,13 @@ export const JoinableGamesTab = () => {
         title: 'Game left',
         description: 'You have successfully left the game.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error leaving game:', error);
-      setError(error.message || 'Failed to leave game');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to leave game';
+      setError(errorMessage);
       setInfoDialog({
         title: 'Leave failed',
-        description: error.message || 'Failed to leave game.',
+        description: errorMessage + '.',
       });
     } finally {
       setLeaving(null);

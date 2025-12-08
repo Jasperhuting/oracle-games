@@ -1,6 +1,6 @@
 import { getServerFirebaseFootball } from '@/lib/firebase/server';
 
-export async function getLiveScores(): Promise<any[]> {
+export async function getLiveScores(): Promise<any[]> { // eslint-disable-line @typescript-eslint/no-explicit-any
 
 
     const clubs = [
@@ -80,7 +80,7 @@ export async function getLiveScores(): Promise<any[]> {
 
     // THIS SHOULD BE WK2026 IF THE GAMES ARE LIVE OFFCOURSE
 
-    const championsLeagueStage = stages.filter((stage: any) => stage.Ccd === 'champions-league');
+    const championsLeagueStage = stages.filter((stage: any) => stage.Ccd === 'champions-league'); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const games = championsLeagueStage[0]?.Events;
 

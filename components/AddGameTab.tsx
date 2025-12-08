@@ -76,9 +76,9 @@ export const AddGameTab = () => {
 
       setSuccess('Race successfully added and starting list is loaded!');
       reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating race:', error);
-      setError(error.message || 'Something went wrong adding the race');
+      setError(error instanceof Error ? error.message : 'Something went wrong adding the race');
     } finally {
       setIsSubmitting(false);
     }

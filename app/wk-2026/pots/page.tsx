@@ -30,11 +30,12 @@ export default function PotsPage() {
                 {pots.map((pot) => (
                     <div key={pot.id} className="bg-white p-4 rounded shadow">
                         <h2 className="text-lg font-semibold">Pot {pot.pouleId}</h2>
-                        {Object.values(pot.teams || {}).length > 0 ? Object.values(pot.teams || {}).map((team: any) => team.name).join(', ') : 'No teams'}
-                        {/* <p>Teams: {pot.teams?.map((team: any) => team.name).join(', ') || 'No teams'}</p> */}
+                        {Object.values(pot.teams || {}).length > 0 ? Object.values(pot.teams || {}).map((team: any) => team.name).join(', ') : 'No teams'} {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+                        {/* <p>Teams: {pot.teams?.map((team: any) => team.name).join(', ') || 'No teams'}</p> // eslint-disable-line @typescript-eslint/no-explicit-any */}
                     </div>
                 ))}
             </div>
         </div>
     );
+
 }

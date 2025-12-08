@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
         }
 
         return Response.json({ result });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error in setEnrichedTeams route for team', team, error);
 
-        const message = error?.message || 'Failed to enrich team';
+        const message = error instanceof Error ? error.message : 'Failed to enrich team';
         return Response.json({ error: message, team, year: Number(year) }, { status: 500 });
     }
 }

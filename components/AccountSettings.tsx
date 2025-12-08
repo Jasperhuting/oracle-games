@@ -28,7 +28,7 @@ interface PasskeyInfo {
 }
 
 export const AccountSettings = ({ userId, email, displayName }: AccountSettingsProps) => {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [passkeyInfo, setPasskeyInfo] = useState<PasskeyInfo>({ hasPasskey: false });
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,9 +103,9 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
         lastName: data.lastName,
         dateOfBirth: data.dateOfBirth
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update error:', error);
-      setError(error.message || 'Er is iets misgegaan bij het bijwerken');
+      setError(error instanceof Error ? error.message : 'Er is iets misgegaan bij het bijwerken');
     } finally {
       setIsSubmitting(false);
     }

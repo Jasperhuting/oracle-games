@@ -83,7 +83,7 @@ export async function GET(
       .get();
 
     // Cache team data to avoid duplicate reads
-    const teamCache = new Map<string, any>();
+    const teamCache = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const allRiders = await Promise.all(
       allRidersSnapshot.docs

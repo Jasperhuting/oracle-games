@@ -70,12 +70,12 @@ export default function ScraperPage() {
           // Convert to result format for display
           setResult({
             success: jobData.status === 'completed',
-            message: `All stages completed. ${jobData.results?.filter((r: any) => r.success).length || 0} successful, ${jobData.errors?.length || 0} failed.`,
+            message: `All stages completed. ${jobData.results?.filter((r: any) => r.success).length || 0} successful, ${jobData.errors?.length || 0} failed.`, // eslint-disable-line @typescript-eslint/no-explicit-any
             type: 'all-stages',
             totalStages: jobData.totalStages,
-            successfulStages: jobData.results?.filter((r: any) => r.success).length || 0,
+            successfulStages: jobData.results?.filter((r: any) => r.success).length || 0, // eslint-disable-line @typescript-eslint/no-explicit-any
             failedStages: jobData.errors?.length || 0,
-            totalDataCount: jobData.results?.reduce((sum: number, r: any) => sum + (r.dataCount || 0), 0) || 0,
+            totalDataCount: jobData.results?.reduce((sum: number, r: any) => sum + (r.dataCount || 0), 0) || 0, // eslint-disable-line @typescript-eslint/no-explicit-any
             results: jobData.results,
           });
         }

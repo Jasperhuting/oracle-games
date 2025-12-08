@@ -153,7 +153,7 @@ export const CreateGameTab = () => {
 
     try {
       // Build config based on game type
-      let config: any = {};
+      let config: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
 
       if (data.gameType === 'auctioneer') {
         // Validate auction periods
@@ -256,9 +256,9 @@ export const CreateGameTab = () => {
       setSelectedGameType('');
       setAuctionPeriods([]);
       setAllowSharedRiders(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating game:', error);
-      setError(error.message || 'Something went wrong creating the game');
+      setError(error instanceof Error ? error.message : 'Something went wrong creating the game');
     } finally {
       setIsSubmitting(false);
     }
@@ -326,7 +326,7 @@ export const CreateGameTab = () => {
               <span className="text-red-500 text-xs mt-1 block">{errors.raceType.message}</span>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Select "Season" for games that span the entire season without a specific race.
+              Select &quot;Season&quot; for games that span the entire season without a specific race.
             </p>
           </div>
 
@@ -430,7 +430,7 @@ export const CreateGameTab = () => {
                 <option value="5">5 Divisions - Separate games created automatically</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Single division: one game created. Multiple divisions: creates separate games automatically (e.g., "Game Name - Division 1", "Game Name - Division 2").
+                Single division: one game created. Multiple divisions: creates separate games automatically (e.g., &quot;Game Name - Division 1&quot;, &quot;Game Name - Division 2&quot;).
               </p>
             </div>
           </div>
@@ -561,7 +561,7 @@ export const CreateGameTab = () => {
 
                 {auctionPeriods.length === 0 && (
                   <p className="text-sm text-gray-500 mb-2">
-                    No auction periods added. Click "+ Add Period" to add one.
+                    No auction periods added. Click &quot;+ Add Period&quot; to add one.
                   </p>
                 )}
 
@@ -747,7 +747,7 @@ export const CreateGameTab = () => {
 
                 {auctionPeriods.length === 0 && (
                   <p className="text-sm text-gray-500 mb-2">
-                    No auction periods added. Click "+ Add Period" to add one.
+                    No auction periods added. Click &quot;+ Add Period&quot; to add one.
                   </p>
                 )}
 
@@ -831,7 +831,7 @@ export const CreateGameTab = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-semibold text-blue-900 mb-2">💡 Tips:</h3>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Create a race via "Add Race" before creating a game</li>
+          <li>• Create a race via &quot;Add Race&quot; before creating a game</li>
           <li>• Choose a clear name that includes the game type, race, and division</li>
           <li>• For Auctioneer games: add multiple auction periods (e.g., pre-race, mid-race)</li>
           <li>• Each auction period can have different start and end dates</li>

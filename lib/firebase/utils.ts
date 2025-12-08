@@ -41,7 +41,7 @@ export function iso2ToFlag(code: string): string {
 }
 
 export function isTTTTeamResult(v: unknown): v is TTTTeamResult {
-  const obj = v as any;
+  const obj = v as any; // eslint-disable-line @typescript-eslint/no-explicit-any
   return obj && typeof obj === 'object' && typeof obj.team === 'string' && Array.isArray(obj.riders);
 }
 

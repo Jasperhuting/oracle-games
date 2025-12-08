@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Create game document(s)
     const now = new Date();
     const divisionCount = gameData.divisionCount || 1;
-    const createdGames: { id: string; game: any }[] = [];
+    const createdGames: { id: string; game: any }[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // If divisionCount > 1, create separate game documents for each division
     if (divisionCount > 1) {

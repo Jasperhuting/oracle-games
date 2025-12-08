@@ -84,7 +84,7 @@ export const DivisionAssignmentModal = ({
 
         if (allGamesResponse.ok) {
           const allGamesData = await allGamesResponse.json();
-          const relatedGames = allGamesData.games.filter((g: any) => {
+          const relatedGames = allGamesData.games.filter((g: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             const gBaseName = (g.name || '').replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
             return gBaseName === baseName && g.id !== gameId;
           });
@@ -148,9 +148,9 @@ export const DivisionAssignmentModal = ({
         }
       });
       setSelectedDivisions(divisions);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading data:', error);
-      setError(error.message || 'Failed to load data');
+      setError(error instanceof Error ? error.message : 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -196,9 +196,9 @@ export const DivisionAssignmentModal = ({
         ...prev,
         [participantId]: division,
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error assigning division:', error);
-      setError(error.message || 'Failed to assign division');
+      setError(error instanceof Error ? error.message : 'Failed to assign division');
     } finally {
       setSaving(null);
     }
@@ -227,9 +227,9 @@ export const DivisionAssignmentModal = ({
 
       // Remove from local state
       setParticipants(prev => prev.filter(p => p.id !== pendingRemove.id));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing participant:', error);
-      setError(error.message || 'Failed to remove participant');
+      setError(error instanceof Error ? error.message : 'Failed to remove participant');
     } finally {
       setRemoving(null);
     }

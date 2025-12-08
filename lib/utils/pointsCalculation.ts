@@ -133,7 +133,7 @@ export function getClassificationMultiplier(
  * @param gameConfig - The game's configuration
  * @returns Points system to use
  */
-export function getPointsSystem(gameConfig: any): Record<number, number> {
+export function getPointsSystem(): Record<number, number> {
   // Always use TOP_20_POINTS system
   return TOP_20_POINTS;
 }

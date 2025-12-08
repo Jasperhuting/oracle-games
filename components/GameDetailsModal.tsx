@@ -15,7 +15,7 @@ interface Game {
   divisionLevel?: number;
   createdAt: string;
   updatedAt: string;
-  config?: any;
+  config?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   raceRef?: string;
   eligibleTeams?: string[];
   eligibleRiders?: string[];
@@ -42,9 +42,9 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
         }
         const data = await response.json();
         setGame(data.game);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error loading game:', error);
-        setError(error.message || 'Failed to load game');
+        setError(error instanceof Error ? error.message : 'Failed to load game');
       } finally {
         setLoading(false);
       }
@@ -185,20 +185,20 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
               </div>
 
               {/* Race Lineup */}
-              {(game.eligibleTeams?.length > 0 || game.eligibleRiders?.length > 0) && (
+              {(game?.eligibleTeams && (game?.eligibleTeams?.length > 0)) || (game?.eligibleRiders && (game?.eligibleRiders?.length > 0)) && (
                 <div>
                   <h3 className="text-lg font-semibold mb-3 text-gray-700">Race Lineup</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {game.eligibleTeams?.length > 0 && (
+                    {game?.eligibleTeams && (game?.eligibleTeams?.length > 0) && (
                       <div>
                         <label className="text-sm font-medium text-gray-500">Eligible Teams</label>
-                        <p className="text-gray-900">{game.eligibleTeams.length} teams</p>
+                        <p className="text-gray-900">{game.eligibleTeams?.length} teams</p>
                       </div>
                     )}
-                    {game.eligibleRiders?.length > 0 && (
+                    {game?.eligibleRiders?.length > 0 && (
                       <div>
                         <label className="text-sm font-medium text-gray-500">Eligible Riders</label>
-                        <p className="text-gray-900">{game.eligibleRiders.length} riders</p>
+                        <p className="text-gray-900">{game.eligibleRiders?.length} riders</p>
                       </div>
                     )}
                   </div>
@@ -233,7 +233,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                               Auction Periods ({game.config.auctionPeriods.length})
                             </label>
                             <div className="space-y-2">
-                              {game.config.auctionPeriods.map((period: any, index: number) => (
+                              {game.config.auctionPeriods.map((period: any, index: number) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
                                 <div key={index} className="bg-white border border-gray-200 rounded-md p-3">
                                   <div className="font-medium text-gray-900 mb-1">{period.name}</div>
                                   <div className="text-sm text-gray-600">

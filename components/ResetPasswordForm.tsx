@@ -7,6 +7,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import { FirebaseError } from "firebase/app";
 
 interface ResetPasswordFormProps {
     email: string;
@@ -33,11 +34,14 @@ export const ResetPasswordForm = () => {
             
             setSuccess(true);
             console.log('Password reset email sent to:', data.email);
-        } catch (error: any) {
-            console.error('Password reset error:', error.code, error.message);
+        } catch (error: unknown) {
+            let errorMessage = 'Something went wrong sending the reset email';
+            if (error instanceof FirebaseError) {
+                console.error('Password reset error:', error.code, error.message);
+            
             
             // User-friendly error messages in English
-            let errorMessage = 'Something went wrong sending the reset email';
+            
             if (error.code === 'auth/user-not-found') {
                 errorMessage = 'No account found with this email address';
             } else if (error.code === 'auth/invalid-email') {
@@ -45,6 +49,7 @@ export const ResetPasswordForm = () => {
             } else if (error.code === 'auth/too-many-requests') {
                 errorMessage = 'Too many requests. Try again later';
             }
+        }
             
             setError(errorMessage);
         } finally {

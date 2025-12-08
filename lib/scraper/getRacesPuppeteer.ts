@@ -18,14 +18,6 @@ export interface RacesResult {
   year: number;
 }
 
-function parsePCSDate(dateStr: string, year: number): string {
-  const match = dateStr.match(/(\d{2})\.(\d{2})/);
-  if (!match) return '';
-  
-  const [, day, month] = match;
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-}
-
 export async function getRacesPuppeteer(year: number): Promise<RacesResult> {
   const url = `https://www.procyclingstats.com/races.php?s=&year=${year}&circuit=&class=&filter=Filter`;
   

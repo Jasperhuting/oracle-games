@@ -49,9 +49,9 @@ export const PasskeySetup = ({ userId, email, displayName }: PasskeySetupProps) 
       }
 
       setSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Passkey setup error:', error);
-      setError(error.message || 'Something went wrong setting up the passkey');
+      setError(error instanceof Error ? error.message : 'Something went wrong setting up the passkey');
     } finally {
       setIsLoading(false);
     }

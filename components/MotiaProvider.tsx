@@ -5,7 +5,7 @@ import { MotiaStreamProvider as MotiaStreamClientProvider } from '@motiadev/stre
 
 interface MotiaContextType {
   address: string;
-  call: <T = any>(endpoint: string, options?: RequestInit) => Promise<T>;
+  call: <T = any>(endpoint: string, options?: RequestInit) => Promise<T>; // eslint-disable-line @typescript-eslint/no-explicit-any
   ws: WebSocket | null;
 }
 
@@ -49,7 +49,7 @@ export function MotiaProvider({
     };
   }, [address]);
 
-  const call = async <T = any,>(endpoint: string, options?: RequestInit): Promise<T> => {
+  const call = async <T = any,>(endpoint: string, options?: RequestInit): Promise<T> => { // eslint-disable-line @typescript-eslint/no-explicit-any
     // Convert ws:// to http:// for REST calls
     const httpUrl = address.replace('ws://', 'http://').replace('wss://', 'https://');
     const url = `${httpUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;

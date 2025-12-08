@@ -21,8 +21,10 @@ interface Race {
 }
 
 // Module-level cache that persists across component mounts
-const raceDataCache = new Map<string, any>();
-const stagesCache = new Map<string, any[]>();
+const raceDataCache = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+const stagesCache = new Map<string, any[]>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+// TODO: fix any
 
 export const GamesTab = () => {
   const { user } = useAuth();
@@ -34,16 +36,16 @@ export const GamesTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(false);
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
-  const [raceData, setRaceData] = useState<any[]>([]);
+  const [raceData, setRaceData] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loadingRaceData, setLoadingRaceData] = useState(false);
   const [editingRaceId, setEditingRaceId] = useState<string | null>(null);
   const [editDescription, setEditDescription] = useState<string>('');
   const [showStages, setShowStages] = useState(false);
-  const [stages, setStages] = useState<any[]>([]);
+  const [stages, setStages] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loadingStages, setLoadingStages] = useState(false);
   const [savingStage, setSavingStage] = useState(false);
   const [stageNumber, setStageNumber] = useState<string>('');
-  const [selectedStage, setSelectedStage] = useState<any | null>(null);
+  const [selectedStage, setSelectedStage] = useState<any | null>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [manuallyDeselected, setManuallyDeselected] = useState(false);
   const [initializeConfirmOpen, setInitializeConfirmOpen] = useState(false);
   const [saveAllStagesConfirmOpen, setSaveAllStagesConfirmOpen] = useState(false);
@@ -64,9 +66,9 @@ export const GamesTab = () => {
       const data = await response.json();
       setRaces(data.races);
       setError(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching races:', error);
-      setError(error.message || 'Kon races niet laden');
+      setError(error instanceof Error ? error.message : 'Kon races niet laden');
     } finally {
       setLoading(false);
     }
@@ -122,11 +124,11 @@ export const GamesTab = () => {
         description: 'Races are successfully initialized.',
       });
       fetchRaces();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error initializing races:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Something went wrong initializing the races.',
+        description: error instanceof Error ? error.message : 'Failed to initialize races.',
       });
     } finally {
       setInitializing(false);
@@ -177,11 +179,11 @@ export const GamesTab = () => {
       
       // Also fetch stages
       fetchStages(race.slug, forceRefresh);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching race data:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Something went wrong fetching the race data.',
+        description: error instanceof Error ? error.message : 'Failed to fetch race data.',
       });
     } finally {
       setLoadingRaceData(false);
@@ -211,7 +213,7 @@ export const GamesTab = () => {
       
       // Cache the stages
       stagesCache.set(raceSlug, data.stages);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching stages:', error);
     } finally {
       setLoadingStages(false);
@@ -248,11 +250,11 @@ export const GamesTab = () => {
       });
       setStageNumber('');
       fetchStages(selectedRace.slug);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving stage:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Something went wrong saving the stage.',
+        description: error instanceof Error ? error.message : 'Failed to save stage.',
       });
     } finally {
       setSavingStage(false);
@@ -317,7 +319,7 @@ export const GamesTab = () => {
       }
 
       fetchStages(selectedRace.slug);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving all stages:', error);
       setInfoDialog({
         title: 'Error',
@@ -377,11 +379,11 @@ export const GamesTab = () => {
       
       setEditingRaceId(null);
       setEditDescription('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating description:', error);
       setInfoDialog({
         title: 'Error',
-        description: error.message || 'Something went wrong updating the description.',
+        description: error instanceof Error ? error.message : 'Failed to update description.',
       });
     }
   };
@@ -614,7 +616,7 @@ export const GamesTab = () => {
             }
             acc[teamName].push(doc);
             return acc;
-          }, {} as Record<string, any[]>);
+          }, {} as Record<string, any[]>); // eslint-disable-line @typescript-eslint/no-explicit-any
 
           // Sort teams alphabetically
           const sortedTeams = Object.keys(ridersByTeam).sort();
@@ -673,7 +675,7 @@ export const GamesTab = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {teamRiders.map((doc: any, index: number) => {
+                          {teamRiders.map((doc: any, index: number) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                             const rider = doc.rider || {};
                             const riderImage = rider?.team?.riders?.find((teamRider: EnrichedRider) => teamRider.name === rider.nameID)?.jerseyImage;
 
@@ -790,8 +792,8 @@ export const GamesTab = () => {
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
           <p className="text-gray-600 mb-4">No races found</p>
           <p className="text-sm text-gray-500">
-            Click "Initialize Existing Races" to add current races,
-            or go to "Add Race" to create a new race.
+            Click &quot;Initialize Existing Races&quot; to add current races,
+            or go to &quot;Add Race&quot; to create a new race.
           </p>
         </div>
       ) : (

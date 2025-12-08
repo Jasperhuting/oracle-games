@@ -57,9 +57,9 @@ function connectToEmulatorsIfNeeded() {
       console.log('   - Auth: http://127.0.0.1:9099');
       console.log('   - Firestore: http://127.0.0.1:8080');
       console.log('   - UI: http://127.0.0.1:4000');
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Already connected or connection failed
-      if (error.code === 'auth/emulator-config-failed') {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'auth/emulator-config-failed') {
         emulatorsConnected = true; // Already connected
       } else {
         console.error('Failed to connect to emulators:', error);

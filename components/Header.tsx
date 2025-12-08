@@ -2,13 +2,13 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { auth } from "@/lib/firebase/client";
-import { signOut } from "firebase/auth";
+import { signOut, User } from "firebase/auth";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User, Logout, UserCircle, ArrowDown, ChevronDown, Mail } from "tabler-icons-react";
-import { Menu, MenuItem, MenuProvider, MenuSeparator } from "./ProfileMenu";
+import { Logout, UserCircle, ChevronDown, Mail } from "tabler-icons-react";
+import { MenuItem, MenuProvider, Menu } from "./ProfileMenu";
 import { MotionProps, Variants } from "framer-motion";
 import { Menubar, MenuButton, useMenuContext, useStoreState } from "@ariakit/react";
 
@@ -38,7 +38,7 @@ const item = {
     transition: { opacity: { duration: 0.2 } },
 } satisfies MotionProps;
 
-const ProfileMenuButton = ({ user, loading, pathname, unreadCount }: { user: any, loading: boolean, pathname: string, unreadCount: number }) => {
+const ProfileMenuButton = ({ user, loading, pathname, unreadCount }: { user: User, loading: boolean, pathname: string, unreadCount: number }) => {
     const menu = useMenuContext();
     const isOpen = useStoreState(menu, 'open') || false;
 
@@ -217,7 +217,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                             <div key={'account'} className="relative gap-1 flex flex-col items-center px-3 group justify-center align-middle">
                                 <Menubar>
                                     <MenuProvider>
-                                        <ProfileMenuButton user={user} loading={loading} pathname={pathname} unreadCount={unreadCount} />
+                                        {user && <ProfileMenuButton user={user} loading={loading} pathname={pathname} unreadCount={unreadCount} />}
                                         <Menu>
                                             {profileItems.map((item) => {
                                                 return <MenuItem key={item.name} onClick={() => item.onClick ? item.onClick() : router.push(item.href)} className={`text-gray-900 whitespace-nowrap py-2 px-3 ${item.href === pathname ? 'text-primary font-bold' : ''}`}>

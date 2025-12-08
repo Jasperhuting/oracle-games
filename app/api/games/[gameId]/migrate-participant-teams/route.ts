@@ -46,7 +46,7 @@ export async function POST(
         }
 
         // Check if any rider has 'amount' field
-        const needsMigration = team.some((rider: any) => 
+        const needsMigration = team.some((rider: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
           rider.hasOwnProperty('amount') && !rider.hasOwnProperty('pricePaid')
         );
 
@@ -56,7 +56,7 @@ export async function POST(
         }
 
         // Migrate the team array
-        const migratedTeam = team.map((rider: any) => {
+        const migratedTeam = team.map((rider: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           if (rider.hasOwnProperty('amount') && !rider.hasOwnProperty('pricePaid')) {
             const { amount, ...rest } = rider;
             return {

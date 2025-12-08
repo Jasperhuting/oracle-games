@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       .orderBy('createdAt', 'desc')
       .get();
 
-    const races: any[] = [];
+    const races: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
     racesSnapshot.forEach((doc) => {
       races.push({
         id: doc.id,

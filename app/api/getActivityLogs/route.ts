@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .get();
 
-    const logs: any[] = [];
+    const logs: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
     logsSnapshot.forEach((doc) => {
       logs.push({
         id: doc.id,

@@ -10,7 +10,7 @@ import { useMotia } from '@/components/MotiaProvider';
  * // Call the endpoint
  * await execute({ method: 'POST', body: JSON.stringify({ data }) });
  */
-export function useMotiaEndpoint<T = any>(endpoint: string) {
+export function useMotiaEndpoint<T = any>(endpoint: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const { call } = useMotia();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);

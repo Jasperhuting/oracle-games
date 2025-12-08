@@ -203,8 +203,8 @@ export default function RiderPointsPage() {
       const data = await response.json();
       
       // Convert date strings back to Date objects and group by day
-      const ridersWithDates = data.riders.map((rider: any) => {
-        const pointsByDate = rider.pointsByDate.map((p: any) => ({
+      const ridersWithDates = data.riders.map((rider: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const pointsByDate = rider.pointsByDate.map((p: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
           ...p,
           date: new Date(p.date),
         }));

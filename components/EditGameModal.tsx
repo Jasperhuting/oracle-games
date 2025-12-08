@@ -53,6 +53,8 @@ interface EditGameModalProps {
   onSuccess: () => void;
 }
 
+// TODO: Remove any
+
 export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,7 +97,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
         // Load auction periods if auctioneer game
         if (game.gameType === 'auctioneer' && game.config?.auctionPeriods) {
-          setAuctionPeriods(game.config.auctionPeriods.map((p: any) => ({
+          setAuctionPeriods(game.config.auctionPeriods.map((p: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
             name: p.name,
             startDate: p.startDate ? new Date(p.startDate).toISOString().slice(0, 16) : '',
             endDate: p.endDate ? new Date(p.endDate).toISOString().slice(0, 16) : '',
@@ -113,9 +115,9 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         if (game.gameType === 'auctioneer' && game.config?.countingClassifications) {
           setCountingClassifications(game.config.countingClassifications);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error loading game:', error);
-        setError(error.message || 'Failed to load game');
+        setError(error instanceof Error ? error.message : 'Failed to load game');
       } finally {
         setLoading(false);
       }
@@ -176,7 +178,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
     // Set default multipliers based on race slug
     let mountainMultiplier = 4; // Default for Tour
-    let sprintMultiplier = 2;
+    const sprintMultiplier = 2;
     
     if (race.slug.includes('giro')) {
       mountainMultiplier = 2; // Giro uses 2x
@@ -213,7 +215,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
     setError(null);
 
     try {
-      const updates: any = {
+      const updates: any = { // eslint-disable-line @typescript-eslint/no-explicit-any
         adminUserId: user.uid,
         name: data.name,
         status: data.status,
@@ -268,9 +270,9 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating game:', error);
-      setError(error.message || 'Something went wrong updating the game');
+      setError(error instanceof Error ? error.message : 'Something went wrong updating the game');
     } finally {
       setIsSubmitting(false);
     }
@@ -442,7 +444,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
                     {auctionPeriods.length === 0 && (
                       <p className="text-sm text-gray-500 mb-2">
-                        No auction periods added. Click "+ Add Period" to add one.
+                        No auction periods added. Click &quot;+ Add Period&quot; to add one.
                       </p>
                     )}
 

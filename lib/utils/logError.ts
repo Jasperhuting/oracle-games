@@ -20,7 +20,7 @@ export async function logError({
   errorDetails?: string;
   gameId?: string;
   endpoint?: string;
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }) {
   try {
     await fetch('/api/logActivity', {

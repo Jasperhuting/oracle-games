@@ -4,7 +4,7 @@ import { toISOString } from './dateHelpers';
  * Serialize a game document for API responses
  * Converts Timestamps/Dates to ISO strings and DocumentReferences to paths
  */
-export function serializeGame(game: any, id?: string) {
+export function serializeGame(game: any, id?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   return {
     id: id || game.id,
     ...game,
@@ -19,7 +19,7 @@ export function serializeGame(game: any, id?: string) {
 /**
  * Serialize a participant document for API responses
  */
-export function serializeParticipant(participant: any, id?: string) {
+export function serializeParticipant(participant: any, id?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   return {
     id: id || participant.id,
     ...participant,
@@ -31,7 +31,7 @@ export function serializeParticipant(participant: any, id?: string) {
 /**
  * Serialize a player team document for API responses
  */
-export function serializePlayerTeam(team: any, id?: string) {
+export function serializePlayerTeam(team: any, id?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   return {
     id: id || team.id,
     ...team,
@@ -42,7 +42,7 @@ export function serializePlayerTeam(team: any, id?: string) {
 /**
  * Serialize a bid document for API responses
  */
-export function serializeBid(bid: any, id?: string) {
+export function serializeBid(bid: any, id?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   return {
     id: id || bid.id,
     ...bid,
@@ -53,7 +53,7 @@ export function serializeBid(bid: any, id?: string) {
 /**
  * Serialize a race lineup document for API responses
  */
-export function serializeRaceLineup(lineup: any, id?: string) {
+export function serializeRaceLineup(lineup: any, id?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
   return {
     id: id || lineup.id,
     ...lineup,

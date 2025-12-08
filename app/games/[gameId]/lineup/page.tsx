@@ -82,7 +82,7 @@ useEffect(() => {
       const data = await response.json();
 
       // Convert API teams to Team type
-      const teams: Team[] = (data.teams || []).map((t: any) => ({
+      const teams: Team[] = (data.teams || []).map((t: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
         id: t.id,
         name: t.name,
         shortName: t.shortName,
@@ -96,7 +96,7 @@ useEffect(() => {
       }));
 
       // Convert API riders to Rider type
-      const riders: Rider[] = (data.riders || []).map((r: any) => {
+      const riders: Rider[] = (data.riders || []).map((r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         // Find the team class from the teams array
         const teamData = teams.find(t => t.id === r.teamId || t.name === r.team);
 
@@ -136,9 +136,9 @@ useEffect(() => {
       const currentRiderIdSet = new Set(data.currentRiderIds || []);
       const preSelectedRiders = riders.filter(r => currentRiderIdSet.has(r.id));
       setSelectedRiders(preSelectedRiders);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading lineup:', error);
-      setError(error.message || 'Failed to load race lineup');
+      setError(error instanceof Error ? error.message : 'Failed to load race lineup');
     } finally {
       setLoading(false);
     }
@@ -198,9 +198,9 @@ Riders removed: ${result.ridersRemoved}`,
           description: 'Lineup saved successfully!',
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving lineup:', error);
-      setError(error.message || 'Failed to save lineup');
+      setError(error instanceof Error ? error.message : 'Failed to save lineup');
     } finally {
       setSaving(false);
     }

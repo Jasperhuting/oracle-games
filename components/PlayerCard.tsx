@@ -4,10 +4,38 @@ import { Minus, Plus } from "tabler-icons-react";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Rider } from "@/lib/scraper";
 
-export const PlayerCard = ({ player, onClick, selected, buttonContainer, showBid, bid, hideInfo, className, bidders, isNeoProf, showNeoProfBadge }: { player: any, onClick: (player: any) => void, selected: boolean, buttonContainer?: ReactNode, showBid?: boolean, bid?: number, hideInfo?: boolean, className?: string, bidders?: Array<{ playername: string, amount: number, bidAt: string }>, isNeoProf?: boolean, showNeoProfBadge?: boolean }) => {
+// TODO: replace any with real type
 
-    const age = player?.team?.riders?.find((rider: any) => rider.name === player.id)?.age;
+export const PlayerCard = (
+    { 
+        player, 
+        onClick, 
+        selected, 
+        buttonContainer, 
+        showBid, 
+        bid, 
+        hideInfo, 
+        className, 
+        bidders, 
+        isNeoProf, 
+        showNeoProfBadge 
+    }: { 
+        player: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        onClick: (player: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        selected: boolean, 
+        buttonContainer?: ReactNode, 
+        showBid?: boolean, 
+        bid?: number, 
+        hideInfo?: boolean, 
+        className?: string, 
+        bidders?: Array<{ playername: string, amount: number, bidAt: string }>, 
+        isNeoProf?: boolean, 
+        showNeoProfBadge?: boolean 
+    }) => {
+
+    const age = player?.team?.riders?.find((rider: Rider) => rider.name === player.id)?.age;
     const jerseyImage = player?.team?.teamImage;
     const teamName = player?.team?.name;
     const isSold = player?.isSold;

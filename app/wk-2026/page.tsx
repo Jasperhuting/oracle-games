@@ -35,9 +35,9 @@ export const WK2026Page = () => {
             const teamAssignments: { [teamId: string]: { poule: string; position: number } } = {};
 
             if (poulesData.poules) {
-                poulesData.poules.forEach((poule: any) => {
+                poulesData.poules.forEach((poule: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (poule.teams) {
-                        Object.entries(poule.teams).forEach(([teamId, teamData]: [string, any]) => {
+                        Object.entries(poule.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                             teamAssignments[teamId] = {
                                 poule: poule.pouleId,
                                 position: teamData.position
@@ -48,7 +48,7 @@ export const WK2026Page = () => {
             }
 
             // Merge team data with saved assignments
-            const teamsWithAssignments = teamsData.teams.map((team: any) => {
+            const teamsWithAssignments = teamsData.teams.map((team: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                 const assignment = teamAssignments[team.id];
                 return {
                     ...team,
@@ -249,7 +249,7 @@ export const WK2026Page = () => {
                                         const teamAtPosition = getTeamAtPosition(poule, position);
 
                                         if (teamAtPosition) {
-                                            const country = countriesList.find((c: any) => c.name === teamAtPosition.name);
+                                            const country = countriesList.find((c: any) => c.name === teamAtPosition.name); // eslint-disable-line @typescript-eslint/no-explicit-any
                                             return (
                                                 <div
                                                     key={position}
@@ -266,13 +266,13 @@ export const WK2026Page = () => {
                                                             <div className="flex flex-col gap-0">
                                                                 <div className="flex flex-row gap-0">
                                                                     {teamAtPosition.possibleTeams.slice(0, 2).map((pt, idx) => {
-                                                                        const ptCountry = countriesList.find((c: any) => c.name === pt);
+                                                                        const ptCountry = countriesList.find((c: any) => c.name === pt); // eslint-disable-line @typescript-eslint/no-explicit-any
                                                                         return <Flag key={idx} countryCode={ptCountry?.code || pt} width={24} />;
                                                                     })}
                                                                 </div>
                                                                 <div className="flex flex-row gap-0">
                                                                     {teamAtPosition.possibleTeams.slice(2, 4).map((pt, idx) => {
-                                                                        const ptCountry = countriesList.find((c: any) => c.name === pt);
+                                                                        const ptCountry = countriesList.find((c: any) => c.name === pt); // eslint-disable-line @typescript-eslint/no-explicit-any
                                                                         return <Flag key={idx} countryCode={ptCountry?.code || pt} width={24} />;
                                                                     })}
                                                                 </div>
@@ -313,7 +313,7 @@ export const WK2026Page = () => {
                 <h2 className="text-xl font-semibold mb-4">Unassigned Teams ({getUnassignedTeams().length})</h2>
                 <div className="grid grid-cols-4 gap-4">
                     {getUnassignedTeams().sort((a, b) => a.pot - b.pot).map((team: TeamInPoule) => {
-                        const country = countriesList.find((c: any) => c.name === team.name);
+                        const country = countriesList.find((c: any) => c.name === team.name); // eslint-disable-line @typescript-eslint/no-explicit-any
                         return (
                             <div
                                 key={team.id}
@@ -338,4 +338,3 @@ export const WK2026Page = () => {
     );
 };
 
-export default WK2026Page;

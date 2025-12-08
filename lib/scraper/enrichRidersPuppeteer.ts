@@ -102,7 +102,7 @@ export async function enrichRidersPuppeteer({ year, team }: { year: number, team
         const uciRank = Number(uciRankRaw || 0);
 
         // Build result object with only valid enriched data (don't overwrite with empty/invalid values)
-        const result: any = {
+        const result: { team: string; year: number; jerseyImageTeam?: string; riders?: EnrichedRider[]; name?: string; country?: string; class?: string; points?: number; pcsRank?: number; uciRank?: number; } = { 
             team,
             year,
         };

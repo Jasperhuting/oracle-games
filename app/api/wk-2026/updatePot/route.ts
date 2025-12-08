@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
                     position: team.position
                 };
                 return acc;
-            }, {} as any);
+            }, {} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
             console.log(`Updating poule ${pouleId} with teams:`, teamIds);
 

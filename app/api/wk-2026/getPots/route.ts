@@ -9,7 +9,7 @@ export async function GET() {
         const poulesRef = db.collection('poules');
         const poulesSnapshot = await poulesRef.get();
         
-        const poules: { id: string; pouleId: string; teamIds: string[]; teams: Record<string, any> }[] = [];
+        const poules: { id: string; pouleId: string; teamIds: string[]; teams: Record<string, any> }[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
         poulesSnapshot.forEach(doc => {
             const data = doc.data();
             poules.push({ 

@@ -33,7 +33,11 @@ export async function saveRidersToRace(
       return false;
     }
     
-    const docData: any = {
+    const docData: {
+      rider: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      dnf?: number;
+      dns?: number;
+    } = { 
       rider: riderFullData,
     };
     

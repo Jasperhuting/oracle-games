@@ -1,8 +1,8 @@
 import { formatCurrency } from "@/lib/utils/formatCurrency";
-import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { Row } from "./Row";
-import { Minus, Plus } from "tabler-icons-react";
+
+// TODO: replace any with real type
 
 export const PlayerRowBids = ({
     player,
@@ -13,11 +13,11 @@ export const PlayerRowBids = ({
     index,
     rightContent
 }: {
-    player: any,
-    selectPlayer: (player: any) => void,
+    player: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    selectPlayer: (player: any) => void, // eslint-disable-line @typescript-eslint/no-explicit-any
     showRank?: boolean,
     showPoints?: boolean,
-    selectedPlayer?: any,
+    selectedPlayer?: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     fullWidth?: boolean,
     index: number | boolean,
     showButton?: boolean,

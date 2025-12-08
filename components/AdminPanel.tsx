@@ -33,7 +33,7 @@ export function AdminPanel() {
     setResult(null);
 
     try {
-      const body: any = { command: commandId };
+      const body: { command: string; stage?: number; year?: number } = { command: commandId };
       if (stage) body.stage = stage;
       if (year) body.year = year;
 

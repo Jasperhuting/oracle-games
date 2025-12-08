@@ -9,6 +9,7 @@ import { Flag } from "./Flag";
 import process from "process";
 import { normalizeString } from "@/lib/utils/stringUtils";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { Ranking } from "@/app/api/getRankings/route";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -63,14 +64,14 @@ export const RidersManagementTab = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/getRankings?year=${YEAR}&limit=3000`);
+      const response: Response = await fetch(`/api/getRankings?year=${YEAR}&limit=3000`);
       if (!response.ok) {
         throw new Error('Failed to load riders');
       }
-      const data = await response.json();
+      const { riders } = await response.json();
 
       // Transform riders data
-      const ridersData = (data.riders || []).map((r: any) => ({
+      const ridersData = (riders || []).map((r: Ranking) => ({
         id: r.nameID || r.id,
         name: r.name,
         country: r.country,
@@ -87,18 +88,17 @@ export const RidersManagementTab = () => {
       } else {
         setRiders(ridersData);
       }
-    } catch (error: any) {
-      console.error('Error loading riders:', error);
-      setError(error.message || 'Failed to load riders');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error loading riders:', error);
+        setError(error.message || 'Failed to load riders');
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
   };
 
-  const loadMoreRiders = () => {
-    loadRiders(true);
-  };
 
   useEffect(() => {
     if (!hasFetchedRef.current) {
@@ -134,12 +134,14 @@ export const RidersManagementTab = () => {
       ));
 
       setEditingRiderTeam(null);
-    } catch (error: any) {
-      console.error('Error updating rider team:', error);
-      setInfoDialog({
-        title: 'Error',
-        description: error.message || 'Failed to update rider team.',
-      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error updating rider team:', error);
+        setInfoDialog({
+          title: 'Error',
+          description: error.message || 'Failed to update rider team.',
+        });
+      }
     }
   };
 
@@ -174,12 +176,14 @@ export const RidersManagementTab = () => {
       setRiders(riders.map(r =>
         r.id === riderId ? { ...r, retired: !currentRetired } : r
       ));
-    } catch (error: any) {
-      console.error('Error updating rider status:', error);
-      setInfoDialog({
-        title: 'Error',
-        description: error.message || 'Failed to update rider status.',
-      });
+    } catch (error: unknown) { 
+      if (error instanceof Error) {
+        console.error('Error updating rider status:', error);
+        setInfoDialog({
+          title: 'Error',
+          description: error.message || 'Failed to update rider status.',
+        });
+      }
     }
   };
 

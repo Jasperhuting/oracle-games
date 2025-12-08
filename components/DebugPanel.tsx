@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 export function DebugPanel() {
-  const [metadata, setMetadata] = useState<any>(null);
+  const [metadata, setMetadata] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(false);
 
   const fetchMetadata = async () => {

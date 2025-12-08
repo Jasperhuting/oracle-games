@@ -9,7 +9,7 @@ export interface ActivityLog {
   targetUserId?: string;
   targetUserEmail?: string;
   targetUserName?: string;
-  details?: Record<string, any>;
+  details?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   timestamp: string;
   ipAddress?: string;
   userAgent?: string;

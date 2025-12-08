@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
                     team2Score: match.team2Score
                 };
                 return acc;
-            }, {} as any);
+            }, {} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
             console.log(`Saving matches for poule ${pouleId}`);
 

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .orderBy('createdAt', 'desc')
       .get();
 
-    const users: any[] = [];
+    const users: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
     usersSnapshot.forEach((doc) => {
       users.push({
         uid: doc.id,

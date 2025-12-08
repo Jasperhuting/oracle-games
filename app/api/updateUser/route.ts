@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     await db.collection('users').doc(userId).update(updateData);
 
     // Log the profile update activity
-    const changes: Record<string, any> = {};
+    const changes: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
     if (oldUserData?.playername !== playername) {
       changes.playername = { old: oldUserData?.playername, new: playername };
     }

@@ -47,7 +47,7 @@ export function ScraperRunner() {
     setLoading(true);
     
     try {
-      const body: any = { type, race, year: parseInt(year) };
+      const body: { type: 'startlist' | 'stage-result'; race: string; year: number; stage?: number } = { type, race, year: parseInt(year) };
       if (type === 'stage-result' && stage) {
         body.stage = parseInt(stage);
       }
