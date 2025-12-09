@@ -76,7 +76,7 @@ export const ActivityLogTab = () => {
       if (!user?.uid) return;
 
       try {
-        const response = await fetch(`/api/getActivityLogs?userId=${user.uid}&limit=200`);
+        const response = await fetch(`/api/getActivityLogs?userId=${user.uid}&limit=1000`);
         
         if (!response.ok) {
           const errorData = await response.json();
