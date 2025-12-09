@@ -12,6 +12,8 @@ interface ActivityLog {
   targetUserId?: string;
   targetUserEmail?: string;
   targetUserName?: string;
+  gameId?: string;
+  gameName?: string;
   details?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   timestamp: string;
   ipAddress?: string;
@@ -291,6 +293,42 @@ export const ActivityLogTab = () => {
               </div>
             ))}
           </div>
+        </div>
+      );
+    }
+
+    // GAME_STATUS_CHANGED details
+    if (log.action === 'GAME_STATUS_CHANGED') {
+      return (
+        <div className="mt-2 space-y-1">
+          {(log.gameName || log.details.gameName) && (
+            <div className="text-sm font-medium text-gray-900">{log.gameName || log.details.gameName}</div>
+          )}
+          {log.gameId && (
+            <div className="text-xs text-gray-500">Game ID: {log.gameId}</div>
+          )}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-medium text-gray-600">Status:</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+              {log.details.oldStatus}
+            </span>
+            <span className="text-gray-400">→</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-700 font-semibold">
+              {log.details.newStatus}
+            </span>
+          </div>
+          {log.details.oldAuctionStatus && log.details.newAuctionStatus && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-medium text-gray-600">Auction Status:</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                {log.details.oldAuctionStatus}
+              </span>
+              <span className="text-gray-400">→</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold">
+                {log.details.newAuctionStatus}
+              </span>
+            </div>
+          )}
         </div>
       );
     }

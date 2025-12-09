@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import type { MessagesResponse, ApiErrorResponse, ClientMessage } from '@/lib/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<MessagesResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
         ...data,
         sentAt: data.sentAt?.toDate().toISOString(),
         readAt: data.readAt?.toDate().toISOString(),
-      };
+      } as ClientMessage;
     });
 
     return NextResponse.json({ messages });

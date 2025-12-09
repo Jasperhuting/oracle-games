@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { BidsListResponse, ApiErrorResponse, ClientBid } from '@/lib/types';
 
 // GET all bids for a game
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<BidsListResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await context.params; // ← FIX
 
@@ -33,7 +34,7 @@ export async function GET(
         id: doc.id,
         ...data,
         bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt,
-      };
+      } as ClientBid;
     });
 
     return NextResponse.json({ success: true, bids, count: bids.length });

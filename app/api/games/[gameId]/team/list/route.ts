@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { PlayerTeamListResponse, ApiErrorResponse, ClientPlayerTeam } from '@/lib/types';
 
 // GET all riders in a user's team for a game
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<PlayerTeamListResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
     const { searchParams } = new URL(request.url);
@@ -39,7 +40,7 @@ export async function GET(
         id: doc.id,
         ...data,
         acquiredAt: data.acquiredAt?.toDate?.()?.toISOString() || data.acquiredAt,
-      };
+      } as ClientPlayerTeam;
     });
 
     return NextResponse.json({

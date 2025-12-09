@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { UsersListResponse, ApiErrorResponse, User } from '@/lib/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<UsersListResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -30,13 +31,10 @@ export async function GET(request: NextRequest) {
       .orderBy('createdAt', 'desc')
       .get();
 
-    const users: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    usersSnapshot.forEach((doc) => {
-      users.push({
-        uid: doc.id,
-        ...doc.data()
-      });
-    });
+    const users: User[] = usersSnapshot.docs.map((doc) => ({
+      uid: doc.id,
+      ...doc.data()
+    } as User));
 
     return NextResponse.json({ users });
   } catch (error) {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { GamesListResponse, ApiErrorResponse, ClientGame } from '@/lib/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<GamesListResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const year = searchParams.get('year');
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
         registrationOpenDate: data.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data.registrationCloseDate?.toDate?.()?.toISOString(),
         raceRef: data.raceRef?.path || data.raceRef,
-      };
+      } as ClientGame;
     });
 
     // Apply filters in memory

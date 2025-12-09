@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { GameResponse, ApiErrorResponse, ClientGame, UpdateGameResponse, DeleteGameResponse, UpdateGameRequest } from '@/lib/types';
 
 // Helper to remove undefined values from object (recursively)
 function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Partial<T> {
@@ -22,7 +23,7 @@ function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Parti
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<GameResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
     const db = getServerFirebase();
@@ -48,7 +49,7 @@ export async function GET(
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
         raceRef: data?.raceRef?.path || data?.raceRef,
-      },
+      } as ClientGame,
     });
   } catch (error) {
     console.error('Error fetching game:', error);
@@ -63,10 +64,10 @@ export async function GET(
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<UpdateGameResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
-    const updates = await request.json();
+    const updates: UpdateGameRequest = await request.json();
     const { adminUserId } = updates;
 
     if (!adminUserId) {
@@ -97,14 +98,14 @@ export async function PATCH(
     }
     const currentGameData = currentGameDoc.data();
 
-    // Remove adminUserId from updates
-    delete updates.adminUserId;
+    // Separate adminUserId from the actual update fields
+    const { adminUserId: _adminUserId, ...gameUpdates } = updates;
 
     // Add updatedAt timestamp
-    updates.updatedAt = new Date();
+    gameUpdates.updatedAt = new Date();
 
     // Remove undefined fields before updating Firestore
-    const cleanedUpdates = removeUndefinedFields(updates);
+    const cleanedUpdates = removeUndefinedFields(gameUpdates);
 
     // Update game
     await db.collection('games').doc(gameId).update(cleanedUpdates);
@@ -155,7 +156,7 @@ export async function PATCH(
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
         raceRef: data?.raceRef?.path || data?.raceRef,
-      },
+      } as ClientGame,
     });
   } catch (error) {
     console.error('Error updating game:', error);
@@ -170,7 +171,7 @@ export async function PATCH(
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<DeleteGameResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
     const { searchParams } = new URL(request.url);

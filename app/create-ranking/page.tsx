@@ -23,9 +23,9 @@ const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 export default function CreateRankingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [rankedRiders, setRankedRiders] = useState<unknown[]>([]);
-  const [teamsList, setTeamsList] = useState<unknown[]>([]);
-  const [teamsArray, setTeamsArray] = useState<unknown[]>([]);
+  const [rankedRiders, setRankedRiders] = useState<Rider[]>([]);
+  const [teamsList, setTeamsList] = useState<Team[]>([]);
+  const [teamsArray, setTeamsArray] = useState<Team[]>([]);
   const [traceId, setTraceId] = useState<string | null>(null);
   const [loadingToastId, setLoadingToastId] = useState<string | undefined>(undefined);
   const [processedStages, setProcessedStages] = useState<Set<string>>(new Set());
@@ -96,7 +96,7 @@ export default function CreateRankingPage() {
   }, []);
 
 
-  const streamGroup = useStreamGroup<{ id: string, stage: string, year: number, teamName: string, dataTeams?: any, dataRiders?: any }>({ // eslint-disable-line @typescript-eslint/no-explicit-any
+  const streamGroup = useStreamGroup<{ id: string, stage: string, year: number, teamName: string, dataTeams?: Team[], dataRiders?: Rider[] }>({
     streamName: 'updates',
     groupId: traceId || 'default'
   })
@@ -326,10 +326,10 @@ export default function CreateRankingPage() {
       }
 
       // Update local state
-      setTeamsList(teamsList.map((team: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      setTeamsList(teamsList.map((team) =>
         team.id === teamId ? { ...team, class: newClass } : team
       ));
-      setFilteredTeams(filteredTeams.map((team: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      setFilteredTeams(filteredTeams.map((team) =>
         team.id === teamId ? { ...team, class: newClass } : team
       ));
 
@@ -359,10 +359,10 @@ export default function CreateRankingPage() {
       const result = await response.json();
 
       // Update local state
-      setRankedRiders(rankedRiders.map((rider: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      setRankedRiders(rankedRiders.map((rider) =>
         rider.id === riderId ? { ...rider, team: result.team } : rider
       ));
-      setFilteredRiders(filteredRiders.map((rider: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      setFilteredRiders(filteredRiders.map((rider) =>
         rider.id === riderId ? { ...rider, team: result.team } : rider
       ));
 
@@ -505,7 +505,7 @@ export default function CreateRankingPage() {
     // Apply country filter
     if (selectedCountries.length > 0) {
       const countryCodes = selectedCountries.map(c => c.code?.toLowerCase());
-      filtered = filtered.filter((rider: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      filtered = filtered.filter((rider) =>
         countryCodes.includes(rider.country?.toLowerCase())
       );
     }
@@ -525,7 +525,7 @@ export default function CreateRankingPage() {
 
     // Apply player filter
     if (selectedPlayers.length > 0) {
-      filtered = filtered.filter((rider: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      filtered = filtered.filter((rider) =>
         selectedPlayers.some(p => p.name === rider.name && p.rank === rider.rank)
       );
     }
@@ -533,7 +533,7 @@ export default function CreateRankingPage() {
     // Apply class filter
     if (selectedClasses.length > 0) {
       const classNames = selectedClasses.map(c => c?.toLowerCase());
-      filtered = filtered.filter((rider: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      filtered = filtered.filter((rider) =>
         classNames.includes(rider.team?.class?.toLowerCase())
       );
     }
@@ -546,21 +546,21 @@ export default function CreateRankingPage() {
 
     if (selectedCountries.length > 0) {
       const countryCodes = selectedCountries.map(c => c.code?.toLowerCase());
-      filteredTeamsList = filteredTeamsList.filter((team: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      filteredTeamsList = filteredTeamsList.filter((team) =>
         countryCodes.includes(team.country?.toLowerCase())
       );
     }
 
     if (selectedTeams.length > 0) {
       const teamNames = selectedTeams.map(t => t.name?.toLowerCase());
-      filteredTeamsList = filteredTeamsList.filter((team: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      filteredTeamsList = filteredTeamsList.filter((team) =>
         teamNames.includes(team.name?.toLowerCase())
       );
     }
 
     if (selectedClasses.length > 0) {
       const classNames = selectedClasses.map(c => c?.toLowerCase());
-      filteredTeamsList = filteredTeamsList.filter((team: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+      filteredTeamsList = filteredTeamsList.filter((team) =>
         classNames.includes(team.class?.toLowerCase())
       );
     }
@@ -775,12 +775,12 @@ export default function CreateRankingPage() {
                     defaultHeight={600}
                     rowCount={filteredRiders.length}
                     rowHeight={(index) => {
-                      const rider: any = filteredRiders[index]; // eslint-disable-line @typescript-eslint/no-explicit-any
+                      const rider = filteredRiders[index];
                       return editingRiderTeam === rider.id ? 60 : 40;
                     }}
                     rowProps={{}}
                     rowComponent={({ index, style }) => {
-                      const rider: any = filteredRiders[index]; // eslint-disable-line @typescript-eslint/no-explicit-any
+                      const rider = filteredRiders[index];
                       const isEditing = editingRiderTeam === rider.id;
 
                       return (
@@ -892,12 +892,12 @@ export default function CreateRankingPage() {
                     defaultHeight={600}
                     rowCount={filteredTeams.length}
                     rowHeight={(index) => {
-                      const team: any = filteredTeams[index]; // eslint-disable-line @typescript-eslint/no-explicit-any
+                      const team = filteredTeams[index];
                       return editingTeamId === team.id ? 60 : 40;
                     }}
                     rowProps={{}}
                     rowComponent={({ index, style }) => {
-                      const team: any = filteredTeams[index]; // eslint-disable-line @typescript-eslint/no-explicit-any
+                      const team = filteredTeams[index];
                       const isEditing = editingTeamId === team.id;
 
                       return (

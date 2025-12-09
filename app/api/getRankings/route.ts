@@ -1,21 +1,9 @@
 import { getServerFirebase } from "@/lib/firebase/server";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { Team } from "@/lib/scraper/types";
+import type { RankingsResponse, ApiErrorResponse, Ranking } from "@/lib/types";
 
-export interface Ranking {
-  id: string;
-  rank: number;
-  name: string;
-  nameID: string;
-  retired: boolean;
-  points: number;
-  jerseyImage: string;
-  age: number;
-  country: string;
-  team: Team | null;
-}
-
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<RankingsResponse | ApiErrorResponse>> {
   const searchParams = request.nextUrl.searchParams;
   const year = searchParams.get('year') || process.env.NEXT_PUBLIC_PLAYING_YEAR;
   const limit = parseInt(searchParams.get('limit') || '100');
@@ -81,7 +69,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    return Response.json({
+    return NextResponse.json({
       riders,
       pagination: {
         offset,
@@ -92,6 +80,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching rankings:', error);
-    return Response.json({ error: 'Failed to fetch rankings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch rankings' }, { status: 500 });
   }
 }

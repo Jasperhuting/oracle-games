@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { GameParticipantsQueryResponse, ApiErrorResponse, ClientGameParticipant } from '@/lib/types';
+import type { Query, CollectionReference, DocumentData } from 'firebase-admin/firestore';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<GameParticipantsQueryResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const db = getServerFirebase();
 
-    let query = db.collection('gameParticipants');
+    let query: Query<DocumentData> | CollectionReference<DocumentData> = db.collection('gameParticipants');
 
     if (userId) {
       query = query.where('userId', '==', userId);
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
         id: doc.id,
         ...data,
         joinedAt: data.joinedAt?.toDate?.()?.toISOString() || data.joinedAt,
-      };
+      } as ClientGameParticipant;
     });
 
     return NextResponse.json({

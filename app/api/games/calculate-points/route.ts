@@ -16,7 +16,9 @@ interface StageResult {
   nameID?: string;
   shortName?: string;
   rank?: number;
-  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  points?: number;
+  time?: string;
+  gap?: string;
 }
 
 /**
@@ -147,7 +149,7 @@ export async function POST(request: NextRequest) {
             const riderNameId = teamData.riderNameId;
             
             // Track detailed points breakdown for this stage
-            const stagePointsBreakdown: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+            const stagePointsBreakdown: Record<string, number> = {};
             let riderTotalPoints = 0;
 
             // 1. STAGE RESULT POINTS (always awarded)
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
 
             // 2. GENERAL CLASSIFICATION POINTS (only on rest days and final stage)
             if (gcMultiplier > 0 && stageData.generalClassification) {
-              const gcResult = stageData.generalClassification.find((r: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+              const gcResult = stageData.generalClassification.find((r: StageResult) =>
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
@@ -183,7 +185,7 @@ export async function POST(request: NextRequest) {
 
             // 3. POINTS CLASSIFICATION (only at final stage)
             if (pointsClassMultiplier > 0 && stageData.pointsClassification) {
-              const pointsResult = stageData.pointsClassification.find((r: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+              const pointsResult = stageData.pointsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
@@ -199,7 +201,7 @@ export async function POST(request: NextRequest) {
 
             // 4. MOUNTAINS CLASSIFICATION (only at final stage)
             if (mountainsClassMultiplier > 0 && stageData.mountainsClassification) {
-              const mountainsResult = stageData.mountainsClassification.find((r: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+              const mountainsResult = stageData.mountainsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
@@ -215,7 +217,7 @@ export async function POST(request: NextRequest) {
 
             // 5. YOUTH CLASSIFICATION (only at final stage)
             if (youthClassMultiplier > 0 && stageData.youthClassification) {
-              const youthResult = stageData.youthClassification.find((r: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+              const youthResult = stageData.youthClassification.find((r: StageResult) =>
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );

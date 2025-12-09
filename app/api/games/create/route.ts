@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import { Game } from '@/lib/types/games';
+import { Game, ClientGame } from '@/lib/types/games';
 import { serializeGame } from '@/lib/utils/serializeGame';
+import type { CreateGameRequest, CreateGameResponse, CreateMultipleGamesResponse, ApiErrorResponse } from '@/lib/types';
+import { createGameSchema, validateRequest } from '@/lib/validation';
 
 // Helper to remove undefined values from object
 function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Partial<T> {
@@ -14,9 +16,17 @@ function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Parti
   return cleaned;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse<CreateGameResponse | CreateMultipleGamesResponse | ApiErrorResponse>> {
   try {
-    const gameData = await request.json();
+    const body = await request.json();
+    
+    // Validate request body
+    const validation = validateRequest(createGameSchema, body);
+    if (!validation.success) {
+      return validation.error;
+    }
+    
+    const gameData = validation.data;
     const { adminUserId } = gameData;
 
     if (!adminUserId) {
@@ -72,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Create game document(s)
     const now = new Date();
     const divisionCount = gameData.divisionCount || 1;
-    const createdGames: { id: string; game: any }[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const createdGames: { id: string; game: ClientGame }[] = [];
 
     // If divisionCount > 1, create separate game documents for each division
     if (divisionCount > 1) {
@@ -86,7 +96,7 @@ export async function POST(request: NextRequest) {
           gameType: gameData.gameType,
           ...(raceRefPath && { raceRef: raceRefPath }), // Only include raceRef if it exists
           raceType: gameData.raceType || 'grand-tour',
-          year: parseInt(gameData.year),
+          year: gameData.year,
           createdBy: adminUserId,
           createdAt: now,
           updatedAt: now,

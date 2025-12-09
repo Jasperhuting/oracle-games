@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import { GameRule, GAME_TYPES, GameType } from '@/lib/types/games';
+import { GameRule, GAME_TYPES, GameType, ClientGameRule } from '@/lib/types/games';
+import type { GameRulesResponse, ApiErrorResponse } from '@/lib/types';
 
 // GET /api/gameRules - Get all game rules
-export async function GET() {
+export async function GET(): Promise<NextResponse<GameRulesResponse | ApiErrorResponse>> {
   try {
     const db = getServerFirebase();
     const rulesSnapshot = await db.collection('gameRules').get();
 
-    const rules: GameRule[] = [];
-    rulesSnapshot.forEach((doc) => {
+    const rules: ClientGameRule[] = rulesSnapshot.docs.map((doc) => {
       const data = doc.data();
-      rules.push({
+      return {
         id: doc.id,
         gameType: data.gameType,
         rules: data.rules || '',
-        updatedAt: data.updatedAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         updatedBy: data.updatedBy || '',
-      });
+      } as ClientGameRule;
     });
 
-    return NextResponse.json(rules);
+    return NextResponse.json({ success: true, rules });
   } catch (error) {
     console.error('Error fetching game rules:', error);
     return NextResponse.json(

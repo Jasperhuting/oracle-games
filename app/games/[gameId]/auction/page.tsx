@@ -356,23 +356,18 @@ useEffect(() => {
       setAllBids(allBidsData);
       setMyBids(userBids);
 
-      // Load all participants to check for sold riders
-      const allParticipantsResponse = await fetch(`/api/gameParticipants?gameId=${gameId}`);
-      const allParticipantsData = await allParticipantsResponse.json();
+      // Load all sold riders from playerTeams collection (properly filtered by gameId)
+      const playerTeamsResponse = await fetch(`/api/games/${gameId}/team/list-all`);
+      const playerTeamsData = await playerTeamsResponse.json();
       
       // Build a map of sold riders: riderNameId -> { ownerName, pricePaid }
       const soldRidersMap = new Map<string, { ownerName: string; pricePaid: number }>();
-      if (allParticipantsData.participants) {
-        allParticipantsData.participants.forEach((p: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-          if (p.team && Array.isArray(p.team)) {
-            p.team.forEach((teamRider: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-              if (teamRider.riderNameId) {
-                // Get player name from participant
-                const ownerName = p.playername || p.userName || p.email || 'Unknown Player';
-                const pricePaid = teamRider.pricePaid || 0;
-                soldRidersMap.set(teamRider.riderNameId, { ownerName, pricePaid });
-              }
-            });
+      if (playerTeamsData.success && playerTeamsData.teams) {
+        playerTeamsData.teams.forEach((teamRider: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          if (teamRider.riderNameId && teamRider.active) {
+            const ownerName = teamRider.playername || teamRider.userName || 'Unknown Player';
+            const pricePaid = teamRider.pricePaid || 0;
+            soldRidersMap.set(teamRider.riderNameId, { ownerName, pricePaid });
           }
         });
       }
@@ -533,7 +528,8 @@ useEffect(() => {
       if (!start || !end) return false;
 
       const inWindow = now >= start && now <= end;
-      const statusActive = p.status === 'active' || game.status === 'bidding';
+      // Use game.status as authoritative check, period status as additional filter
+      const statusActive = p.status === 'active' && game.status === 'bidding';
       return inWindow && statusActive;
     });
 
@@ -715,7 +711,7 @@ useEffect(() => {
     setError(null);
 
     try {
-      // Cancel all active bids
+      // Cancel all active bids only (users shouldn't know they're outbid)
       const cancelPromises = myBids
         .filter(bid => bid.status === 'active')
         .map(bid =>
@@ -840,7 +836,7 @@ useEffect(() => {
 
     // After finalization, spentBudget already includes won bids
     // During auction, we need to account for active bids (spentBudget doesn't include them yet)
-    const auctionClosed = game?.status === 'finished' || game?.config?.auctionStatus === 'closed' || game?.config?.auctionStatus === 'finalized';
+    const auctionClosed = game?.status === 'finished';
 
     if (auctionClosed) {
       // After finalization, only use spentBudget (which already includes won riders)
@@ -916,9 +912,10 @@ useEffect(() => {
 
   if (!game) return null;
 
-  // Check both game.status and game.config.auctionStatus for auction state
-  const auctionActive = game.status === 'bidding' || game.config.auctionStatus === 'active';
-  const auctionClosed = game.status === 'finished' || game.config.auctionStatus === 'closed' || game.config.auctionStatus === 'finalized';
+  // Use game.status as the single source of truth for auction state
+  // config.auctionStatus is kept in sync but game.status is authoritative
+  const auctionActive = game.status === 'bidding';
+  const auctionClosed = game.status === 'finished';
 
   // Calculate min/max prices for the slider
   const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points);
@@ -1030,7 +1027,7 @@ useEffect(() => {
                 <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
                   Reset all bids
                 </label>
-               <Button text="Reset all bids" disabled={myBids.length === 0} onClick={handleResetBidsClick} />
+               <Button text="Reset all bids" disabled={!myBids.some(bid => bid.status === 'active')} onClick={handleResetBidsClick} />
               </span>
             </div>
           </div>
@@ -1111,7 +1108,7 @@ useEffect(() => {
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">No bids placed yet.</div>}
                 {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
-                  const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+                  const canCancel = myBidRider.status === 'active';
 
                   return rider ? (
                     <div key={myBidRider.id}>
@@ -1159,7 +1156,7 @@ useEffect(() => {
                 <div className="divide-gray-300 divide-y">
                   {myBids.map((myBidRider) => {
                     const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
-                    const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+                    const canCancel = myBidRider.status === 'active';
 
                     return rider ? (
                       <div key={myBidRider.id} className="bg-white px-2">
@@ -1251,7 +1248,16 @@ useEffect(() => {
 
                         {myTeamView === 'card' ?
 
-                          <PlayerCard showBid={true} bid={rider.highestBid} player={rider} onClick={() => { }} selected={false} bidders={riderBidders} isNeoProf={qualifiesAsNeoProf(rider)} showNeoProfBadge={game?.gameType === 'worldtour-manager'} buttonContainer={<>
+                          <PlayerCard 
+                            showBid={true} 
+                            bid={rider.highestBid} 
+                            player={rider} 
+                            onClick={() => { }} 
+                            selected={false} 
+                            bidders={riderBidders} 
+                            isNeoProf={qualifiesAsNeoProf(rider)} 
+                            showNeoProfBadge={game?.gameType === 'worldtour-manager'} 
+                            buttonContainer={<>
                             <div className="flex flex-row gap-2">
 
 
@@ -1289,7 +1295,7 @@ useEffect(() => {
                               </div>
                               {auctionActive && !rider.isSold && (
                                 <>
-                                  {rider.myBid && rider.myBidId && (
+                                  {rider.myBid && rider.myBidId && rider.myBidStatus === 'active' && (
                                     <Button
                                       type="button"
                                       text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
@@ -1356,7 +1362,7 @@ useEffect(() => {
                               </div>
                               {auctionActive && !rider.isSold && (
                                 <>
-                                  {rider.myBid && rider.myBidId && (
+                                  {rider.myBid && rider.myBidId && rider.myBidStatus === 'active' && (
                                     <Button
                                       type="button"
                                       text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}

@@ -8,7 +8,12 @@ export async function GET() {
     const db = getServerFirebaseFootball();
     const snapshot = await db.collection('contenders').get();
 
-    const teams = snapshot.docs.map((doc: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+    interface Team {
+      id: string;
+      [key: string]: unknown;
+    }
+    
+    const teams = snapshot.docs.map((doc): Team => ({
       id: doc.id,
       ...doc.data()
     }));

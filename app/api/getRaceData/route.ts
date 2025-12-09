@@ -30,12 +30,20 @@ export async function GET(request: NextRequest) {
       .collection(raceSlug)
       .get();
 
-    const data: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+    interface RaceStageData {
+      id: string;
+      stage?: number;
+      date?: string;
+      scrapedAt?: unknown;
+      [key: string]: unknown;
+    }
+    
+    const data: RaceStageData[] = [];
     
     // Process each document and resolve team references
     for (const doc of raceDataSnapshot.docs) {
       const docData = doc.data();
-      const processedData: any = { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const processedData: RaceStageData = {
         id: doc.id,
         ...docData
       };

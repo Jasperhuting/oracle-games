@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { GameParticipantsResponse, ApiErrorResponse, ClientGameParticipant } from '@/lib/types';
 
 // GET all participants for a game
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<GameParticipantsResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
     const { searchParams } = new URL(request.url);
@@ -37,7 +38,7 @@ export async function GET(
         ...data,
         joinedAt: data.joinedAt?.toDate?.()?.toISOString() || data.joinedAt,
         eliminatedAt: data.eliminatedAt?.toDate?.()?.toISOString(),
-      };
+      } as ClientGameParticipant;
     });
 
     return NextResponse.json({

@@ -9,7 +9,11 @@ export async function GET() {
         // Fetch all poule documents which contain matches
         const poulesSnapshot = await db.collection('poules').get();
 
-        const allMatches: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+        interface Match {
+            [key: string]: unknown;
+        }
+        
+        const allMatches: Match[] = [];
 
         poulesSnapshot.docs.forEach(doc => {
             const data = doc.data();

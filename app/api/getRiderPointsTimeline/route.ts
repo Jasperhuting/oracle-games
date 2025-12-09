@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       const stagesSnapshot = await raceDoc.ref.collection('stages').get();
       const stageMap = new Map<number, { date: Date; raceName: string }>();
 
-      stagesSnapshot.forEach((stageDoc: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      stagesSnapshot.forEach((stageDoc) => {
         const stageData = stageDoc.data();
         const stageNum = stageData.stage;
         const scrapedAt = stageData.scrapedAt?.toDate() || new Date();
@@ -47,10 +47,37 @@ export async function GET(request: NextRequest) {
       stageResultsMap.set(raceSlug, stageMap);
     }
 
+    interface RiderPointsData {
+      riderNameId: string;
+      riderName: string;
+      riderTeam: string;
+      riderCountry: string;
+      jerseyImage: string;
+      totalPoints: number;
+      pointsByDate: Array<{ 
+        date: string; 
+        stage: number;
+        raceSlug: string;
+        raceName: string;
+        points: number;
+        breakdown: {
+          stageResult: number;
+          gcPoints: number;
+          pointsClass: number;
+          mountainsClass: number;
+          youthClass: number;
+          mountainPoints: number;
+          sprintPoints: number;
+          combativityBonus: number;
+          teamPoints: number;
+        };
+      }>;
+    }
+    
     // Build rider points data
-    const ridersMap = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const ridersMap = new Map<string, RiderPointsData>();
 
-    playerTeamsSnapshot.forEach((doc: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    playerTeamsSnapshot.forEach((doc) => {
       const data = doc.data();
       
       if (!data.racePoints) return;
@@ -59,7 +86,7 @@ export async function GET(request: NextRequest) {
       
       if (!ridersMap.has(riderId)) {
         ridersMap.set(riderId, {
-          riderId,
+          riderNameId: riderId,
           riderName: data.riderName,
           riderTeam: data.riderTeam,
           riderCountry: data.riderCountry,
@@ -83,7 +110,7 @@ export async function GET(request: NextRequest) {
           const date = stageInfo?.date || new Date();
           const raceName = stageInfo?.raceName || raceSlug.split('_')[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
           
-          riderData.pointsByDate.push({
+          riderData?.pointsByDate.push({
             date: date.toISOString(),
             stage: stageNumber,
             raceSlug,
@@ -105,7 +132,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Sort by date
-      riderData.pointsByDate.sort((a: any, b: any) =>  // eslint-disable-line @typescript-eslint/no-explicit-any
+      riderData?.pointsByDate.sort((a, b) =>
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
     });

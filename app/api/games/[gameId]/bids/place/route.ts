@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, BidStatus } from '@/lib/types';
+import { placeBidSchema, validateRequest } from '@/lib/validation';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<PlaceBidResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
-    const { userId, riderNameId, amount, riderName, riderTeam, jerseyImage } = await request.json();
+    const body = await request.json();
+    
+    // Validate request body
+    const validation = validateRequest(placeBidSchema, body);
+    if (!validation.success) {
+      return validation.error;
+    }
+    
+    const { userId, riderNameId, amount, riderName, riderTeam, jerseyImage } = validation.data;
 
     if (!userId || !riderNameId || amount === undefined) {
       return NextResponse.json(
@@ -48,11 +58,10 @@ export async function POST(
       );
     }
 
-    // Check if auction is active (either game status is 'bidding' or config.auctionStatus is 'active')
-    const isAuctionActive = gameData?.status === 'bidding' || gameData?.config?.auctionStatus === 'active';
-    if (!isAuctionActive) {
+    // Check if game status is 'bidding' (strict validation - game.status is the single source of truth)
+    if (gameData?.status !== 'bidding') {
       return NextResponse.json(
-        { error: 'Auction is not active' },
+        { error: 'Auction is not active. Current game status: ' + (gameData?.status || 'unknown') },
         { status: 400 }
       );
     }
@@ -168,7 +177,7 @@ export async function POST(
       riderNameId,
       amount,
       bidAt: now,
-      status: 'active',
+      status: 'active' as BidStatus,
       riderName: riderName || '',
       riderTeam: riderTeam || '',
       jerseyImage: jerseyImage || null,
@@ -207,7 +216,7 @@ export async function POST(
         id: bidRef.id,
         ...bid,
         bidAt: bid.bidAt.toISOString(),
-      },
+      } as ClientBid,
     });
   } catch (error) {
     console.error('Error placing bid:', error);

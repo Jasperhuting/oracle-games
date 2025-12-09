@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import type { UnreadMessagesCountResponse, ApiErrorResponse } from '@/lib/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<UnreadMessagesCountResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');

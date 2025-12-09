@@ -80,7 +80,7 @@ export async function getLiveScores(): Promise<any[]> { // eslint-disable-line @
 
     // THIS SHOULD BE WK2026 IF THE GAMES ARE LIVE OFFCOURSE
 
-    const championsLeagueStage = stages.filter((stage: any) => stage.Ccd === 'champions-league'); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const championsLeagueStage = stages.filter((stage: { Ccd?: string }) => stage.Ccd === 'champions-league');
 
     const games = championsLeagueStage[0]?.Events;
 

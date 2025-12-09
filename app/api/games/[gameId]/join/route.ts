@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import { GameParticipant } from '@/lib/types';
+import { GameParticipant, ClientGameParticipant } from '@/lib/types';
+import type { JoinGameRequest, JoinGameResponse, LeaveGameResponse, ApiErrorResponse } from '@/lib/types';
+import { joinGameSchema, validateRequest } from '@/lib/validation';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<JoinGameResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
-    const { userId } = await request.json();
+    const body = await request.json();
+    
+    // Validate request body
+    const validation = validateRequest(joinGameSchema, body);
+    if (!validation.success) {
+      return validation.error;
+    }
+    
+    const { userId } = validation.data;
 
     if (!userId) {
       return NextResponse.json(
@@ -189,7 +199,7 @@ export async function POST(
         id: participantRef.id,
         ...participant,
         joinedAt: (participant.joinedAt as Date).toISOString(),
-      },
+      } as ClientGameParticipant,
     });
   } catch (error) {
     console.error('Error joining game:', error);
@@ -238,7 +248,7 @@ export async function POST(
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
-) {
+): Promise<NextResponse<LeaveGameResponse | ApiErrorResponse>> {
   try {
     const { gameId } = await params;
     const { searchParams } = new URL(request.url);

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { ActivityLogsResponse, ApiErrorResponse, ActivityLog } from '@/lib/types';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse<ActivityLogsResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -32,13 +33,10 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .get();
 
-    const logs: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    logsSnapshot.forEach((doc) => {
-      logs.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
+    const logs: ActivityLog[] = logsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    } as ActivityLog));
 
     return NextResponse.json({ logs });
   } catch (error) {

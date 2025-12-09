@@ -40,6 +40,7 @@ export async function PATCH(
     };
 
     // For auction/auctioneer games, sync the config.auctionStatus with game status
+    // This ensures config.auctionStatus is always in sync with game.status
     if (currentGameData?.gameType === 'auction' || currentGameData?.gameType === 'auctioneer') {
       if (status === 'bidding') {
         updateData['config.auctionStatus'] = 'active';
@@ -48,6 +49,9 @@ export async function PATCH(
         // If so, it might mean the auction was finalized
         if (currentGameData?.status === 'bidding') {
           updateData['config.auctionStatus'] = 'finalized';
+        } else {
+          // If not coming from bidding, set to active (safe default)
+          updateData['config.auctionStatus'] = 'active';
         }
       } else if (status === 'finished') {
         updateData['config.auctionStatus'] = 'closed';
@@ -59,15 +63,23 @@ export async function PATCH(
     // Update game status
     await gameRef.update(updateData);
 
-    // Log the status change
+    // Log the status change with auction status details for auction games
+    const logDetails: Record<string, unknown> = {
+      oldStatus: currentGameData?.status,
+      newStatus: status,
+    };
+    
+    // Add auction status info for auction/auctioneer games
+    if (currentGameData?.gameType === 'auction' || currentGameData?.gameType === 'auctioneer') {
+      logDetails.oldAuctionStatus = currentGameData?.config?.auctionStatus;
+      logDetails.newAuctionStatus = updateData['config.auctionStatus'];
+    }
+
     await db.collection('activityLogs').add({
       action: 'GAME_STATUS_CHANGED',
       gameId: gameId,
       gameName: currentGameData?.name,
-      details: {
-        oldStatus: currentGameData?.status,
-        newStatus: status,
-      },
+      details: logDetails,
       timestamp: new Date().toISOString(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',

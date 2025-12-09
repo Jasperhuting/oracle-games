@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Team } from '@/lib/scraper';
 
 // GET race lineup (teams and riders) for a game
 export async function GET(
@@ -83,7 +84,7 @@ export async function GET(
       .get();
 
     // Cache team data to avoid duplicate reads
-    const teamCache = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const teamCache = new Map<string, any>(); // eslint-disable-line
 
     const allRiders = await Promise.all(
       allRidersSnapshot.docs
