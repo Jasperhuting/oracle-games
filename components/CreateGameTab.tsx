@@ -36,7 +36,6 @@ interface GameFormData {
   wtmBudget?: number;
   wtmMinRiders?: number;
   wtmMaxRiders?: number;
-  wtmMinNeoPros?: number;
   wtmMaxNeoProPoints?: number;
   wtmMaxNeoProAge?: number;
 }
@@ -203,7 +202,6 @@ export const CreateGameTab = () => {
           budget: Number(data.wtmBudget) || 12000,
           minRiders: Number(data.wtmMinRiders) || 27,
           maxRiders: Number(data.wtmMaxRiders) || 32,
-          minNeoPros: Number(data.wtmMinNeoPros) || 5,
           maxNeoProPoints: data.wtmMaxNeoProPoints ? Number(data.wtmMaxNeoProPoints) : undefined,
           maxNeoProAge: data.wtmMaxNeoProAge ? Number(data.wtmMaxNeoProAge) : 21,
           auctionPeriods: auctionPeriods.map(period => ({
@@ -641,23 +639,6 @@ export const CreateGameTab = () => {
                     Total budget in ranking points (e.g., 12000 points from 2025 ranking)
                   </p>
                 </div>
-                <div>
-                  <TextInput
-                    type="number"
-                    label="Min Neo-Professionals"
-                    placeholder="E.g. 5"
-                    defaultValue="5"
-                    {...register('wtmMinNeoPros', {
-                      min: {
-                        value: 0,
-                        message: 'Cannot be negative'
-                      }
-                    })}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Minimum number of neo-professionals required (max 21 years old)
-                  </p>
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -674,6 +655,9 @@ export const CreateGameTab = () => {
                       }
                     })}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tot {'{minRiders}'} renners: geen restricties
+                  </p>
                 </div>
                 <div>
                   <TextInput
@@ -688,6 +672,9 @@ export const CreateGameTab = () => {
                       }
                     })}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Bij {'{minRiders+1}'}+ renners: minimaal 1 neoprof vereist
+                  </p>
                 </div>
               </div>
 

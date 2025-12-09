@@ -115,9 +115,9 @@ export interface CountryRoadsConfig {
 
 export interface WorldTourManagerConfig {
   budget: number;                   // e.g., 12000 points
-  minRiders: number;                // e.g., 27
-  maxRiders: number;                // e.g., 32
-  minNeoPros: number;               // e.g., 5 (riders max 21 years old)
+  minRiders: number;                // e.g., 27 (up to this number: no restrictions)
+  maxRiders: number;                // e.g., 32 (if you have 28+: need at least 1 neo-prof)
+  minNeoPros?: number;              // Deprecated: use minRiders instead (28+ riders requires 1 neo-prof)
   maxNeoProPoints?: number;         // e.g., 250 (max points per neo-pro in current year)
   maxNeoProAge?: number;            // e.g., 21 (maximum age for neo-professionals)
   auctionPeriods?: AuctionPeriod[]; // Auction periods with optional neo-pro rules

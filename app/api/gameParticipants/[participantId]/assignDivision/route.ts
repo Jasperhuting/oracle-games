@@ -10,9 +10,17 @@ export async function POST(
     const { participantId } = await context.params;
     const { adminUserId, assignedDivision } = await request.json();
 
-    if (!adminUserId || !assignedDivision) {
+    if (!adminUserId) {
       return NextResponse.json(
-        { error: 'Admin user ID and assigned division are required' },
+        { error: 'Admin user ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Allow assignedDivision to be null/empty for "unassign" action
+    if (!assignedDivision) {
+      return NextResponse.json(
+        { error: 'Assigned division is required (use "unassigned" to remove division)' },
         { status: 400 }
       );
     }
@@ -61,6 +69,59 @@ export async function POST(
         { error: 'This is a single-division game, division assignment is not required' },
         { status: 400 }
       );
+    }
+
+    // Handle "unassigned" - move participant back to pending
+    if (assignedDivision.toLowerCase() === 'unassigned') {
+      const pendingGameId = `${baseGameId}-pending`;
+      
+      // Decrement player count from current division if assigned
+      if (!isPending && participantData?.divisionAssigned) {
+        const currentGameDoc = await db.collection('games').doc(currentGameId).get();
+        if (currentGameDoc.exists) {
+          const currentGameData = currentGameDoc.data();
+          await currentGameDoc.ref.update({
+            playerCount: Math.max(0, (currentGameData?.playerCount || 1) - 1),
+          });
+        }
+      }
+
+      // Update participant to pending state
+      await participantDoc.ref.update({
+        gameId: pendingGameId,
+        assignedDivision: null,
+        divisionAssigned: false,
+        status: 'active',
+      });
+
+      // Log the activity
+      const adminData = adminDoc.data();
+      await db.collection('activityLogs').add({
+        action: 'DIVISION_UNASSIGNED',
+        userId: adminUserId,
+        userEmail: adminData?.email,
+        userName: adminData?.playername || adminData?.email,
+        details: {
+          participantId: participantId,
+          previousGameId: currentGameId,
+          newGameId: pendingGameId,
+          playerName: participantData?.playername,
+        },
+        timestamp: new Date().toISOString(),
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Participant unassigned from division',
+        participant: {
+          id: participantId,
+          assignedDivision: null,
+          divisionAssigned: false,
+          status: 'active',
+        },
+      });
     }
 
     // Find the specific division game based on the assigned division

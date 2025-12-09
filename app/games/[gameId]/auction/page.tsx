@@ -596,35 +596,33 @@ useEffect(() => {
     }
 
     // WorldTour Manager: Check neo-prof requirements
-    if (game && game.gameType === 'worldtour-manager' && game.config.minNeoPros) {
+    // Rule: If you want 28+ riders, you need at least 1 neo-prof in your team
+    if (game && game.gameType === 'worldtour-manager') {
+      const totalActiveBids = myBids.filter(b => b.status === 'active').length;
+      const minRiders = game.config.minRiders || 27;
+      const isThisRiderNeoProf = qualifiesAsNeoProf(rider);
+
+      // Count current neo-profs in the team
       const currentNeoProfBids = myBids.filter(b => {
+        if (b.status !== 'active') return false;
         const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
         return bidRider && qualifiesAsNeoProf(bidRider);
       });
-
-      const isThisRiderNeoProf = qualifiesAsNeoProf(rider);
       const currentNeoProfCount = currentNeoProfBids.length;
-      const minNeoPros = game.config.minNeoPros;
 
-      // If this is NOT a neo-prof, check if we still need more neo-profs
-      if (!isThisRiderNeoProf) {
-        const totalActiveBids = myBids.filter(b => b.status === 'active').length;
-        const maxRiders = game.config.maxRiders || 32;
-        const remainingSlots = maxRiders - totalActiveBids;
-        const neededNeoPros = minNeoPros - currentNeoProfCount;
+      // If we're trying to get to 28+ riders and this is NOT a neo-prof,
+      // check if we already have at least one neo-prof
+      if (totalActiveBids >= minRiders && !isThisRiderNeoProf && currentNeoProfCount === 0) {
+        const maxAge = game.config.maxNeoProAge || 21;
+        const maxPoints = game.config.maxNeoProPoints || 250;
+        setError(`Om meer dan ${minRiders} renners te hebben, moet je minimaal 1 neoprof in je team hebben (max ${maxAge} jaar oud met max ${maxPoints} punten).`);
+        return;
+      }
 
-        if (neededNeoPros > remainingSlots) {
-          const maxAge = game.config.maxNeoProAge || 21;
-          const maxPoints = game.config.maxNeoProPoints || 250;
-          setError(`Je moet nog ${neededNeoPros} neoprofs selecteren. Je hebt maar ${remainingSlots} plekken over. Kies eerst een neoprof (max ${maxAge} jaar oud met max ${maxPoints} punten).`);
-          return;
-        }
-      } else {
-        // This IS a neo-prof - check if they qualify
-        if (game.config.maxNeoProPoints && rider.points > game.config.maxNeoProPoints) {
-          setError(`Deze renner heeft te veel punten (${rider.points}) om als neoprof te kwalificeren. Max toegestaan: ${game.config.maxNeoProPoints} punten.`);
-          return;
-        }
+      // If this IS a neo-prof, check if they qualify based on points
+      if (isThisRiderNeoProf && game.config.maxNeoProPoints && rider.points > game.config.maxNeoProPoints) {
+        setError(`Deze renner heeft te veel punten (${rider.points}) om als neoprof te kwalificeren. Max toegestaan: ${game.config.maxNeoProPoints} punten.`);
+        return;
       }
     }
 

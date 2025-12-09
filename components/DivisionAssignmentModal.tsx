@@ -64,29 +64,50 @@ export const DivisionAssignmentModal = ({
       let allParticipants: Participant[] = [];
 
       if (isMultiDivision) {
-        // For multi-division games, load pending participants
-        const pendingGameId = `${gameId}-pending`;
-        const pendingResponse = await fetch(`/api/gameParticipants?gameId=${pendingGameId}`);
-        if (pendingResponse.ok) {
-          const pendingData = await pendingResponse.json();
-          allParticipants = [...(pendingData.participants || [])];
-        }
-
-        // Also load already assigned participants from all related divisions
         // Get the base name to find related division games
         const gameName = loadedGame.name || '';
         const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
 
-        // Fetch all games with same base name, year, gameType
+        // Find the base game (without division suffix) to get pending participants
         const allGamesResponse = await fetch(
           `/api/games/list?year=${loadedGame.year}&gameType=${loadedGame.gameType}`
         );
 
+        let baseGameId = gameId; // fallback to current gameId
+        let allGamesData: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+        
         if (allGamesResponse.ok) {
-          const allGamesData = await allGamesResponse.json();
+          allGamesData = await allGamesResponse.json(); // Read once and store
+          
+          // Find the base game (the one with divisionCount > 1 but no specific division field)
+          const baseGame = allGamesData.games.find((g: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            const gBaseName = (g.name || '').replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+            return gBaseName === baseName && g.divisionCount > 1 && !g.division;
+          });
+          
+          if (baseGame) {
+            baseGameId = baseGame.id;
+          }
+        }
+
+        // For multi-division games, load pending participants from base game
+        const pendingGameId = `${baseGameId}-pending`;
+        console.log('[DivisionAssignment] Loading pending from:', pendingGameId);
+        const pendingResponse = await fetch(`/api/gameParticipants?gameId=${pendingGameId}`);
+        if (pendingResponse.ok) {
+          const pendingData = await pendingResponse.json();
+          console.log('[DivisionAssignment] Pending participants:', pendingData.participants?.length || 0);
+          allParticipants = [...(pendingData.participants || [])];
+        } else {
+          console.log('[DivisionAssignment] Failed to load pending participants');
+        }
+
+        // Also load already assigned participants from all related divisions
+        // Use the already parsed allGamesData
+        if (allGamesData) {
           const relatedGames = allGamesData.games.filter((g: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             const gBaseName = (g.name || '').replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
-            return gBaseName === baseName && g.id !== gameId;
+            return gBaseName === baseName && g.id !== gameId && g.id !== baseGameId;
           });
 
           // Fetch participants from each related division
@@ -116,9 +137,12 @@ export const DivisionAssignmentModal = ({
       }
 
       // Remove duplicates (same userId)
+      console.log('[DivisionAssignment] Total participants before dedup:', allParticipants.length);
       const uniqueParticipants = Array.from(
         new Map(allParticipants.map(p => [p.userId, p])).values()
       );
+      console.log('[DivisionAssignment] Unique participants:', uniqueParticipants.length);
+      console.log('[DivisionAssignment] Participants:', uniqueParticipants.map(p => `${p.playername} (${p.divisionAssigned ? 'assigned' : 'pending'})`));
 
       // For participants without email, fetch from users collection
       const participantsWithEmails = await Promise.all(
@@ -183,19 +207,10 @@ export const DivisionAssignmentModal = ({
         throw new Error(errorData.error || 'Failed to assign division');
       }
 
-      // Update local state
-      setParticipants(prev =>
-        prev.map(p =>
-          p.id === participantId
-            ? { ...p, assignedDivision: division, divisionAssigned: true, status: 'active' }
-            : p
-        )
-      );
-
-      setSelectedDivisions(prev => ({
-        ...prev,
-        [participantId]: division,
-      }));
+      // Reload data to get fresh participant list
+      // This ensures pending participants are shown correctly
+      await loadData();
+      
     } catch (error: unknown) {
       console.error('Error assigning division:', error);
       setError(error instanceof Error ? error.message : 'Failed to assign division');
@@ -237,7 +252,7 @@ export const DivisionAssignmentModal = ({
 
   const getDivisionOptions = () => {
     const count = game?.divisionCount || 1;
-    const options = [];
+    const options = ['Unassigned']; // Add unassigned option first
     for (let i = 1; i <= count; i++) {
       options.push(`Division ${i}`);
     }
