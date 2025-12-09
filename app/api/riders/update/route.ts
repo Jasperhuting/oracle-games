@@ -38,8 +38,6 @@ export async function PATCH(request: NextRequest) {
 
     // Check if rider exists
 
-    console.log('riderId', riderId);
-
     const riderDoc = await db.collection(`rankings_${YEAR}`).doc(riderId).get();
 
     if (!riderDoc.exists) {

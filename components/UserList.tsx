@@ -49,6 +49,7 @@ export const UserList = () => {
   const [changeTypeDialogOpen, setChangeTypeDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<{userId: string; newUserType?: string} | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+  const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
 
   // Check if user is admin
   useEffect(() => {
@@ -241,6 +242,63 @@ export const UserList = () => {
   const closeEmailModal = () => {
     setEmailModalOpen(false);
     setSelectedUser(null);
+  };
+
+  const impersonateUser = async (userId: string) => {
+    if (!user) return;
+
+    setImpersonatingUserId(userId);
+    try {
+      const response = await fetch('/api/impersonate/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          targetUserId: userId,
+          adminUserId: user.uid 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Could not start impersonation');
+      }
+
+      const data = await response.json();
+      
+      console.log('Impersonation started - data received:', {
+        hasCustomToken: !!data.customToken,
+        hasAdminToken: !!data.adminToken
+      });
+      
+      // Store the custom token for sign-in
+      localStorage.setItem('impersonation_token', data.customToken);
+      console.log('Stored impersonation_token');
+      
+      // Store the admin token to restore session later
+      if (data.adminToken) {
+        localStorage.setItem('admin_restore_token', data.adminToken);
+        console.log('Stored admin_restore_token');
+        
+        // Verify it was stored
+        const verify = localStorage.getItem('admin_restore_token');
+        console.log('Verification - admin_restore_token stored:', verify ? 'YES' : 'NO');
+      } else {
+        console.error('No admin token in response!');
+      }
+      
+      // Redirect to home page
+      console.log('Redirecting to /home...');
+      window.location.href = '/home';
+    } catch (error: unknown) {
+      console.error('Error impersonating user:', error);
+      setInfoDialog({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Could not impersonate user.',
+      });
+      setImpersonatingUserId(null);
+    }
   };
 
   // Filter users based on search term and type
@@ -437,6 +495,15 @@ export const UserList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex gap-2">
+                        {!user.deletedAt && (
+                          <Button
+                            className="py-1 px-3 text-sm"
+                            ghost
+                            text={impersonatingUserId === user.uid ? "..." : "Impersonate"}
+                            onClick={() => impersonateUser(user.uid)}
+                            disabled={impersonatingUserId === user.uid}
+                          />
+                        )}
                         {user.deletedAt ? (
                           <Button
                             className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700"

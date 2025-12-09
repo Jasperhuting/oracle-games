@@ -11,7 +11,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     className?: string;
     disabled?: boolean;
     children?: React.ReactNode;
-    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'text';
+    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'text' | 'white';
     outline?: boolean;
     ghost?: boolean;
     size?: 'sm' | 'md' | 'lg' | 'text';
@@ -43,6 +43,7 @@ const ghostStyles = {
     danger: 'bg-transparent text-red-600 border-red-600/30 hover:bg-red-50 hover:border-red-600',
     warning: 'bg-transparent text-yellow-600 border-yellow-600/30 hover:bg-yellow-50 hover:border-yellow-600',
     text: 'bg-transparent text-primary border-none hover:text-primary/80',
+    white: 'bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white',
 };
 
 // Size styles

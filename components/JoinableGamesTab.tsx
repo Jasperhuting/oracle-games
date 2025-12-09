@@ -138,9 +138,10 @@ export const JoinableGamesTab = () => {
       try {
         const response = await fetch('/api/gameRules');
         if (response.ok) {
-          const rules = await response.json();
+          const data = await response.json();
+          const rulesArray = data.rules || [];
           const rulesSet = new Set<GameType>(
-            rules.filter((r: any) => r.rules).map((r: any) => r.gameType as GameType) // eslint-disable-line @typescript-eslint/no-explicit-any
+            rulesArray.filter((r: any) => r.rules).map((r: any) => r.gameType as GameType) // eslint-disable-line @typescript-eslint/no-explicit-any
           );
           setAvailableRules(rulesSet);
         }

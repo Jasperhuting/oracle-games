@@ -6,7 +6,8 @@ import { Toaster } from 'react-hot-toast';
 import { LayoutShell } from "@/components/LayoutShell";
 import { AuthGuard } from "@/components/AuthGuard";
 import MessageNotification from "@/components/MessageNotification";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,15 +34,17 @@ export default function RootLayout({
       >
         <SpeedInsights />
         <MotiaProvider address={process.env.NEXT_PUBLIC_MOTIA_WS ?? 'ws://localhost:3000'}>
-          <Toaster position="top-center" />
-          <MessageNotification />
-          <AuthGuard>
-            <LayoutShell>
-              <main>
-                {children}
-              </main>
-            </LayoutShell>
-          </AuthGuard>
+          <ImpersonationProvider>
+            <Toaster position="top-center" />
+            <MessageNotification />
+            <AuthGuard>
+              <LayoutShell>
+                <main>
+                  {children}
+                </main>
+              </LayoutShell>
+            </AuthGuard>
+          </ImpersonationProvider>
         </MotiaProvider>
       </body>
     </html>

@@ -25,8 +25,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('raceSlug', raceSlug)
-
     // Fetch all stage results from the subcollection
     const stagesSnapshot = await db
       .collection(raceSlug)

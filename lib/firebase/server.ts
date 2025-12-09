@@ -5,6 +5,7 @@ import {
   cert,
 } from "firebase-admin/app";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
+import { getAuth as getAdminAuth } from "firebase-admin/auth";
 
 // Track if emulators have been configured
 let emulatorsConfigured = false;
@@ -76,5 +77,15 @@ export function getServerFirebaseFootball() {
   return getAdminFirestore(app, "oracle-games-football");
 }
 
+export function getServerAuth() {
+  configureEmulatorsIfNeeded();
+  const app = initializeFirebaseAdmin();
+  if (!app) {
+    throw new Error("Firebase Admin not initialized — missing env vars.");
+  }
+  return getAdminAuth(app);
+}
+
 export const adminDb = getServerFirebase();
 export const adminFootballDb = getServerFirebaseFootball();
+export const adminAuth = getServerAuth();

@@ -124,12 +124,35 @@ export async function POST(
     }
 
     // Check if game is full
-    if (gameData?.maxPlayers && gameData?.playerCount >= gameData?.maxPlayers) {
+    let currentPlayerCount = gameData?.playerCount || 0;
+    const maxPlayers = gameData?.maxPlayers;
+    
+    // For multi-division games, count pending participants across all divisions
+    if (isMultiDivision && maxPlayers) {
+      // Get the base name for counting total participants
+      const gameName = gameData?.name || '';
+      const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+      
+      // Count all pending participants for this game (across all divisions)
+      const pendingParticipantsSnapshot = await db.collection('gameParticipants')
+        .where('pendingGameBaseName', '==', baseName)
+        .where('pendingGameYear', '==', gameData?.year)
+        .where('pendingGameType', '==', gameData?.gameType)
+        .get();
+      
+      currentPlayerCount = pendingParticipantsSnapshot.size;
+      console.log(`[JOIN_GAME] Multi-division game ${baseName}: ${currentPlayerCount} pending participants, max ${maxPlayers}`);
+    }
+    
+    if (maxPlayers && currentPlayerCount >= maxPlayers) {
+      console.log(`[JOIN_GAME] Game ${gameId} is full: ${currentPlayerCount}/${maxPlayers}`);
       return NextResponse.json(
-        { error: 'Game is full' },
+        { error: `Game is full (${currentPlayerCount}/${maxPlayers} players)` },
         { status: 400 }
       );
     }
+    
+    console.log(`[JOIN_GAME] Game ${gameId} has space: ${currentPlayerCount}/${maxPlayers || 'unlimited'} players`);
 
     // Create participant
     const now = new Date();

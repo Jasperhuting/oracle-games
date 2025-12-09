@@ -74,7 +74,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     const pathname = usePathname()
     const router = useRouter();
 
-    const { user, loading } = useAuth();
+    const { user, loading, impersonationStatus } = useAuth();
     const { unreadCount } = useUnreadMessages(user?.uid);
     const [isAdmin, setIsAdmin] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -108,6 +108,51 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             router.push('/login');
         } catch (error) {
             console.error('Logout error:', error);
+        }
+    };
+
+    const stopImpersonation = async () => {
+        console.log('Header: stopImpersonation called');
+        try {
+            const response = await fetch('/api/impersonate/stop', {
+                method: 'POST',
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to stop impersonation');
+            }
+            
+            const data = await response.json();
+            
+            // Get the admin restore token from localStorage
+            const adminToken = localStorage.getItem('admin_restore_token') || data.adminToken;
+            console.log('Stop impersonation - admin token:', adminToken ? 'FOUND' : 'NOT FOUND');
+            
+            // Clear impersonation tokens and state
+            localStorage.removeItem('impersonation_token');
+            localStorage.removeItem('admin_restore_token');
+            localStorage.removeItem('impersonation');
+            
+            if (adminToken) {
+                // Store admin token temporarily to restore session
+                localStorage.setItem('restore_admin_session', adminToken);
+                console.log('Stored restore_admin_session token');
+                
+                // Verify it was stored
+                const verify = localStorage.getItem('restore_admin_session');
+                console.log('Verification - token stored:', verify ? 'YES' : 'NO');
+            } else {
+                console.error('No admin token available for restore!');
+            }
+            
+            // Small delay to ensure localStorage is written before redirect
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Force reload to admin page - this will trigger the restore flow in useAuth
+            console.log('Redirecting to /admin...');
+            window.location.href = '/admin';
+        } catch (error) {
+            console.error('Error stopping impersonation:', error);
         }
     };
 
@@ -182,9 +227,20 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
         }
     ]
 
+    // Calculate header top position based on banners
+    const getHeaderTop = () => {
+        let top = 0;
+        if (hideBetaBanner) top += 36; // Beta banner
+        if (impersonationStatus.isImpersonating) top += 48; // Impersonation banner
+        return top;
+    };
+
     return (
-        <header className={`sticky ${hideBetaBanner ? 'top-[36px]' : 'top-0'} w-full bg-white drop-shadow-header z-50 h-[86px] px-8`}>
-            <div className="container mx-auto">
+        <header 
+            className="sticky w-full bg-white drop-shadow-header z-40 h-[86px] px-8"
+            style={{ top: `${getHeaderTop()}px` }}
+        >
+                <div className="container mx-auto">
                 <div className="flex flex-1 justify-between py-2">
                     <div className="flex-1 flex items-center">
                         <Link href="/home">

@@ -112,7 +112,7 @@ interface RiderWithBid extends Rider {
 
 export default function AuctionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, impersonationStatus } = useAuth();
   const [gameId, setGameId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [game, setGame] = useState<GameData | null>(null);
@@ -944,7 +944,16 @@ useEffect(() => {
         </div>
       </div>
       
-      <div className={`sticky ${showBanner ? 'top-[121px]' : 'top-[86px]'} z-20 transition-all duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}>
+      <div 
+        className={`sticky z-20 transition-all duration-200 ${isSticky ? 'drop-shadow-md' : ''}`}
+        style={{ 
+          top: `${
+            (showBanner ? 36 : 0) + 
+            (impersonationStatus.isImpersonating ? 48 : 0) + 
+            86
+          }px` 
+        }}
+      >
         {/* Stats Bar */}
         <div className="bg-white border-b border-gray-200 z-10 px-8">
           <div className="container mx-auto py-3">

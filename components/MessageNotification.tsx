@@ -55,7 +55,6 @@ export default function MessageNotification() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        console.log('MessageNotification: snapshot received, docs:', snapshot.docs.length);
         
         // On initial load, mark all current messages as seen
         if (!isInitialized) {
@@ -65,8 +64,6 @@ export default function MessageNotification() {
               return data.read === false && !data.deletedAt;
             })
             .map(doc => doc.id);
-          
-          console.log('MessageNotification: initial load, marking', currentMessageIds.length, 'messages as seen');
           setSeenMessageIds(new Set(currentMessageIds));
           setIsInitialized(true);
           return;
@@ -81,14 +78,12 @@ export default function MessageNotification() {
             
             // Only show notification if it's unread, not deleted, and not seen before
             if (data.read === false && !data.deletedAt && !seenMessageIds.has(messageId)) {
-              console.log('MessageNotification: NEW MESSAGE added, checking if should show notification');
               
               // Check if user is on inbox page at the moment of notification
               const currentPath = window.location.pathname;
               const isOnInboxPage = currentPath === '/inbox';
               
               if (!isOnInboxPage) {
-                console.log('MessageNotification: User not on inbox, showing notification');
                 setNotification({
                   id: messageId,
                   subject: data.subject,
@@ -100,8 +95,6 @@ export default function MessageNotification() {
                 setTimeout(() => {
                   setNotification(null);
                 }, 5000);
-              } else {
-                console.log('MessageNotification: User on inbox page, skipping notification');
               }
               
               // Mark this message as seen
@@ -130,11 +123,8 @@ export default function MessageNotification() {
   };
 
   if (!notification) {
-    console.log('MessageNotification: notification is null, not rendering');
     return null;
   }
-
-  console.log('MessageNotification: RENDERING snackbar with notification:', notification);
 
   return (
     <div

@@ -1,19 +1,152 @@
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { useEffect, useState, useRef } from 'react';
+import { onAuthStateChanged, User, signInWithCustomToken, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
+
+interface ImpersonationStatus {
+  isImpersonating: boolean;
+  realAdmin?: {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+  };
+  impersonatedUser?: {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+  };
+  startedAt?: string;
+}
+
+// Global state to share impersonation status across all useAuth instances
+let globalImpersonationStatus: ImpersonationStatus = { isImpersonating: false };
+let globalImpersonationListeners: Set<(status: ImpersonationStatus) => void> = new Set();
+let isCheckingImpersonation = false;
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [impersonationStatus, setImpersonationStatus] = useState<ImpersonationStatus>(globalImpersonationStatus);
+  const [restoringSession, setRestoringSession] = useState(false);
+  const hasCheckedRef = useRef(false);
+
+  // Function to update global impersonation status
+  const updateGlobalImpersonationStatus = (status: ImpersonationStatus) => {
+    globalImpersonationStatus = status;
+    globalImpersonationListeners.forEach(listener => listener(status));
+  };
+
+  // Function to refresh impersonation status
+  const refreshImpersonationStatus = async () => {
+    if (isCheckingImpersonation) {
+      console.log('Already checking impersonation, skipping...');
+      return;
+    }
+    
+    isCheckingImpersonation = true;
+    try {
+      const response = await fetch('/api/impersonate/status');
+      if (response.ok) {
+        const data = await response.json();
+        updateGlobalImpersonationStatus(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing impersonation status:', error);
+    } finally {
+      isCheckingImpersonation = false;
+    }
+  };
+
+  // Subscribe to global impersonation status changes
+  useEffect(() => {
+    const listener = (status: ImpersonationStatus) => {
+      setImpersonationStatus(status);
+    };
+    
+    globalImpersonationListeners.add(listener);
+    
+    return () => {
+      globalImpersonationListeners.delete(listener);
+    };
+  }, []);
+
+  // Check impersonation status on mount (only once globally)
+  useEffect(() => {
+    if (hasCheckedRef.current) {
+      return;
+    }
+    hasCheckedRef.current = true;
+    
+    const checkImpersonation = async () => {
+      try {
+        // Check if we need to restore admin session after stopping impersonation
+        const restoreAdminToken = localStorage.getItem('restore_admin_session');
+        console.log('Checking for restore_admin_session token:', restoreAdminToken ? 'FOUND' : 'NOT FOUND');
+        if (restoreAdminToken) {
+          console.log('Restoring admin session...');
+          setRestoringSession(true);
+          setLoading(true);
+          
+          // First sign out the impersonated user
+          await signOut(auth);
+          console.log('Signed out impersonated user');
+          
+          // Then sign in with the admin token
+          await signInWithCustomToken(auth, restoreAdminToken);
+          console.log('Signed in with admin token');
+          localStorage.removeItem('restore_admin_session');
+          
+          // After restoring admin session, update impersonation status
+          const statusResponse = await fetch('/api/impersonate/status');
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            console.log('Admin session restored, impersonation status:', statusData);
+            updateGlobalImpersonationStatus(statusData);
+          }
+          
+          setRestoringSession(false);
+          setLoading(false);
+          return;
+        }
+        
+        // Only check if not already checking
+        if (!isCheckingImpersonation) {
+          await refreshImpersonationStatus();
+          
+          // If impersonating and we have a custom token in localStorage, sign in
+          if (globalImpersonationStatus.isImpersonating) {
+            const customToken = localStorage.getItem('impersonation_token');
+            if (customToken) {
+              await signInWithCustomToken(auth, customToken);
+              localStorage.removeItem('impersonation_token');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking impersonation status:', error);
+      }
+    };
+
+    checkImpersonation();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
+      // Only set loading to false if we're not restoring a session
+      if (!restoringSession) {
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [restoringSession]);
 
-  return { user, loading, isAuthenticated: !!user };
+  return { 
+    user, 
+    loading: loading || restoringSession, 
+    isAuthenticated: !!user,
+    impersonationStatus,
+    refreshImpersonationStatus,
+    restoringSession,
+  };
 }
