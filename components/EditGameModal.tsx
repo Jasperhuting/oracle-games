@@ -242,13 +242,21 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         updates.config = {
           budget: Number(data.budget) || 100,
           maxRiders: Number(data.maxRiders) || 8,
-          auctionPeriods: auctionPeriods.map(period => ({
-            name: period.name,
-            startDate: new Date(period.startDate).toISOString(),
-            endDate: new Date(period.endDate).toISOString(),
-            status: period.status,
-            top200Only: period.top200Only || false,
-          })),
+          auctionPeriods: auctionPeriods.map(period => {
+            // datetime-local gives us "2025-12-14T00:00" format
+            // We need to treat this as the actual UTC time, not local time
+            // So we append 'Z' to indicate UTC timezone
+            const startDate = new Date(period.startDate + ':00Z');
+            const endDate = new Date(period.endDate + ':00Z');
+            
+            return {
+              name: period.name,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              status: period.status,
+              top200Only: period.top200Only || false,
+            };
+          }),
           auctionStatus: auctionPeriods.some(p => p.status === 'active') ? 'active' :
                         auctionPeriods.every(p => p.status === 'closed') ? 'closed' : 'pending',
           countingRaces: countingRaces.length > 0 ? countingRaces : undefined,

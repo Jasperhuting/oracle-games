@@ -175,12 +175,20 @@ export const CreateGameTab = () => {
           maxMinimumBid: data.maxMinimumBid ? Number(data.maxMinimumBid) : undefined,
           allowSharedRiders: data.allowSharedRiders || false,
           maxOwnersPerRider: data.allowSharedRiders && data.maxOwnersPerRider ? Number(data.maxOwnersPerRider) : undefined,
-          auctionPeriods: auctionPeriods.map(period => ({
-            name: period.name,
-            startDate: new Date(period.startDate).toISOString(),
-            endDate: new Date(period.endDate).toISOString(),
-            status: 'pending',
-          })),
+          auctionPeriods: auctionPeriods.map(period => {
+            // datetime-local gives us "2025-12-14T00:00" format
+            // We need to treat this as the actual UTC time, not local time
+            // So we append 'Z' to indicate UTC timezone
+            const startDate = new Date(period.startDate + ':00Z');
+            const endDate = new Date(period.endDate + ':00Z');
+            
+            return {
+              name: period.name,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              status: 'pending',
+            };
+          }),
           auctionStatus: 'pending',
         };
       } else if (data.gameType === 'worldtour-manager') {
@@ -204,12 +212,20 @@ export const CreateGameTab = () => {
           maxRiders: Number(data.wtmMaxRiders) || 32,
           maxNeoProPoints: data.wtmMaxNeoProPoints ? Number(data.wtmMaxNeoProPoints) : undefined,
           maxNeoProAge: data.wtmMaxNeoProAge ? Number(data.wtmMaxNeoProAge) : 21,
-          auctionPeriods: auctionPeriods.map(period => ({
-            name: period.name,
-            startDate: new Date(period.startDate).toISOString(),
-            endDate: new Date(period.endDate).toISOString(),
-            status: 'pending',
-          })),
+          auctionPeriods: auctionPeriods.map(period => {
+            // datetime-local gives us "2025-12-14T00:00" format
+            // We need to treat this as the actual UTC time, not local time
+            // So we append 'Z' to indicate UTC timezone
+            const startDate = new Date(period.startDate + ':00Z');
+            const endDate = new Date(period.endDate + ':00Z');
+            
+            return {
+              name: period.name,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              status: 'pending',
+            };
+          }),
           auctionStatus: 'pending',
         };
       }
