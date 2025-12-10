@@ -467,7 +467,6 @@ export const JoinableGamesTab = () => {
 
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">Type:</span> {getGameTypeLabel(game.gameType)}
                         {availableRules.has(game.gameType as GameType) && (
                           <Button
                             variant="text"

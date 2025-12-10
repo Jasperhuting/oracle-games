@@ -54,7 +54,7 @@ export const PlayerCard = (
                         <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis ${isSold ? 'line-through' : ''}`}>{player.name}</span>
                         {showNeoProfBadge && isNeoProf && (
                             <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-                                Neo-prof
+                                Fillers
                             </span>
                         )}
                     </span>
