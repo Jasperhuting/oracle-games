@@ -9,7 +9,7 @@ import { Flag } from "./Flag";
 import process from "process";
 import { normalizeString } from "@/lib/utils/stringUtils";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { Ranking } from "@/app/api/getRankings/route";
+import { Ranking } from "@/lib/types";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -307,7 +307,7 @@ export const RidersManagementTab = () => {
                         ) : (
                           <div className="flex items-center gap-2">
                             <span 
-                              className="hover:bg-gray-100 px-2 py-1 rounded cursor-pointer flex-1"
+                              className="hover:bg-gray-100 px-2 py-1 rounded cursor-pointer flex-1 cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingRiderTeam(rider.id);
@@ -321,7 +321,7 @@ export const RidersManagementTab = () => {
                                   e.stopPropagation();
                                   handleRemoveTeam(rider.id);
                                 }}
-                                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded text-xs font-medium"
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded text-xs font-medium cursor-pointer"
                                 title="Remove team"
                               >
                                 ✕

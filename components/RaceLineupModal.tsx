@@ -220,7 +220,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
               <div className="flex space-x-2 mb-6">
                 <button
                   onClick={() => setViewMode('riders')}
-                  className={`px-4 py-2 rounded-md font-medium ${
+                  className={`px-4 py-2 rounded-md font-medium cursor-pointer ${
                     viewMode === 'riders'
                       ? 'bg-primary text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -230,7 +230,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                 </button>
                 <button
                   onClick={() => setViewMode('teams')}
-                  className={`px-4 py-2 rounded-md font-medium ${
+                  className={`px-4 py-2 rounded-md font-medium cursor-pointer ${
                     viewMode === 'teams'
                       ? 'bg-primary text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -299,7 +299,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                               <div className="col-span-1 flex justify-end">
                                 <button
                                   onClick={() => handleRemoveRider(rider.id)}
-                                  className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                                  className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 cursor-pointer"
                                 >
                                   Remove
                                 </button>
@@ -370,7 +370,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                               <div className="col-span-1 flex justify-end">
                                 <button
                                   onClick={() => handleRemoveTeam(team.id)}
-                                  className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                                  className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 cursor-pointer"
                                 >
                                   Remove
                                 </button>
@@ -399,13 +399,13 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
               text="Cancel"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 cursor-pointer"
             />
             <Button
               text={saving ? "Saving..." : "Save Lineup"}
               onClick={handleSave}
               disabled={saving || loading}
-              className="px-4 py-2 bg-primary hover:bg-primary"
+              className="px-4 py-2 bg-primary hover:bg-primary cursor-pointer"
             />
           </div>
         </div>

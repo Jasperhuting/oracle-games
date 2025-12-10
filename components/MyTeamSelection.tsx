@@ -33,7 +33,7 @@ export const MyTeamSelection = (
     return (
         <div className={`fixed bottom-0 px-3 pt-4 right-5 z-50 w-[calc(100%_-_600px)] max-w-[900px] min-w-[600px] transition-transform duration-300 ease-in-out ${open ? 'translate-y-0' : 'translate-y-[calc(100%_-_58px)]'}`}>
             <div className="flex flex-col w-full drop-shadow-header">
-                <div onClick={handleToggle} className="flex bg-white rounded-t-lg items-center justify-self-end gap-2 pb-2 px-2 pt-2 cursor-pointer w-fit self-end">
+                <div onClick={handleToggle} className="flex bg-white rounded-t-lg cursor-pointer items-center justify-self-end gap-2 pb-2 px-2 pt-2 w-fit self-end">
                     <h3 className="text-md font-bold">My Team</h3>
                     <button className="text-gray-500 cursor-pointer">
                         {open ? <ChevronDown /> : <ChevronUp />}

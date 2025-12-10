@@ -40,14 +40,14 @@ export const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-3 py-1 border cursor-pointer border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                 >
                     First
                 </button>
                 <button
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-3 py-1 border cursor-pointer border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                 >
                     Previous
                 </button>
@@ -57,14 +57,14 @@ export const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange
                 <button
                     onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage >= totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-3 py-1 border cursor-pointer border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                 >
                     Next
                 </button>
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage >= totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-3 py-1 border cursor-pointer border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                 >
                     Last
                 </button>

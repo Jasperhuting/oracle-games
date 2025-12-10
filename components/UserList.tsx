@@ -497,7 +497,7 @@ export const UserList = () => {
                       <div className="flex gap-2">
                         {!user.deletedAt && (
                           <Button
-                            className="py-1 px-3 text-sm"
+                            className="py-1 px-3 text-sm cursor-pointer"
                             ghost
                             text={impersonatingUserId === user.uid ? "..." : "Impersonate"}
                             onClick={() => impersonateUser(user.uid)}
@@ -506,14 +506,14 @@ export const UserList = () => {
                         )}
                         {user.deletedAt ? (
                           <Button
-                            className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700"
+                            className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700 cursor-pointer"
                             text={deletingUserId === user.uid ? "busy..." : "Restore"}
                             onClick={() => confirmRestoreUser(user.uid)}
                             disabled={deletingUserId === user.uid}
                           />
                         ) : (
                           <Button
-                            className="py-1 px-3 text-sm bg-gray-600 hover:bg-gray-700"
+                            className="py-1 px-3 text-sm bg-gray-600 hover:bg-gray-700 cursor-pointer"
                             text={deletingUserId === user.uid ? "busy..." : "Delete"}
                             onClick={() => confirmDeleteUser(user.uid)}
                             disabled={deletingUserId === user.uid}

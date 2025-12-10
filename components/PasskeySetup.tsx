@@ -78,7 +78,7 @@ export const PasskeySetup = ({ userId, email, displayName }: PasskeySetupProps) 
         Log in faster and more securely next time with a passkey. No password needed!
       </p>
       <Button
-        className="w-full justify-center py-2  text-white "
+        className="w-full justify-center py-2 text-white"
         text={isLoading ? "Setting up..." : "Set up Passkey"}
         onClick={handleSetupPasskey}
         disabled={isLoading}

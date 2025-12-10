@@ -54,7 +54,7 @@ export function StageList({ race, year, maxStages = 21 }: { race: string; year: 
         {stages.map((s) => (
           <div key={s.stage} className="rounded border border-black/10 dark:border-white/10">
             <button
-              className="w-full flex items-center justify-between px-3 py-2 text-left text-xs hover:bg-black/5 dark:hover:bg-white/10"
+              className="w-full flex items-center cursor-pointer justify-between px-3 py-2 text-left text-xs hover:bg-black/5 dark:hover:bg-white/10"
               onClick={async () => {
                 setOpenStages(prev => ({ ...prev, [s.stage]: !prev[s.stage] }));
                 const alreadyLoaded = stageData[s.stage]?.data || stageData[s.stage]?.loading;

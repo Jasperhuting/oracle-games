@@ -853,13 +853,13 @@ export const GamesTab = () => {
                               />
                               <button
                                 onClick={(e) => handleSaveDescription(race.id, e)}
-                                className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 cursor-pointer"
                               >
                                 ✓
                               </button>
                               <button
                                 onClick={handleCancelEdit}
-                                className="px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
+                                className="px-2 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 cursor-pointer"
                               >
                                 ✕
                               </button>

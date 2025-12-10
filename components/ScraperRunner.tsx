@@ -177,14 +177,14 @@ export function ScraperRunner() {
           <button
             onClick={runScraper}
             disabled={loading || (type === 'stage-result' && !stage)}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded transition-colors"
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded transition-colors cursor-pointer"
           >
             {loading ? 'Starting...' : 'Run Scraper'}
           </button>
 
           <button
             onClick={loadAllJobs}
-            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors cursor-pointer"
           >
             Refresh Jobs
           </button>

@@ -166,7 +166,7 @@ export default function MessagingTab() {
               <button
                 type="button"
                 onClick={() => setMessageType('broadcast')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`flex-1 flex items-center justify-center cursor-pointer gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
                   messageType === 'broadcast'
                     ? 'border-primary bg-primary text-white'
                     : 'border-gray-300 hover:border-primary'
@@ -178,7 +178,7 @@ export default function MessagingTab() {
               <button
                 type="button"
                 onClick={() => setMessageType('individual')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`flex-1 flex items-center justify-center cursor-pointer gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
                   messageType === 'individual'
                     ? 'border-primary bg-primary text-white'
                     : 'border-gray-300 hover:border-primary'
@@ -204,7 +204,7 @@ export default function MessagingTab() {
                     <button
                       type="button"
                       onClick={handleClearSelection}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      className="p-1 hover:bg-gray-100 rounded cursor-pointer transition-colors"
                       title="Clear selection"
                     >
                       <X className="w-4 h-4 text-gray-500" />
@@ -236,7 +236,7 @@ export default function MessagingTab() {
                           key={u.id}
                           type="button"
                           onClick={() => handleUserSelect(u.id)}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                          className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-b-0"
                         >
                           <div className="font-medium text-gray-900">{u.displayName}</div>
                           {u.email && (

@@ -331,7 +331,7 @@ export default function RiderPointsPage() {
           {selectedRider && (
             <button
               onClick={() => setSelectedRider(null)}
-              className="mt-2 text-sm text-primary hover:underline"
+              className="mt-2 cursor-pointer text-sm text-primary hover:underline"
             >
               ← Back to all riders
             </button>
@@ -476,7 +476,7 @@ export default function RiderPointsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
                             onClick={() => setSelectedRider(selectedRider?.riderId === rider.riderId ? null : rider)}
-                            className="text-primary hover:text-primary/80 font-medium"
+                            className="text-primary cursor-pointer hover:text-primary/80 font-medium"
                           >
                             {selectedRider?.riderId === rider.riderId ? 'Hide' : 'Details'}
                           </button>

@@ -72,7 +72,7 @@ export const RacesScraperTab = () => {
             max={new Date().getFullYear() + 1}
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
-            className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full max-w-xs px-3 py-2 border cursor-pointer border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={scraping}
           />
         </div>

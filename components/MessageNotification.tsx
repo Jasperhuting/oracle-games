@@ -128,7 +128,7 @@ export default function MessageNotification() {
 
   return (
     <div
-      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-2xl px-4 animate-slide-down"
+      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-2xl px-4 animate-slide-down cursor-pointer"
       onClick={handleClick}
       style={{ pointerEvents: 'auto' }}
     >
@@ -147,7 +147,7 @@ export default function MessageNotification() {
           </div>
           <button
             onClick={handleClose}
-            className="flex-shrink-0 hover:bg-gray-100 rounded-full p-1.5 transition-colors"
+            className="flex-shrink-0 hover:bg-gray-100 rounded-full p-1.5 cursor-pointer transition-colors"
           >
             <X className="h-4 w-4 text-gray-500" />
           </button>

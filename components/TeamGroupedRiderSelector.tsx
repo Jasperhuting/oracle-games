@@ -243,7 +243,7 @@ export const TeamGroupedRiderSelector = ({
                           e.preventDefault();
                           toggleExpanded(group.teamId);
                         }}
-                        className="flex-1 flex items-center justify-between text-left font-medium text-gray-900 hover:text-primary transition-colors"
+                        className="flex-1 flex items-center justify-between text-left font-medium text-gray-900 hover:text-primary transition-colors cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
                           <span>{group.teamImage ? <img src={`https://www.procyclingstats.com/${group?.teamImage}`} alt={group.teamName} className="w-8 h-8" /> : <img src="/jersey-transparent.png" className="w-8 h-8" />}</span>

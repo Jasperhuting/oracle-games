@@ -146,7 +146,7 @@ export const PageEditor = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-6 py-2 rounded-lg cursor-pointer font-medium transition-colors ${
                   saving
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-primary text-white hover:bg-primary/90'

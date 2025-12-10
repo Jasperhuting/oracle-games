@@ -302,7 +302,7 @@ Riders removed: ${result.ridersRemoved}`,
         <div className="flex space-x-2 mb-6">
           <button
             onClick={() => setViewMode('riders')}
-            className={`px-4 py-2 rounded-md font-medium ${
+            className={`px-4 py-2 rounded-md font-medium cursor-pointer ${
               viewMode === 'riders'
                 ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -312,7 +312,7 @@ Riders removed: ${result.ridersRemoved}`,
           </button>
           <button
             onClick={() => setViewMode('teams')}
-            className={`px-4 py-2 rounded-md font-medium ${
+            className={`px-4 py-2 rounded-md font-medium cursor-pointer ${
               viewMode === 'teams'
                 ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -409,7 +409,7 @@ Riders removed: ${result.ridersRemoved}`,
                         <div className="col-span-1 flex justify-end">
                           <button
                             onClick={() => handleRemoveRider(rider.id)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                            className="text-red-600 cursor-pointer hover:text-red-800 text-sm font-medium px-2 py-1"
                           >
                             Remove
                           </button>
@@ -481,7 +481,7 @@ Riders removed: ${result.ridersRemoved}`,
                         <div className="col-span-1 flex justify-end">
                           <button
                             onClick={() => handleRemoveTeam(team.id)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                            className="text-red-600 cursor-pointer hover:text-red-800 text-sm font-medium px-2 py-1"
                           >
                             Remove
                           </button>

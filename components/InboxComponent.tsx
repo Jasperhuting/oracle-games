@@ -227,7 +227,7 @@ export default function InboxComponent() {
                           )}
                           <button
                             onClick={(e) => deleteMessage(message.id!, e)}
-                            className="p-1 hover:bg-red-100 rounded transition-colors"
+                            className="p-1 hover:bg-red-100 rounded cursor-pointer transition-colors"
                             title="Delete message"
                           >
                             <Trash className="w-4 h-4 text-red-600" />
@@ -283,14 +283,14 @@ export default function InboxComponent() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => deleteMessage(selectedMessage.id!)}
-                    className="p-2 hover:bg-red-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-red-100 rounded-full cursor-pointer transition-colors"
                     title="Delete message"
                   >
                     <Trash className="w-5 h-5 text-red-600" />
                   </button>
                   <button
                     onClick={closeMessageDetail}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-full cursor-pointer transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>

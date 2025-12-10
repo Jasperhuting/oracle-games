@@ -31,7 +31,7 @@ export const ImpersonationBanner = ({
         <Button
           onClick={onStop}
           variant="white"
-          className="px-4 py-1"
+          className="px-4 py-1 cursor-pointer"
         >
           Stop Impersonation
         </Button>

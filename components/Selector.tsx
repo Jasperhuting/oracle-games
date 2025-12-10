@@ -140,7 +140,7 @@ export function Selector<T>({
                             {renderSelectedItem(item, index, () => toggleItem(item))}
                             <button
                                 onClick={() => toggleItem(item)}
-                                className="text-red-500 hover:text-red-700 font-bold"
+                                className="text-red-500 hover:text-red-700 font-bold cursor-pointer"
                                 title="Remove"
                             >
                                 ✕

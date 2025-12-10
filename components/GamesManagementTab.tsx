@@ -306,7 +306,7 @@ export const GamesManagementTab = () => {
             <Button
               text="Refresh"
               onClick={loadGames}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 cursor-pointer"
             />
           </div>
         </div>
@@ -385,7 +385,7 @@ export const GamesManagementTab = () => {
                             {group.hasDivisions && (
                               <button
                                 onClick={() => toggleGroupExpanded(group.baseName)}
-                                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
                               >
                                 {isExpanded ? (
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -430,7 +430,7 @@ export const GamesManagementTab = () => {
                             {group.hasDivisions ? (
                               <button
                                 onClick={() => toggleGroupExpanded(group.baseName)}
-                                className="text-blue-600 hover:text-blue-800 font-medium"
+                                className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
                               >
                                 {group.games.length} divisions
                               </button>
@@ -444,6 +444,7 @@ export const GamesManagementTab = () => {
                             onClick={() => handleView(game.id)}
                             variant="primary"
                             ghost
+                            className="cursor-pointer"
                           >
                             View
                           </Button>
@@ -451,6 +452,7 @@ export const GamesManagementTab = () => {
                             onClick={() => handleEdit(game.id)}
                             variant="secondary"
                             ghost
+                            className="cursor-pointer"
                           >
                             Edit
                           </Button>
@@ -458,6 +460,7 @@ export const GamesManagementTab = () => {
                             onClick={() => handleManageLineup(game.id)}
                             variant="success"
                             ghost
+                            className="cursor-pointer"
                           >
                             Lineup
                           </Button>
@@ -467,6 +470,7 @@ export const GamesManagementTab = () => {
                               disabled={finalizingGameId === game.id}
                               variant="warning"
                               ghost
+                              className="cursor-pointer"
                             >
                               {finalizingGameId === game.id ? '...' : 'Finalize'}
                             </Button>
@@ -475,6 +479,7 @@ export const GamesManagementTab = () => {
                             onClick={() => handleManageDivisions(game.id)}
                             variant="primary"
                             ghost
+                            className="cursor-pointer"
                           >
                             Assign Players
                           </Button>
@@ -483,6 +488,7 @@ export const GamesManagementTab = () => {
                               onClick={() => handleManageDivisionGames(group.games)}
                               variant="secondary"
                               ghost
+                              className="cursor-pointer"
                             >
                               Manage Divisions
                             </Button>
@@ -492,6 +498,7 @@ export const GamesManagementTab = () => {
                               onClick={() => handleDeleteClick(game.id)}
                               variant="danger"
                               ghost
+                              className="cursor-pointer"
                             >
                               Delete
                             </Button>

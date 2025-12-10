@@ -321,7 +321,7 @@ export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelection
                               !(r.name === rider.name && r.rank === rider.rank)
                             ));
                           }}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                          className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 cursor-pointer"
                         >
                           Remove
                         </button>

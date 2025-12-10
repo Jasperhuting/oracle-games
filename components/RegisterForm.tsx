@@ -239,7 +239,7 @@ export const RegisterForm = () => {
 
             <div className="space-y-3">
                 <Button
-                    className="w-full justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+                    className="w-full cursor-pointer justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
                     text={isGoogleLoading ? "Loading..." : "Register with Google"}
                     onClick={handleGoogleSignup}
                     disabled={isGoogleLoading || isSubmitting}

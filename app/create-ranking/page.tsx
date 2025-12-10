@@ -845,14 +845,14 @@ export default function CreateRankingPage() {
                     <button
                       onClick={loadMoreRiders}
                       disabled={loadingMore}
-                      className="px-5 py-2.5"
+                      className="px-5 py-2.5 cursor-pointer"
                     >
                       {loadingMore ? 'Loading...' : `Load More (${totalCount - rankedRiders.length} remaining)`}
                     </button>
                     <button
                       onClick={loadAllData}
                       disabled={loadingMore}
-                      className="px-5 py-2.5 bg-green-500 text-white"
+                      className="px-5 py-2.5 bg-green-500 text-white cursor-pointer"
                     >
                       Load All & Cache
                     </button>

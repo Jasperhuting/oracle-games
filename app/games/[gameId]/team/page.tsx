@@ -359,7 +359,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
                             !(r.name === rider.name && r.rank === rider.rank)
                           ));
                         }}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                        className="text-red-600 cursor-pointer hover:text-red-800 text-sm font-medium px-2 py-1"
                       >
                         Remove
                       </button>
