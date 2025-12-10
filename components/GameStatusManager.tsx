@@ -106,7 +106,7 @@ export const GameStatusManager = ({
             ref={buttonRef}
             onClick={() => setShowDropdown(!showDropdown)}
             disabled={updating}
-            className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${STATUS_COLORS[currentStatus]} hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`px-3 py-1 rounded-full text-xs cursor-pointer font-semibold text-white ${STATUS_COLORS[currentStatus]} hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
             title="Click to change status"
           >
             {updating ? 'Updating...' : STATUS_LABELS[currentStatus]}
@@ -120,7 +120,7 @@ export const GameStatusManager = ({
               onClick={() => setShowDropdown(false)}
             />
             <div
-              className="fixed w-40 bg-white border border-gray-200 rounded-md shadow-xl z-[101]"
+              className="fixed w-40 bg-white border cursor-pointer border-gray-200 rounded-md shadow-xl z-[101]"
               style={{
                 top: `${dropdownPosition.top + 8}px`,
                 left: `${dropdownPosition.left}px`,
@@ -131,7 +131,7 @@ export const GameStatusManager = ({
                   key={status}
                   onClick={() => confirmStatusChange(status)}
                   disabled={updating}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                  className={`w-full text-left cursor-pointer px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
                     status === currentStatus ? 'bg-gray-50 font-semibold' : ''
                   } ${updating ? 'opacity-50 cursor-not-allowed' : ''} first:rounded-t-md last:rounded-b-md`}
                 >
