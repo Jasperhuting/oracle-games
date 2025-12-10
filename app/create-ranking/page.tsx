@@ -48,8 +48,8 @@ export default function CreateRankingPage() {
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
 
   // Filtered lists based on selected countries and players
-  const [filteredRiders, setFilteredRiders] = useState<unknown[]>([]);
-  const [filteredTeams, setFilteredTeams] = useState<unknown[]>([]);
+  const [filteredRiders, setFilteredRiders] = useState<Rider[]>([]);
+  const [filteredTeams, setFilteredTeams] = useState<Team[]>([]);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   // Close editor when clicking outside
@@ -534,7 +534,7 @@ export default function CreateRankingPage() {
     if (selectedClasses.length > 0) {
       const classNames = selectedClasses.map(c => c?.toLowerCase());
       filtered = filtered.filter((rider) =>
-        classNames.includes(rider.team?.class?.toLowerCase())
+        rider.team?.class && classNames.includes(rider.team?.class?.toLowerCase())
       );
     }
 
@@ -547,7 +547,7 @@ export default function CreateRankingPage() {
     if (selectedCountries.length > 0) {
       const countryCodes = selectedCountries.map(c => c.code?.toLowerCase());
       filteredTeamsList = filteredTeamsList.filter((team) =>
-        countryCodes.includes(team.country?.toLowerCase())
+        team.country && countryCodes.includes(team.country?.toLowerCase())
       );
     }
 
@@ -561,7 +561,7 @@ export default function CreateRankingPage() {
     if (selectedClasses.length > 0) {
       const classNames = selectedClasses.map(c => c?.toLowerCase());
       filteredTeamsList = filteredTeamsList.filter((team) =>
-        classNames.includes(team.class?.toLowerCase())
+        team.class && classNames.includes(team.class?.toLowerCase())
       );
     }
 
@@ -590,7 +590,7 @@ export default function CreateRankingPage() {
   };
 
   const createRanking = async () => {
-    const offsetOptions = [0, 100, 200, 300, 400]; //, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500
+    const offsetOptions = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500]; 
 
     setProgress({ current: 0, total: offsetOptions.length, isRunning: true });
 
@@ -951,6 +951,7 @@ export default function CreateRankingPage() {
                           >
                             <Flag countryCode={team.country} />
                           </div>}</div>}
+                          
                           {viewImage && <div>{team?.teamImage ? <img src={`https://www.procyclingstats.com/${team?.teamImage}`} alt={team?.name} className="w-[30px] h-[30px]" /> : <img src="/jersey-transparent.png" className="w-[30px] h-[30px]" />}</div>}
                         </div>
                       );

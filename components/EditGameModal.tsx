@@ -309,7 +309,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           <h2 className="text-2xl font-bold">Edit Game</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
           >
             ×
           </button>

@@ -110,7 +110,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
           <h2 className="text-2xl font-bold">Game Details</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
           >
             ×
           </button>

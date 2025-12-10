@@ -52,7 +52,7 @@ export interface Rider {
   name: string;
   rank: number;
   points: number;
-  team?: RankedTeam;
+  team?: Team;
   country: string;
   id: string;
 }
@@ -92,6 +92,7 @@ export interface Team {
   country?: string;
   slug?: string;
   class?: string;
+  teamImage?: string;
 }
 
 export interface RankedTeamsResult {

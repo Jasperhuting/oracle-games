@@ -280,7 +280,7 @@ export const DivisionAssignmentModal = ({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              className="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer leading-none"
             >
               ×
             </button>
