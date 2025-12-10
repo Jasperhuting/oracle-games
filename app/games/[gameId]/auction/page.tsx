@@ -835,7 +835,7 @@ useEffect(() => {
 
   const getTotalMyBids = (): number => {
     return myBids
-      .filter(b => b.status === 'active' || b.status === 'won')
+      .filter(b => b.status === 'active' || b.status === 'outbid' || b.status === 'won')
       .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
   };
 
