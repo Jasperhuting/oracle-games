@@ -119,7 +119,7 @@ export const PlayerCard = (
                 </div>
                 )}
                 
-                {showBid && !isSold &&
+                {showBid && !isSold && !showNeoProfBadge &&
                     <div className="flex flex-row gap-2 justify-between">
                         <span className="font-medium text-gray-700">
                             Bid:

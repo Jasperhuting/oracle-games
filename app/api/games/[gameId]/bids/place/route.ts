@@ -50,8 +50,8 @@ export async function POST(
 
     const gameData = gameDoc.data();
 
-    // Check if game type is auctioneer
-    if (gameData?.gameType !== 'auctioneer') {
+    // Check if game type supports bidding/selection
+    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager') {
       return NextResponse.json(
         { error: 'Game does not support bidding' },
         { status: 400 }
@@ -109,10 +109,7 @@ export async function POST(
       } else {
         // Someone else has the highest bid
         // Allow any bid amount - users can bid lower than the current highest bid
-        // Only mark previous highest bid as outbid if new bid is higher
-        if (amount > highestBidData.amount) {
-          await highestBidDoc.ref.update({ status: 'outbid' });
-        }
+        // Do NOT mark previous bids as outbid during bidding - this is only done during finalization
       }
     }
 
@@ -163,9 +160,9 @@ export async function POST(
       );
     }
 
-    // If updating own bid, mark the old bid as outbid before creating new one
+    // If updating own bid, delete the old bid before creating new one
     if (isUpdatingOwnBid && !highestBidSnapshot.empty) {
-      await highestBidSnapshot.docs[0].ref.update({ status: 'outbid' });
+      await highestBidSnapshot.docs[0].ref.delete();
     }
 
     // Create new bid

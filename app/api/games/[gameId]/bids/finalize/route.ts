@@ -21,8 +21,8 @@ export async function POST(
 
     const gameData = gameDoc.data();
 
-    // Check if game type is auctioneer
-    if (gameData?.gameType !== 'auctioneer') {
+    // Check if game type supports bidding/selection
+    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager') {
       return NextResponse.json(
         { error: 'Game does not support bidding' },
         { status: 400 }
@@ -37,9 +37,12 @@ export async function POST(
 
     console.log(`[FINALIZE] Found ${allBidsForGameSnapshot.size} total bids for game`);
 
-    // Filter for active bids in memory
-    const activeBidsDocs = allBidsForGameSnapshot.docs.filter(doc => doc.data().status === 'active');
-    console.log(`[FINALIZE] Found ${activeBidsDocs.length} active bids after filtering`);
+    // Filter for active and outbid bids in memory (outbid status may exist from legacy data)
+    const activeBidsDocs = allBidsForGameSnapshot.docs.filter(doc => {
+      const status = doc.data().status;
+      return status === 'active' || status === 'outbid';
+    });
+    console.log(`[FINALIZE] Found ${activeBidsDocs.length} active/outbid bids after filtering`);
 
     // Create a snapshot-like object for compatibility with existing code
     const activeBidsSnapshot = {

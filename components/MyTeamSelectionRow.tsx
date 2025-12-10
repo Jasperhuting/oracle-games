@@ -23,7 +23,8 @@ export const MyTeamSelectionRow = (
         hideButton?: boolean 
     }) => {
     const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name;
-    const canCancelBid = rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid';
+    // During bidding, only active bids can be cancelled (outbid status only appears after finalization)
+    const canCancelBid = rider.myBidStatus === 'active';
 
     return (
         <div className="flex flex-row items-center justify-between p-2 min-h-[50px]">

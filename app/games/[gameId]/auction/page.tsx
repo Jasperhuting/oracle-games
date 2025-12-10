@@ -585,7 +585,7 @@ useEffect(() => {
 
     // Check maxRiders limit before placing a new bid (not when updating existing)
     const maxRiders = game?.config?.maxRiders;
-    const activeBidsCount = myBids.filter(b => b.status === 'active').length;
+    const activeBidsCount = myBids.filter(b => b.status === 'active' || b.status === 'outbid').length;
     const isUpdatingExistingBid = rider.myBid !== undefined;
 
     if (maxRiders && activeBidsCount >= maxRiders && !isUpdatingExistingBid) {
@@ -610,13 +610,13 @@ useEffect(() => {
     // WorldTour Manager: Check neo-prof requirements
     // Rule: If you want 28+ riders, you need at least 1 neo-prof in your team
     if (game && game.gameType === 'worldtour-manager') {
-      const totalActiveBids = myBids.filter(b => b.status === 'active').length;
+      const totalActiveBids = myBids.filter(b => b.status === 'active' || b.status === 'outbid').length;
       const minRiders = game.config.minRiders || 27;
       const isThisRiderNeoProf = qualifiesAsNeoProf(rider);
 
       // Count current neo-profs in the team
       const currentNeoProfBids = myBids.filter(b => {
-        if (b.status !== 'active') return false;
+        if (b.status !== 'active' && b.status !== 'outbid') return false;
         const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
         return bidRider && qualifiesAsNeoProf(bidRider);
       });
@@ -852,9 +852,9 @@ useEffect(() => {
       // After finalization, only use spentBudget (which already includes won riders)
       return budget - spentBudget;
     } else {
-      // During auction, calculate total active bids
+      // During auction, calculate total active bids (including outbid for legacy data)
       const activeBidsTotal = myBids
-        .filter(b => b.status === 'active')
+        .filter(b => b.status === 'active' || b.status === 'outbid')
         .filter(b => !excludeRiderNameId || b.riderNameId !== excludeRiderNameId)
         .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
 
@@ -891,7 +891,14 @@ useEffect(() => {
           return a.rank - b.rank;
         }
       })
-      .filter((rider) => !myBids.some(bid => bid.riderName === rider.name))
+      .filter((rider) => {
+        // Filter out riders that have active bids - they should only appear in "My Bids" section
+        // Check both nameID and id to ensure we catch all matches
+        return !myBids.some(bid => 
+          bid.riderNameId === rider.nameID || 
+          bid.riderNameId === rider.id
+        );
+      })
       .filter((rider) => !hideSoldPlayers || !rider.isSold)
       .filter((rider) => !showOnlyNeoPros || qualifiesAsNeoProf(rider));
   }, [filteredRiders, myBids, hideSoldPlayers, showOnlyNeoPros]);
@@ -1048,7 +1055,7 @@ useEffect(() => {
                 <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
                   Reset all bids
                 </label>
-               <Button text="Reset all bids" disabled={!myBids.some(bid => bid.status === 'active')} onClick={handleResetBidsClick} />
+               <Button text="Reset all bids" disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
               </span>
             </div>
           </div>
@@ -1065,8 +1072,12 @@ useEffect(() => {
               <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
                 }`}>
                 {auctionClosed
-                  ? 'The auction has ended. No more bids can be placed.'
-                  : 'The auction has not started yet. Bidding will open soon.'}
+                  ? game.gameType === 'worldtour-manager' 
+                    ? 'Team selection has ended. No more riders can be selected.'
+                    : 'The auction has ended. No more bids can be placed.'
+                  : game.gameType === 'worldtour-manager'
+                    ? 'Team selection has not started yet. Selection will open soon.'
+                    : 'The auction has not started yet. Bidding will open soon.'}
               </p>
             </div>
           )}
@@ -1133,7 +1144,7 @@ useEffect(() => {
                 </div>}
                 {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
-                  const canCancel = myBidRider.status === 'active';
+                  const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
 
                   return rider ? (
                     <div key={myBidRider.id}>
@@ -1183,7 +1194,9 @@ useEffect(() => {
                 <div className="divide-gray-300 divide-y">
                   {myBids.map((myBidRider) => {
                     const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
-                    const canCancel = myBidRider.status === 'active';
+                    const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+
+                    console.log(myBidRider);
 
                     return rider ? (
                       <div key={myBidRider.id} className="bg-white px-2">
@@ -1256,8 +1269,6 @@ useEffect(() => {
                 {/* it should sort when there is a myBid */}
                 {sortedAndFilteredRiders.map((rider, index) => {
                   const riderNameId = rider.nameID || rider.id || '';
-                  const isOutbid = rider.myBidStatus === 'outbid';
-                  const isWinning = rider.myBid && rider.myBid === rider.highestBid;
 
                   // Get all bidders for this rider (admin only)
                   const riderBidders = isAdmin
@@ -1290,12 +1301,7 @@ useEffect(() => {
 
                               <div className="flex-1">
                                 {auctionActive ? (<>
-                                  {game?.gameType === 'worldtour-manager' ? (
-                                    // For worldtour-manager, show the price (no input needed)
-                                    <div className="w-full px-2 py-1 text-sm text-center font-semibold text-gray-700">
-                                      Price: {formatCurrencyWhole(rider.effectiveMinBid || rider.points)}
-                                    </div>
-                                  ) : (
+                                  {game?.gameType !== 'worldtour-manager' && (
                                     // For auction games, show bid input
                                     <CurrencyInput
                                       id="input-example"
@@ -1313,14 +1319,18 @@ useEffect(() => {
                                   )}
                                 </>
                                 ) : (
-
+                                  // After auction closes, show win/loss status
                                   rider.myBid ? (
                                     <div>
-                                      <div className={`font-bold text-sm ${isOutbid ? 'text-red-600' : 'text-green-600'}`}>
+                                      <div className={`font-bold text-sm ${
+                                        rider.myBidStatus === 'won' ? 'text-green-600' : 
+                                        rider.myBidStatus === 'lost' ? 'text-red-600' : 
+                                        'text-gray-700'
+                                      }`}>
                                         {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        {isOutbid ? 'Outbid' : isWinning ? 'Winning' : rider.myBidStatus}
+                                        {rider.myBidStatus === 'won' ? 'Won' : rider.myBidStatus === 'lost' ? 'Lost' : rider.myBidStatus}
                                       </div>
                                     </div>
                                   ) : (
@@ -1330,7 +1340,7 @@ useEffect(() => {
                               </div>
                               {auctionActive && !rider.isSold && (
                                 <>
-                                  {rider.myBid && rider.myBidId && rider.myBidStatus === 'active' && (
+                                  {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') && (
                                     <Button
                                       type="button"
                                       text={cancellingBid === rider.myBidId ? "..." : game?.gameType === 'worldtour-manager' ? "Remove" : "Reset bid"}
@@ -1346,7 +1356,7 @@ useEffect(() => {
                                     text={placingBid === riderNameId ? "..." : game?.gameType === 'worldtour-manager' ? "Select" : "Bid"}
                                     onClick={() => handlePlaceBid(rider)}
                                     disabled={placingBid === riderNameId}
-                                    className="px-3 py-1 text-sm"
+                                    className="py-1 text-sm w-full"
                                     variant="primary"
                                   />
                                 </>
@@ -1356,7 +1366,7 @@ useEffect(() => {
                           </>} />
                           :
                           <PlayerRowBids player={rider} showPoints showRank fullWidth selectPlayer={() => handlePlaceBid(rider)} index={index} rightContent={<>
-                            <div className="flex flex-row gap-2">
+                            <div className={`flex flex-row ${game?.gameType !== 'worldtour-manager' && 'gap-2'}`}>
 
 
                               <div className="flex-1">
@@ -1384,14 +1394,18 @@ useEffect(() => {
                                   )}
                                 </>
                                 ) : (
-
+                                  // After auction closes, show win/loss status
                                   rider.myBid ? (
                                     <div>
-                                      <div className={`font-bold text-sm ${isOutbid ? 'text-red-600' : 'text-green-600'}`}>
+                                      <div className={`font-bold text-sm ${
+                                        rider.myBidStatus === 'won' ? 'text-green-600' : 
+                                        rider.myBidStatus === 'lost' ? 'text-red-600' : 
+                                        'text-gray-700'
+                                      }`}>
                                         {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        {isOutbid ? 'Outbid' : isWinning ? 'Winning' : rider.myBidStatus}
+                                        {rider.myBidStatus === 'won' ? 'Won' : rider.myBidStatus === 'lost' ? 'Lost' : rider.myBidStatus}
                                       </div>
                                     </div>
                                   ) : (
@@ -1405,7 +1419,7 @@ useEffect(() => {
                               </div>
                               {auctionActive && !rider.isSold && (
                                 <>
-                                  {rider.myBid && rider.myBidId && rider.myBidStatus === 'active' && (
+                                  {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') && (
                                     <Button
                                       type="button"
                                       text={cancellingBid === rider.myBidId ? "..." : game?.gameType === 'worldtour-manager' ? "Remove" : "Reset bid"}

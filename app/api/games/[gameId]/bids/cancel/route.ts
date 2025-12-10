@@ -72,26 +72,8 @@ export async function POST(
       );
     }
 
-    // If this was an active bid, we need to restore the previous highest bid
-    if (bidData?.status === 'active') {
-      const riderNameId = bidData?.riderNameId;
-
-      // Get all outbid bids for this rider, sorted by amount descending
-      const outbidBidsSnapshot = await db.collection('bids')
-        .where('gameId', '==', gameId)
-        .where('riderNameId', '==', riderNameId)
-        .where('status', '==', 'outbid')
-        .orderBy('amount', 'desc')
-        .limit(1)
-        .get();
-
-      // If there was a previous bid, restore it to active
-      if (!outbidBidsSnapshot.empty) {
-        await outbidBidsSnapshot.docs[0].ref.update({ status: 'active' });
-      }
-    }
-
-    // Delete the bid (or mark as cancelled)
+    // Delete the bid
+    // Note: We no longer need to restore previous bids since we don't mark them as outbid during bidding
     await bidDoc.ref.delete();
 
     // Get user data for logging
