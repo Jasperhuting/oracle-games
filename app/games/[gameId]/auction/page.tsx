@@ -137,6 +137,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
   const [hideSoldPlayers, setHideSoldPlayers] = useState(false);
   const [showOnlyNeoPros, setShowOnlyNeoPros] = useState(false);
+  const [adjustingBid, setAdjustingBid] = useState<string | null>(null);
 
 useEffect(() => {
   const checkBannerCookie = () => {
@@ -767,6 +768,10 @@ useEffect(() => {
     }
   };
 
+  const handleAdjustBid = (bidId: string) => {
+    setAdjustingBid(bidId);
+  };
+
   const handleCancelBidConfirm = async () => {
     if (!user || !cancelConfirmModal) return;
 
@@ -1145,6 +1150,7 @@ useEffect(() => {
                 {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                   const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+                  const riderNameId = rider?.nameID || rider?.id || '';
 
                   return rider ? (
                     <div key={myBidRider.id}>
@@ -1161,16 +1167,68 @@ useEffect(() => {
                         buttonContainer={
                           <>
                             {rider && canCancel && (
-                              <Button
-                                type="button"
-                                text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
-                                onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
-                                disabled={cancellingBid === rider.myBidId}
-                                className="px-2 py-1 text-sm w-full"
-                                ghost
-                                title="Cancel bid"
-                                variant="danger"
-                              />
+                              <div className="flex flex-col gap-2 w-full">
+                                {adjustingBid === rider.myBidId ? (
+                                  <>
+                                    <CurrencyInput
+                                      id={`adjust-bid-${rider.myBidId}`}
+                                      name="adjust-bid"
+                                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                      placeholder={`Current: ${rider.myBid || 0}`}
+                                      prefix="€"
+                                      decimalsLimit={0}
+                                      disabled={placingBid === riderNameId}
+                                      defaultValue={bidAmountsRef.current[riderNameId] || ''}
+                                      onValueChange={(value) => {
+                                        bidAmountsRef.current[riderNameId] = value || '0';
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        text={placingBid === riderNameId ? "..." : "Save"}
+                                        onClick={() => {
+                                          handlePlaceBid(rider);
+                                          setAdjustingBid(null);
+                                        }}
+                                        disabled={placingBid === riderNameId}
+                                        className="px-2 py-1 text-sm flex-1"
+                                        variant="primary"
+                                      />
+                                      <Button
+                                        type="button"
+                                        text="Cancel"
+                                        onClick={() => setAdjustingBid(null)}
+                                        className="px-2 py-1 text-sm flex-1"
+                                        ghost
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {game?.gameType !== 'worldtour-manager' && (
+                                      <Button
+                                        type="button"
+                                        text="Adjust bid"
+                                        onClick={() => setAdjustingBid(rider.myBidId!)}
+                                        className="px-2 py-1 text-sm w-full"
+                                        ghost
+                                        variant="primary"
+                                      />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
+                                      onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                      disabled={cancellingBid === rider.myBidId}
+                                      className="px-2 py-1 text-sm w-full"
+                                      ghost
+                                      title="Cancel bid"
+                                      variant="danger"
+                                    />
+                                  </>
+                                )}
+                              </div>
                             )}
                           </>
                         }
@@ -1188,13 +1246,14 @@ useEffect(() => {
                     <span className="font-bold basis-[90px]">Bid</span>
                     <span className="font-bold flex-1">Name</span>
                     <span className="font-bold basis-[300px]">Team</span>
-                    <span className="font-bold basis-[100px]"></span>
+                    <span className="font-bold basis-[200px]"></span>
                   </div>
                 )}
                 <div className="divide-gray-300 divide-y">
                   {myBids.map((myBidRider) => {
                     const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                     const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+                    const riderNameId = rider?.nameID || rider?.id || '';
 
                     console.log(myBidRider);
 
@@ -1205,19 +1264,72 @@ useEffect(() => {
                           <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.myBid || 0)}</span>
                           <span className="flex-1 flex items-center">{rider.name}</span>
                           <span className="basis-[300px] flex items-center">{rider.team?.name || 'Unknown'}</span>
-                          <span className="basis-[100px] flex items-center">
+                          <span className="basis-[200px] flex items-center gap-2">
                             {canCancel && (
-                              <Button
-                                type="button"
-                                text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
-                                onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
-                                disabled={cancellingBid === rider.myBidId}
-                                className="px-2 py-1 text-sm w-full"
-                                ghost
-                                size="sm"
-                                title="Cancel bid"
-                                variant="danger"
-                              />
+                              <>
+                                {adjustingBid === rider.myBidId ? (
+                                  <div className="flex gap-2 items-center w-full">
+                                    <CurrencyInput
+                                      id={`adjust-bid-list-${rider.myBidId}`}
+                                      name="adjust-bid"
+                                      className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                      placeholder={`${rider.myBid || 0}`}
+                                      prefix="€"
+                                      decimalsLimit={0}
+                                      disabled={placingBid === riderNameId}
+                                      defaultValue={bidAmountsRef.current[riderNameId] || ''}
+                                      onValueChange={(value) => {
+                                        bidAmountsRef.current[riderNameId] = value || '0';
+                                      }}
+                                    />
+                                    <Button
+                                      type="button"
+                                      text={placingBid === riderNameId ? "..." : "Save"}
+                                      onClick={() => {
+                                        handlePlaceBid(rider);
+                                        setAdjustingBid(null);
+                                      }}
+                                      disabled={placingBid === riderNameId}
+                                      className="px-2 py-1 text-sm"
+                                      size="sm"
+                                      variant="primary"
+                                    />
+                                    <Button
+                                      type="button"
+                                      text="Cancel"
+                                      onClick={() => setAdjustingBid(null)}
+                                      className="px-2 py-1 text-sm"
+                                      size="sm"
+                                      ghost
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    {game?.gameType !== 'worldtour-manager' && (
+                                      <Button
+                                        type="button"
+                                        text="Adjust"
+                                        onClick={() => setAdjustingBid(rider.myBidId!)}
+                                        className="px-2 py-1 text-sm"
+                                        size="sm"
+                                        ghost
+                                        variant="primary"
+                                      />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      text={cancellingBid === rider.myBidId ? "..." : "Reset"}
+                                      onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                      disabled={cancellingBid === rider.myBidId}
+                                      className="px-2 py-1 text-sm"
+                                      ghost
+                                      size="sm"
+                                      title="Cancel bid"
+                                      variant="danger"
+                                    />
+                                  </>
+                                )}
+                              </>
                             )}
                           </span>
                         </div>
@@ -1356,7 +1468,7 @@ useEffect(() => {
                                     text={placingBid === riderNameId ? "..." : game?.gameType === 'worldtour-manager' ? "Select" : "Bid"}
                                     onClick={() => handlePlaceBid(rider)}
                                     disabled={placingBid === riderNameId}
-                                    className="py-1 text-sm w-full"
+                                    className={`py-1 text-sm ${game?.gameType === 'worldtour-manager' ? 'w-full' : ''}`}
                                     variant="primary"
                                   />
                                 </>
@@ -1459,7 +1571,10 @@ useEffect(() => {
               myTeamSelection={availableRiders.filter(r => r.myBid)}
               setMyTeamSelection={() => { }}
               onCancelBid={handleCancelBidClick}
+              onAdjustBid={handleAdjustBid}
               hideButton={!auctionActive}
+              adjustingBid={adjustingBid}
+              isWorldTourManager={game?.gameType === 'worldtour-manager'}
             />
           )}
 
@@ -1468,7 +1583,10 @@ useEffect(() => {
               myTeamSelection={availableRiders.filter(rider => rider.myBid && myBids.some(bid => bid.id === rider.myBidId && bid.status === 'won'))}
               setMyTeamSelection={() => { }}
               onCancelBid={handleCancelBidClick}
+              onAdjustBid={handleAdjustBid}
               hideButton={!auctionActive}
+              adjustingBid={adjustingBid}
+              isWorldTourManager={game?.gameType === 'worldtour-manager'}
             />
           )}
 

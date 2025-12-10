@@ -8,14 +8,20 @@ export const MyTeamSelection = (
         myTeamSelection, 
         setMyTeamSelection, 
         removeAble, 
-        onCancelBid, 
-        hideButton 
+        onCancelBid,
+        onAdjustBid, 
+        hideButton,
+        adjustingBid,
+        isWorldTourManager
     }: { 
         myTeamSelection: any[],  // eslint-disable-line @typescript-eslint/no-explicit-any
         setMyTeamSelection: (myTeamSelection: any[]) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
         removeAble?: boolean, 
-        onCancelBid?: (bidId: string, riderName: string) => void, 
-        hideButton?: boolean 
+        onCancelBid?: (bidId: string, riderName: string) => void,
+        onAdjustBid?: (bidId: string) => void, 
+        hideButton?: boolean,
+        adjustingBid?: string | null,
+        isWorldTourManager?: boolean
     }) => {
 
     const [open, setOpen] = useState(false);
@@ -42,7 +48,10 @@ export const MyTeamSelection = (
                             removeItem={(rider) => setMyTeamSelection(myTeamSelection.filter((p) => p.id !== rider.id))}
                             removeAble={removeAble}
                             onCancelBid={onCancelBid}
+                            onAdjustBid={onAdjustBid}
                             hideButton={hideButton}
+                            adjustingBid={adjustingBid}
+                            isWorldTourManager={isWorldTourManager}
                         />
                     ))}
                 </div>

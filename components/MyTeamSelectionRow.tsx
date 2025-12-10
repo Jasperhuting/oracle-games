@@ -11,16 +11,22 @@ export const MyTeamSelectionRow = (
         showStage, 
         stageText, 
         removeAble, 
-        onCancelBid, 
-        hideButton 
+        onCancelBid,
+        onAdjustBid, 
+        hideButton,
+        adjustingBid,
+        isWorldTourManager
     }: { 
         rider: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
         removeItem: (rider: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
         showStage?: boolean, 
         stageText?: string, 
         removeAble?: boolean, 
-        onCancelBid?: (bidId: string, riderName: string) => void, 
-        hideButton?: boolean 
+        onCancelBid?: (bidId: string, riderName: string) => void,
+        onAdjustBid?: (bidId: string) => void, 
+        hideButton?: boolean,
+        adjustingBid?: string | null,
+        isWorldTourManager?: boolean
     }) => {
     const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name;
     // During bidding, only active bids can be cancelled (outbid status only appears after finalization)
@@ -68,16 +74,27 @@ export const MyTeamSelectionRow = (
 
                 {showStage && <span>{stageText}</span>}
 
-                {/* Show cancel bid button for auction games - only for active/outbid bids */}
+                {/* Show adjust and cancel bid buttons for auction games - only for active/outbid bids */}
                 {rider.myBid !== undefined && onCancelBid && rider.myBidId && !hideButton && canCancelBid && (
-                    <Button
-                        onClick={() => onCancelBid(rider.myBidId, rider.name)}
-                        selected={false}
-                        text="Reset bid"
-                        endIcon={<X size={20} />}
-                        variant="danger"
-                        ghost
-                    />
+                    <div className="flex gap-2">
+                        {!isWorldTourManager && onAdjustBid && (
+                            <Button
+                                onClick={() => onAdjustBid(rider.myBidId)}
+                                selected={false}
+                                text="Adjust bid"
+                                variant="primary"
+                                ghost
+                            />
+                        )}
+                        <Button
+                            onClick={() => onCancelBid(rider.myBidId, rider.name)}
+                            selected={false}
+                            text="Reset bid"
+                            endIcon={<X size={20} />}
+                            variant="danger"
+                            ghost
+                        />
+                    </div>
                 )}
 
                 {!hideButton && removeAble && <Button onClick={() => removeItem(rider)} selected={false} endIcon={<Minus size={20} />} />}
