@@ -44,10 +44,10 @@ export const GameRulesTab = () => {
     try {
       const response = await fetch('/api/gameRules');
       if (response.ok) {
-        const rules: GameRule[] = await response.json();
+        const data: { rules: GameRule[] } = await response.json();
         const rulesMap: Record<GameType, string> = {} as Record<GameType, string>;
 
-        rules.forEach((rule) => {
+        data.rules.forEach((rule) => {
           rulesMap[rule.gameType] = rule.rules;
         });
 
