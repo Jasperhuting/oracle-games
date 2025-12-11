@@ -1,7 +1,7 @@
 import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { Minus, Plus } from "tabler-icons-react";
-import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Rider } from "@/lib/scraper";
@@ -95,10 +95,10 @@ export const PlayerCard = (
                         Price:
                     </span>
                     <span className={`${player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""} line-through`}>
-                        {formatCurrency(player.effectiveMinBid || player.points)}
+                        {formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {player.effectiveMinBid && player.effectiveMinBid < player.points && (
                             <span className="text-xs text-gray-500 line-through ml-1">
-                                {formatCurrency(player.points)}
+                                {formatCurrencyWhole(player.points)}
                             </span>
                         )}
                     </span>
@@ -109,10 +109,10 @@ export const PlayerCard = (
                         Price:
                     </span>
                     <span className={player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""}>
-                        {formatCurrency(player.effectiveMinBid || player.points)}
+                        {formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {player.effectiveMinBid && player.effectiveMinBid < player.points && (
                             <span className="text-xs text-gray-500 line-through ml-1">
-                                {formatCurrency(player.points)}
+                                {formatCurrencyWhole(player.points)}
                             </span>
                         )}
                     </span>
@@ -125,7 +125,7 @@ export const PlayerCard = (
                             Bid:
                         </span>
                         <span>
-                            {bid ? formatCurrency(bid) : 'N/A'}
+                            {bid ? formatCurrencyWhole(bid) : 'N/A'}
                         </span>
                     </div>
                 }
@@ -135,7 +135,7 @@ export const PlayerCard = (
                             Winning bid:
                         </span>
                         <span>
-                            {isSoldFor ? formatCurrency(isSoldFor) : 'N/A'}
+                            {isSoldFor ? formatCurrencyWhole(isSoldFor) : 'N/A'}
                         </span>
                     </div>
                 }
