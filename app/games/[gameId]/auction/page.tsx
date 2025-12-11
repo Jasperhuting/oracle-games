@@ -600,14 +600,6 @@ useEffect(() => {
       return;
     }
 
-    // For auction games, check if bid is higher than current highest bid
-    // For worldtour-manager, skip this check (it's a direct selection, not a bid)
-    if (!isWorldTourManager && rider.highestBid !== undefined && rider.highestBid !== null && bidAmount <= rider.highestBid) {
-      const highestBid = typeof rider.highestBid === 'number' ? rider.highestBid.toFixed(1) : rider.highestBid;
-      setError(`Bid must be higher than current highest bid (${highestBid})`);
-      return;
-    }
-
     // WorldTour Manager: Check neo-prof requirements
     // Rule: If you want 28+ riders, you need at least 1 neo-prof in your team
     if (game && game.gameType === 'worldtour-manager') {
