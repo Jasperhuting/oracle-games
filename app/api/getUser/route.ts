@@ -36,6 +36,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
       createdAt: userData?.createdAt,
       updatedAt: userData?.updatedAt,
       userType: userData?.userType,
+      programmer: userData?.programmer || false,
+      preferredLanguage: userData?.preferredLanguage || 'nl',
     });
   } catch (error) {
     console.error('Error fetching user:', error);

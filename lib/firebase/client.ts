@@ -33,25 +33,25 @@ let emulatorsConnected = false;
 function connectToEmulatorsIfNeeded() {
   // Only run on client side
   if (typeof window === 'undefined') return;
-  
+
   // Only connect once
   if (emulatorsConnected) return;
-  
+
   // Check if we should use emulators - only if explicitly enabled via env var
-  const useEmulators = 
+  const useEmulators =
     process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' &&
-    process.env.NODE_ENV === 'development' && 
+    process.env.NODE_ENV === 'development' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  
+
   if (useEmulators) {
     try {
       // Connect Auth emulator
       connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-      
+
       // Connect Firestore emulators
       connectFirestoreEmulator(db, '127.0.0.1', 8080);
       connectFirestoreEmulator(footballDb, '127.0.0.1', 8080);
-      
+
       emulatorsConnected = true;
       console.log('🔧 Connected to Firebase Emulators');
       console.log('   - Auth: http://127.0.0.1:9099');

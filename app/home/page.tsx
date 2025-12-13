@@ -6,9 +6,13 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+
+import { useTranslation } from "react-i18next";
+
 export default function HomePage() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
+    const { t } = useTranslation();
     const [isAdmin, setIsAdmin] = useState(false);
     const [pageContent, setPageContent] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -56,7 +60,7 @@ export default function HomePage() {
     if (authLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="text-gray-600">Loading...</div>
+                <div className="text-gray-600">{t('global.loading')}</div>
             </div>
         );
     }
@@ -85,7 +89,7 @@ export default function HomePage() {
                 <div className="bg-white p-6 border border-gray-200 rounded-md">
                     {loading ? (
                         <div className="flex items-center justify-center py-8">
-                            <div className="text-gray-500">Loading...</div>
+                            <div className="text-gray-500">{t('global.loading')}</div>
                         </div>
                     ) : pageContent ? (
                         <>
@@ -198,10 +202,10 @@ export default function HomePage() {
                     ) : (
                         <>
                             <h2 className="text-xl font-semibold mb-4">
-                                Welcome to Oracle Games!
+                                {t('home.backupTitle')}
                             </h2>
                             <p className="text-gray-700">
-                                Welcome to the Oracle Games homepage. This page is only visible to logged-in users.
+                                {t('home.backupDescription')}
                             </p>
                         </>
                     )}

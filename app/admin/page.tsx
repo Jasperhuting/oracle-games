@@ -15,18 +15,28 @@ import { FeedbackTab } from "@/components/FeedbackTab";
 import { PageEditor } from "@/components/PageEditor";
 import MessagingTab from "@/components/MessagingTab";
 import { DataMigrationsTab } from "@/components/DataMigrationsTab";
+import { TranslationsTab } from "@/components/TranslationsTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 import { ArrowRight } from "tabler-icons-react";
 
 export default function AdminPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { t, i18n } = useTranslation();
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isProgrammer, setIsProgrammer] = useState(false);
     const [checking, setChecking] = useState(true);
+
+    useEffect(() => {
+        console.log('Current language:', i18n.language);
+        console.log('Available languages:', i18n.languages);
+        console.log('Translation test (admin.tabs.users):', t('admin.tabs.users'));
+    }, [i18n, t]);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -43,6 +53,10 @@ export default function AdminPage() {
                         const userData = await response.json();
                         if (userData.userType === 'admin') {
                             setIsAdmin(true);
+                            // Check if user is also a programmer
+                            if (userData.programmer === true) {
+                                setIsProgrammer(true);
+                            }
                         } else {
                             router.push('/home');
                         }
@@ -93,72 +107,77 @@ export default function AdminPage() {
                     tabs={[
                         {
                             id: 'users',
-                            label: 'Users',
+                            label: t('admin.tabs.users'),
                             content: <UserList />
                         },
                         {
                             id: 'games',
-                            label: 'Races',
+                            label: t('admin.tabs.races'),
                             content: <GamesTab />
                         },
                         {
                             id: 'add-game',
-                            label: 'Add Race',
+                            label: t('admin.tabs.addRace'),
                             content: <AddGameTab />
                         },
                         {
                             id: 'create-game',
-                            label: 'Create Game',
+                            label: t('admin.tabs.createGame'),
                             content: <CreateGameTab />
                         },
                         {
                             id: 'games-management',
-                            label: 'Manage Games',
+                            label: t('admin.tabs.manageGames'),
                             content: <GamesManagementTab />
                         },
                         {
                             id: 'riders',
-                            label: 'Manage Riders',
+                            label: t('admin.tabs.manageRiders'),
                             content: <RidersManagementTab />
                         },
                         {
                             id: 'scrape-races',
-                            label: 'Scrape Races',
+                            label: t('admin.tabs.scrapeRaces'),
                             content: <RacesScraperTab />
                         },
                         {
                             id: 'game-rules',
-                            label: 'Game Rules',
+                            label: t('admin.tabs.gameRules'),
                             content: <GameRulesTab />
                         },
                         {
                             id: 'pages-editor',
-                            label: 'Pages Editor',
+                            label: t('admin.tabs.pagesEditor'),
                             content: <PageEditor />
                         },
                         {
+                            id: 'translations',
+                            label: t('admin.tabs.translations'),
+                            content: <TranslationsTab isProgrammer={isProgrammer} />
+                        },
+                        {
                             id: 'feedback',
-                            label: 'Feedback',
+                            label: t('admin.tabs.feedback'),
                             content: <FeedbackTab />
                         },
                         {
                             id: 'messaging',
-                            label: 'Messaging',
+                            label: t('admin.tabs.messaging'),
                             content: <MessagingTab />
                         },
                         {
                             id: 'forum',
-                            label: 'Forum',
+                            label: t('admin.tabs.forum'),
                             content: <ForumTab />
                         },
                         {
                             id: 'activity',
-                            label: 'Activity Log',
+                            label: t('admin.tabs.activityLog'),
                             content: <ActivityLogTab />
                         },
                         {
                             id: 'migrations',
-                            label: 'Data Migrations',
+                            label: t('admin.tabs.dataMigrations'),
                             content: <DataMigrationsTab />
                         }
                     ]}

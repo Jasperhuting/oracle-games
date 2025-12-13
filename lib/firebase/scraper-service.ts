@@ -1,4 +1,4 @@
-import { getServerFirebase } from './config';
+import { getServerFirebase } from './server';
 import type { DocumentData } from 'firebase-admin/firestore';
 import { type StartlistResult, type StageResult } from '../scraper/types';
 import { cleanFirebaseData } from './utils';

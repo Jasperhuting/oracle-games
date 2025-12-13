@@ -3,7 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, playername, firstName, lastName, dateOfBirth } = await request.json();
+    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage } = await request.json();
 
     if (!userId || !playername) {
       return NextResponse.json(
@@ -47,6 +47,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate preferred language
+    if (preferredLanguage && !['en', 'nl'].includes(preferredLanguage)) {
+      return NextResponse.json(
+        { error: 'Invalid preferred language' },
+        { status: 400 }
+      );
+    }
+
     const db = getServerFirebase();
     
     // Check if user exists
@@ -87,6 +95,7 @@ export async function POST(request: NextRequest) {
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (preferredLanguage !== undefined) updateData.preferredLanguage = preferredLanguage;
 
     // Get old user data for comparison
     const oldUserData = userDoc.data();
@@ -106,6 +115,9 @@ export async function POST(request: NextRequest) {
     }
     if (dateOfBirth !== undefined && oldUserData?.dateOfBirth !== dateOfBirth) {
       changes.dateOfBirth = { old: oldUserData?.dateOfBirth, new: dateOfBirth };
+    }
+    if (preferredLanguage !== undefined && oldUserData?.preferredLanguage !== preferredLanguage) {
+      changes.preferredLanguage = { old: oldUserData?.preferredLanguage, new: preferredLanguage };
     }
 
     // Only log if there were actual changes
@@ -130,8 +142,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating user:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to update user', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to update user', details: error instanceof Error ? error.message : 'Unknown error', stack: error instanceof Error ? error.stack : undefined },
       { status: 500 }
     );
   }

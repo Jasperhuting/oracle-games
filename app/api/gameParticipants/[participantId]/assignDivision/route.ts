@@ -128,20 +128,19 @@ export async function POST(
     // The division name is like "Division 1", we need to find the game with that division
     const gameName = gameData?.name || '';
 
-    // Extract base name by removing any division suffix (handles various formats)
+    // Extract base name by removing division suffix
     // Examples: "Game Name - Division 1" -> "Game Name"
-    //           "Game Name - Custom Division 2" -> "Game Name"
-    const baseName = gameName.replace(/\s*-\s*.*Division\s+\d+\s*$/i, '').trim();
+    //           "Game Name - Season (test) - Division 1" -> "Game Name - Season (test)"
+    const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
     const targetGameName = `${baseName} - ${assignedDivision}`;
 
     // Find the target division game
     // Try multiple strategies to find the game:
     // 1. Exact name match
     // 2. Match by division field (more reliable for multi-division games)
-    const divisionGamesSnapshot = await db.collection('games')
-      .where('year', '==', gameData?.year)
-      .where('gameType', '==', gameData?.gameType)
-      .get();
+    // 3. Extract division from name if division field is empty
+    // Use a broader search to handle edge cases
+    const divisionGamesSnapshot = await db.collection('games').get();
 
     let targetGameId: string | null = null;
     const availableGames: { name: string; division?: string; divisionCount?: number }[] = [];
@@ -166,6 +165,19 @@ export async function POST(
         const docBaseName = docName.replace(/\s*-\s*.*Division\s+\d+\s*$/i, '').trim();
         if (docBaseName === baseName) {
           targetGameId = doc.id;
+        }
+      }
+
+      // Strategy 3: Extract division from name if division field is empty
+      // For games where division field is empty but name contains "Division X"
+      if (!targetGameId && (!docData?.division || docData.division.trim() === '')) {
+        const docBaseName = docName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+        const match = docName.match(/Division\s+(\d+)/i);
+        if (match && docBaseName === baseName) {
+          const extractedDivision = `Division ${match[1]}`;
+          if (extractedDivision === assignedDivision) {
+            targetGameId = doc.id;
+          }
         }
       }
     });

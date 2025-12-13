@@ -7,6 +7,9 @@ import { PasskeySetup } from "./PasskeySetup";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
+import { listenTranslations } from "@/lib/i18n/firestore";
 
 interface AccountSettingsProps {
   userId: string;
@@ -19,6 +22,7 @@ interface AccountFormData {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  preferredLanguage: 'en' | 'nl';
 }
 
 interface PasskeyInfo {
@@ -34,8 +38,14 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
-  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<AccountFormData>();
+
+  const { t } = useTranslation();
+
+  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<AccountFormData>({
+    defaultValues: {
+      preferredLanguage: 'nl'
+    }
+  });
 
   // Fetch user data and passkey info
   useEffect(() => {
@@ -50,6 +60,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
           setValue('firstName', data.firstName || '');
           setValue('lastName', data.lastName || '');
           setValue('dateOfBirth', data.dateOfBirth || '');
+          setValue('preferredLanguage', data.preferredLanguage || 'nl');
         }
 
         // Check if user has passkey
@@ -87,6 +98,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
           firstName: data.firstName,
           lastName: data.lastName,
           dateOfBirth: data.dateOfBirth,
+          preferredLanguage: data.preferredLanguage,
         }),
       });
 
@@ -96,12 +108,29 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
       }
 
       setSuccess('Gegevens succesvol bijgewerkt!');
-      setUserData({ 
-        ...userData, 
+
+      // Apply language changes without refresh
+      if (userData?.preferredLanguage !== data.preferredLanguage) {
+        // Load translations for the new language
+        await new Promise<void>((resolve) => {
+          listenTranslations(data.preferredLanguage, (translations) => {
+            console.log('Loading translations for:', data.preferredLanguage, translations);
+            i18n.addResourceBundle(data.preferredLanguage, 'translation', translations, true, true);
+            resolve();
+          });
+        });
+
+        // Change language
+        await i18n.changeLanguage(data.preferredLanguage);
+      }
+
+      setUserData({
+        ...userData,
         playername: data.playername,
         firstName: data.firstName,
         lastName: data.lastName,
-        dateOfBirth: data.dateOfBirth
+        dateOfBirth: data.dateOfBirth,
+        preferredLanguage: data.preferredLanguage
       });
     } catch (error: unknown) {
       console.error('Update error:', error);
@@ -236,6 +265,22 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
               />
               {errors.dateOfBirth && (
                 <span className="text-red-500 text-xs mt-1 block">{errors.dateOfBirth.message}</span>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('account.preferredLanguage')}
+              </label>
+              <select
+                {...register('preferredLanguage', { required: 'Please select a language' })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="nl">{t('global.dutch')}</option>
+                <option value="en">{t('global.english')}</option>
+              </select>
+              {errors.preferredLanguage && (
+                <span className="text-red-500 text-xs mt-1 block">{errors.preferredLanguage.message}</span>
               )}
             </div>
 

@@ -5,8 +5,14 @@ service cloud.firestore {
     
     // Helper function to check if user is admin
     function isAdmin() {
-      return request.auth != null && 
+      return request.auth != null &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'admin';
+    }
+
+    // Helper function to check if user is a programmer
+    function isProgrammer() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.programmer == true;
     }
     
     // Users collection - users can create and read their own document, admins can read all
@@ -176,10 +182,20 @@ service cloud.firestore {
       // Security is enforced by the query filtering on recipientId in the client code
       allow read: if request.auth != null;
       allow create: if false; // Only server-side access (via API)
-      allow update: if request.auth != null && 
+      allow update: if request.auth != null &&
                       resource.data.recipientId == request.auth.uid &&
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
       allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // TRANSLATIONS (i18n)
+    // ========================================================================
+
+    // Translations - all users can read, only programmers can write
+    match /translations/{locale} {
+      allow read: if true; // Public read access for i18n
+      allow write: if isProgrammer();
     }
 
     // Default deny all other collections

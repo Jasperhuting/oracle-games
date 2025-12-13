@@ -9,34 +9,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logout, UserCircle, ChevronDown, Mail } from "tabler-icons-react";
 import { MenuItem, MenuProvider, Menu } from "./ProfileMenu";
-import { MotionProps, Variants } from "framer-motion";
 import { Menubar, MenuButton, useMenuContext, useStoreState } from "@ariakit/react";
+import { useTranslation } from "react-i18next";
 
-const menu = {
-    closed: {
-        scale: 0,
-        transition: {
-            delay: 0.15,
-        },
-    },
-    open: {
-        scale: 1,
-        transition: {
-            type: "spring",
-            duration: 0.4,
-            delayChildren: 0.2,
-            staggerChildren: 0.05,
-        },
-    },
-} satisfies Variants;
-
-const item = {
-    variants: {
-        closed: { x: -16, opacity: 0 },
-        open: { x: 0, opacity: 1 },
-    },
-    transition: { opacity: { duration: 0.2 } },
-} satisfies MotionProps;
 
 const ProfileMenuButton = ({ user, loading, pathname, unreadCount }: { user: User, loading: boolean, pathname: string, unreadCount: number }) => {
     const menu = useMenuContext();
@@ -73,6 +48,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
     const pathname = usePathname()
     const router = useRouter();
+    const { t } = useTranslation();
 
     const { user, loading, impersonationStatus } = useAuth();
     const { unreadCount } = useUnreadMessages(user?.uid);
@@ -158,13 +134,13 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
         const profileItems = [
         {
-            name: "Profile",
+            name: t('header.menu.profile'),
             href: "/account",
             icon: <UserCircle className="w-6 h-6" />,
             display: true
         },
         {
-            name: "Inbox",
+            name: t('header.menu.inbox'),
             href: "/inbox",
             icon: (
                 <div className="relative">
@@ -179,7 +155,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             display: true
         },
         {
-            name: "Logout",
+            name: t('header.menu.logout'),
             onClick: handleLogout,
             icon: <Logout className="w-6 h-6" />,
             display: true
@@ -191,37 +167,37 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
     const MenuItems = [
         {
-            name: "Home",
+            name: t('header.menu.home'),
             href: "/home",
             display: true
         },
         {
-            name: "Games",
+            name: t('header.menu.games'),
             href: "/games",
             display: true
         },
         {
-            name: "Rider Points",
+            name: t('header.menu.riderPoints'),
             href: "/rider-points",
             display: false
         },
         {
-            name: "Forum",
+            name: t('header.menu.forum'),
             href: "/forum",
             display: false
         },
         {
-            name: "GameCalendar",
+            name: t('header.menu.gameCalendar'),
             href: "/gameCalendar",
             display: false
         },
         {
-            name: "MyGames",
+            name: t('header.menu.myGames'),
             href: "/myGames",
             display: false
         },
         {
-            name: "Admin",
+            name: t('header.menu.admin'),
             href: "/admin",
             display: true
         }

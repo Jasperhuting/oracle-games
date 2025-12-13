@@ -20,6 +20,14 @@ interface Game {
   id: string;
   name: string;
   divisionCount?: number;
+  year: number;
+  gameType: string;
+}
+
+interface DivisionGame {
+  id: string;
+  name: string;
+  division: string;
 }
 
 interface DivisionAssignmentModalProps {
@@ -35,6 +43,7 @@ export const DivisionAssignmentModal = ({
 }: DivisionAssignmentModalProps) => {
   const { user } = useAuth();
   const [game, setGame] = useState<Game | null>(null);
+  const [availableDivisions, setAvailableDivisions] = useState<DivisionGame[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +52,30 @@ export const DivisionAssignmentModal = ({
   const [selectedDivisions, setSelectedDivisions] = useState<Record<string, string>>({});
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<{id: string; name: string} | null>(null);
+
+  const cleanupOrphanedParticipants = async () => {
+    if (!user) return;
+
+    try {
+      console.log('[DivisionAssignment] Cleaning up orphaned participants...');
+      const response = await fetch('/api/games/cleanup-orphaned-participants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          adminUserId: user.uid,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`[DivisionAssignment] Cleanup complete: ${data.deletedCount} participant(s) removed`);
+      }
+    } catch (error) {
+      console.error('Error cleaning up orphaned participants:', error);
+    }
+  };
 
   const loadData = (async () => {
     setLoading(true);
@@ -69,25 +102,68 @@ export const DivisionAssignmentModal = ({
         const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
 
         // Find the base game (without division suffix) to get pending participants
+        // Use a broader search - just get all games and filter client-side
         const allGamesResponse = await fetch(
-          `/api/games/list?year=${loadedGame.year}&gameType=${loadedGame.gameType}`
+          `/api/games/list?limit=1000`
         );
 
         let baseGameId = gameId; // fallback to current gameId
         let allGamesData: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
-        
+
         if (allGamesResponse.ok) {
           allGamesData = await allGamesResponse.json(); // Read once and store
-          
+
           // Find the base game (the one with divisionCount > 1 but no specific division field)
           const baseGame = allGamesData.games.find((g: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             const gBaseName = (g.name || '').replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
             return gBaseName === baseName && g.divisionCount > 1 && !g.division;
           });
-          
+
           if (baseGame) {
             baseGameId = baseGame.id;
           }
+
+          // Find all actual division games that exist
+          console.log('[DivisionAssignment] Base name:', baseName);
+          console.log('[DivisionAssignment] All games retrieved:', allGamesData.games.map((g: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+            name: g.name,
+            division: g.division,
+            divisionCount: g.divisionCount,
+          })));
+
+          const divisionGames = allGamesData.games.filter((g: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            const gBaseName = (g.name || '').replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+            const gName = g.name || '';
+
+            // Check if this game has a division field OR has "Division X" in the name
+            const hasDivisionField = g.division && g.division.trim() !== '';
+            const hasDivisionInName = /Division\s+\d+/i.test(gName);
+            const matchesBaseName = gBaseName === baseName;
+
+            console.log('[DivisionAssignment] Checking game:', g.name, 'baseName:', gBaseName, 'division:', g.division, 'hasDivisionField:', hasDivisionField, 'hasDivisionInName:', hasDivisionInName, 'match:', matchesBaseName && (hasDivisionField || hasDivisionInName));
+
+            // Include games that match the base name AND (have a division field OR have Division X in name)
+            return matchesBaseName && (hasDivisionField || hasDivisionInName);
+          }).map((g: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            // Extract division from the division field, or from the name if field is empty
+            let division = g.division && g.division.trim() !== '' ? g.division : '';
+            if (!division) {
+              const match = (g.name || '').match(/Division\s+(\d+)/i);
+              if (match) {
+                division = `Division ${match[1]}`;
+              }
+            }
+
+            return {
+              id: g.id,
+              name: g.name,
+              division: division,
+            };
+          }).filter((g: DivisionGame) => g.division); // Filter out any that still don't have a division
+
+          console.log('[DivisionAssignment] All games for this type/year:', allGamesData.games.length);
+          console.log('[DivisionAssignment] Available divisions:', divisionGames);
+          setAvailableDivisions(divisionGames);
         }
 
         // For multi-division games, load pending participants from base game
@@ -134,6 +210,9 @@ export const DivisionAssignmentModal = ({
         }
         const participantsData = await participantsResponse.json();
         allParticipants = participantsData.participants || [];
+
+        // Still set availableDivisions to empty array for single-division games
+        setAvailableDivisions([]);
       }
 
       // Remove duplicates (same userId)
@@ -181,7 +260,13 @@ export const DivisionAssignmentModal = ({
   });
 
   useEffect(() => {
-    loadData();
+    const initialize = async () => {
+      // First cleanup any orphaned participants
+      await cleanupOrphanedParticipants();
+      // Then load the data
+      await loadData();
+    };
+    initialize();
   }, []);
 
   const handleAssignDivision = async (participantId: string, division: string) => {
@@ -251,11 +336,11 @@ export const DivisionAssignmentModal = ({
   };
 
   const getDivisionOptions = () => {
-    const count = game?.divisionCount || 1;
     const options = ['Unassigned']; // Add unassigned option first
-    for (let i = 1; i <= count; i++) {
-      options.push(`Division ${i}`);
-    }
+    // Use actual available divisions instead of divisionCount
+    availableDivisions.forEach(div => {
+      options.push(div.division);
+    });
     return options;
   };
 
@@ -274,7 +359,7 @@ export const DivisionAssignmentModal = ({
               </h2>
               {game && (
                 <p className="text-sm text-gray-600 mt-1">
-                  {game.name} - {game.divisionCount} Divisions
+                  {game.name} - {availableDivisions.length > 0 ? availableDivisions.length : game.divisionCount} Division{(availableDivisions.length > 0 ? availableDivisions.length : game.divisionCount) !== 1 ? 's' : ''}
                 </p>
               )}
             </div>

@@ -235,12 +235,64 @@ export async function DELETE(
     const participantsSnapshot = await db.collection('gameParticipants')
       .where('gameId', '==', gameId)
       .get();
-    
+
     for (const participantDoc of participantsSnapshot.docs) {
       await participantDoc.ref.delete();
       deletionStats.participants++;
     }
     console.log(`[DELETE_GAME] Deleted ${deletionStats.participants} participants`);
+
+    // Also delete pending participants for division games
+    // When a division game is deleted, we need to clean up pending participants
+    // that are waiting to be assigned to this specific division
+    const division = gameData?.division; // e.g., "Division 1"
+    if (division && gameData?.divisionCount && gameData.divisionCount > 1) {
+      console.log(`[DELETE_GAME] This is a division game (${division}), checking for pending participants...`);
+
+      // Find the base game ID by looking for related games
+      const relatedGamesSnapshot = await db.collection('games')
+        .where('year', '==', gameData.year)
+        .where('gameType', '==', gameData.gameType)
+        .where('divisionCount', '==', gameData.divisionCount)
+        .get();
+
+      // Find a game that shares the same base name (without division suffix)
+      const baseName = gameData.name?.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+      let baseGameId: string | null = null;
+
+      for (const doc of relatedGamesSnapshot.docs) {
+        const docData = doc.data();
+        const docBaseName = docData.name?.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+        if (docBaseName === baseName && doc.id !== gameId) {
+          baseGameId = doc.id;
+          break;
+        }
+      }
+
+      if (baseGameId) {
+        const pendingGameId = `${baseGameId}-pending`;
+        console.log(`[DELETE_GAME] Checking for pending participants with gameId: ${pendingGameId}`);
+
+        // Get all pending participants
+        const pendingParticipantsSnapshot = await db.collection('gameParticipants')
+          .where('gameId', '==', pendingGameId)
+          .get();
+
+        // Check if there are any remaining division games
+        const remainingDivisions = relatedGamesSnapshot.docs.filter(doc => doc.id !== gameId);
+
+        if (remainingDivisions.length === 0) {
+          // No more divisions left, delete all pending participants
+          console.log(`[DELETE_GAME] No divisions remaining, deleting all ${pendingParticipantsSnapshot.size} pending participants`);
+          for (const pendingDoc of pendingParticipantsSnapshot.docs) {
+            await pendingDoc.ref.delete();
+            deletionStats.participants++;
+          }
+        } else {
+          console.log(`[DELETE_GAME] ${remainingDivisions.length} division(s) remaining, keeping pending participants`);
+        }
+      }
+    }
 
     // 3. Delete all player teams
     console.log(`[DELETE_GAME] Deleting player teams...`);
