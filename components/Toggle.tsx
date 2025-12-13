@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 export const Toggle = ({ toggleOn, toggleOff, status, onText, offText }: { toggleOn: () => void, toggleOff: () => void, status: boolean, onText: string, offText: string }) => {
     const [optimisticStatus, setOptimisticStatus] = useState(status);
+    const [dimensions, setDimensions] = useState({ onWidth: 0, offWidth: 0, onLeft: 0, offLeft: 0 });
     const onButtonRef = useRef<HTMLButtonElement>(null);
     const offButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -18,6 +19,18 @@ export const Toggle = ({ toggleOn, toggleOff, status, onText, offText }: { toggl
         return { onWidth: 0, offWidth: 0, onLeft: 0, offLeft: 0 };
     }, []);
 
+    // Update dimensions when buttons are mounted and when text changes
+    useEffect(() => {
+        const updateDimensions = () => {
+            const newDimensions = getButtonDimensions();
+            if (newDimensions.onWidth > 0 && newDimensions.offWidth > 0) {
+                setDimensions(newDimensions);
+            }
+        };
+
+        updateDimensions();
+    }, [getButtonDimensions, onText, offText]);
+
     const handleToggleOn = () => {
         setOptimisticStatus(true);
         toggleOn();
@@ -32,8 +45,6 @@ export const Toggle = ({ toggleOn, toggleOff, status, onText, offText }: { toggl
     if (optimisticStatus !== status) {
         setOptimisticStatus(status);
     }
-
-    const dimensions = getButtonDimensions();
 
     return (
         <div className="flex items-center w-fit gap-0 border bg-white border-gray-200 relative rounded-md">

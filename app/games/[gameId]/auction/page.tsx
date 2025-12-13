@@ -21,6 +21,7 @@ import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PlayerRowBids } from "@/components/PlayerRowBids";
 import { useTranslation } from "react-i18next";
+import { hide } from "@floating-ui/dom";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -1352,18 +1353,20 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                       {showOnlyFillers ? <><Users />{t('global.showAllRiders')}</> : <><Star />{t('global.showOnlyFillers')}</>}
                     </span>
                   </Button>
-                ) : <Button onClick={() => setHideSoldPlayers(!hideSoldPlayers)}>
-                  <span className={`flex flex-row gap-2 items-center`}>
-                    {hideSoldPlayers ? <><Eye />{t('global.showSoldPlayers')}</> : <><EyeOff />{t('global.hideSoldPlayers')}</>}
-                  </span>
-                </Button>}
+                ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <Toggle 
+                toggleOn={() => setHideSoldPlayers(false)}
+                toggleOff={() => setHideSoldPlayers(true)}
+                status={!hideSoldPlayers}
+                onText={t('global.showSoldPlayers')}
+                offText={t('global.hideSoldPlayers')}
+                />}
               </span>
 
             </div>
 
 
             <div className="overflow-y-auto">
-              <div className={`w-full ${myTeamView === 'card' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
+              <div className={`w-full ${myTeamView === 'card' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-start justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
 
                 {/* it should sort when there is a myBid */}
                 {sortedAndFilteredRiders.map((rider, index) => {
