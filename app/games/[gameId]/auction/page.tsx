@@ -1353,12 +1353,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                       {showOnlyFillers ? <><Users />{t('global.showAllRiders')}</> : <><Star />{t('global.showOnlyFillers')}</>}
                     </span>
                   </Button>
-                ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <Toggle 
-                toggleOn={() => setHideSoldPlayers(false)}
-                toggleOff={() => setHideSoldPlayers(true)}
-                status={!hideSoldPlayers}
-                onText={t('global.showSoldPlayers')}
-                offText={t('global.hideSoldPlayers')}
+                ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <Toggle
+                  toggleOn={() => setHideSoldPlayers(false)}
+                  toggleOff={() => setHideSoldPlayers(true)}
+                  status={!hideSoldPlayers}
+                  onText={t('global.showSoldPlayers')}
+                  offText={t('global.hideSoldPlayers')}
                 />}
               </span>
 
@@ -1424,8 +1424,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     rider.myBid ? (
                                       <div>
                                         <div className={`font-bold text-sm ${rider.myBidStatus === 'won' ? 'text-green-600' :
-                                            rider.myBidStatus === 'lost' ? 'text-red-600' :
-                                              'text-gray-700'
+                                          rider.myBidStatus === 'lost' ? 'text-red-600' :
+                                            'text-gray-700'
                                           }`}>
                                           {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
                                         </div>
@@ -1497,8 +1497,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                   rider.myBid ? (
                                     <div>
                                       <div className={`font-bold text-sm ${rider.myBidStatus === 'won' ? 'text-green-600' :
-                                          rider.myBidStatus === 'lost' ? 'text-red-600' :
-                                            'text-gray-700'
+                                        rider.myBidStatus === 'lost' ? 'text-red-600' :
+                                          'text-gray-700'
                                         }`}>
                                         {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
                                       </div>

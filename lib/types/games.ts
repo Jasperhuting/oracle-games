@@ -602,13 +602,17 @@ export interface Message {
   // Read status (for individual messages)
   read?: boolean;
   readAt?: Timestamp | Date;
-  
-  // Soft delete
-  deletedAt?: Timestamp | Date;
+
+  // Soft delete (separate for sender and recipient)
+  deletedAt?: Timestamp | Date; // Legacy field
+  deletedBySender?: boolean;
+  deletedByRecipient?: boolean;
 }
 
 export type ClientMessage = Omit<Message, 'sentAt' | 'readAt' | 'deletedAt'> & {
   sentAt: string;
   readAt?: string;
   deletedAt?: string;
+  deletedBySender?: boolean;
+  deletedByRecipient?: boolean;
 };

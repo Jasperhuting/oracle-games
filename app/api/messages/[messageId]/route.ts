@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
-import { Timestamp } from 'firebase-admin/firestore';
 
 export async function DELETE(
   request: NextRequest,
@@ -31,22 +30,33 @@ export async function DELETE(
 
     const messageData = messageDoc.data();
 
-    // Verify that the user is the recipient of the message
-    if (messageData?.recipientId !== userId) {
+    // Verify that the user is either the sender or recipient
+    const isSender = messageData?.senderId === userId;
+    const isRecipient = messageData?.recipientId === userId;
+
+    if (!isSender && !isRecipient) {
       return NextResponse.json(
         { error: 'Unauthorized: You can only delete your own messages' },
         { status: 403 }
       );
     }
 
-    // Soft delete: set deletedAt timestamp instead of actually deleting
-    await messageRef.update({
-      deletedAt: Timestamp.now()
-    });
+    // Soft delete: mark as deleted by sender or recipient
+    const updateData: { deletedBySender?: boolean; deletedByRecipient?: boolean } = {};
 
-    return NextResponse.json({ 
+    if (isSender) {
+      updateData.deletedBySender = true;
+    }
+
+    if (isRecipient) {
+      updateData.deletedByRecipient = true;
+    }
+
+    await messageRef.update(updateData);
+
+    return NextResponse.json({
       success: true,
-      message: 'Message deleted successfully' 
+      message: 'Message deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting message:', error);
