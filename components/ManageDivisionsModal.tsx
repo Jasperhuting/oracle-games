@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { useTranslation } from "react-i18next";
 
 interface Game {
   id: string;
@@ -28,6 +29,7 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{id: string; name: string} | null>(null);
+  const { t } = useTranslation();
 
   const confirmDeleteDivision = (gameId: string, gameName: string) => {
     setPendingDelete({ id: gameId, name: gameName });
@@ -126,11 +128,11 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'draft': return 'Draft';
-      case 'registration': return 'Registration';
-      case 'bidding': return 'Bidding';
-      case 'active': return 'Active';
-      case 'finished': return 'Finished';
+      case 'draft': return 'draft';
+      case 'registration': return 'registration';
+      case 'bidding': return 'bidding';
+      case 'active': return 'active';
+      case 'finished': return 'finished';
       default: return status;
     }
   };
@@ -169,7 +171,7 @@ export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisi
                     <h3 className="font-semibold text-lg">{game.name}</h3>
                     <div className="flex items-center gap-4 mt-2">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(game.status)}`}>
-                        {getStatusLabel(game.status)}
+                        {t(`games.statuses.${getStatusLabel(game.status)}`)}
                       </span>
                       <span className="text-sm text-gray-600">
                         {game.playerCount} {game.playerCount === 1 ? 'player' : 'players'}

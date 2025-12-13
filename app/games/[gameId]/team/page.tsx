@@ -9,6 +9,7 @@ import { MyTeamSelection } from "@/components/MyTeamSelection";
 import { Rider } from "@/lib/scraper/types";
 import process from "process";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useTranslation } from "react-i18next";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -48,6 +49,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
   const [budget, setBudget] = useState<number>(0);
   const [spentBudget, setSpentBudget] = useState<number>(0);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     params.then(p => setGameId(p.gameId));
@@ -216,7 +218,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
           <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
           <p className="text-gray-700 mb-4">{error}</p>
           <Button
-            text="Back to Games"
+            text={t('global.backToGames')}
             onClick={() => router.push('/games')}
             className="px-4 py-2 bg-primary hover:bg-primary"
           />
@@ -244,7 +246,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
               <p className="text-sm text-gray-600 mt-1">{game.name}</p>
             </div>
             <Button
-              text="← Back to Games"
+              text={t('global.backToGames')}
               onClick={() => router.push('/games')}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700"
             />

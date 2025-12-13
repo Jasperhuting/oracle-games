@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "./Button";
+import { useTranslation } from "react-i18next";
 
 interface Game {
   id: string;
@@ -32,6 +33,8 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const t = useTranslation();
 
   useEffect(() => {
     const loadGame = async () => {
@@ -69,13 +72,13 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
     return labels[gameType] || gameType;
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string, t: any) => {
     switch (status) {
-      case 'draft': return 'Draft';
-      case 'registration': return 'Registration';
-      case 'bidding': return 'Bidding';
-      case 'active': return 'Active';
-      case 'finished': return 'Finished';
+      case 'draft': return t('games.statuses.draft');
+      case 'registration': return t('games.statuses.registration');
+      case 'bidding': return t('games.statuses.bidding');
+      case 'active': return t('games.statuses.active');
+      case 'finished': return t('games.statuses.finished');
       default: return status;
     }
   };
@@ -149,7 +152,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                   <div>
                     <label className="text-sm font-medium text-gray-500">Status</label>
                     <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(game.status)}`}>
-                      {getStatusLabel(game.status)}
+                      {getStatusLabel(game.status, t)}
                     </span>
                   </div>
                   {game.division && (

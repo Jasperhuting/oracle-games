@@ -11,6 +11,7 @@ import { Team, Rider } from "@/lib/scraper/types";
 import { Flag } from "@/components/Flag";
 import { ArrowUp } from "tabler-icons-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useTranslation } from "react-i18next";
 
 export default function LineupPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -30,6 +31,8 @@ export default function LineupPage({ params }: { params: Promise<{ gameId: strin
 
  const [showBanner, setShowBanner] = useState(true);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+
+  const { t } = useTranslation();
 
 useEffect(() => {
   const checkBannerCookie = () => {
@@ -283,7 +286,7 @@ Riders removed: ${result.ridersRemoved}`,
             </div>
             <Button
               type="button"
-              text="← Back to Games"
+              text={t('global.backToGames')}
               onClick={() => router.push('/games')}
             />
           </div>

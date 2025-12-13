@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: `You are a professional translator. Translate the given text from ${sourceLangName} to ${targetLangName}.
           Maintain the same tone and style. If the text contains UI elements or technical terms, keep them appropriate for a web application.
+          IMPORTANT: Translate the text literally - if the text is a language name like "English", "Dutch", "French", etc., translate it as the name of that language in the target language.
+          For example: "English" in Dutch should be "Engels", not "Nederlands".
           Only return the translated text, nothing else.`,
         },
         {

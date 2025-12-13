@@ -6,6 +6,7 @@ import { TextInput } from "./TextInput";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType } from "@/lib/types/games";
+import { useTranslation } from "react-i18next";
 
 interface AuctionPeriodInput {
   name: string;
@@ -67,6 +68,8 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
   const [countingClassifications, setCountingClassifications] = useState<string[]>([]);
   const [availableRaces, setAvailableRaces] = useState<Race[]>([]);
   const [loadingRaces, setLoadingRaces] = useState(false);
+
+  const { t } = useTranslation();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<GameFormData>();
 
@@ -287,18 +290,18 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
   };
 
   const STATUS_OPTIONS = [
-    { value: 'draft', label: 'Draft' },
-    { value: 'registration', label: 'Registration' },
-    { value: 'bidding', label: 'Bidding' },
-    { value: 'active', label: 'Active' },
-    { value: 'finished', label: 'Finished' },
+    { value: 'draft', label: t('games.statuses.draft') },
+    { value: 'registration', label: t('games.statuses.registration') },
+    { value: 'bidding', label: t('games.statuses.bidding') },
+    { value: 'active', label: t('games.statuses.active') },
+    { value: 'finished', label: t('games.statuses.finished') },
   ];
 
   const AUCTION_STATUS_OPTIONS = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'active', label: 'Active' },
-    { value: 'closed', label: 'Closed' },
-    { value: 'finalized', label: 'Finalized' },
+    { value: 'pending', label: t('games.auctionStatuses.pending') },
+    { value: 'active', label: t('games.auctionStatuses.active') },
+    { value: 'closed', label: t('games.auctionStatuses.closed') },
+    { value: 'finalized', label: t('games.auctionStatuses.finalized') },
   ];
 
   return (
@@ -306,7 +309,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
       <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Edit Game</h2>
+          <h2 className="text-2xl font-bold">{t('games.editGame')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
@@ -318,7 +321,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         {/* Content */}
         <div className="p-6">
           {loading && (
-            <div className="text-center py-8 text-gray-600">Loading...</div>
+            <div className="text-center py-8 text-gray-600">{t('games.loading')}</div>
           )}
 
           {!loading && (
@@ -326,7 +329,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
               {/* Game Name */}
               <div>
                 <TextInput
-                  label="Game Name"
+                  label={t('games.name')}
                   placeholder="E.g. Auctioneer - Tour de France 2025 - Division 1"
                   {...register('name', {
                     required: 'Game name is required',

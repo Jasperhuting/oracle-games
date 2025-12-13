@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { GAME_STATUSES, GameStatus } from '@/lib/types/games';
 import { Button } from '@ariakit/react';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useTranslation } from 'react-i18next';
 
 interface GameStatusManagerProps {
   gameId: string;
@@ -14,11 +15,11 @@ interface GameStatusManagerProps {
 }
 
 const STATUS_LABELS: Record<GameStatus, string> = {
-  draft: 'Draft',
-  registration: 'Registration',
-  bidding: 'Bidding',
-  active: 'Active',
-  finished: 'Finished'
+  draft: 'draft',
+  registration: 'registration',
+  bidding: 'bidding',
+  active: 'active',
+  finished: 'finished'
 };
 
 const STATUS_COLORS: Record<GameStatus, string> = {
@@ -42,6 +43,7 @@ export const GameStatusManager = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<GameStatus | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (showDropdown && buttonRef.current) {
@@ -109,7 +111,7 @@ export const GameStatusManager = ({
             className={`px-3 py-1 rounded-full text-xs cursor-pointer font-semibold text-white ${STATUS_COLORS[currentStatus]} hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
             title="Click to change status"
           >
-            {updating ? 'Updating...' : STATUS_LABELS[currentStatus]}
+            {updating ? 'Updating...' : t(`games.statusses.${STATUS_LABELS[currentStatus]}`)}
           </button>
         </div>
 

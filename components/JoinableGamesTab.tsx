@@ -8,6 +8,7 @@ import { GameRulesModal } from "./GameRulesModal";
 import { GameType } from "@/lib/types/games";
 import process from "process";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { useTranslation } from "react-i18next";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -68,6 +69,9 @@ export const JoinableGamesTab = () => {
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [pendingLeaveGameId, setPendingLeaveGameId] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+  const [showTestGames, setShowTestGames] = useState(false);
+
+  const { t } = useTranslation();
 
   const loadGames = (async () => {
     setLoading(true);
@@ -257,11 +261,11 @@ export const JoinableGamesTab = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'draft': return 'Draft';
-      case 'registration': return 'Registration';
-      case 'bidding': return 'Bidding';
-      case 'active': return 'Active';
-      case 'finished': return 'Finished';
+      case 'draft': return 'draft';
+      case 'registration': return 'registration';
+      case 'bidding': return 'bidding';
+      case 'active': return 'active';
+      case 'finished': return 'finished';
       default: return status;
     }
   };
@@ -352,10 +356,18 @@ export const JoinableGamesTab = () => {
 
   const gameGroups = groupGames(games);
 
+  // Separate test games from regular games
+  const isTestGame = (group: GameGroup) => {
+    return group.baseName.toLowerCase().includes('test');
+  };
+
+  const regularGameGroups = gameGroups.filter(group => !isTestGame(group));
+  const testGameGroups = gameGroups.filter(group => isTestGame(group));
+
   if (loading && games.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-600">Loading games...</div>
+        <div className="text-gray-600">{t('games.loadingGames')}</div>
       </div>
     );
   }
@@ -364,7 +376,7 @@ export const JoinableGamesTab = () => {
     <div className="space-y-4">
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h2 className="text-2xl font-bold mb-4">Join a Game</h2>
+        <h2 className="text-2xl font-bold mb-4">{t('games.joinGame')}</h2>
 
         {/* Filters */}
         <div className="flex gap-4">
@@ -377,7 +389,7 @@ export const JoinableGamesTab = () => {
               onChange={(e) => setFilterYear(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">All Years</option>
+              <option value="">{t('global.allYears')}</option>
               <option value="2026">2026</option>
               <option value="2025">2025</option>
               <option value="2024">2024</option>
@@ -386,18 +398,18 @@ export const JoinableGamesTab = () => {
 
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              {t('games.status')}
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">All Statuses</option>
-              <option value="registration">Registration</option>
-              <option value="bidding">Bidding</option>
-              <option value="active">Active</option>
-              <option value="finished">Finished</option>
+              <option value="">{t('global.allStatuses')}</option>
+              <option value="registration">{t('games.statuses.registration')}</option>
+              <option value="bidding">{t('games.statuses.bidding')}</option>
+              <option value="active">{t('games.statuses.active')}</option>
+              <option value="finished">{t('games.statuses.finished')}</option>
             </select>
           </div>
         </div>
@@ -416,7 +428,8 @@ export const JoinableGamesTab = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {gameGroups.map((group) => {
+          {/* Regular Games */}
+          {regularGameGroups.map((group) => {
             // For multi-division games, use the first game as the representative
             const game = group.games[0];
 
@@ -457,7 +470,7 @@ export const JoinableGamesTab = () => {
                         </span>
                       )}
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(game.status)}`}>
-                        {getStatusLabel(game.status)}
+                        {t(`games.statuses.${getStatusLabel(game.status)}`)}
                       </span>
                     </div>
 
@@ -473,20 +486,20 @@ export const JoinableGamesTab = () => {
                             size="text"
                             onClick={() => handleShowRules(game.gameType, group.baseName)}
                           >
-                            Rules
+                            {t('games.rules')}
                           </Button>
                         )}
                       </div>
                       <div>
-                        <span className="font-medium">Year:</span> {game.year}
+                        <span className="font-medium">{t('global.year')}:</span> {game.year}
                       </div>
                       <div>
-                        <span className="font-medium">Players:</span> {group.totalPlayers}
+                        <span className="font-medium">{t('global.players')}:</span> {group.totalPlayers}
                         {isFull && <span className="text-red-600 ml-1">(Full)</span>}
                       </div>
                       {group.isMultiDivision && (
                         <div>
-                          <span className="font-medium">Divisions:</span> {group.games.length}
+                          <span className="font-medium">{t('global.divisions')}:</span> {group.games.length}
                           {participant?.assignedDivision && (
                             <span className="text-primary ml-1">
                               (You: {participant.assignedDivision})
@@ -524,7 +537,7 @@ export const JoinableGamesTab = () => {
                     {/* Admin View Button - show for admins who haven't joined, or for games in bidding/active status */}
                     {isAdmin && !isJoined && (
                       <Button
-                        text="View Game (Admin)"
+                        text={t('games.viewGameAdmin')}
                         onClick={() => {
                           // Navigate to first division if multi-division, otherwise to the game
                           const targetGame = group.isMultiDivision ? group.games[0] : game;
@@ -541,7 +554,7 @@ export const JoinableGamesTab = () => {
                     {/* Admin View Button for joined games - show alongside regular buttons */}
                     {isAdmin && isJoined && !isWaitingForDivision && joinedGame && (
                       <Button
-                        text="View All (Admin)"
+                        text={t('games.viewAllAdmin')}
                         onClick={() => {
                           // Navigate to first division if multi-division, otherwise stay on current game
                           const targetGame = group.isMultiDivision ? group.games[0] : joinedGame;
@@ -558,7 +571,7 @@ export const JoinableGamesTab = () => {
                     {/* Regular user buttons */}
                     {joinable && (
                       <Button
-                        text={joining === game.id ? "Joining..." : "Join Game"}
+                        text={joining === game.id ? t('games.joining') : t('games.joinGame')}
                         onClick={() => handleJoinGame(game.id)}
                         disabled={joining === game.id}
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
@@ -566,37 +579,246 @@ export const JoinableGamesTab = () => {
                     )}
                     {isJoined && !isWaitingForDivision && joinedGame && (game.gameType === 'auction' || game.gameType === 'auctioneer' || game.gameType === 'worldtour-manager') && (
                       <Button
-                        text="Auction"
+                        text={t('games.auction')}
                         onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
                     {isJoined && !isWaitingForDivision && joinedGame && game.gameType !== 'auction' && game.gameType !== 'auctioneer' && game.gameType !== 'worldtour-manager' && (
                       <Button
-                        text="Select Team"
+                        text={t('games.selectTeam')}
                         onClick={() => router.push(`/games/${joinedGame.id}/team`)}
                         className="px-4 py-2 bg-green-600 hover:bg-green-600/80 whitespace-nowrap"
                       />
                     )}
                     {leaveable && joinedGame && (
                       <Button
-                        text={leaving === joinedGame.id ? "Leaving..." : "Leave Game"}
+                        text={leaving === joinedGame.id ? t('games.leaving') : t('games.leaveGame')}
                         onClick={() => confirmLeaveGame(joinedGame.id)}
                         disabled={leaving === joinedGame.id}
                         className="px-4 py-2 bg-red-600 hover:bg-red-700 whitespace-nowrap"
                       />
                     )}
                     {!joinable && !leaveable && !isJoined && isFull && !isAdmin && (
-                      <span className="text-sm text-red-600">Game is full</span>
+                      <span className="text-sm text-red-600">{t('games.gameIsFull')}</span>
                     )}
                     {!joinable && !isJoined && !isFull && !isRegistrationOpen(game) && !isAdmin && (
-                      <span className="text-sm text-gray-500">Registration closed</span>
+                      <span className="text-sm text-gray-500">{t('games.registrationClosed')}</span>
                     )}
                   </div>
                 </div>
               </div>
             );
           })}
+
+          {/* Test Games Section */}
+          {testGameGroups.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg">
+              <button
+                onClick={() => setShowTestGames(!showTestGames)}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-700">{t('games.testGames')}</span>
+                  <span className="text-sm text-gray-500">({testGameGroups.length})</span>
+                </div>
+                <svg
+                  className={`w-5 h-5 text-gray-500 transition-transform ${showTestGames ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showTestGames && (
+                <div className="border-t border-gray-200 p-4 space-y-4">
+                  {testGameGroups.map((group) => {
+                    // For multi-division games, use the first game as the representative
+                    const game = group.games[0];
+
+                    // Check if user has joined ANY division in this group
+                    const joinedGame = group.games.find(g => myGames.has(g.id));
+                    const isJoined = !!joinedGame;
+                    const participant = joinedGame ? myParticipants.get(joinedGame.id) : undefined;
+                    const isWaitingForDivision = isJoined && participant && !participant.divisionAssigned;
+
+                    // For multi-division: user can join if they haven't joined any division yet
+                    // For single-division: use existing canJoin logic
+                    const joinable = group.isMultiDivision
+                      ? !isJoined && isRegistrationOpen(game) && (!group.maxPlayers || group.totalPlayers < group.maxPlayers)
+                      : canJoin(game);
+
+                    const leaveable = joinedGame ? canLeave(joinedGame) : false;
+                    const isFull = group.maxPlayers && group.totalPlayers >= group.maxPlayers;
+
+                    return (
+                      <div
+                        key={group.isMultiDivision ? group.baseName : game.id}
+                        className={`bg-white border rounded-lg p-4 ${
+                          isJoined ? 'border-primary bg-primary' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-lg font-semibold">{group.baseName}</h3>
+                              {isJoined && !isWaitingForDivision && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-white">
+                                  {t('games.joined')}
+                                </span>
+                              )}
+                              {isWaitingForDivision && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-200 text-yellow-800">
+                                  Waiting for Division Assignment
+                                </span>
+                              )}
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(game.status)}`}>
+                                {t(`games.statuses.${getStatusLabel(game.status)}`)}
+                              </span>
+                            </div>
+
+                            {game.description && (
+                              <p className="text-sm text-gray-600 mb-2">{game.description}</p>
+                            )}
+
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                {availableRules.has(game.gameType as GameType) && (
+                                  <Button
+                                    variant="text"
+                                    size="text"
+                                    onClick={() => handleShowRules(game.gameType, group.baseName)}
+                                  >
+                                    {t('games.rules')}
+                                  </Button>
+                                )}
+                              </div>
+                              <div>
+                                <span className="font-medium">{t('global.year')}:</span> {game.year}
+                              </div>
+                              <div>
+                                <span className="font-medium">{t('global.players')}:</span> {group.totalPlayers}
+                                {isFull && <span className="text-red-600 ml-1">(Full)</span>}
+                              </div>
+                              {group.isMultiDivision && (
+                                <div>
+                                  <span className="font-medium">{t('global.divisions')}:</span> {group.games.length}
+                                  {participant?.assignedDivision && (
+                                    <span className="text-primary ml-1">
+                                      ({t('global.you')}: {participant.assignedDivision})
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {!group.isMultiDivision && game.division && (
+                                <div>
+                                  <span className="font-medium">{t('global.division')}:</span> {game.division}
+                                </div>
+                              )}
+                            </div>
+
+                            {isWaitingForDivision && (
+                              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                                Your registration is pending. The admin will assign you to a division soon.
+                              </div>
+                            )}
+
+                            {(game.registrationOpenDate || game.registrationCloseDate) && (
+                              <div className="mt-2 text-xs text-gray-500">
+                                {game.registrationOpenDate && (
+                                  <span>Opens: {formatDate(game.registrationOpenDate)}</span>
+                                )}
+                                {game.registrationOpenDate && game.registrationCloseDate && <span> • </span>}
+                                {game.registrationCloseDate && (
+                                  <span>Closes: {formatDate(game.registrationCloseDate)}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="ml-4 flex flex-col gap-2">
+                            {/* Admin View Button - show for admins who haven't joined, or for games in bidding/active status */}
+                            {isAdmin && !isJoined && (
+                              <Button
+                                text={t('games.viewGameAdmin')}
+                                onClick={() => {
+                                  // Navigate to first division if multi-division, otherwise to the game
+                                  const targetGame = group.isMultiDivision ? group.games[0] : game;
+                                  if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
+                                    router.push(`/games/${targetGame.id}/auction`);
+                                  } else {
+                                    router.push(`/games/${targetGame.id}/team`);
+                                  }
+                                }}
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+                              />
+                            )}
+
+                            {/* Admin View Button for joined games - show alongside regular buttons */}
+                            {isAdmin && isJoined && !isWaitingForDivision && joinedGame && (
+                              <Button
+                                text="View All (Admin)"
+                                onClick={() => {
+                                  // Navigate to first division if multi-division, otherwise stay on current game
+                                  const targetGame = group.isMultiDivision ? group.games[0] : joinedGame;
+                                  if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
+                                    router.push(`/games/${targetGame.id}/auction`);
+                                  } else {
+                                    router.push(`/games/${targetGame.id}/team`);
+                                  }
+                                }}
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+                              />
+                            )}
+
+                            {/* Regular user buttons */}
+                            {joinable && (
+                              <Button
+                                text={joining === game.id ? "Joining..." : "Join Game"}
+                                onClick={() => handleJoinGame(game.id)}
+                                disabled={joining === game.id}
+                                className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
+                              />
+                            )}
+                            {isJoined && !isWaitingForDivision && joinedGame && (game.gameType === 'auction' || game.gameType === 'auctioneer' || game.gameType === 'worldtour-manager') && (
+                              <Button
+                                text="Auction"
+                                onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
+                                className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
+                              />
+                            )}
+                            {isJoined && !isWaitingForDivision && joinedGame && game.gameType !== 'auction' && game.gameType !== 'auctioneer' && game.gameType !== 'worldtour-manager' && (
+                              <Button
+                                text="Select Team"
+                                onClick={() => router.push(`/games/${joinedGame.id}/team`)}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-600/80 whitespace-nowrap"
+                              />
+                            )}
+                            {leaveable && joinedGame && (
+                              <Button
+                                text={leaving === joinedGame.id ? "Leaving..." : "Leave Game"}
+                                onClick={() => confirmLeaveGame(joinedGame.id)}
+                                disabled={leaving === joinedGame.id}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 whitespace-nowrap"
+                              />
+                            )}
+                            {!joinable && !leaveable && !isJoined && isFull && !isAdmin && (
+                              <span className="text-sm text-red-600">Game is full</span>
+                            )}
+                            {!joinable && !isJoined && !isFull && !isRegistrationOpen(game) && !isAdmin && (
+                              <span className="text-sm text-gray-500">Registration closed</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

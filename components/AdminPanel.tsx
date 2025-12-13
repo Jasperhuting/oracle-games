@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { ScraperRunner } from './ScraperRunner';
 import { DebugPanel } from './DebugPanel';
 import process from "process";
+import { useTranslation } from "react-i18next";
+
+
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -133,6 +136,7 @@ interface CommandButtonProps {
 function CommandButton({ command, onRun, loading }: CommandButtonProps) {
   const [stage, setStage] = useState<string>('');
   const [year, setYear] = useState<string>(YEAR.toString());
+  const { t } = useTranslation();
 
   const handleRun = () => {
     const stageNum = stage ? parseInt(stage) : undefined;
@@ -154,10 +158,10 @@ function CommandButton({ command, onRun, loading }: CommandButtonProps) {
             className="w-full px-2 py-1 text-sm border rounded "
             min="1"
             max="21"
-          />
+        />
           <input
             type="number"
-            placeholder="Year"
+            placeholder={t('global.year')}
             value={year}
             onChange={(e) => setYear(e.target.value)}
             className="w-full px-2 py-1 text-sm border rounded "

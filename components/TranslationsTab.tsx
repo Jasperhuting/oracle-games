@@ -52,18 +52,24 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
       // Voorkom dubbele listeners voor dezelfde taal
       if (processedLocales.has(locale)) return;
       processedLocales.add(locale);
-      
+
       const docRef = doc(db, 'translations', locale);
-      
+
       const unsubscribe = onSnapshot(docRef, (doc) => {
         if (doc.exists()) {
           const data = doc.data() as Translation;
-          
+
           // Update de vertalingen voor deze specifieke taal
           setTranslationsMap(prev => {
             const newMap = new Map(prev);
-            newMap.set(locale, data);
-            return newMap;
+            const currentData = newMap.get(locale);
+
+            // Only update if data actually changed (deep comparison on stringified version)
+            if (JSON.stringify(currentData) !== JSON.stringify(data)) {
+              newMap.set(locale, data);
+              return newMap;
+            }
+            return prev;
           });
 
           // Update de languages state zonder de hele lijst opnieuw te maken
@@ -72,20 +78,31 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
             if (!langExists) {
               return [...prevLanguages, { locale, translations: data }];
             }
-            return prevLanguages.map(lang => 
-              lang.locale === locale ? { ...lang, translations: data } : lang
-            );
+            return prevLanguages.map(lang => {
+              if (lang.locale === locale) {
+                // Only update if data actually changed
+                if (JSON.stringify(lang.translations) !== JSON.stringify(data)) {
+                  return { ...lang, translations: data };
+                }
+              }
+              return lang;
+            });
           });
-          
+
           // Als het Engels is, update ook de enTranslations
           if (locale === 'en') {
-            setEnTranslations(data);
+            setEnTranslations(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(data)) {
+                return data;
+              }
+              return prev;
+            });
           }
         }
       }, (error) => {
         console.error(`Error listening to ${locale} translations:`, error);
       });
-      
+
       return unsubscribe;
     };
 
@@ -257,7 +274,13 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
       if (!current[keys[i]]) current[keys[i]] = {};
       current = current[keys[i]];
     }
-    current[keys[keys.length - 1]] = value;
+
+    // If value is empty, delete the key instead of setting it to empty string
+    if (value.trim() === '') {
+      delete current[keys[keys.length - 1]];
+    } else {
+      current[keys[keys.length - 1]] = value;
+    }
 
     const newMap = new Map(translationsMap);
     newMap.set(locale, updated);
@@ -423,11 +446,29 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
 
       const { translatedText } = await response.json();
 
-      // Update the translation
-      handleUpdateTranslation(locale, path, translatedText);
+      // Get current translations from the map
+      const translations = translationsMap.get(locale);
+      if (!translations) return;
 
-      // Save immediately
-      await handleSaveTranslation(locale);
+      // Create updated translation object
+      const keys = path.split('.');
+      const updated = JSON.parse(JSON.stringify(translations));
+
+      let current: any = updated;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      current[keys[keys.length - 1]] = translatedText;
+
+      // Update local state immediately for responsive UI
+      const newMap = new Map(translationsMap);
+      newMap.set(locale, updated);
+      setTranslationsMap(newMap);
+
+      // Save to Firestore
+      const db = getFirestore(getApp());
+      await setDoc(doc(db, 'translations', locale), updated, { merge: true });
 
       toast.success('Translation completed!');
     } catch (error) {
@@ -653,7 +694,7 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
                               />
                               <button
                                 onClick={() => handleTranslateKey(locale, row.path, row.enValue)}
-                                disabled={isTranslating}
+                                disabled={isTranslating || !row.enValue}
                                 className="px-3 py-2 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                 title="Auto-translate with OpenAI"
                               >

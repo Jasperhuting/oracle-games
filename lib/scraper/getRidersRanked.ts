@@ -45,10 +45,31 @@ export async function getRidersRanked({ offset, year }: GetRidersOptions): Promi
       const lastNameMatch = name.match(/^[\p{Lu}ß\s'-]+(?=\s+\p{Lu}\p{L})/u);
       const lastNameUppercase = String(lastNameMatch?.[0] || '').trim();
 
+      // Debug: log apostrophe character code
+      if (lastNameUppercase.includes("'") || lastNameUppercase.includes("'") || lastNameUppercase.match(/['']/)) {
+        console.log('Name with apostrophe:', lastNameUppercase);
+        const apostropheIndex = lastNameUppercase.search(/['']/);
+        if (apostropheIndex >= 0) {
+          const apostrophe = lastNameUppercase[apostropheIndex];
+          console.log('Apostrophe character code:', apostrophe.charCodeAt(0), 'char:', apostrophe);
+        }
+      }
+
       // Capitalize first letter, rest lowercase (preserves special chars)
       // Special handling for ß: keep it as ß in output (not convert to ss)
-      const lastName = lastNameUppercase.charAt(0).toUpperCase() +
-                       lastNameUppercase.slice(1).toLowerCase();
+      // Also capitalize letter after apostrophe (e.g., O'brien → O'Brien)
+      // Handle both straight apostrophe (') and curly apostrophe (')
+      const lastName = lastNameUppercase
+        .toLowerCase()
+        .split('')
+        .map((char, index, arr) => {
+          // Capitalize first character
+          if (index === 0) return char.toUpperCase();
+          // Capitalize character after apostrophe (both ' and ')
+          if (index > 0 && (arr[index - 1] === "'" || arr[index - 1] === "'")) return char.toUpperCase();
+          return char;
+        })
+        .join('');
 
       // Extract everything after the last name (the first name part)
       const afterLastName = name.substring(lastNameUppercase.length).trim();

@@ -7,6 +7,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import { GAME_TYPES, GameType } from "@/lib/types/games";
 import process from "process";
+import { useTranslation } from "react-i18next";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -57,6 +58,7 @@ export const CreateGameTab = () => {
   const [selectedGameType, setSelectedGameType] = useState<GameType | ''>('');
   const [auctionPeriods, setAuctionPeriods] = useState<AuctionPeriodInput[]>([]);
   const [allowSharedRiders, setAllowSharedRiders] = useState(false);
+  const { t } = useTranslation();
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<GameFormData>({
     defaultValues: {
@@ -403,7 +405,7 @@ export const CreateGameTab = () => {
           <div>
             <TextInput
               type="number"
-              label="Year"
+              label={t('global.year')}
               placeholder={`E.g. ${YEAR}`}
               {...register('year', {
                 required: 'Year is required',

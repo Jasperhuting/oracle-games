@@ -20,6 +20,7 @@ import { Eye, EyeOff, GridDots, List, Star, Users } from "tabler-icons-react";
 import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PlayerRowBids } from "@/components/PlayerRowBids";
+import { useTranslation } from "react-i18next";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -138,6 +139,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [hideSoldPlayers, setHideSoldPlayers] = useState(false);
   const [showOnlyFillers, setshowOnlyFillers] = useState(false);
   const [adjustingBid, setAdjustingBid] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const checkBannerCookie = () => {
@@ -916,7 +918,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           <p className="text-gray-700 mb-4">{error}</p>
           <Button
             type="button"
-            text="Back to Games"
+            text={t('global.backToGames')}
             onClick={() => router.push('/games')}
           />
         </div>
@@ -955,7 +957,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             </div>
             <Button
               type="button"
-              text="← Back to Games"
+              text={t('global.backToGames')}
               onClick={() => router.push('/games')}
             />
           </div>
@@ -976,7 +978,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           <div className="container mx-auto py-3">
             <div className="flex gap-6 items-center flex-wrap">
               <div>
-                <span className="text-sm font-medium text-gray-700">Total Budget:</span>
+                <span className="text-sm font-medium text-gray-700">{t('games.auctions.totalBudget')}:</span>
                 <span className="ml-2 text-lg font-bold text-gray-900">
                   {formatCurrencyWhole(game?.config?.budget || 0)}
                 </span>
@@ -990,7 +992,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 </span>
               </div>
               <div>
-                <span className="text-sm font-medium text-gray-700">Remaining Budget:</span>
+                <span className="text-sm font-medium text-gray-700">{t('games.auctions.remainingBudget')}:</span>
                 <span className={`ml-2 text-lg font-bold ${getRemainingBudget() < 0 ? 'text-red-600' : 'text-green-600'
                   }`}>
                   {formatCurrencyWhole(getRemainingBudget())}
@@ -1009,7 +1011,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               </div>
               {game.config.maxRiders && (
                 <div>
-                  <span className="text-sm font-medium text-gray-700">Max Riders:</span>
+                  <span className="text-sm font-medium text-gray-700">{t('games.auctions.maxRiders')}:</span>
                   <span className="ml-2 text-lg font-bold text-gray-900">
                     {game.config.maxRiders}
                   </span>
@@ -1025,10 +1027,10 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             <div className="mb-4 bg-white py-4 flex flex-row gap-4">
 
               <span className="flex flex-col flex-1">
-                <label htmlFor="search" className="text-sm font-bold text-gray-700">Search</label>
+                <label htmlFor="search" className="text-sm font-bold text-gray-700">{t('global.search')}</label>
                 <input
                   type="text"
-                  placeholder="Search riders by name or team..."
+                  placeholder={t('games.auctions.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -1036,7 +1038,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               </span>
               <span className="flex flex-col flex-1 justify-center">
                 <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                  Price Range: {formatCurrencyWhole(priceRange[0])} - {formatCurrencyWhole(priceRange[1])}
+                  {t('games.auctions.priceRangeLabel')}: {formatCurrencyWhole(priceRange[0])} - {formatCurrencyWhole(priceRange[1])}
                 </label>
                 <div className="py-2 mt-2">
                   <RangeSlider
@@ -1049,9 +1051,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               </span>
               <span className="flex flex-col flex-1 justify-center">
                 <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                  Reset all bids
+                  {t('games.auctions.resetAllBids')}
                 </label>
-                <Button text="Reset all bids" disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
+                <Button text={t('games.auctions.resetAllBids')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
               </span>
             </div>
           </div>
@@ -1088,7 +1090,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           {auctionClosed && (
             <div ref={ref}>
               <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200">
-                <h1 className="text-2xl font-bold">My Team</h1>
+                <h1 className="text-2xl font-bold">{t('games.auctions.myTeam')}</h1>
               </div>
 
               <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
@@ -1110,7 +1112,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                           showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                           buttonContainer={
                             <div className="w-full text-center py-2 text-green-700 font-semibold">
-                              ✓ Won!
+                              ✓ {t('games.auctions.won')}
                             </div>
                           }
                         />
@@ -1125,7 +1127,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             <div ref={myBidRef}>
               <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
                 <h1 className="text-2xl font-bold mt-1">
-                  {game?.gameType === 'worldtour-manager' ? 'My Selected Riders' : 'My Bids'}
+                  {game?.gameType === 'worldtour-manager' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
                 </h1>
                 <span className="flex flex-row gap-2">
                   <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
@@ -1136,7 +1138,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
               {myTeamBidsView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-                  {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
+                  {game?.gameType === 'worldtour-manager' ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
                 </div>}
                 {myBids.map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -1165,7 +1167,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                       id={`adjust-bid-${rider.myBidId}`}
                                       name="adjust-bid"
                                       className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                                      placeholder={`Current: ${rider.myBid || 0}`}
+                                      placeholder={`${t('global.current')}: ${rider.myBid || 0}`}
                                       prefix="€"
                                       decimalsLimit={0}
                                       disabled={placingBid === riderNameId}
@@ -1177,7 +1179,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     <div className="flex gap-2">
                                       <Button
                                         type="button"
-                                        text={placingBid === riderNameId ? "..." : "Save"}
+                                        text={placingBid === riderNameId ? t('global.loading') : t('global.save')}
                                         onClick={() => {
                                           handlePlaceBid(rider);
                                           setAdjustingBid(null);
@@ -1188,7 +1190,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                       />
                                       <Button
                                         type="button"
-                                        text="Cancel"
+                                        text={t('global.cancel')}
                                         onClick={() => setAdjustingBid(null)}
                                         className="px-2 py-1 text-sm flex-1"
                                         ghost
@@ -1200,7 +1202,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     {game?.gameType !== 'worldtour-manager' && (
                                       <Button
                                         type="button"
-                                        text="Adjust bid"
+                                        text={t('games.auctions.adjustBid')}
                                         onClick={() => setAdjustingBid(rider.myBidId!)}
                                         className="px-2 py-1 text-sm w-full"
                                         ghost
@@ -1209,12 +1211,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     )}
                                     <Button
                                       type="button"
-                                      text={cancellingBid === rider.myBidId ? "..." : "Reset bid"}
+                                      text={cancellingBid === rider.myBidId ? t('global.loading') : t('games.auctions.resetBid')}
                                       onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                                       disabled={cancellingBid === rider.myBidId}
                                       className="px-2 py-1 text-sm w-full"
                                       ghost
-                                      title="Cancel bid"
+                                      title={t('games.auctions.cancelBid')}
                                       variant="danger"
                                     />
                                   </>
@@ -1233,10 +1235,10 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 </div>}
                 {myBids.length > 0 && (
                   <div className="flex flex-row w-full p-2">
-                    <span className="font-bold basis-[90px]">Price</span>
-                    <span className="font-bold basis-[90px]">Bid</span>
-                    <span className="font-bold flex-1">Name</span>
-                    <span className="font-bold basis-[300px]">Team</span>
+                    <span className="font-bold basis-[90px]">{t('global.price')}</span>
+                    <span className="font-bold basis-[90px]">{t('global.bid')}</span>
+                    <span className="font-bold flex-1">{t('global.name')}</span>
+                    <span className="font-bold basis-[300px]">{t('global.team')}</span>
                     <span className="font-bold basis-[200px]"></span>
                   </div>
                 )}
@@ -1254,7 +1256,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                           <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
                           <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.myBid || 0)}</span>
                           <span className="flex-1 flex items-center">{rider.name}</span>
-                          <span className="basis-[300px] flex items-center">{rider.team?.name || 'Unknown'}</span>
+                          <span className="basis-[300px] flex items-center">{rider.team?.name || t('global.unknown')}</span>
                           <span className="basis-[200px] flex items-center gap-2">
                             {canCancel && (
                               <>
@@ -1265,7 +1267,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                       name="adjust-bid"
                                       className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                       placeholder={`${rider.myBid || 0}`}
-                                      prefix="€"
                                       decimalsLimit={0}
                                       disabled={placingBid === riderNameId}
                                       defaultValue={bidAmountsRef.current[riderNameId] || ''}
@@ -1275,7 +1276,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     />
                                     <Button
                                       type="button"
-                                      text={placingBid === riderNameId ? "..." : "Save"}
+                                      text={placingBid === riderNameId ? t('global.loading') : t('global.save')}
                                       onClick={() => {
                                         handlePlaceBid(rider);
                                         setAdjustingBid(null);
@@ -1287,7 +1288,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     />
                                     <Button
                                       type="button"
-                                      text="Cancel"
+                                      text={t('global.cancel')}
                                       onClick={() => setAdjustingBid(null)}
                                       className="px-2 py-1 text-sm"
                                       size="sm"
@@ -1299,7 +1300,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     {game?.gameType !== 'worldtour-manager' && (
                                       <Button
                                         type="button"
-                                        text="Adjust"
+                                        text={t('global.adjust')}
                                         onClick={() => setAdjustingBid(rider.myBidId!)}
                                         className="px-2 py-1 text-sm"
                                         size="sm"
@@ -1309,13 +1310,13 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     )}
                                     <Button
                                       type="button"
-                                      text={cancellingBid === rider.myBidId ? "..." : "Reset"}
+                                      text={cancellingBid === rider.myBidId ? t('global.loading') : t('global.reset')}
                                       onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                                       disabled={cancellingBid === rider.myBidId}
                                       className="px-2 py-1 text-sm"
                                       ghost
                                       size="sm"
-                                      title="Cancel bid"
+                                      title={t('global.cancelBid')}
                                       variant="danger"
                                     />
                                   </>
@@ -1337,7 +1338,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           {/* Riders List */}
           <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
             <div className="flex flex-col gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
-              <div className="col-span-1">Riders</div>
+              <div className="col-span-1">{t('global.riders')}</div>
               <span className="flex flex-row gap-2">
                 <span className="flex flex-row gap-2">
                   <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
@@ -1348,12 +1349,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 {game.gameType === 'worldtour-manager' ? (
                   <Button onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
                     <span className={`flex flex-row gap-2 items-center`}>
-                      {showOnlyFillers ? <><Users />Show all riders</> : <><Star />Show only fillers</>}
+                      {showOnlyFillers ? <><Users />{t('global.showAllRiders')}</> : <><Star />{t('global.showOnlyFillers')}</>}
                     </span>
                   </Button>
                 ) : <Button onClick={() => setHideSoldPlayers(!hideSoldPlayers)}>
                   <span className={`flex flex-row gap-2 items-center`}>
-                    {hideSoldPlayers ? <><Eye />Show sold players</> : <><EyeOff />Hide sold players</>}
+                    {hideSoldPlayers ? <><Eye />{t('global.showSoldPlayers')}</> : <><EyeOff />{t('global.hideSoldPlayers')}</>}
                   </span>
                 </Button>}
               </span>
@@ -1362,10 +1363,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
 
             <div className="overflow-y-auto">
-
-
-
-
               <div className={`w-full ${myTeamView === 'card' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap my-4 pb-4'}`}>
 
                 {/* it should sort when there is a myBid */}
@@ -1410,7 +1407,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                         name="input-name"
                                         className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                         placeholder={`Min: ${rider.effectiveMinBid || rider.points}`}
-                                        prefix="€"
                                         decimalsLimit={0}
                                         disabled={placingBid === riderNameId || rider.isSold}
                                         defaultValue={bidAmountsRef.current[riderNameId] || ''}
@@ -1435,7 +1431,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                         </div>
                                       </div>
                                     ) : (
-                                      <span className="text-xs text-gray-400">No bid</span>
+                                      <span className="text-xs text-gray-400">{t('global.noBid')}</span>
                                     )
                                   )}
                                 </div>
@@ -1444,17 +1440,17 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                     {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') && (
                                       <Button
                                         type="button"
-                                        text={cancellingBid === rider.myBidId ? "..." : game?.gameType === 'worldtour-manager' ? "Remove" : "Reset bid"}
+                                        text={cancellingBid === rider.myBidId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.remove') : t('games.auctions.resetBid')}
                                         onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                                         disabled={cancellingBid === rider.myBidId}
                                         className="px-2 py-1 text-sm"
-                                        title={game?.gameType === 'worldtour-manager' ? "Remove rider" : "Cancel bid"}
+                                        title={game?.gameType === 'worldtour-manager' ? t('games.auctions.removeRider') : t('games.auctions.cancelBid')}
                                         variant="danger"
                                       />
                                     )}
                                     <Button
                                       type="button"
-                                      text={placingBid === riderNameId ? "..." : game?.gameType === 'worldtour-manager' ? "Select" : "Bid"}
+                                      text={placingBid === riderNameId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.select') : t('games.auctions.bid')}
                                       onClick={() => handlePlaceBid(rider)}
                                       disabled={placingBid === riderNameId}
                                       className={`py-1 text-sm ${game?.gameType === 'worldtour-manager' ? 'w-full' : ''}`}
@@ -1484,7 +1480,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                       name="input-name"
                                       className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                       placeholder={`Min: ${rider.effectiveMinBid || rider.points}`}
-                                      prefix="€"
                                       decimalsLimit={0}
                                       disabled={placingBid === riderNameId || rider.isSold}
                                       defaultValue={bidAmountsRef.current[riderNameId] || ''}
@@ -1505,14 +1500,14 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                         {typeof rider.myBid === 'number' ? rider.myBid.toFixed(1) : '0.0'}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        {rider.myBidStatus === 'won' ? 'Won' : rider.myBidStatus === 'lost' ? 'Lost' : rider.myBidStatus}
+                                        {rider.myBidStatus === 'won' ? t('games.auctions.won') : rider.myBidStatus === 'lost' ? t('games.auctions.lost') : rider.myBidStatus}
                                       </div>
                                     </div>
                                   ) : (
                                     rider.isSold && rider?.pricePaid ? (
-                                      <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">Sold for {formatCurrency(rider?.pricePaid)}</span>
+                                      <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">{t('games.auctions.soldFor')} {formatCurrency(rider?.pricePaid)}</span>
                                     ) : (
-                                      <span className="text-xs text-gray-400">No bid</span>
+                                      <span className="text-xs text-gray-400">{t('games.auctions.noBid')}</span>
                                     )
                                   )
                                 )}
@@ -1522,17 +1517,17 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                                   {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') && (
                                     <Button
                                       type="button"
-                                      text={cancellingBid === rider.myBidId ? "..." : game?.gameType === 'worldtour-manager' ? "Remove" : "Reset bid"}
+                                      text={cancellingBid === rider.myBidId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.remove') : t('games.auctions.resetBid')}
                                       onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                                       disabled={cancellingBid === rider.myBidId}
                                       className="px-2 py-1 text-sm"
-                                      title={game?.gameType === 'worldtour-manager' ? "Remove rider" : "Cancel bid"}
+                                      title={game?.gameType === 'worldtour-manager' ? t('games.auctions.removeRider') : t('games.auctions.cancelBid')}
                                       variant="danger"
                                     />
                                   )}
                                   <Button
                                     type="button"
-                                    text={placingBid === riderNameId ? "..." : game?.gameType === 'worldtour-manager' ? "Select" : "Bid"}
+                                    text={placingBid === riderNameId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.select') : t('games.auctions.bid')}
                                     onClick={() => handlePlaceBid(rider)}
                                     disabled={placingBid === riderNameId}
                                     className="px-3 py-1 text-sm"

@@ -6,6 +6,7 @@ import { TextInput } from "./TextInput";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import process from "process";
+import { t } from "i18next";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -115,7 +116,7 @@ export const AddGameTab = () => {
           <div>
             <TextInput
               type="number"
-              label="Jaar"
+              label={t('global.year')}
               placeholder={`Bijv. ${YEAR}`}
               {...register('year', {
                 required: 'Jaar is verplicht',
