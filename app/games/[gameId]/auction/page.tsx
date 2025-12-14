@@ -77,12 +77,13 @@ interface GameData {
   eligibleRiders: string[];
 }
 
-interface ParticipantData {
+export interface ParticipantData {
   id: string;
   budget?: number;
   spentBudget?: number;
   rosterSize: number;
   rosterComplete: boolean;
+  playername?: string;
 }
 
 interface Bid {
@@ -131,9 +132,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [resetConfirmModal, setResetConfirmModal] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showPlayerCard, setShowPlayerCard] = useState(true);
   const [myTeamView, setMyTeamView] = useState('card');
   const [myTeamBidsView, setMyTeamBidsView] = useState('list');
+  const [myTeamBidsWonView, setMyTeamBidsWonView] = useState('list');
   const [isSticky, setIsSticky] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
@@ -142,6 +143,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [adjustingBid, setAdjustingBid] = useState<string | null>(null);
   const { t } = useTranslation();
 
+  console.log('participant', participant)
   useEffect(() => {
     const checkBannerCookie = () => {
       // Clear any localStorage value (legacy)
@@ -354,10 +356,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             hasMoreBids = false;
           }
         }
-        allBidsData = userBids; // For non-admins, allBids is just their bids
+        allBidsData = userBids.filter((b: Bid) => b.status === 'won'); // For non-admins, allBids is just their bids
       }
 
       setAllBids(allBidsData);
+      userBids = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
       setMyBids(userBids);
 
       // Load all sold riders from playerTeams collection (properly filtered by gameId)
@@ -846,7 +849,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
     // After finalization, spentBudget already includes won bids
     // During auction, we need to account for active bids (spentBudget doesn't include them yet)
-    const auctionClosed = game?.status === 'finished';
+    const auctionClosed = game?.status === 'active';
+
+
+
+    console.log('auctionClosed', auctionClosed);
+    console.log('game?.status', game?.status);
 
     if (auctionClosed) {
       // After finalization, only use spentBudget (which already includes won riders)
@@ -880,25 +888,26 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const sortedAndFilteredRiders = useMemo(() => {
     return [...filteredRiders]
-      .sort((a, b) => {
-        if (a.myBid && b.myBid) {
-          return b.myBid - a.myBid;
-        } else if (a.myBid) {
-          return -1;
-        } else if (b.myBid) {
-          return 1;
-        } else {
-          return a.rank - b.rank;
-        }
-      })
-      .filter((rider) => {
-        // Filter out riders that have active bids - they should only appear in "My Bids" section
-        // Check both nameID and id to ensure we catch all matches
-        return !myBids.some(bid =>
-          bid.riderNameId === rider.nameID ||
-          bid.riderNameId === rider.id
-        );
-      })
+      // .sort((a, b) => {
+      //   if (a.myBid && b.myBid) {
+      //     return b.myBid - a.myBid;
+      //   } else if (a.myBid) {
+      //     return -1;
+      //   } else if (b.myBid) {
+      //     return 1;
+      //   } else {
+      //     return a.rank - b.rank;
+      //   }
+      // })
+      // .filter((rider) => {
+      //   // Filter out riders that have active bids - they should only appear in "My Bids" section
+      //   // Check both nameID and id to ensure we catch all matches
+      //   // don't filter the bids if you won them
+      //   return !myBids.some(bid =>
+      //     bid.riderNameId === rider.nameID ||
+      //     bid.riderNameId === rider.id
+      //   );
+      // })
       .filter((rider) => !hideSoldPlayers || !rider.isSold)
       .filter((rider) => !showOnlyFillers || qualifiesAsNeoProf(rider));
   }, [filteredRiders, myBids, hideSoldPlayers, showOnlyFillers]);
@@ -932,7 +941,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   // Use game.status as the single source of truth for auction state
   // config.auctionStatus is kept in sync but game.status is authoritative
   const auctionActive = game.status === 'bidding';
-  const auctionClosed = game.status === 'finished';
+  const auctionClosed = game.status === 'active' || game.status === 'finished';
 
   // Calculate min/max prices for the slider
   const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points);
@@ -948,13 +957,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               <h1 className="text-2xl font-bold">
                 {game.gameType === 'worldtour-manager' ? 'Team Selection' : 'Auction'} - {game.name}
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Status: <span className={`font-medium ${auctionActive ? 'text-green-600' :
-                  auctionClosed ? 'text-red-600' : 'text-yellow-600'
-                  }`}>
-                  {game.status === 'bidding' ? 'active' : (game.config.auctionStatus || game.status || 'pending')}
-                </span>
-              </p>
             </div>
             <Button
               type="button"
@@ -1090,23 +1092,32 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           {/* My Team Section - Only show when auction is closed */}
           {auctionClosed && (
             <div ref={ref}>
-              <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200">
+
+              <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
                 <h1 className="text-2xl font-bold">{t('games.auctions.myTeam')}</h1>
+                <span className="flex flex-row gap-2">
+                  <Button ghost={myTeamBidsWonView === 'card'} onClick={() => setMyTeamBidsWonView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+                  <Button ghost={myTeamBidsWonView === 'list'} onClick={() => setMyTeamBidsWonView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
+                </span>
               </div>
 
-              <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
-                {myBids
-                  .filter(bid => bid.status === 'won')
-                  .map((myBidRider) => {
-                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
-                    return rider ? (
-                      <div key={myBidRider.id}>
+              <div className={`bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 ${myTeamBidsWonView === 'card' ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : ""} items-center justify-start flex-wrap gap-4 py-4`}>
+                {myTeamBidsWonView === 'card' ? (
+                  // Card View
+                  myBids
+                    .filter(bid => bid.status === 'won')
+                    .map((myBidRider) => {
+                      const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                      return rider ? (
                         <PlayerCard
+                          key={myBidRider.id}
                           showBid={true}
                           className="border-2 rounded-md border-green-500 bg-green-50"
                           hideInfo={true}
                           bid={myBidRider.amount || 0}
                           player={rider}
+                          participant={participant}
+                          myTeam={true}
                           onClick={() => { }}
                           selected={false}
                           isNeoProf={qualifiesAsNeoProf(rider)}
@@ -1117,12 +1128,265 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                             </div>
                           }
                         />
-                      </div>
-                    ) : null;
-                  })}
+                      ) : null;
+                    })
+                ) : (
+                  // List View
+                  <div className="w-full">
+                    <div className="flex flex-row w-full p-2 bg-gray-50 border-b border-gray-200">
+                      <span className="font-bold basis-[90px]">{t('global.price')}</span>
+                      <span className="font-bold basis-[90px]">{t('global.bid')}</span>
+                      <span className="font-bold flex-1">{t('global.name')}</span>
+                      <span className="font-bold basis-[300px]">{t('global.team')}</span>
+                      <span className="font-bold basis-[200px]">{t('global.status')}</span>
+                    </div>
+                    <div className="divide-y divide-gray-200">
+                      {myBids
+                        .filter(bid => bid.status === 'won')
+                        .map((myBidRider) => {
+                          const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                          if (!rider) return null;
+                          
+                          return (
+                            <div key={myBidRider.id} className="flex flex-row w-full p-2 hover:bg-gray-50">
+                              <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
+                              <span className="basis-[90px] flex items-center">{formatCurrencyWhole(myBidRider.amount || 0)}</span>
+                              <span className="flex-1 flex items-center">{rider.name}</span>
+                              <span className="basis-[300px] flex items-center">{rider.team?.name || t('global.unknown')}</span>
+                              <span className="basis-[200px] flex items-center text-green-600 font-medium">
+                                ✓ {t('games.auctions.won')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      {myBids.filter(bid => bid.status === 'won').length === 0 && (
+                        <div className="p-4 text-center text-gray-500">
+                          {game?.gameType === 'worldtour-manager' ? 'No riders won yet.' : 'No winning bids yet.'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
+
+
+          {!auctionClosed && (
+            <div ref={myBidRef}>
+              <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
+                <h1 className="text-2xl font-bold mt-1">
+                  {game?.gameType === 'worldtour-manager' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myTeam')}
+                </h1>
+                <span className="flex flex-row gap-2">
+                  <Button ghost={myTeamBidsWonView === 'card'} onClick={() => setMyTeamBidsWonView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+                  <Button ghost={myTeamBidsWonView === 'list'} onClick={() => setMyTeamBidsWonView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
+                </span>
+              </div>
+
+
+              {myTeamBidsWonView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
+                {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
+                  {game?.gameType === 'worldtour-manager' ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
+                </div>}
+                {myBids.filter((bid) => bid.status === 'won').map((myBidRider) => {
+                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+                  const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+                  const riderNameId = rider?.nameID || rider?.id || '';
+
+                  return rider ? (
+                    <div key={myBidRider.id}>
+                      <PlayerCard
+                        showBid={true}
+                        className="border-2 rounded-md border-gray-200"
+                        hideInfo={true}
+                        bid={rider?.myBid || myBidRider.amount || 0}
+                        player={rider}
+                        onClick={() => { }}
+                        participant={participant}
+                        myTeam={true}
+                        selected={false}
+                        isNeoProf={qualifiesAsNeoProf(rider)}
+                        showNeoProfBadge={game?.gameType === 'worldtour-manager'}
+                        buttonContainer={
+                          <>
+                            {rider && canCancel && (
+                              <div className="flex flex-col gap-2 w-full">
+                                {adjustingBid === rider.myBidId ? (
+                                  <>
+                                    <CurrencyInput
+                                      id={`adjust-bid-${rider.myBidId}`}
+                                      name="adjust-bid"
+                                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                      placeholder={`${t('global.current')}: ${rider.myBid || 0}`}
+                                      prefix="€"
+                                      decimalsLimit={0}
+                                      disabled={placingBid === riderNameId}
+                                      defaultValue={bidAmountsRef.current[riderNameId] || ''}
+                                      onValueChange={(value) => {
+                                        bidAmountsRef.current[riderNameId] = value || '0';
+                                      }}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="button"
+                                        text={placingBid === riderNameId ? t('global.loading') : t('global.save')}
+                                        onClick={() => {
+                                          handlePlaceBid(rider);
+                                          setAdjustingBid(null);
+                                        }}
+                                        disabled={placingBid === riderNameId}
+                                        className="px-2 py-1 text-sm flex-1"
+                                        variant="primary"
+                                      />
+                                      <Button
+                                        type="button"
+                                        text={t('global.cancel')}
+                                        onClick={() => setAdjustingBid(null)}
+                                        className="px-2 py-1 text-sm flex-1"
+                                        ghost
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {game?.gameType !== 'worldtour-manager' && (
+                                      <Button
+                                        type="button"
+                                        text={t('games.auctions.adjustBid')}
+                                        onClick={() => setAdjustingBid(rider.myBidId!)}
+                                        className="px-2 py-1 text-sm w-full"
+                                        ghost
+                                        variant="primary"
+                                      />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      text={cancellingBid === rider.myBidId ? t('global.loading') : t('games.auctions.resetBid')}
+                                      onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                      disabled={cancellingBid === rider.myBidId}
+                                      className="px-2 py-1 text-sm w-full"
+                                      ghost
+                                      title={t('games.auctions.cancelBid')}
+                                      variant="danger"
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        }
+                      />
+                    </div>
+                  ) : null;
+                })}
+              </div>) : (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
+                {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
+                  {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
+                </div>}
+                {myBids.length > 0 && (
+                  <div className="flex flex-row w-full p-2">
+                    <span className="font-bold basis-[90px]">{t('global.price')}</span>
+                    <span className="font-bold basis-[90px]">{t('global.bid')}</span>
+                    <span className="font-bold flex-1">{t('global.name')}</span>
+                    <span className="font-bold basis-[300px]">{t('global.team')}</span>
+                    <span className="font-bold basis-[200px]"></span>
+                  </div>
+                )}
+                <div className="divide-gray-300 divide-y">
+                  {myBids.filter((bid) => bid.status === 'won').map((myBidRider) => {
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+                    const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
+                    const riderNameId = rider?.nameID || rider?.id || '';
+
+                    console.log(myBidRider);
+
+                    return rider ? (
+                      <div key={myBidRider.id} className="bg-white px-2">
+                        <div className="flex flex-row w-full py-1">
+                          <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
+                          <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.myBid || 0)}</span>
+                          <span className="flex-1 flex items-center">{rider.name}</span>
+                          <span className="basis-[300px] flex items-center">{rider.team?.name || t('global.unknown')}</span>
+                          <span className="basis-[200px] flex items-center gap-2">
+                            {canCancel && (
+                              <>
+                                {adjustingBid === rider.myBidId ? (
+                                  <div className="flex gap-2 items-center w-full">
+                                    <CurrencyInput
+                                      id={`adjust-bid-list-${rider.myBidId}`}
+                                      name="adjust-bid"
+                                      className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                      placeholder={`${rider.myBid || 0}`}
+                                      decimalsLimit={0}
+                                      disabled={placingBid === riderNameId}
+                                      defaultValue={bidAmountsRef.current[riderNameId] || ''}
+                                      onValueChange={(value) => {
+                                        bidAmountsRef.current[riderNameId] = value || '0';
+                                      }}
+                                    />
+                                    <Button
+                                      type="button"
+                                      text={placingBid === riderNameId ? t('global.loading') : t('global.save')}
+                                      onClick={() => {
+                                        handlePlaceBid(rider);
+                                        setAdjustingBid(null);
+                                      }}
+                                      disabled={placingBid === riderNameId}
+                                      className="px-2 py-1 text-sm"
+                                      size="sm"
+                                      variant="primary"
+                                    />
+                                    <Button
+                                      type="button"
+                                      text={t('global.cancel')}
+                                      onClick={() => setAdjustingBid(null)}
+                                      className="px-2 py-1 text-sm"
+                                      size="sm"
+                                      ghost
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    {game?.gameType !== 'worldtour-manager' && (
+                                      <Button
+                                        type="button"
+                                        text={t('global.adjust')}
+                                        onClick={() => setAdjustingBid(rider.myBidId!)}
+                                        className="px-2 py-1 text-sm"
+                                        size="sm"
+                                        ghost
+                                        variant="primary"
+                                      />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      text={cancellingBid === rider.myBidId ? t('global.loading') : t('global.reset')}
+                                      onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                                      disabled={cancellingBid === rider.myBidId}
+                                      className="px-2 py-1 text-sm"
+                                      ghost
+                                      size="sm"
+                                      title={t('global.cancelBid')}
+                                      variant="danger"
+                                    />
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>)}
+
+
+            </div>
+          )}
+
+          
           {/* My Bids Section - Only show when auction is active */}
           {!auctionClosed && (
             <div ref={myBidRef}>
@@ -1141,7 +1405,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
                   {game?.gameType === 'worldtour-manager' ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
                 </div>}
-                {myBids.map((myBidRider) => {
+                {myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost').map((myBidRider) => {
                   const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                   const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
                   const riderNameId = rider?.nameID || rider?.id || '';
@@ -1244,7 +1508,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   </div>
                 )}
                 <div className="divide-gray-300 divide-y">
-                  {myBids.map((myBidRider) => {
+                  {myBids.filter((bid) => bid.status === 'active').map((myBidRider) => {
                     const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                     const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
                     const riderNameId = rider?.nameID || rider?.id || '';
@@ -1395,6 +1659,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                             onClick={() => { }}
                             selected={false}
                             bidders={riderBidders}
+                            participant={participant}
                             isNeoProf={qualifiesAsNeoProf(rider)}
                             showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                             buttonContainer={<>

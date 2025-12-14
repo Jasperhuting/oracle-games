@@ -5,6 +5,7 @@ import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency"
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Rider } from "@/lib/scraper";
+import { ParticipantData } from "@/app/games/[gameId]/auction/page";
 
 // TODO: replace any with real type
 
@@ -20,7 +21,9 @@ export const PlayerCard = (
         className, 
         bidders, 
         isNeoProf, 
-        showNeoProfBadge 
+        showNeoProfBadge,
+        myTeam,
+        participant,
     }: { 
         player: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
         onClick: (player: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -32,7 +35,9 @@ export const PlayerCard = (
         className?: string, 
         bidders?: Array<{ playername: string, amount: number, bidAt: string }>, 
         isNeoProf?: boolean, 
-        showNeoProfBadge?: boolean 
+        showNeoProfBadge?: boolean,
+        myTeam?: boolean,
+        participant?: ParticipantData | null,
     }) => {
 
     const age = player?.team?.riders?.find((rider: Rider) => rider.name === player.id)?.age;
@@ -43,7 +48,7 @@ export const PlayerCard = (
     const isSoldFor = player?.pricePaid;
     
     return (
-        <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && "opacity-60 bg-gray-50", className)}>        
+        <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && !myTeam && "opacity-60 bg-gray-50", className)}>        
             <div className="flex items-center justify-start gap-3 divide-[#CAC4D0] divide-x-2 pb-2">
                 <span className="pr-0 min-w-[55px]">
                     {jerseyImage ? <img src={`https://www.procyclingstats.com/${jerseyImage}`} alt={player?.name} style={{ width: '50px' }} className={isSold ? 'opacity-50' : ''} /> : <img src="/jersey-transparent.png" alt={player?.name} style={{ width: '50px' }} className={isSold ? 'opacity-50' : ''} />}
@@ -51,14 +56,14 @@ export const PlayerCard = (
                 <div className="flex flex-col gap-2 min-w-0 flex-1">
                     <span className="flex items-end content-end gap-2 min-w-0">
                         <span><Flag width={25} countryCode={player.country} /></span>
-                        <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis ${isSold ? 'line-through' : ''}`}>{player.name}</span>
+                        <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis ${isSold && !myTeam ? 'line-through' : ''}`}>{player.name}</span>
                         {showNeoProfBadge && isNeoProf && (
                             <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
                                 Fillers
                             </span>
                         )}
                     </span>
-                    <span className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm ${isSold ? 'line-through' : ''}`}>
+                    <span className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm ${isSold && !myTeam ? 'line-through' : ''}`}>
                         {teamName}
                     </span>
                 </div>
@@ -160,9 +165,7 @@ export const PlayerCard = (
                 )}
 
                 {isSold ? (
-                <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">
-                    Sold to {soldTo}
-                </div>
+                    participant?.playername === soldTo ? <></> : <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">Sold to {soldTo}</div>
                 ): (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />)}
             </div>
         </div>
