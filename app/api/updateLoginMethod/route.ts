@@ -13,9 +13,20 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getServerFirebase();
+    const userRef = db.collection('users').doc(userId);
 
-    // Update last login method and timestamp
-    await db.collection('users').doc(userId).update({
+    // Check if user document exists
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update existing user document
+    await userRef.update({
       lastLoginMethod: loginMethod,
       lastLoginAt: new Date().toISOString(),
     });

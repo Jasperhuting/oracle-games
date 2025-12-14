@@ -179,24 +179,26 @@ export const LoginForm = () => {
     };
 
     return (
-        <div className="flex flex-col">
-            <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="flex flex-col" data-testid="login-form">
+            <form onSubmit={handleSubmit(onSubmit)} data-testid="login-form-element">
                 <div className="flex flex-col">
-                    <TextInput 
-                        label="Email" 
-                        placeholder="Email" 
-                        {...register('email', { required: true })} 
+                    <TextInput
+                        label="Email"
+                        placeholder="Email"
+                        data-testid="login-email-input"
+                        {...register('email', { required: true })}
                     />
                 </div>
                 <div className="flex flex-col">
-                    <TextInput 
-                        type="password" 
-                        label="Password" 
-                        placeholder="Password" 
-                        {...register('password', { required: true })} 
+                    <TextInput
+                        type="password"
+                        label="Password"
+                        placeholder="Password"
+                        data-testid="login-password-input"
+                        {...register('password', { required: true })}
                     />
                 </div>
-                {error && <span className="text-red-500 text-xs my-2">{error}</span>}
+                {error && <span className="text-red-500 text-xs my-2" data-testid="login-error-message">{error}</span>}
                 <div className="flex justify-between items-center my-2">
                     <label className="flex items-center text-xs cursor-pointer">
                         <input
@@ -204,6 +206,7 @@ export const LoginForm = () => {
                             checked={stayLoggedIn}
                             onChange={(e) => setStayLoggedIn(e.target.checked)}
                             className="mr-2 cursor-pointer"
+                            data-testid="stay-logged-in-checkbox"
                         />
                         Stay logged in
                     </label>
@@ -216,6 +219,7 @@ export const LoginForm = () => {
                     text={isSubmitting ? "Loading..." : "Log in"}
                     type="submit"
                     disabled={isSubmitting}
+                    data-testid="login-submit-button"
                 />
             </form>
 
@@ -230,12 +234,13 @@ export const LoginForm = () => {
 
             <div className="space-y-3">
                 <PasskeyLogin />
-                
+
                 <Button
                     className="w-full justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
                     text={isGoogleLoading ? "Loading..." : "Log in with Google"}
                     onClick={handleGoogleLogin}
                     disabled={isGoogleLoading || isSubmitting}
+                    data-testid="google-login-button"
                     startIcon={
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

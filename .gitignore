@@ -50,3 +50,9 @@ emulator-data/
 ui-debug.log
 firebase-debug.log
 firestore-debug.log
+firebase-export-*/
+
+# Playwright
+/playwright-report/
+/test-results/
+/playwright/.cache/
