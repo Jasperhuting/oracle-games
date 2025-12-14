@@ -143,7 +143,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [adjustingBid, setAdjustingBid] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  console.log('participant', participant)
   useEffect(() => {
     const checkBannerCookie = () => {
       // Clear any localStorage value (legacy)
@@ -851,11 +850,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     // During auction, we need to account for active bids (spentBudget doesn't include them yet)
     const auctionClosed = game?.status === 'active';
 
-
-
-    console.log('auctionClosed', auctionClosed);
-    console.log('game?.status', game?.status);
-
     if (auctionClosed) {
       // After finalization, only use spentBudget (which already includes won riders)
       return budget - spentBudget;
@@ -1108,12 +1102,22 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                     .filter(bid => bid.status === 'won')
                     .map((myBidRider) => {
                       const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+
+
+                      // this is now not possible because allBids is only for admin at this moment
+                      // const riderBidders =  allBids
+                      // .filter((b: Bid) => (b.riderNameId === rider?.nameID || b.riderNameId === rider?.id))
+                      // .sort((a: Bid, b: Bid) => b.amount - a.amount)
+                      // .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
+                      // .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
+
                       return rider ? (
                         <PlayerCard
                           key={myBidRider.id}
                           showBid={true}
                           className="border-2 rounded-md border-green-500 bg-green-50"
                           hideInfo={true}
+                          // bidders={riderBidders}
                           bid={myBidRider.amount || 0}
                           player={rider}
                           participant={participant}
@@ -1637,13 +1641,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   const riderNameId = rider.nameID || rider.id || '';
 
                   // Get all bidders for this rider (admin only)
-                  const riderBidders = isAdmin
-                    ? allBids
+                  const riderBidders =  allBids
                       .filter((b: Bid) => (b.riderNameId === rider.nameID || b.riderNameId === rider.id) && b.status === 'active')
                       .sort((a: Bid, b: Bid) => b.amount - a.amount)
                       .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
                       .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
-                    : undefined;
 
                   return (
                     <React.Fragment key={rider.id || index}>
@@ -1658,7 +1660,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                             player={rider}
                             onClick={() => { }}
                             selected={false}
-                            bidders={riderBidders}
+                            bidders={isAdmin ? riderBidders : undefined}
                             participant={participant}
                             isNeoProf={qualifiesAsNeoProf(rider)}
                             showNeoProfBadge={game?.gameType === 'worldtour-manager'}
