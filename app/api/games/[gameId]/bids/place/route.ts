@@ -83,6 +83,15 @@ export async function POST(
     const participantDoc = participantSnapshot.docs[0];
     const participantData = participantDoc.data();
 
+    // Check if user already has an active bid on this rider
+    const existingUserBid = await db.collection('bids')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .where('riderNameId', '==', riderNameId)
+      .where('status', '==', 'active')
+      .limit(1)
+      .get();
+
     // Get highest bid for this rider
     const highestBidSnapshot = await db.collection('bids')
       .where('gameId', '==', gameId)
@@ -94,6 +103,16 @@ export async function POST(
 
     let currentUserBidOnThisRider = 0;
     let isUpdatingOwnBid = false;
+
+    // If user already has an active bid on this rider, we'll update it instead of creating a new one
+    if (!existingUserBid.empty) {
+      // Mark that we're updating an existing bid
+      isUpdatingOwnBid = true;
+      currentUserBidOnThisRider = existingUserBid.docs[0].data().amount || 0;
+      
+      // Delete the existing bid - we'll create a new one with the updated amount
+      await existingUserBid.docs[0].ref.delete();
+    }
 
     if (!highestBidSnapshot.empty) {
       const highestBidData = highestBidSnapshot.docs[0].data();
