@@ -303,11 +303,12 @@ export const UserList = () => {
 
   // Filter users based on search term and type
   const filteredUsers = users.filter((user) => {
+
     const matchesSearch =
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.playername.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()));
+      user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user?.playername?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user?.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user?.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesType = filterType === "all" || user.userType === filterType;
 

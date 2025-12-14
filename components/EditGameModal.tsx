@@ -12,6 +12,7 @@ interface AuctionPeriodInput {
   name: string;
   startDate: string;
   endDate: string;
+  finalizeDate?: string;
   status: string;
   top200Only?: boolean;
 }
@@ -104,6 +105,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
             name: p.name,
             startDate: p.startDate ? new Date(p.startDate).toISOString().slice(0, 16) : '',
             endDate: p.endDate ? new Date(p.endDate).toISOString().slice(0, 16) : '',
+            finalizeDate: p.finalizeDate ? new Date(p.finalizeDate).toISOString().slice(0, 16) : '',
             status: p.status,
             top200Only: p.top200Only || false,
           })));
@@ -152,7 +154,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
   }, [gameYear, gameType]);
 
   const addAuctionPeriod = () => {
-    setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', status: 'pending', top200Only: false }]);
+    setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', finalizeDate: '', status: 'pending', top200Only: false }]);
   };
 
   const removeAuctionPeriod = (index: number) => {
@@ -251,11 +253,13 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
             // So we append 'Z' to indicate UTC timezone
             const startDate = new Date(period.startDate + ':00Z');
             const endDate = new Date(period.endDate + ':00Z');
-            
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00Z') : undefined;
+
             return {
               name: period.name,
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString(),
+              finalizeDate: finalizeDate?.toISOString(),
               status: period.status,
               top200Only: period.top200Only || false,
             };
@@ -484,7 +488,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                               />
                             </div>
 
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <label className="block text-xs text-gray-600 mb-1">Start Date & Time</label>
                                 <input
@@ -504,19 +508,40 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-600 mb-1">Status</label>
-                                <select
-                                  value={period.status}
-                                  onChange={(e) => updateAuctionPeriod(index, 'status', e.target.value)}
+                                <label className="block text-xs text-gray-600 mb-1">
+                                  Finalize Date & Time (optional)
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={period.finalizeDate || ''}
+                                  onChange={(e) => updateAuctionPeriod(index, 'finalizeDate', e.target.value)}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                >
-                                  {AUCTION_STATUS_OPTIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                      {option.label}
-                                    </option>
-                                  ))}
-                                </select>
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {period.finalizeDate
+                                    ? 'Status will be managed automatically'
+                                    : 'Leave empty for manual finalization'}
+                                </p>
                               </div>
+                              {!period.finalizeDate && (
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">Status</label>
+                                  <select
+                                    value={period.status}
+                                    onChange={(e) => updateAuctionPeriod(index, 'status', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                  >
+                                    {AUCTION_STATUS_OPTIONS.map((option) => (
+                                      <option key={option.value} value={option.value}>
+                                        {option.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Manual status control
+                                  </p>
+                                </div>
+                              )}
                             </div>
 
                             {/* Top 200 Only Checkbox */}

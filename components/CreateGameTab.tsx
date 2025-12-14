@@ -15,6 +15,7 @@ interface AuctionPeriodInput {
   name: string;
   startDate: string;
   endDate: string;
+  finalizeDate?: string;
 }
 
 interface GameFormData {
@@ -132,7 +133,7 @@ export const CreateGameTab = () => {
   }, [user]);
 
   const addAuctionPeriod = () => {
-    setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '' }]);
+    setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', finalizeDate: '' }]);
   };
 
   const removeAuctionPeriod = (index: number) => {
@@ -183,11 +184,13 @@ export const CreateGameTab = () => {
             // So we append 'Z' to indicate UTC timezone
             const startDate = new Date(period.startDate + ':00Z');
             const endDate = new Date(period.endDate + ':00Z');
-            
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00Z') : undefined;
+
             return {
               name: period.name,
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString(),
+              finalizeDate: finalizeDate?.toISOString(),
               status: 'pending',
             };
           }),
@@ -220,11 +223,13 @@ export const CreateGameTab = () => {
             // So we append 'Z' to indicate UTC timezone
             const startDate = new Date(period.startDate + ':00Z');
             const endDate = new Date(period.endDate + ':00Z');
-            
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00Z') : undefined;
+
             return {
               name: period.name,
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString(),
+              finalizeDate: finalizeDate?.toISOString(),
               status: 'pending',
             };
           }),
@@ -625,6 +630,22 @@ export const CreateGameTab = () => {
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                             />
                           </div>
+                          <div className="col-span-2">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Finalize Date & Time (optional)
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={period.finalizeDate || ''}
+                              onChange={(e) => updateAuctionPeriod(index, 'finalizeDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              {period.finalizeDate
+                                ? 'Status will be managed automatically'
+                                : 'Leave empty for manual finalization'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -799,6 +820,22 @@ export const CreateGameTab = () => {
                               onChange={(e) => updateAuctionPeriod(index, 'endDate', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                             />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Finalize Date & Time (optional)
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={period.finalizeDate || ''}
+                              onChange={(e) => updateAuctionPeriod(index, 'finalizeDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              {period.finalizeDate
+                                ? 'Status will be managed automatically'
+                                : 'Leave empty for manual finalization'}
+                            </p>
                           </div>
                         </div>
                       </div>
