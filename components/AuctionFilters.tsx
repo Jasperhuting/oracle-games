@@ -44,7 +44,7 @@ export const AuctionFilters = ({
 
     const { t } = useTranslation();
 
-    return <Collapsible title="Filters" defaultOpen={true} className="mb-4 bg-white border border-gray-200 rounded-md p-2">
+    return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 rounded-md p-2">
         <div className="flex flex-col gap-4">
 
         <span className="flex flex-col flex-1">

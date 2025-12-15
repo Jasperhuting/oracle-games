@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Feedback } from '@/lib/types/games';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // GET /api/feedback - Get all feedback (admin only)
 export async function GET(request: NextRequest) {
@@ -166,6 +167,36 @@ export async function PATCH(request: NextRequest) {
     if (typeof adminResponse !== 'undefined') {
       updateData.adminResponse = adminResponse;
       updateData.adminResponseDate = new Date().toISOString();
+
+      // Get the feedback document to find the user who submitted it
+      const feedbackDoc = await db.collection('feedback').doc(feedbackId).get();
+      if (feedbackDoc.exists) {
+        const feedbackData = feedbackDoc.data();
+        const feedbackUserId = feedbackData?.userId;
+        const feedbackUserEmail = feedbackData?.userEmail;
+
+        // Get admin user info
+        const adminUserDoc = await db.collection('users').doc(userId).get();
+        const adminName = adminUserDoc.exists
+          ? (adminUserDoc.data()?.displayName || adminUserDoc.data()?.email || 'Admin')
+          : 'Admin';
+
+        // Send a personal message to the user who submitted the feedback
+        if (feedbackUserId && adminResponse.trim()) {
+          const messageRef = db.collection('messages').doc();
+          await messageRef.set({
+            type: 'individual',
+            senderId: userId,
+            senderName: adminName,
+            recipientId: feedbackUserId,
+            recipientName: feedbackUserEmail || 'User',
+            subject: 'Response to your feedback',
+            message: `Thank you for your feedback!\n\nYour original message:\n"${feedbackData?.message || ''}"\n\nOur response:\n${adminResponse}`,
+            sentAt: Timestamp.now(),
+            read: false,
+          });
+        }
+      }
     }
 
     await db.collection('feedback').doc(feedbackId).update(updateData);
