@@ -39,11 +39,26 @@ export async function GET(
 
     const data = gameDoc.data();
 
+    // Convert Timestamp objects in auctionPeriods to ISO strings
+    let config = data?.config;
+    if (config?.auctionPeriods) {
+      config = {
+        ...config,
+        auctionPeriods: config.auctionPeriods.map((period: any) => ({
+          ...period,
+          startDate: period.startDate?.toDate?.()?.toISOString() || period.startDate,
+          endDate: period.endDate?.toDate?.()?.toISOString() || period.endDate,
+          finalizeDate: period.finalizeDate?.toDate?.()?.toISOString() || period.finalizeDate,
+        })),
+      };
+    }
+
     return NextResponse.json({
       success: true,
       game: {
         id: gameDoc.id,
         ...data,
+        config,
         createdAt: data?.createdAt?.toDate?.()?.toISOString() || data?.createdAt,
         updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
@@ -146,11 +161,26 @@ export async function PATCH(
     });
     await db.collection('activityLogs').add(activityLogData);
 
+    // Convert Timestamp objects in auctionPeriods to ISO strings
+    let config = data?.config;
+    if (config?.auctionPeriods) {
+      config = {
+        ...config,
+        auctionPeriods: config.auctionPeriods.map((period: any) => ({
+          ...period,
+          startDate: period.startDate?.toDate?.()?.toISOString() || period.startDate,
+          endDate: period.endDate?.toDate?.()?.toISOString() || period.endDate,
+          finalizeDate: period.finalizeDate?.toDate?.()?.toISOString() || period.finalizeDate,
+        })),
+      };
+    }
+
     return NextResponse.json({
       success: true,
       game: {
         id: gameId,
         ...data,
+        config,
         createdAt: data?.createdAt?.toDate?.()?.toISOString() || data?.createdAt,
         updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),

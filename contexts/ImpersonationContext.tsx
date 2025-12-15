@@ -77,43 +77,63 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
 
   const stopImpersonation = async () => {
     try {
+      // First, sign out the impersonated user
+      const { signOut, signInWithCustomToken } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase/client');
+      await signOut(auth);
+
       const response = await fetch('/api/impersonate/stop', {
         method: 'POST',
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to stop impersonation');
       }
-      
+
       const data = await response.json();
-      
-      // Get the admin restore token from localStorage
+
+      // Get the admin restore token from localStorage or API response
       const adminToken = localStorage.getItem('admin_restore_token') || data.adminToken;
 
-      // Clear impersonation state
+      // Clear impersonation state from localStorage
       localStorage.removeItem('impersonation');
       localStorage.removeItem('impersonation_token');
       localStorage.removeItem('admin_restore_token');
-      
+      localStorage.removeItem('restore_admin_session');
+
       setImpersonatedUser(null);
       setRealAdmin(null);
       setIsImpersonating(false);
-      
+
       if (adminToken) {
-        // Store admin token temporarily to restore session
-        localStorage.setItem('restore_admin_session', adminToken);
-        console.log('Stored restore_admin_session token');
+        try {
+          // Immediately sign in with the admin token instead of storing it
+          console.log('Signing in with admin token immediately...');
+          await signInWithCustomToken(auth, adminToken);
+          console.log('Successfully signed in as admin');
+
+          // Navigate to admin page after successful sign-in
+          window.location.href = '/admin';
+        } catch (signInError) {
+          console.error('Error signing in with admin token:', signInError);
+          // If immediate sign-in fails, fall back to storing the token
+          localStorage.setItem('restore_admin_session', adminToken);
+          console.log('Stored restore_admin_session token as fallback');
+          // Force reload to trigger restore flow
+          window.location.href = '/admin';
+        }
       } else {
         console.error('No admin token available for restore!');
+        // Redirect anyway to force a fresh login
+        window.location.href = '/admin';
       }
-      
-      // Small delay to ensure localStorage is written before redirect
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Force reload to admin page - this will trigger the restore flow in useAuth
-      window.location.href = '/admin';
     } catch (error) {
       console.error('Error stopping impersonation:', error);
+      // Clear all impersonation-related data on error
+      localStorage.removeItem('impersonation');
+      localStorage.removeItem('impersonation_token');
+      localStorage.removeItem('admin_restore_token');
+      localStorage.removeItem('restore_admin_session');
     }
   };
 

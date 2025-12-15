@@ -9,19 +9,16 @@ import CurrencyInput from 'react-currency-input-field';
 import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { MyTeamSelection } from "@/components/MyTeamSelection";
 import { PlayerCard } from "@/components/PlayerCard";
-import { PlayerRow } from "@/components/PlayerRow";
-import { ActionPanel } from "@/components/ActionPanel";
 import { Toggle } from "@/components/Toggle";
 import process from "process";
 import { useInView } from "react-intersection-observer";
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
-import { Eye, EyeOff, GridDots, List, Star, Users } from "tabler-icons-react";
+import { GridDots, List, Star, Users } from "tabler-icons-react";
 import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PlayerRowBids } from "@/components/PlayerRowBids";
 import { useTranslation } from "react-i18next";
-import { hide } from "@floating-ui/dom";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -79,11 +76,13 @@ interface GameData {
 
 export interface ParticipantData {
   id: string;
+  userId: string;
   budget?: number;
   spentBudget?: number;
   rosterSize: number;
   rosterComplete: boolean;
   playername?: string;
+  assignedDivision?: string;
 }
 
 interface Bid {
@@ -117,6 +116,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const router = useRouter();
   const { user, loading: authLoading, impersonationStatus } = useAuth();
   const [gameId, setGameId] = useState<string>('');
+
   const [loading, setLoading] = useState(true);
   const [game, setGame] = useState<GameData | null>(null);
   const [participant, setParticipant] = useState<ParticipantData | null>(null);
@@ -142,6 +142,34 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [showOnlyFillers, setshowOnlyFillers] = useState(false);
   const [adjustingBid, setAdjustingBid] = useState<string | null>(null);
   const { t } = useTranslation();
+
+  // Player selector state
+  const [divisionParticipants, setDivisionParticipants] = useState<ParticipantData[]>([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [selectedPlayerBids, setSelectedPlayerBids] = useState<Bid[]>([]);
+  const [activeAuctionPeriodTab, setActiveAuctionPeriodTab] = useState(0);
+
+const [alleBiedingen, setAlleBiedingen] = useState<Bid[]>([]);
+
+useEffect(() => {
+  params.then(p => setGameId(p.gameId));
+}, [params]);
+
+
+const alleBeidingenLaden = (async () => {
+
+  if (!gameId) return;
+
+  const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${1000}&offset=${0}&notActive=true`);
+  const bidsData = await bidsResponse.json();
+  setAlleBiedingen(bidsData.bids);
+})
+
+console.log('alleBiedingen', alleBiedingen);
+
+useEffect(() => {
+  alleBeidingenLaden()
+}, [gameId])
 
   useEffect(() => {
     const checkBannerCookie = () => {
@@ -195,10 +223,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    params.then(p => setGameId(p.gameId));
-  }, [params]);
 
   useEffect(() => {
     if (!user) return;
@@ -263,6 +287,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         // For admins, set a placeholder participant with view-only access
         setParticipant({
           id: 'admin-view',
+          userId: user.uid,
           budget: gameData.game.config?.budget || 0,
           spentBudget: 0,
           rosterSize: 0,
@@ -314,8 +339,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       let allBidsData: Bid[] = [];
       let userBids: Bid[] = [];
 
-      if (userIsAdmin) {
-        // Admin: Load all bids with pagination
+      
         let bidsOffset = 0;
         const bidsLimit = 1000;
         let hasMoreBids = true;
@@ -335,31 +359,19 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           }
         }
         userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
-      } else {
-        // Regular user: Load only their own bids with pagination
-        let bidsOffset = 0;
-        const bidsLimit = 1000;
-        let hasMoreBids = true;
+        allBidsData = userBids.filter((b: Bid) => b.status !== 'active'); // For non-admins, allBids is just their bids
+      
 
-        while (hasMoreBids) {
-          const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?userId=${user.uid}&limit=${bidsLimit}&offset=${bidsOffset}`);
-          if (bidsResponse.ok) {
-            const bidsData = await bidsResponse.json();
-            const fetchedBids = bidsData.bids || [];
-            userBids = userBids.concat(fetchedBids);
-
-            // Check if there are more bids to fetch
-            hasMoreBids = fetchedBids.length === bidsLimit;
-            bidsOffset += bidsLimit;
-          } else {
-            hasMoreBids = false;
-          }
-        }
-        allBidsData = userBids.filter((b: Bid) => b.status === 'won'); // For non-admins, allBids is just their bids
-      }
+      console.log('DEBUG - user.uid:', user.uid);
+      console.log('DEBUG - allBidsData length:', allBidsData.length);
+      console.log('DEBUG - userBids before filter length:', userBids.length);
+      console.log('DEBUG - userBids sample:', userBids.slice(0, 3));
+      console.log('DEBUG - userBids riderNameIds:', userBids.map(b => ({ riderNameId: b.riderNameId, status: b.status, riderName: b.riderName })));
 
       setAllBids(allBidsData);
       userBids = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
+      console.log('DEBUG - userBids after status filter length:', userBids.length);
+      console.log('DEBUG - filtered out bids:', userBids.filter(b => b.status !== 'won' && b.status !== 'active' && b.status !== 'outbid' && b.status !== 'lost').length);
       setMyBids(userBids);
 
       // Load all sold riders from playerTeams collection (properly filtered by gameId)
@@ -416,7 +428,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           }
         } else {
           // For regular users, only show their own bid if it's active
-          if (myBid && myBid.status === 'active') {
+          if (myBid && (myBid.status === 'active' || myBid.status === 'outbid' || myBid.status === 'won')) {
             highestBid = myBid.amount;
             // Don't set highestBidder for non-admins
           }
@@ -435,6 +447,10 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           pricePaid,
         };
       });
+
+      console.log('DEBUG - riders total:', riders.length);
+      console.log('DEBUG - ridersWithBids total:', ridersWithBids.length);
+      console.log('DEBUG - Sample rider IDs:', riders.slice(0, 5).map(r => ({ id: r.id, nameID: r.nameID, name: r.name })));
 
       setAvailableRiders(ridersWithBids);
 
@@ -458,6 +474,59 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     loadAuctionData();
   }, [gameId, user, authLoading, router]);
 
+  // Load all participants in the same division
+  useEffect(() => {
+    const loadDivisionParticipants = async () => {
+      if (!gameId || !participant) return;
+
+      try {
+        const response = await fetch(`/api/games/${gameId}/participants?limit=1000`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success) return;
+
+        // Filter participants by division (if divisions exist)
+        let filteredParticipants = data.participants;
+        if (participant.assignedDivision) {
+          filteredParticipants = data.participants.filter(
+            (p: ParticipantData) => p.assignedDivision === participant.assignedDivision
+          );
+        }
+
+        setDivisionParticipants(filteredParticipants);
+      } catch (error) {
+        console.error('Error loading division participants:', error);
+      }
+    };
+
+    loadDivisionParticipants();
+  }, [gameId, participant]);
+
+  // Load selected player's bids
+  useEffect(() => {
+    const loadPlayerBids = async () => {
+      if (!gameId || !selectedPlayerId) {
+        setSelectedPlayerBids([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/games/${gameId}/bids/list?userId=${selectedPlayerId}&limit=1000`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success) return;
+
+        setSelectedPlayerBids(data.bids || []);
+      } catch (error) {
+        console.error('Error loading player bids:', error);
+      }
+    };
+
+    loadPlayerBids();
+  }, [gameId, selectedPlayerId]);
+
   // Calculate min/max prices from available riders and set initial price range
   useEffect(() => {
     if (availableRiders.length > 0) {
@@ -474,6 +543,36 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       return maxMinBid;
     }
     return riderPoints;
+  };
+
+  // Calculate remaining budget for a player based on their won bids up to a specific auction period
+  const calculateRemainingBudget = (playerBids: Bid[], upToAuctionPeriodIndex: number): number => {
+    if (!game?.config?.budget) return 0;
+
+    const startingBudget = game.config.budget;
+    const auctionPeriods = game.config.auctionPeriods || [];
+
+    // Calculate total spent on won bids up to and including the specified auction period
+    let totalSpent = 0;
+
+    for (let i = 0; i <= upToAuctionPeriodIndex; i++) {
+      if (i >= auctionPeriods.length) break;
+
+      const period = auctionPeriods[i];
+      const startDate = new Date(period.startDate);
+      const endDate = new Date(period.endDate);
+
+      // Find all won bids in this period
+      const wonBidsInPeriod = playerBids.filter((bid) => {
+        if (bid.status !== 'won') return false;
+        const bidDate = new Date(bid.bidAt);
+        return bidDate >= startDate && bidDate <= endDate;
+      });
+
+      totalSpent += wonBidsInPeriod.reduce((sum, bid) => sum + bid.amount, 0);
+    }
+
+    return startingBudget - totalSpent;
   };
 
   // Helper to calculate rider's age
@@ -669,12 +768,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         const filtered = prev.filter(b => b.riderNameId !== riderNameId);
         return [...filtered, newBid];
       });
-      setAllBids(prev => {
-        const filtered = prev.filter(b =>
-          !(b.userId === user.uid && b.riderNameId === riderNameId)
-        );
-        return [...filtered, newBid];
-      });
+      // setAllBids(prev => {
+      //   const filtered = prev.filter(b =>
+      //     !(b.userId === user.uid && b.riderNameId === riderNameId)
+      //   );
+      //   return [...filtered, newBid];
+      // });
 
       // Update the rider's bid info
       setAvailableRiders(prev => prev.map(r => {
@@ -1083,6 +1182,148 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             </div>
           )}
 
+
+          <div>
+
+            {/* Player selector dropdown */}
+            {divisionParticipants.length > 0 && (
+              <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+                <label htmlFor="player-selector" className="block text-sm font-medium text-gray-700 mb-2">
+                  View another player's bids:
+                </label>
+                <select
+                  id="player-selector"
+                  value={selectedPlayerId || ''}
+                  onChange={(e) => setSelectedPlayerId(e.target.value || null)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">-- Select a player --</option>
+                  {divisionParticipants
+                    .filter(p => p.userId !== user?.uid) // Exclude current user
+                    .map((p) => (
+                      <option key={p.id} value={p.userId}>
+                        {p.playername || 'Unknown Player'}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <h2 className="text-2xl font-bold mb-4">
+              {selectedPlayerId ? 'Selected Player\'s Bids per Auction Round' : 'My Bids per Auction Round'}
+            </h2>
+
+            {/* Auction Period Tabs */}
+            {game.config.auctionPeriods && game.config.auctionPeriods.length > 0 && (
+              <div className="mb-4">
+                <div className="border-b border-gray-200">
+                  <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                    {game.config.auctionPeriods.map((period, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setActiveAuctionPeriodTab(index)}
+                        className={`
+                          whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm
+                          ${activeAuctionPeriodTab === index
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }
+                        `}
+                      >
+                        {period.name}
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              </div>
+            )}
+
+            {game.config.auctionPeriods?.map((auctionPeriod, periodIndex) => {
+              // Only render the active tab
+              if (periodIndex !== activeAuctionPeriodTab) return null;
+
+              // bidAt looks like: bidAt: "2025-12-14T19:26:01.513Z"
+              // auctionPeriod looks like: startDate: '2025-12-15T22:00:00.000Z', endDate: '2025-12-17T22:00:00.000Z',
+              // help me filter them
+              // the bids are empty
+
+              const startDate = new Date(auctionPeriod.startDate)
+              const endDate = new Date(auctionPeriod.endDate)
+
+              console.log({startDate});
+              console.log({endDate});
+
+              const bids = alleBiedingen
+              .filter((bid) => {              
+                return new Date(bid.bidAt) >= startDate && new Date(bid.bidAt) <= endDate ? bid : null
+              })
+
+              console.log('alleBiedingen', alleBiedingen)
+              console.log('bids', bids.length)
+              console.log('auctionPeriod', auctionPeriod)
+
+              // Use selectedPlayerBids if a player is selected, otherwise use myBids
+              const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
+
+              // Filter bids to only show bids within this auction period
+              const bidsInPeriod = bidsToShow.filter((bid) => {
+                const bidDate = new Date(bid.bidAt);
+                return bidDate >= startDate && bidDate <= endDate;
+              });
+
+              // Don't render this section if there are no bids in this period
+              if (bidsInPeriod.length === 0) return null;
+
+              // Calculate remaining budget for the selected player up to this period
+              const remainingBudget = selectedPlayerId
+                ? calculateRemainingBudget(selectedPlayerBids, periodIndex)
+                : calculateRemainingBudget(myBids, periodIndex);
+
+              // Card View - Show all bids (won and lost) for this auction period
+              return <div key={periodIndex} className="mb-8">
+                <div className="flex justify-end items-center mb-4">
+                  <div className="text-sm">
+                    <span className="font-medium">Remaining Budget: </span>
+                    <span className="text-lg font-bold text-green-600">{formatCurrencyWhole(remainingBudget)}</span>
+                  </div>
+                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {bidsInPeriod
+                    .map((myBidRider) => {
+                      const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
+
+                      const riderBidders =  alleBiedingen
+                      .filter((b: Bid) => (b.riderNameId === rider?.nameID || b.riderNameId === rider?.id))
+                      .sort((a: Bid, b: Bid) => b.amount - a.amount)
+                      .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
+
+                      console.log('riderBidders',riderBidders)
+
+                      return rider ? (
+                        <PlayerCard
+                          key={myBidRider.id}
+                          showBid={true}
+                          className={`border-2 rounded-md ${myBidRider.status === 'won' ? 'border-green-500 bg-green-50' : ''}`}
+                          hideInfo={true}
+                          bidders={riderBidders}
+                          bid={myBidRider.amount || 0}
+                          player={rider}
+                          participant={participant}
+                          myTeam={true}
+                          onClick={() => { }}
+                          selected={false}
+                          isNeoProf={qualifiesAsNeoProf(rider)}
+                          showNeoProfBadge={game?.gameType === 'worldtour-manager'}
+                          buttonContainer={<></>}
+                        />
+                      ) : null;
+                    })
+                  }</div>
+              </div>
+            })}
+
+          </div>
+
+
           {/* My Team Section - Only show when auction is closed */}
           {auctionClosed && (
             <div ref={ref}>
@@ -1095,29 +1336,27 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 </span>
               </div>
 
-              <div className={`bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 ${myTeamBidsWonView === 'card' ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : ""} items-center justify-start flex-wrap gap-4 py-4`}>
+              <div className={`bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 ${myTeamBidsWonView === 'card' ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : ""} items-start justify-start flex-wrap gap-4 py-4`}>
                 {myTeamBidsWonView === 'card' ? (
-                  // Card View
+                  // Card View - Only show won bids
                   myBids
-                    .filter(bid => bid.status === 'won')
+                    .filter((bid) => bid.status === 'won')
                     .map((myBidRider) => {
-                      const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                      const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
 
-
-                      // this is now not possible because allBids is only for admin at this moment
-                      // const riderBidders =  allBids
-                      // .filter((b: Bid) => (b.riderNameId === rider?.nameID || b.riderNameId === rider?.id))
-                      // .sort((a: Bid, b: Bid) => b.amount - a.amount)
-                      // .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
-                      // .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
+                      const riderBidders =  alleBiedingen
+                      .filter((b: Bid) => (b.riderNameId === rider?.nameID || b.riderNameId === rider?.id))
+                      .sort((a: Bid, b: Bid) => b.amount - a.amount)
+                      .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
+                      .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
 
                       return rider ? (
                         <PlayerCard
                           key={myBidRider.id}
                           showBid={true}
-                          className="border-2 rounded-md border-green-500 bg-green-50"
+                          className={`border-2 rounded-md ${myBidRider.status === 'won' ? 'border-green-500 bg-green-50' : ''}`}
                           hideInfo={true}
-                          // bidders={riderBidders}
+                          bidders={riderBidders}
                           bid={myBidRider.amount || 0}
                           player={rider}
                           participant={participant}
@@ -1126,11 +1365,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                           selected={false}
                           isNeoProf={qualifiesAsNeoProf(rider)}
                           showNeoProfBadge={game?.gameType === 'worldtour-manager'}
-                          buttonContainer={
-                            <div className="w-full text-center py-2 text-green-700 font-semibold">
-                              ✓ {t('games.auctions.won')}
-                            </div>
-                          }
+                          buttonContainer={<></>}
                         />
                       ) : null;
                     })
@@ -1140,26 +1375,22 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                     <div className="flex flex-row w-full p-2 bg-gray-50 border-b border-gray-200">
                       <span className="font-bold basis-[90px]">{t('global.price')}</span>
                       <span className="font-bold basis-[90px]">{t('global.bid')}</span>
-                      <span className="font-bold flex-1">{t('global.name')}</span>
-                      <span className="font-bold basis-[300px]">{t('global.team')}</span>
-                      <span className="font-bold basis-[200px]">{t('global.status')}</span>
+                      <span className="font-bold basis-[300px]">{t('global.name')}</span>
+                      <span className="font-bold flex-1">{t('global.team')}</span>
                     </div>
                     <div className="divide-y divide-gray-200">
                       {myBids
                         .filter(bid => bid.status === 'won')
                         .map((myBidRider) => {
-                          const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId);
+                          const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
                           if (!rider) return null;
                           
                           return (
                             <div key={myBidRider.id} className="flex flex-row w-full p-2 hover:bg-gray-50">
                               <span className="basis-[90px] flex items-center">{formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
                               <span className="basis-[90px] flex items-center">{formatCurrencyWhole(myBidRider.amount || 0)}</span>
-                              <span className="flex-1 flex items-center">{rider.name}</span>
-                              <span className="basis-[300px] flex items-center">{rider.team?.name || t('global.unknown')}</span>
-                              <span className="basis-[200px] flex items-center text-green-600 font-medium">
-                                ✓ {t('games.auctions.won')}
-                              </span>
+                              <span className="basis-[300px] flex items-center">{rider.name}</span>
+                              <span className="flex-1 flex items-center">{rider.team?.name || t('global.unknown')}</span>
                             </div>
                           );
                         })}
@@ -1193,8 +1424,19 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
                   {game?.gameType === 'worldtour-manager' ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
                 </div>}
+                {(() => {
+                  console.log('DEBUG - Won bids section - total myBids:', myBids.length, 'won bids:', myBids.filter((bid) => bid.status === 'won').length, 'availableRiders:', availableRiders.length);
+                  return null;
+                })()}
                 {myBids.filter((bid) => bid.status === 'won').map((myBidRider) => {
-                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+                  console.log('DEBUG - Processing won bid:', myBidRider.riderNameId, 'rider found:', !!rider);
+
+                  if (!rider) {
+                    console.log('DEBUG - Rider not found for bid:', myBidRider.riderNameId, 'availableRiders sample:', availableRiders.slice(0, 3).map(r => ({ id: r.id, nameID: r.nameID })));
+                  }
+
                   const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
                   const riderNameId = rider?.nameID || rider?.id || '';
 
@@ -1299,7 +1541,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 )}
                 <div className="divide-gray-300 divide-y">
                   {myBids.filter((bid) => bid.status === 'won').map((myBidRider) => {
-                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                     const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
                     const riderNameId = rider?.nameID || rider?.id || '';
 
@@ -1410,7 +1652,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   {game?.gameType === 'worldtour-manager' ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
                 </div>}
                 {myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost').map((myBidRider) => {
-                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+                  const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                   const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
                   const riderNameId = rider?.nameID || rider?.id || '';
 
@@ -1512,8 +1754,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   </div>
                 )}
                 <div className="divide-gray-300 divide-y">
-                  {myBids.filter((bid) => bid.status === 'active').map((myBidRider) => {
-                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
+                  {myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost').map((myBidRider) => {
+                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
                     const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
                     const riderNameId = rider?.nameID || rider?.id || '';
 

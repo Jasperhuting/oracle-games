@@ -5,10 +5,10 @@ import type { BidsListResponse, ApiErrorResponse, ClientBid } from '@/lib/types'
 // GET all bids for a game
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ gameId: string }> }
+  context: { params: Promise<{ gameId: string, notActive?: string }> }
 ): Promise<NextResponse<BidsListResponse | ApiErrorResponse>> {
   try {
-    const { gameId } = await context.params; // ← FIX
+    const { gameId, notActive } = await context.params; // ← FIX
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -20,6 +20,7 @@ export async function GET(
 
     let query = db.collection('bids').where('gameId', '==', gameId);
 
+    if (notActive) query = query.where('status', '!=', 'active');
     if (userId) query = query.where('userId', '==', userId);
     if (riderNameId) query = query.where('riderNameId', '==', riderNameId);
     if (status) query = query.where('status', '==', status);

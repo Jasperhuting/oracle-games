@@ -85,44 +85,60 @@ export function useAuth() {
           console.log('Restoring admin session...');
           setRestoringSession(true);
           setLoading(true);
-          
-          // First sign out the impersonated user
-          await signOut(auth);
-          console.log('Signed out impersonated user');
-          
-          // Then sign in with the admin token
-          await signInWithCustomToken(auth, restoreAdminToken);
-          console.log('Signed in with admin token');
-          localStorage.removeItem('restore_admin_session');
-          
-          // After restoring admin session, update impersonation status
-          const statusResponse = await fetch('/api/impersonate/status');
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json();
-            console.log('Admin session restored, impersonation status:', statusData);
-            updateGlobalImpersonationStatus(statusData);
+
+          try {
+            // First sign out the impersonated user
+            await signOut(auth);
+            console.log('Signed out impersonated user');
+
+            // Then sign in with the admin token
+            await signInWithCustomToken(auth, restoreAdminToken);
+            console.log('Signed in with admin token');
+
+            // After restoring admin session, update impersonation status
+            const statusResponse = await fetch('/api/impersonate/status');
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              console.log('Admin session restored, impersonation status:', statusData);
+              updateGlobalImpersonationStatus(statusData);
+            }
+          } catch (restoreError) {
+            console.error('Error restoring admin session:', restoreError);
+            // Clear invalid token to prevent infinite retry loop
+          } finally {
+            // Always remove the token, whether successful or not
+            localStorage.removeItem('restore_admin_session');
+            setRestoringSession(false);
+            setLoading(false);
           }
-          
-          setRestoringSession(false);
-          setLoading(false);
+
           return;
         }
-        
+
         // Only check if not already checking
         if (!isCheckingImpersonation) {
           await refreshImpersonationStatus();
-          
+
           // If impersonating and we have a custom token in localStorage, sign in
           if (globalImpersonationStatus.isImpersonating) {
             const customToken = localStorage.getItem('impersonation_token');
             if (customToken) {
-              await signInWithCustomToken(auth, customToken);
-              localStorage.removeItem('impersonation_token');
+              try {
+                await signInWithCustomToken(auth, customToken);
+              } catch (impersonationError) {
+                console.error('Error signing in with impersonation token:', impersonationError);
+              } finally {
+                // Always remove the token after attempting to use it
+                localStorage.removeItem('impersonation_token');
+              }
             }
           }
         }
       } catch (error) {
         console.error('Error checking impersonation status:', error);
+        // Ensure we're not stuck in a loading state
+        setRestoringSession(false);
+        setLoading(false);
       }
     };
 
