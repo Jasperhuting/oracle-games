@@ -863,8 +863,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   };
 
   const getTotalMyBids = (): number => {
+
+    console.log(myBids.filter(b => b.status === 'active' || b.status === 'won'));
+
     return myBids
-      .filter(b => b.status === 'active' || b.status === 'outbid' || b.status === 'won')
+      .filter(b => b.status === 'active' || b.status === 'won')
       .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
   };
 

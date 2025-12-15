@@ -38,7 +38,7 @@ export const AuctionStats = ({ game, myBids, auctionClosed, getTotalMyBids, getR
                 <span className="ml-2 font-bold text-primary">
                   {auctionClosed
                     ? myBids.filter(b => b.status === 'won').length
-                    : myBids.length
+                    : myBids.filter(b => b.status === 'won' || b.status === 'active').length
                   }
                 </span>
               </div>
