@@ -9,7 +9,37 @@ interface ExtendedBid extends Bid {
 export const MyAuctionTeam = ({ myBids, auctionPeriods, availableRiders }: { myBids: ExtendedBid[], auctionPeriods: Array<{ name: string; startDate: string; endDate: string; status: string; neoProfsRequired?: number; neoProfsMaxPoints?: number; neoProfsMaxBudget?: number; }>, availableRiders: any, starterAmount: number }) => {
 
 
-const periodsColors = ['amber', 'blue', 'green', 'yellow', 'red', 'orange', 'purple', 'pink', 'teal', 'indigo']    
+const periodsColors = [{
+    border:  'border-amber-100',
+    bg: 'bg-amber-50'
+}, {
+    border: 'border-blue-100',
+    bg: 'bg-blue-50'
+}, {
+    border: 'border-green-100',
+    bg: 'bg-green-50'
+},{
+    border: 'border-yellow-100',
+    bg: 'bg-yellow-50'
+},{
+    border: 'border-red-100',
+    bg: 'bg-red-50'
+},{
+    border: 'border-orange-100',
+    bg: 'bg-orange-50'   
+},{
+    border: 'border-purple-100',
+    bg: 'bg-purple-50'
+},{
+    border: 'border-pink-100',
+    bg: 'bg-pink-50'
+},{
+    border: 'border-teal-100',
+    bg: 'bg-teal-50'
+},{
+    border: 'border-indigo-100',
+    bg: 'bg-indigo-50'
+}]
 
     return <div>
         <span className="flex justify-between">
@@ -31,7 +61,7 @@ const periodsColors = ['amber', 'blue', 'green', 'yellow', 'red', 'orange', 'pur
                     return null
                 }
 
-                return <div key={period.name} className={`border border-${periodsColors[index % periodsColors.length]}-100 pt-1 bg-${periodsColors[index % periodsColors.length]}-50 rounded-md`}>
+                return <div key={period.name} className={`border ${periodsColors[index].border} pt-1 ${periodsColors[index].bg} rounded-md`}>
                     <span className="font-bold p-2 text-sm">Period {index + 1}</span>
 
                     {bids.map((bid, idx) => {
