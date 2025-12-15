@@ -1081,7 +1081,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           )}
 
               <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={game.config.auctionPeriods || []} myBids={myBids.map((bid: Bid) => ({ ...bid, price: sortedAndFilteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
-              {myAuctionBids.length > 0 && <MyAuctionBids className="mt-4" myBids={myAuctionBids} />}
+              {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} className="mt-4" myBids={myAuctionBids} />}
               <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
               <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
 
