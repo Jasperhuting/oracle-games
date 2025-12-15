@@ -1021,14 +1021,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   setAdjustingBid={setAdjustingBid}
                   handleCancelBidClick={handleCancelBidClick}
                   game={game} 
-                  t={t} 
                   myBids={myBids} 
                   availableRiders={availableRiders} 
                   adjustingBid={adjustingBid}
-                  myBidRider={undefined} 
-                  rider={undefined} 
-                  canCancel={undefined} 
-                  riderNameId={undefined}   
                   placingBid={placingBid}               
                 
                 /> },

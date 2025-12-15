@@ -3,13 +3,13 @@ import { Button } from "./Button";
 import { PlayerCard } from "./PlayerCard";
 import { qualifiesAsNeoProf } from "@/lib/utils";
 import { useState } from "react";
-import { GridDots, List, Star, Users } from "tabler-icons-react";
+import { GridDots, List } from "tabler-icons-react";
 import { Bid } from "@/lib/types";
 import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency";
-import { Toggle } from "./Toggle";
 import { PlayerRowBids } from "./PlayerRowBids";
 import React from "react";
-import { ParticipantData } from "@/app/games/[gameId]/auction/page";
+import { GameData, ParticipantData, RiderWithBid } from "@/app/games/[gameId]/auction/page";
+import { useTranslation } from "react-i18next";
 
 export const Bidding = ({ 
     auctionClosed, 
@@ -17,7 +17,6 @@ export const Bidding = ({
     game, 
     auctionActive,
     isAdmin,
-    t, 
     myBids, 
     participant,
     allBids,
@@ -32,37 +31,34 @@ export const Bidding = ({
     bidAmountsRef,
     }: {
     auctionClosed: boolean,
-    myBidRef: any,
-    game: any,
-    t: any,
+    myBidRef: (node?: Element | null | undefined) => void,
+    game: GameData,
     myBids: Bid[],
     participant: ParticipantData | null,
-    sortedAndFilteredRiders: any,
+    sortedAndFilteredRiders: RiderWithBid[],
     bidAmountsRef: React.RefObject<Record<string, string>>,
-    availableRiders: any,
+    availableRiders: RiderWithBid[],
     showOnlyFillers: boolean,
-    setAdjustingBid: any,
+    setAdjustingBid: React.Dispatch<React.SetStateAction<string | null>>,
     auctionActive: boolean,
-    setshowOnlyFillers: any,
+    setshowOnlyFillers: React.Dispatch<React.SetStateAction<boolean>>,
     isAdmin: boolean,
-    setHideSoldPlayers: any,
-    hideSoldPlayers: any,
-    handleCancelBidClick: any,
-    cancellingBid: any,
-    myBidRider: any,
+    setHideSoldPlayers: React.Dispatch<React.SetStateAction<boolean>>,
+    hideSoldPlayers: boolean,
+    handleCancelBidClick: (bidId: string, riderName: string) => void,
+    cancellingBid: string | null,
     allBids: any,
-    handlePlaceBid: any,
+    handlePlaceBid: (rider: any) => void,
     adjustingBid: string | null,
-    rider: any,
     placingBid: string | null,
-    canCancel: any,
-    riderNameId: any 
 
 }) => {
 
 
     const [myTeamView, setMyTeamView] = useState('card');
       const [myTeamBidsView, setMyTeamBidsView] = useState('list');
+
+      const { t } = useTranslation();
 
     return <>
 
