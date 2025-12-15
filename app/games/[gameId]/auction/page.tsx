@@ -999,7 +999,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           <div className=" w-full flex flex-row gap-4 mb-4 relative">{/* container */}
             <div className="bg-white rounded-md border border-gray-200 p-4 flex-9/12">{/* content */}
 
-              {showMyAuctionBidsBig &&
+            
                 <MyAuctionBidsBig
                   selectedPlayerBids={selectedPlayerBids}
                   alleBiedingen={alleBiedingen}
@@ -1012,7 +1012,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   user={user}
                   availableRiders={availableRiders}
                   participant={participant}
-                  game={game} />}
+                  game={game} />
 
 
                 <Bidding 

@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { Flag } from "./Flag";
 import { Row } from "./Row";
 
@@ -36,7 +36,7 @@ export const PlayerRowBids = ({
             className={isSold ? 'opacity-60 bg-gray-50' : ''}
             rightContent={<>            {showPoints && (
                 <span className="text-xs mt-1 text-gray-500 justify-center font-bold w-[80px] break-keep whitespace-nowrap">
-                    {formatCurrency(player?.points)}
+                    {formatCurrencyWhole(player?.points)}
                 </span>
             )}{rightContent}</>}
         >
