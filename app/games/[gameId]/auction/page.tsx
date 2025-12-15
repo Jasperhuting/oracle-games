@@ -1051,7 +1051,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 
 
             </div>
-            <div className="bg-white rounded-md border border-gray-200 p-4 flex-3/12 sticky top-[190px] z-20 self-start">{/* sidebar */}
+            <div className="bg-white rounded-md border border-gray-200 p-4 flex-3/12 sticky top-[142px] z-20 self-start">{/* sidebar */}
 
                  {!auctionActive && (
             <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
@@ -1075,11 +1075,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             </div>
           )}
 
+          <div className="flex flex-col gap-4">
               <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={game.config.auctionPeriods || []} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
-              {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} className="mt-4" myBids={myAuctionBids} />}
+              {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} myBids={myAuctionBids} />}
               <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
               <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
-
+</div>
 
           
 

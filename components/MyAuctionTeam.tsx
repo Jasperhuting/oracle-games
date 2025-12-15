@@ -1,5 +1,6 @@
 import { Bid, Rider } from "@/lib/types"
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
+import { Collapsible } from "./Collapsible";
 
 
 interface ExtendedBid extends Bid {
@@ -26,7 +27,7 @@ const periodsColors = [{
     bg: 'bg-red-50'
 },{
     border: 'border-orange-100',
-    bg: 'bg-orange-50'   
+    bg: 'bg-orange-50'
 },{
     border: 'border-purple-100',
     bg: 'bg-purple-50'
@@ -41,11 +42,8 @@ const periodsColors = [{
     bg: 'bg-indigo-50'
 }]
 
-    return <div>
-        <span className="flex justify-between">
-            <h2 className="text-lg font-bold">My Team (<span>{myBids.length}</span>)</h2>
-        </span>
-        <div className="mt-2">
+    return <Collapsible title={`My Team (${myBids.length})`} className="border border-gray-200 rounded-md p-2" defaultOpen={true}>
+        <div>
 
             {auctionPeriods?.map((period, index) => {
 
@@ -83,5 +81,5 @@ const periodsColors = [{
             })}
 
         </div>
-    </div>
+    </Collapsible>
 }

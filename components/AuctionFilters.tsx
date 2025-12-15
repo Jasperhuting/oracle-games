@@ -6,6 +6,7 @@ import { Button } from "./Button";
 import { GameData, RiderWithBid } from "@/app/games/[gameId]/auction/page";
 import { Star, Users } from "tabler-icons-react";
 import { Toggle } from "./Toggle";
+import { Collapsible } from "./Collapsible";
 
 export const AuctionFilters = ({
     searchTerm,
@@ -43,7 +44,8 @@ export const AuctionFilters = ({
 
     const { t } = useTranslation();
 
-    return <div className="mb-4 bg-white py-4 flex flex-col gap-4 border border-gray-200 rounded-md p-4 mt-4">
+    return <Collapsible title="Filters" defaultOpen={true} className="mb-4 bg-white border border-gray-200 rounded-md p-2">
+        <div className="flex flex-col gap-4">
 
         <span className="flex flex-col flex-1">
             <label htmlFor="search" className="text-sm font-bold text-gray-700">{t('global.search')}</label>
@@ -88,8 +90,6 @@ export const AuctionFilters = ({
                   onText={t('global.showSoldPlayers')}
                   offText={t('global.hideSoldPlayers')}
                 />}
-    </div>
-
-
-
+        </div>
+    </Collapsible>
 }
