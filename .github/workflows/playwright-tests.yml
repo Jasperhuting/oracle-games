@@ -49,7 +49,7 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
-          firebase emulators:start --only auth,firestore,functions --import=./emulator-data &
+          firebase emulators:start --only auth,firestore,functions &
           echo "Waiting for emulators to start..."
           npx wait-on http://127.0.0.1:4000 -t 60000
 
