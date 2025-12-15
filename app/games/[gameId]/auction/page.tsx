@@ -137,7 +137,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [selectedPlayerBids, setSelectedPlayerBids] = useState<Bid[]>([]);
   const [activeAuctionPeriodTab, setActiveAuctionPeriodTab] = useState(0);
 
-  const [alleBiedingen, setAlleBiedingen] = useState<Bid[]>([]);
+  const [alleBiedingen, setAlleBiedingen] = useState<Bid[]>([]); // Naam aanpassen TODO:
 
   useEffect(() => {
     params.then(p => setGameId(p.gameId));
@@ -152,8 +152,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     const bidsData = await bidsResponse.json();
     setAlleBiedingen(bidsData.bids);
   })
-
-  console.log('alleBiedingen', alleBiedingen);
 
   useEffect(() => {
     alleBeidingenLaden()
@@ -427,10 +425,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         };
       });
 
-      console.log('DEBUG - riders total:', riders.length);
-      console.log('DEBUG - ridersWithBids total:', ridersWithBids.length);
-      console.log('DEBUG - Sample rider IDs:', riders.slice(0, 5).map(r => ({ id: r.id, nameID: r.nameID, name: r.name })));
-
       setAvailableRiders(ridersWithBids);
 
       setError(null);
@@ -547,7 +541,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     };
 
     const now = new Date();
-    console.log('Current time:', now.toISOString());
 
     // Find the period where we are currently in the time window
     // IMPORTANT: Only check time window, ignore status field to avoid confusion
@@ -895,7 +888,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   };
 
   const filteredRiders = useMemo(() => {
-    console.log('Filtering riders with isTop200Restricted:', isTop200Restricted);
     return availableRiders.filter(rider => {
       const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) || rider.nameID.toLowerCase().includes(searchTerm.toLowerCase()) ||
         rider.team?.name?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -974,9 +966,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const maxRiderPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
 
   const myAuctionBids = myBids.map((bid: Bid) => ({ ...bid, price: sortedAndFilteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points })).filter((bid: Bid) => bid.status === 'active')
-
-  console.log('sortedAndFilteredRiders', sortedAndFilteredRiders)
-  console.log('myBids', myBids)
 
   return (
     <div className={`min-h-screen bg-gray-50 relative `}>

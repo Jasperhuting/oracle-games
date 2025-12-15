@@ -27,16 +27,10 @@ import { ArrowRight } from "tabler-icons-react";
 export default function AdminPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [isAdmin, setIsAdmin] = useState(false);
     const [isProgrammer, setIsProgrammer] = useState(false);
     const [checking, setChecking] = useState(true);
-
-    useEffect(() => {
-        console.log('Current language:', i18n.language);
-        console.log('Available languages:', i18n.languages);
-        console.log('Translation test (admin.tabs.users):', t('admin.tabs.users'));
-    }, [i18n, t]);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
