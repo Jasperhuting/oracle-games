@@ -20,6 +20,7 @@ import { Bidding } from "@/components/Bidding";
 import { AuctionStats } from "@/components/AuctionStats";
 import { AuctionFilters } from "@/components/AuctionFilters";
 import { qualifiesAsNeoProf } from "@/lib/utils";
+import { Tabs } from "@/components/Tabs";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
@@ -997,25 +998,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       <div className="p-8">
         <div className="container mx-auto">
           <div className=" w-full flex flex-row gap-4 mb-4 relative">{/* container */}
-            <div className="bg-white rounded-md border border-gray-200 p-4 flex-9/12">{/* content */}
+            <div className="bg-white rounded-md flex-9/12">{/* content */}
 
-            
-                <MyAuctionBidsBig
-                  selectedPlayerBids={selectedPlayerBids}
-                  alleBiedingen={alleBiedingen}
-                  myBids={myBids}
-                  divisionParticipants={divisionParticipants}
-                  selectedPlayerId={selectedPlayerId}
-                  setSelectedPlayerId={setSelectedPlayerId}
-                  setActiveAuctionPeriodTab={setActiveAuctionPeriodTab}
-                  activeAuctionPeriodTab={activeAuctionPeriodTab}
-                  user={user}
-                  availableRiders={availableRiders}
-                  participant={participant}
-                  game={game} />
-
-
-                <Bidding 
+              <Tabs 
+                defaultTab="bidding"
+                tabs={[                
+                { id: 'bidding', label: 'Bidding', content: <Bidding 
                   auctionClosed={auctionClosed} 
                   allBids={allBids}
                   auctionActive={auctionActive}
@@ -1043,7 +1031,26 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   riderNameId={undefined}   
                   placingBid={placingBid}               
                 
-                />
+                /> },
+                { id: 'my-bids', label: 'My Bids', content: <MyAuctionBidsBig
+                  selectedPlayerBids={selectedPlayerBids}
+                  alleBiedingen={alleBiedingen}
+                  myBids={myBids}
+                  divisionParticipants={divisionParticipants}
+                  selectedPlayerId={selectedPlayerId}
+                  setSelectedPlayerId={setSelectedPlayerId}
+                  setActiveAuctionPeriodTab={setActiveAuctionPeriodTab}
+                  activeAuctionPeriodTab={activeAuctionPeriodTab}
+                  user={user}
+                  availableRiders={availableRiders}
+                  participant={participant}
+                  game={game} /> }
+              ]} />
+            
+                
+
+
+                
 
 
                 
