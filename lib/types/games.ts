@@ -297,14 +297,15 @@ export interface Bid {
   riderNameId: string;
 
   amount: number;
-  bidAt: Timestamp | Date;
+  bidAt: string;
   status: BidStatus;
-  deletedAt?: Timestamp | Date;
+  deletedAt?: string;
 
   // Denormalized rider info
   riderName: string;
   riderTeam: string;
   jerseyImage?: string;
+
 }
 
 // ============================================================================

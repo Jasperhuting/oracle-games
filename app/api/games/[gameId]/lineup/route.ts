@@ -80,7 +80,7 @@ export async function GET(
     // Fetch available riders from rankings_{year} (limit to top 1000 to avoid quota issues)
     const allRidersSnapshot = await db.collection(`rankings_${year}`)
       .orderBy('rank')
-      .limit(1000)
+      .limit(3000)
       .get();
 
     // Cache team data to avoid duplicate reads
