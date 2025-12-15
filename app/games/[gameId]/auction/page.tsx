@@ -1003,89 +1003,93 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           <div className=" w-full flex flex-row gap-4 mb-4 relative">{/* container */}
             <div className="bg-white rounded-md flex-9/12">{/* content */}
 
-              <Tabs 
+              <Tabs
                 defaultTab="bidding"
-                tabs={[                
-                { id: 'bidding', label: 'Bidding', content: <Bidding 
-                  auctionClosed={auctionClosed} 
-                  allBids={allBids}
-                  auctionActive={auctionActive}
-                  cancellingBid={cancellingBid}
-                  setHideSoldPlayers={setHideSoldPlayers}
-                  hideSoldPlayers={hideSoldPlayers}
-                  participant={participant}
-                  isAdmin={isAdmin}
-                  bidAmountsRef={bidAmountsRef}
-                  sortedAndFilteredRiders={sortedAndFilteredRiders}
-                  myBidRef={myBidRef} 
-                  setshowOnlyFillers={setshowOnlyFillers}
-                  showOnlyFillers={showOnlyFillers}
-                  handlePlaceBid={handlePlaceBid}
-                  setAdjustingBid={setAdjustingBid}
-                  handleCancelBidClick={handleCancelBidClick}
-                  game={game} 
-                  myBids={myBids} 
-                  availableRiders={availableRiders} 
-                  adjustingBid={adjustingBid}
-                  placingBid={placingBid}               
-                
-                /> },
-                { id: 'my-bids', label: 'My Bids', content: <MyAuctionBidsBig
-                  selectedPlayerBids={selectedPlayerBids}
-                  alleBiedingen={alleBiedingen}
-                  myBids={myBids}
-                  divisionParticipants={divisionParticipants}
-                  selectedPlayerId={selectedPlayerId}
-                  setSelectedPlayerId={setSelectedPlayerId}
-                  setActiveAuctionPeriodTab={setActiveAuctionPeriodTab}
-                  activeAuctionPeriodTab={activeAuctionPeriodTab}
-                  user={user}
-                  availableRiders={availableRiders}
-                  participant={participant}
-                  game={game} /> }
-              ]} />
-            
-                
+                tabs={[
+                  {
+                    id: 'bidding', label: 'Bidding', content: <Bidding
+                      auctionClosed={auctionClosed}
+                      allBids={allBids}
+                      auctionActive={auctionActive}
+                      cancellingBid={cancellingBid}
+                      setHideSoldPlayers={setHideSoldPlayers}
+                      hideSoldPlayers={hideSoldPlayers}
+                      participant={participant}
+                      isAdmin={isAdmin}
+                      bidAmountsRef={bidAmountsRef}
+                      sortedAndFilteredRiders={sortedAndFilteredRiders}
+                      myBidRef={myBidRef}
+                      setshowOnlyFillers={setshowOnlyFillers}
+                      showOnlyFillers={showOnlyFillers}
+                      handlePlaceBid={handlePlaceBid}
+                      setAdjustingBid={setAdjustingBid}
+                      handleCancelBidClick={handleCancelBidClick}
+                      game={game}
+                      myBids={myBids}
+                      availableRiders={availableRiders}
+                      adjustingBid={adjustingBid}
+                      placingBid={placingBid}
+
+                    />
+                  },
+                  {
+                    id: 'my-bids', label: 'Bidding history', content: <MyAuctionBidsBig
+                      selectedPlayerBids={selectedPlayerBids}
+                      alleBiedingen={alleBiedingen}
+                      myBids={myBids}
+                      divisionParticipants={divisionParticipants}
+                      selectedPlayerId={selectedPlayerId}
+                      setSelectedPlayerId={setSelectedPlayerId}
+                      setActiveAuctionPeriodTab={setActiveAuctionPeriodTab}
+                      activeAuctionPeriodTab={activeAuctionPeriodTab}
+                      user={user}
+                      availableRiders={availableRiders}
+                      participant={participant}
+                      game={game} />
+                  }
+                ]} />
 
 
-                
 
 
-                
+
+
+
+
 
             </div>
             <div className="bg-white rounded-md border border-gray-200 p-4 flex-3/12 sticky top-[142px] z-20 self-start">{/* sidebar */}
 
-                 {!auctionActive && (
-            <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
-              }`}>
-              <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
-                }`}>
-                {auctionClosed
-                  ? game.gameType === 'worldtour-manager'
-                    ? 'Team selection has ended. No more riders can be selected.'
-                    : 'The auction has ended. No more bids can be placed.'
-                  : game.gameType === 'worldtour-manager'
-                    ? 'Team selection has not started yet. Selection will open soon.'
-                    : 'The auction has not started yet. Bidding will open soon.'}
-              </p>
-            </div>
-          )}
+              {!auctionActive && (
+                <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
+                  }`}>
+                  <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
+                    }`}>
+                    {auctionClosed
+                      ? game.gameType === 'worldtour-manager'
+                        ? 'Team selection has ended. No more riders can be selected.'
+                        : 'The auction has ended. No more bids can be placed.'
+                      : game.gameType === 'worldtour-manager'
+                        ? 'Team selection has not started yet. Selection will open soon.'
+                        : 'The auction has not started yet. Bidding will open soon.'}
+                  </p>
+                </div>
+              )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-              <span className="text-red-700 text-sm">{error}</span>
-            </div>
-          )}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                  <span className="text-red-700 text-sm">{error}</span>
+                </div>
+              )}
 
-          <div className="flex flex-col gap-4">
-              <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={game.config.auctionPeriods || []} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
-              {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} myBids={myAuctionBids} />}
-              <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
-              <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
-</div>
+              <div className="flex flex-col gap-4">
+                <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
+                <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
+                {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} myBids={myAuctionBids} />}
+                <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={game.config.auctionPeriods || []} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
+              </div>
 
-          
+
 
             </div>
           </div>
@@ -1175,7 +1179,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           //   </div>
           // )} */}
 
-{/* 
+          {/* 
           {!auctionClosed && (
             <div ref={myBidRef}>
               <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
