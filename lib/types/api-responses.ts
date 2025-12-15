@@ -35,6 +35,7 @@ export interface User {
   blockedBy?: string;
   blockedReason?: string;
   preferredLanguage?: 'en' | 'nl';
+  deletedAt?: string;
 }
 
 // ============================================================================

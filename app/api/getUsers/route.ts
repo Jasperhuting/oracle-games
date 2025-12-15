@@ -6,6 +6,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UsersListR
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const forMessaging = searchParams.get('forMessaging') === 'true';
 
     if (!userId) {
       return NextResponse.json(
@@ -16,9 +17,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<UsersListR
 
     const db = getServerFirebase();
 
-    // Check if requesting user is admin
+    // Verify requesting user exists
     const requestingUserDoc = await db.collection('users').doc(userId).get();
-    if (!requestingUserDoc.exists || requestingUserDoc.data()?.userType !== 'admin') {
+    if (!requestingUserDoc.exists) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const isAdmin = requestingUserDoc.data()?.userType === 'admin';
+
+    // For non-messaging requests, only admins can access
+    if (!forMessaging && !isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 403 }
@@ -31,10 +42,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<UsersListR
       .orderBy('createdAt', 'desc')
       .get();
 
-    const users: User[] = usersSnapshot.docs.map((doc) => ({
+    let users: User[] = usersSnapshot.docs.map((doc) => ({
       uid: doc.id,
       ...doc.data()
     } as User));
+
+    // For messaging, filter out deleted users and only return basic info
+    if (forMessaging) {
+      users = users.filter((user) => !user.deletedAt);
+    }
 
     return NextResponse.json({ users });
   } catch (error) {

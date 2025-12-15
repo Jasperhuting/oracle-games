@@ -15,16 +15,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify sender is admin
+    // Verify sender exists
     const senderDoc = await adminDb.collection('users').doc(senderId).get();
-    if (!senderDoc.exists || senderDoc.data()?.userType !== 'admin') {
+    if (!senderDoc.exists) {
       return NextResponse.json(
-        { error: 'Unauthorized: Only admins can send messages' },
-        { status: 403 }
+        { error: 'Sender not found' },
+        { status: 404 }
       );
     }
 
+    const isAdmin = senderDoc.data()?.userType === 'admin';
+
     if (type === 'broadcast') {
+      // Only admins can send broadcast messages
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'Unauthorized: Only admins can send broadcast messages' },
+          { status: 403 }
+        );
+      }
       // Send message to all users
       const usersSnapshot = await adminDb.collection('users').get();
       const batch = adminDb.batch();

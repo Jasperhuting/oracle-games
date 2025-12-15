@@ -3,11 +3,19 @@
 import { useAuth } from '@/hooks/useAuth';
 import { ClientMessage } from '@/lib/types/games';
 import { useEffect, useState } from 'react';
-import { Mail, MailOpened, X, Trash, Send } from 'tabler-icons-react';
+import { Mail, MailOpened, X, Trash, Send, Edit, AlertCircle } from 'tabler-icons-react';
 import { db } from '@/lib/firebase/client';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
-type TabType = 'inbox' | 'outbox';
+type TabType = 'inbox' | 'outbox' | 'compose';
+
+interface User {
+  id: string;
+  displayName: string;
+  email?: string;
+  playername?: string;
+}
 
 export default function InboxComponent() {
   const { user } = useAuth();
@@ -17,6 +25,14 @@ export default function InboxComponent() {
   const [selectedMessage, setSelectedMessage] = useState<ClientMessage | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBanner, setShowBanner] = useState(true);
+
+  // Compose message state
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<string>('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
 
   useEffect(() => {
     const checkBannerCookie = () => {
@@ -146,6 +162,96 @@ export default function InboxComponent() {
     };
   }, [user]);
 
+  // Fetch users for compose tab
+  useEffect(() => {
+    if (activeTab === 'compose' && users.length === 0 && user) {
+      fetchUsers();
+    }
+  }, [activeTab, user]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`/api/getUsers?userId=${user?.uid}&forMessaging=true`);
+      if (!response.ok) {
+        console.error('Failed to fetch users');
+        return;
+      }
+      const data = await response.json();
+      console.log('data', data)
+      const usersData = data.users
+        .map((u: any) => ({
+          id: u.uid,
+          displayName: u.playername || u.email || '',
+          email: u.email,
+          playername: u.playername,
+        }))
+        .filter((u: User) => u.id !== user?.uid) // Filter out current user
+        .filter((u: User) => {
+          // Filter out users without playername or email
+          return (u.playername && u.playername.trim() !== '') || (u.email && u.email.trim() !== '');
+        })
+        .sort((a: User, b: User) => {
+          // Safe sort with fallback for undefined values
+          const nameA = a.displayName || '';
+          const nameB = b.displayName || '';
+          return nameA.localeCompare(nameB);
+        });
+
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setSending(true);
+    setSendError('');
+
+    try {
+      const recipientUser = users.find((u) => u.id === selectedRecipient);
+      if (!recipientUser) {
+        setSendError('Selecteer een ontvanger');
+        setSending(false);
+        return;
+      }
+
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          senderId: user.uid,
+          senderName: user.displayName || user.email,
+          type: 'individual',
+          recipientId: selectedRecipient,
+          recipientName: recipientUser.displayName,
+          subject,
+          message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      // Reset form
+      setSelectedRecipient('');
+      setSubject('');
+      setMessage('');
+      toast.success('Bericht succesvol verzonden!');
+      setActiveTab('outbox');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setSendError('Er is een fout opgetreden bij het verzenden van het bericht');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const markAsRead = async (messageId: string) => {
     if (!user) return;
 
@@ -208,6 +314,14 @@ export default function InboxComponent() {
     setSelectedMessage(null);
   };
 
+  const handleReply = (message: ClientMessage) => {
+    // Set the recipient to the sender of the message
+    setSelectedRecipient(message.senderId);
+    setSubject(`RE: ${message.subject}`);
+    setMessage('');
+    setActiveTab('compose');
+  };
+
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -264,11 +378,123 @@ export default function InboxComponent() {
           <Send className="w-5 h-5" />
           Outbox ({outboxMessages.length})
         </button>
+        <button
+          onClick={() => {
+            setActiveTab('compose');
+            setSelectedMessage(null);
+          }}
+          className={`px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+            activeTab === 'compose'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <Edit className="w-5 h-5" />
+          Nieuw bericht
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Messages List */}
-        <div className="lg:col-span-1 bg-white rounded-lg shadow">
+      {activeTab === 'compose' ? (
+        /* Compose Message Form */
+        <div className="bg-white rounded-lg shadow p-6">
+          {/* Privacy Warning */}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-yellow-800 mb-1">Privacywaarschuwing</h3>
+              <p className="text-sm text-yellow-700">
+                Administrators kunnen alle berichten inzien die via dit systeem worden verzonden.
+                Verstuur geen gevoelige of persoonlijke informatie via dit berichtensysteem.
+              </p>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold mb-6">Nieuw bericht verzenden</h2>
+
+          <form onSubmit={handleSendMessage} className="space-y-4">
+            {/* Recipient Selection */}
+            <div>
+              <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 mb-2">
+                Ontvanger *
+              </label>
+              <select
+                id="recipient"
+                value={selectedRecipient}
+                onChange={(e) => setSelectedRecipient(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Selecteer een gebruiker...</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subject */}
+            <div>
+              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                Onderwerp *
+              </label>
+              <input
+                type="text"
+                id="subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Onderwerp van het bericht"
+                required
+              />
+            </div>
+
+            {/* Message */}
+            <div>
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                Bericht *
+              </label>
+              <textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[200px]"
+                placeholder="Typ je bericht hier..."
+                required
+              />
+            </div>
+
+            {/* Error Message */}
+            {sendError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {sendError}
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={sending}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                <Send className="w-5 h-5" />
+                {sending ? 'Bezig met verzenden...' : 'Verzenden'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('inbox')}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Annuleren
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Messages List */}
+          <div className="lg:col-span-1 bg-white rounded-lg shadow">
           <div className="p-4 border-b">
             <h2 className="text-xl font-semibold">
               {activeTab === 'inbox' ? 'Received' : 'Sent'} ({messages.length})
@@ -381,6 +607,15 @@ export default function InboxComponent() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {activeTab === 'inbox' && (
+                    <button
+                      onClick={() => handleReply(selectedMessage)}
+                      className="p-2 hover:bg-blue-100 rounded-full cursor-pointer transition-colors"
+                      title="Beantwoorden"
+                    >
+                      <Send className="w-5 h-5 text-blue-600" />
+                    </button>
+                  )}
                   <button
                     onClick={() => deleteMessage(selectedMessage.id!)}
                     className="p-2 hover:bg-red-100 rounded-full cursor-pointer transition-colors"
@@ -412,6 +647,7 @@ export default function InboxComponent() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
