@@ -13,7 +13,7 @@ import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { MyAuctionTeam } from "@/components/MyAuctionTeam";
-import { Bid } from "@/lib/types";
+import { Bid, AuctionPeriod } from "@/lib/types";
 import { MyAuctionBids } from "@/components/MyAuctionBids";
 import { MyAuctionBidsBig } from "@/components/MyAuctionBidsBig";
 import { Bidding } from "@/components/Bidding";
@@ -63,15 +63,7 @@ export interface GameData {
     minNeoPros?: number;
     maxNeoProPoints?: number;
     maxNeoProAge?: number;
-    auctionPeriods?: Array<{
-      name: string;
-      startDate: string;
-      endDate: string;
-      status: string;
-      neoProfsRequired?: number;
-      neoProfsMaxPoints?: number;
-      neoProfsMaxBudget?: number;
-    }>;
+    auctionPeriods?: Array<AuctionPeriod>;
   };
   eligibleRiders: string[];
 }
@@ -1075,7 +1067,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
                 <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
                 {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} myBids={myAuctionBids} />}
-                <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={game.config.auctionPeriods || []} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
+                <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
+                  ...period,
+                  startDate: typeof period.startDate === 'string' ? period.startDate : period.startDate.toDate().toISOString(),
+                  endDate: typeof period.endDate === 'string' ? period.endDate : period.endDate.toDate().toISOString()
+                }))} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
               </div>
 
 

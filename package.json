@@ -51,6 +51,7 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "19.2.1",
+    "react-countdown": "^2.3.6",
     "react-currency-input-field": "^4.0.3",
     "react-datepicker": "^8.10.0",
     "react-dom": "19.2.1",

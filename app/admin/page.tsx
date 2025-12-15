@@ -1,7 +1,7 @@
 'use client'
 
 import { UserList } from "@/components/UserList";
-import { Tabs } from "@/components/Tabs";
+import { NestedTabs } from "@/components/NestedTabs";
 import { GamesTab } from "@/components/GamesTab";
 import { ForumTab } from "@/components/ForumTab";
 import { ActivityLogTab } from "@/components/ActivityLogTab";
@@ -96,83 +96,108 @@ export default function AdminPage() {
                     </Link>
                 </div>
 
-                <Tabs
+                <NestedTabs
+                    defaultGroup="community"
                     defaultTab="users"
-                    tabs={[
+                    groups={[
                         {
-                            id: 'users',
-                            label: t('admin.tabs.users'),
-                            content: <UserList />
+                            id: 'community',
+                            label: 'Gebruikers & Community',
+                            tabs: [
+                                {
+                                    id: 'users',
+                                    label: t('admin.tabs.users'),
+                                    content: <UserList />
+                                },
+                                {
+                                    id: 'messaging',
+                                    label: t('admin.tabs.messaging'),
+                                    content: <MessagingTab />
+                                },
+                                {
+                                    id: 'forum',
+                                    label: t('admin.tabs.forum'),
+                                    content: <ForumTab />
+                                },
+                                {
+                                    id: 'feedback',
+                                    label: t('admin.tabs.feedback'),
+                                    content: <FeedbackTab />
+                                }
+                            ]
                         },
                         {
                             id: 'games',
-                            label: t('admin.tabs.races'),
-                            content: <GamesTab />
+                            label: 'Games Management',
+                            tabs: [
+                                {
+                                    id: 'races',
+                                    label: t('admin.tabs.races'),
+                                    content: <GamesTab />
+                                },
+                                {
+                                    id: 'add-game',
+                                    label: t('admin.tabs.addRace'),
+                                    content: <AddGameTab />
+                                },
+                                {
+                                    id: 'create-game',
+                                    label: t('admin.tabs.createGame'),
+                                    content: <CreateGameTab />
+                                },
+                                {
+                                    id: 'games-management',
+                                    label: t('admin.tabs.manageGames'),
+                                    content: <GamesManagementTab />
+                                },
+                                {
+                                    id: 'scrape-races',
+                                    label: t('admin.tabs.scrapeRaces'),
+                                    content: <RacesScraperTab />
+                                }
+                            ]
                         },
                         {
-                            id: 'add-game',
-                            label: t('admin.tabs.addRace'),
-                            content: <AddGameTab />
+                            id: 'content',
+                            label: 'Content Management',
+                            tabs: [
+                                {
+                                    id: 'riders',
+                                    label: t('admin.tabs.manageRiders'),
+                                    content: <RidersManagementTab />
+                                },
+                                {
+                                    id: 'game-rules',
+                                    label: t('admin.tabs.gameRules'),
+                                    content: <GameRulesTab />
+                                },
+                                {
+                                    id: 'pages-editor',
+                                    label: t('admin.tabs.pagesEditor'),
+                                    content: <PageEditor />
+                                },
+                                {
+                                    id: 'translations',
+                                    label: t('admin.tabs.translations'),
+                                    content: <TranslationsTab isProgrammer={isProgrammer} />
+                                }
+                            ]
                         },
                         {
-                            id: 'create-game',
-                            label: t('admin.tabs.createGame'),
-                            content: <CreateGameTab />
-                        },
-                        {
-                            id: 'games-management',
-                            label: t('admin.tabs.manageGames'),
-                            content: <GamesManagementTab />
-                        },
-                        {
-                            id: 'riders',
-                            label: t('admin.tabs.manageRiders'),
-                            content: <RidersManagementTab />
-                        },
-                        {
-                            id: 'scrape-races',
-                            label: t('admin.tabs.scrapeRaces'),
-                            content: <RacesScraperTab />
-                        },
-                        {
-                            id: 'game-rules',
-                            label: t('admin.tabs.gameRules'),
-                            content: <GameRulesTab />
-                        },
-                        {
-                            id: 'pages-editor',
-                            label: t('admin.tabs.pagesEditor'),
-                            content: <PageEditor />
-                        },
-                        {
-                            id: 'translations',
-                            label: t('admin.tabs.translations'),
-                            content: <TranslationsTab isProgrammer={isProgrammer} />
-                        },
-                        {
-                            id: 'feedback',
-                            label: t('admin.tabs.feedback'),
-                            content: <FeedbackTab />
-                        },
-                        {
-                            id: 'messaging',
-                            label: t('admin.tabs.messaging'),
-                            content: <MessagingTab />
-                        },
-                        {
-                            id: 'forum',
-                            label: t('admin.tabs.forum'),
-                            content: <ForumTab />
-                        },
-                        {
-                            id: 'activity',
-                            label: t('admin.tabs.activityLog'),
-                            content: <ActivityLogTab />
-                        },
-                        {
-                            id: 'migrations',
-                            label: t('admin.tabs.dataMigrations'),
-                            content: <DataMigrationsTab />
+                            id: 'system',
+                            label: 'Systeem',
+                            tabs: [
+                                {
+                                    id: 'activity',
+                                    label: t('admin.tabs.activityLog'),
+                                    content: <ActivityLogTab />
+                                },
+                                {
+                                    id: 'migrations',
+                                    label: t('admin.tabs.dataMigrations'),
+                                    content: <DataMigrationsTab />
+                                }
+                            ]
                         }
                     ]}
                 />
