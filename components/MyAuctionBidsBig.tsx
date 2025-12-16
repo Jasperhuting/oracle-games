@@ -100,21 +100,54 @@ export const MyAuctionBidsBig = ({
                 <div className="mb-4">
                   <div className="border-b border-gray-200">
                     <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-                      {game.config.auctionPeriods.map((period, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setActiveAuctionPeriodTab(index)}
-                          className={`
-                          whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm
-                          ${activeAuctionPeriodTab === index
-                              ? 'border-primary text-primary'
-                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      {game.config.auctionPeriods.map((period, index) => {
+                        const now = new Date()
+                        const startDate = typeof period.startDate === 'object' && 'toDate' in period.startDate
+                          ? period.startDate.toDate()
+                          : new Date(period.startDate as any)
+                        const endDate = typeof period.endDate === 'object' && 'toDate' in period.endDate
+                          ? period.endDate.toDate()
+                          : new Date(period.endDate as any)
+                        const isPeriodActive = now >= startDate && now <= endDate
+
+                        const formatDate = (date: Date) => {
+                          return date.toLocaleDateString('nl-NL', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        }
+
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => !isPeriodActive && setActiveAuctionPeriodTab(index)}
+                            disabled={isPeriodActive}
+                            className={`
+                            whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm
+                            ${isPeriodActive
+                              ? 'border-transparent text-gray-400 cursor-not-allowed opacity-50'
+                              : activeAuctionPeriodTab === index
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }
-                        `}
-                        >
-                          {period.name}
-                        </button>
-                      ))}
+                          `}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span className="font-semibold">{period.name}</span>
+                              <span className="text-xs mt-1">
+                                {formatDate(startDate)} - {formatDate(endDate)}
+                              </span>
+                              {isPeriodActive && (
+                                <span className="text-xs font-bold text-orange-500 mt-1">
+                                  ● Actief - Niet zichtbaar
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
                     </nav>
                   </div>
                 </div>
@@ -132,32 +165,37 @@ export const MyAuctionBidsBig = ({
               
                               const startDate = new Date(auctionPeriod.startDate)
                               const endDate = new Date(auctionPeriod.endDate)
-              
+                              const now = new Date()
+
+                              // SECURITY: Check if this auction period is currently active
+                              // During an active auction period, users should NOT see active bids from other players
+                              const isAuctionPeriodActive = now >= startDate && now <= endDate
+
                               console.log({ startDate });
                               console.log({ endDate });
-              
+
                               const bids = alleBiedingen
                                 .filter((bid) => {
                                   return new Date(bid.bidAt) >= startDate && new Date(bid.bidAt) <= endDate ? bid : null
                                 })
-              
+
                               // Use selectedPlayerBids if a player is selected, otherwise use myBids
                               const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
-              
+
                               // Filter bids to only show bids within this auction period
                               const bidsInPeriod = bidsToShow.filter((bid) => {
                                 const bidDate = new Date(bid.bidAt);
                                 return bidDate >= startDate && bidDate <= endDate;
                               });
-              
+
                               // Don't render this section if there are no bids in this period
                               if (bidsInPeriod.length === 0) return null;
-              
+
                               // Calculate remaining budget for the selected player up to this period
                               const remainingBudget = selectedPlayerId
                                 ? calculateRemainingBudget(selectedPlayerBids, periodIndex)
                                 : calculateRemainingBudget(myBids, periodIndex);
-              
+
                               // Card View - Show all bids (won and lost) for this auction period
                               return <div key={periodIndex} className="mb-8">
                                 <div className="flex justify-end items-center mb-4">
@@ -169,9 +207,19 @@ export const MyAuctionBidsBig = ({
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {bidsInPeriod
                                   .map((myBidRider) => {
                                     const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
-              
+
+                                    // SECURITY: Only show other players' active bids if the auction period is over
+                                    // If auction period is still active, filter out all 'active' status bids from other players
+                                    // This prevents users from seeing what others are currently bidding during an active auction
                                     const riderBidders = alleBiedingen
                                       .filter((b: Bid) => (b.riderNameId === rider?.nameID || b.riderNameId === rider?.id))
+                                      .filter((b: Bid) => {
+                                        // If the auction period is still active, hide all 'active' bids
+                                        if (isAuctionPeriodActive && b.status === 'active') {
+                                          return false;
+                                        }
+                                        return true;
+                                      })
                                       .sort((a: Bid, b: Bid) => b.amount - a.amount)
                                       .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
               

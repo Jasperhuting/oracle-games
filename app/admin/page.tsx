@@ -16,6 +16,7 @@ import { PageEditor } from "@/components/PageEditor";
 import MessagingTab from "@/components/MessagingTab";
 import { DataMigrationsTab } from "@/components/DataMigrationsTab";
 import { TranslationsTab } from "@/components/TranslationsTab";
+import { BidBackupTab } from "@/components/BidBackupTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -155,6 +156,11 @@ export default function AdminPage() {
                                     id: 'scrape-races',
                                     label: t('admin.tabs.scrapeRaces'),
                                     content: <RacesScraperTab />
+                                },
+                                {
+                                    id: 'bid-backup',
+                                    label: 'Bid Backup',
+                                    content: <BidBackupTab />
                                 }
                             ]
                         },

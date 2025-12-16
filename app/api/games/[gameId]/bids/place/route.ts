@@ -4,7 +4,7 @@ import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, Bi
 import { placeBidSchema, validateRequest } from '@/lib/validation';
 
 // TEMPORARY: Toggle to disable bidding
-const BIDDING_DISABLED = true;
+const BIDDING_DISABLED = false;
 
 export async function POST(
   request: NextRequest,

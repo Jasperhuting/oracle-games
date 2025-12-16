@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 
 // TEMPORARY: Toggle to disable bid modifications
-const BIDDING_DISABLED = true;
+const BIDDING_DISABLED = false;
 
 export async function POST(
   request: NextRequest,
