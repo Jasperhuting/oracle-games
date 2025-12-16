@@ -10,6 +10,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
 ): Promise<NextResponse<PlaceBidResponse | ApiErrorResponse>> {
+  // Parse params and body at the top so they're available in catch block
+  const { gameId } = await params;
+  let userId: string | undefined;
+  let riderNameId: string | undefined;
+  let amount: number | undefined;
+
   try {
     // Check if bidding is temporarily disabled
     if (BIDDING_DISABLED) {
@@ -19,7 +25,6 @@ export async function POST(
       );
     }
 
-    const { gameId } = await params;
     const body = await request.json();
 
     // Validate request body
@@ -27,8 +32,12 @@ export async function POST(
     if (!validation.success) {
       return validation.error;
     }
-    
-    const { userId, riderNameId, amount, riderName, riderTeam, jerseyImage } = validation.data;
+
+    const validatedData = validation.data;
+    userId = validatedData.userId;
+    riderNameId = validatedData.riderNameId;
+    amount = validatedData.amount;
+    const { riderName, riderTeam, jerseyImage } = validatedData;
 
     if (!userId || !riderNameId || amount === undefined) {
       return NextResponse.json(
@@ -250,10 +259,6 @@ export async function POST(
 
     // Log the error to activity log
     try {
-      const { gameId } = await params;
-      const body = await request.json().catch(() => ({}));
-      const { userId, riderNameId, amount } = body;
-
       if (userId) {
         const db = getServerFirebase();
         const userDoc = await db.collection('users').doc(userId).get();

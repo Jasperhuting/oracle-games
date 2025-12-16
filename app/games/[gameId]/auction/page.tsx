@@ -53,6 +53,7 @@ export interface GameData {
   gameType: string;
   year: number;
   status: string;
+  division?: string;
   config: {
     budget?: number;
     maxRiders?: number;
@@ -997,6 +998,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               <h1 className="text-2xl font-bold">
                 {game.gameType === 'worldtour-manager' ? 'Team Selection' : 'Auction'} - {game.name}
               </h1>
+              <p className="text-gray-600">{game.division}</p>
             </div>
             <Button
               type="button"

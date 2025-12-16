@@ -536,19 +536,38 @@ export const JoinableGamesTab = () => {
                   <div className="ml-4 flex flex-col gap-2">
                     {/* Admin View Button - show for admins who haven't joined, or for games in bidding/active status */}
                     {isAdmin && !isJoined && (
-                      <Button
-                        text={t('games.viewGameAdmin')}
-                        onClick={() => {
-                          // Navigate to first division if multi-division, otherwise to the game
-                          const targetGame = group.isMultiDivision ? group.games[0] : game;
-                          if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
-                            router.push(`/games/${targetGame.id}/auction`);
-                          } else {
-                            router.push(`/games/${targetGame.id}/team`);
-                          }
-                        }}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
-                      />
+                      <>
+                        {group.isMultiDivision ? (
+                          // Show a button for each division
+                          group.games.map((divisionGame) => (
+                            <Button
+                              key={divisionGame.id}
+                              text={`${t('games.viewGameAdmin')} - ${divisionGame.division || `Division ${divisionGame.divisionLevel}`}`}
+                              onClick={() => {
+                                if (divisionGame.gameType === 'auction' || divisionGame.gameType === 'auctioneer' || divisionGame.gameType === 'worldtour-manager') {
+                                  router.push(`/games/${divisionGame.id}/auction`);
+                                } else {
+                                  router.push(`/games/${divisionGame.id}/team`);
+                                }
+                              }}
+                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+                            />
+                          ))
+                        ) : (
+                          // Single division - show one button
+                          <Button
+                            text={t('games.viewGameAdmin')}
+                            onClick={() => {
+                              if (game.gameType === 'auction' || game.gameType === 'auctioneer' || game.gameType === 'worldtour-manager') {
+                                router.push(`/games/${game.id}/auction`);
+                              } else {
+                                router.push(`/games/${game.id}/team`);
+                              }
+                            }}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+                          />
+                        )}
+                      </>
                     )}
 
                     {/* Admin View Button for joined games - show alongside regular buttons */}

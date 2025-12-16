@@ -8,6 +8,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
 ) {
+  // Parse params and body at the top so they're available in catch block
+  const { gameId } = await params;
+  let userId: string | undefined;
+  let bidId: string | undefined;
+
   try {
     // Check if bidding is temporarily disabled
     if (BIDDING_DISABLED) {
@@ -17,8 +22,9 @@ export async function POST(
       );
     }
 
-    const { gameId } = await params;
-    const { userId, bidId } = await request.json();
+    const body = await request.json();
+    userId = body.userId;
+    bidId = body.bidId;
 
     if (!userId || !bidId) {
       return NextResponse.json(
@@ -123,10 +129,6 @@ export async function POST(
 
     // Log the error to activity log
     try {
-      const { gameId } = await params;
-      const body = await request.json().catch(() => ({}));
-      const { userId, bidId } = body;
-
       if (userId) {
         const db = getServerFirebase();
         const userDoc = await db.collection('users').doc(userId).get();
