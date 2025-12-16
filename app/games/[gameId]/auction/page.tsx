@@ -123,6 +123,37 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const { t } = useTranslation();
 
+
+  useEffect(() => { // TEMPORARY
+        const checkAdminStatus = async () => {
+            if (!loading && !user) {
+                router.push('/login');
+                return;
+            }
+
+            if (user) {
+                // Check if user is admin
+                try {
+                    const response = await fetch(`/api/getUser?userId=${user.uid}`);
+                    if (response.ok) {
+                        const userData = await response.json();
+                        if (userData.userType === 'admin' || impersonationStatus?.isImpersonating) {
+                            
+                         
+                        } else {
+                            router.push('/maintenance');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking admin status:', error);
+                    router.push('/maintenance');
+                } 
+            }
+        };
+
+        checkAdminStatus();
+    }, [user, loading, router]);
+
   // Player selector state
   const [divisionParticipants, setDivisionParticipants] = useState<ParticipantData[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);

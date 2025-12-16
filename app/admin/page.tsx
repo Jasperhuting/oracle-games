@@ -32,6 +32,7 @@ export default function AdminPage() {
     const [isProgrammer, setIsProgrammer] = useState(false);
     const [checking, setChecking] = useState(true);
 
+
     useEffect(() => {
         const checkAdminStatus = async () => {
             if (!loading && !user) {
