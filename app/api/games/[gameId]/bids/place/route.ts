@@ -80,6 +80,27 @@ export async function POST(
 
     // Check if game status is 'bidding' (strict validation - game.status is the single source of truth)
     if (gameData?.status !== 'bidding') {
+      // Log auction not active validation failure
+      await db.collection('activityLogs').add({
+        action: 'BID_VALIDATION_FAILED',
+        userId,
+        userEmail: userData?.email,
+        userName: userData?.playername || userData?.email,
+        details: {
+          gameId,
+          gameName: gameData?.name,
+          riderNameId,
+          riderName,
+          amount,
+          validationType: 'AUCTION_NOT_ACTIVE',
+          errorMessage: 'Auction is not active. Current game status: ' + (gameData?.status || 'unknown'),
+          currentGameStatus: gameData?.status || 'unknown',
+        },
+        timestamp: new Date().toISOString(),
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      });
+
       return NextResponse.json(
         { error: 'Auction is not active. Current game status: ' + (gameData?.status || 'unknown') },
         { status: 400 }
@@ -123,15 +144,17 @@ export async function POST(
 
     let currentUserBidOnThisRider = 0;
     let isUpdatingOwnBid = false;
+    let existingBidRef: FirebaseFirestore.DocumentReference | null = null;
 
     // If user already has an active bid on this rider, we'll update it instead of creating a new one
     if (!existingUserBid.empty) {
       // Mark that we're updating an existing bid
       isUpdatingOwnBid = true;
       currentUserBidOnThisRider = existingUserBid.docs[0].data().amount || 0;
-      
-      // Delete the existing bid - we'll create a new one with the updated amount
-      await existingUserBid.docs[0].ref.delete();
+
+      // IMPORTANT: Store the reference but DO NOT delete yet!
+      // We'll delete it AFTER all validations pass and right before creating the new bid
+      existingBidRef = existingUserBid.docs[0].ref;
     }
 
     if (!highestBidSnapshot.empty) {
@@ -142,6 +165,12 @@ export async function POST(
       if (highestBidData.userId === userId) {
         isUpdatingOwnBid = true;
         currentUserBidOnThisRider = highestBidData.amount || 0;
+
+        // IMPORTANT: Store the reference but DO NOT delete yet!
+        // Only update existingBidRef if we haven't already found one
+        if (!existingBidRef) {
+          existingBidRef = highestBidDoc.ref;
+        }
 
         // Allow users to update their bid to any amount (increase or decrease)
         // No restrictions on the new amount
@@ -170,6 +199,28 @@ export async function POST(
 
     const maxRiders = gameData?.config?.maxRiders;
     if (maxRiders && uniqueRiderIds.size >= maxRiders && !isUpdatingOwnBid) {
+      // Log maxRiders limit validation failure
+      await db.collection('activityLogs').add({
+        action: 'BID_VALIDATION_FAILED',
+        userId,
+        userEmail: userData?.email,
+        userName: userData?.playername || userData?.email,
+        details: {
+          gameId,
+          gameName: gameData?.name,
+          riderNameId,
+          riderName,
+          amount,
+          validationType: 'MAX_RIDERS_LIMIT',
+          errorMessage: `Maximum number of riders reached (${maxRiders})`,
+          currentRidersCount: uniqueRiderIds.size,
+          maxRiders,
+        },
+        timestamp: new Date().toISOString(),
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      });
+
       return NextResponse.json(
         { error: `Maximum number of riders reached (${maxRiders}). Cancel a bid to place a new one.` },
         { status: 400 }
@@ -193,18 +244,50 @@ export async function POST(
     const availableBudget = budget - spentBudget - totalActiveBids;
 
     if (amount > availableBudget) {
+      // Log budget validation failure
+      await db.collection('activityLogs').add({
+        action: 'BID_VALIDATION_FAILED',
+        userId,
+        userEmail: userData?.email,
+        userName: userData?.playername || userData?.email,
+        details: {
+          gameId,
+          gameName: gameData?.name,
+          riderNameId,
+          riderName,
+          amount,
+          validationType: 'INSUFFICIENT_BUDGET',
+          errorMessage: `Insufficient budget. Available: ${availableBudget.toFixed(1)}, Attempted: ${amount}`,
+          budget,
+          spentBudget,
+          totalActiveBids,
+          availableBudget: availableBudget.toFixed(1),
+          isUpdate: isUpdatingOwnBid,
+          previousAmount: isUpdatingOwnBid ? currentUserBidOnThisRider : null,
+        },
+        timestamp: new Date().toISOString(),
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      });
+
       return NextResponse.json(
         { error: `Insufficient budget. Available: ${availableBudget.toFixed(1)}, Attempted: ${amount}` },
         { status: 400 }
       );
     }
 
-    // If updating own bid, delete the old bid before creating new one
-    if (isUpdatingOwnBid && !highestBidSnapshot.empty) {
-      await highestBidSnapshot.docs[0].ref.delete();
+    // CRITICAL: Only delete the existing bid AFTER all validations have passed
+    // This prevents the bug where a bid is deleted but the new one fails to be created
+
+    // Store the old bid data in case we need to restore it
+    let oldBidData: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (existingBidRef) {
+      const oldBidDoc = await existingBidRef.get();
+      oldBidData = oldBidDoc.exists ? oldBidDoc.data() : null;
+      await existingBidRef.delete();
     }
 
-    // Create new bid
+    // Create new bid - wrap in try-catch to restore old bid if this fails
     const now = new Date();
     const bid = {
       gameId,
@@ -219,7 +302,65 @@ export async function POST(
       jerseyImage: jerseyImage || null,
     };
 
-    const bidRef = await db.collection('bids').add(bid);
+    let bidRef;
+    try {
+      bidRef = await db.collection('bids').add(bid);
+    } catch (createError) {
+      // If creating the new bid fails, restore the old bid
+      if (oldBidData && existingBidRef) {
+        try {
+          await db.collection('bids').add(oldBidData);
+          console.error('[BID PLACE] Failed to create new bid, restored old bid:', createError);
+
+          // Log the restore action - this is CRITICAL to track
+          await db.collection('activityLogs').add({
+            action: 'BID_RESTORE_SUCCESS',
+            userId,
+            userEmail: userData?.email,
+            userName: userData?.playername || userData?.email,
+            details: {
+              gameId,
+              gameName: gameData?.name,
+              riderNameId,
+              riderName,
+              attemptedAmount: amount,
+              restoredAmount: oldBidData.amount,
+              errorMessage: createError instanceof Error ? createError.message : 'Unknown error creating bid',
+              errorType: 'BID_CREATE_FAILED',
+            },
+            timestamp: new Date().toISOString(),
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          });
+        } catch (restoreError) {
+          console.error('[BID PLACE] CRITICAL: Failed to restore old bid after create failure:', restoreError);
+
+          // Log the CRITICAL failure to restore - this means data loss!
+          await db.collection('activityLogs').add({
+            action: 'BID_RESTORE_FAILED',
+            userId,
+            userEmail: userData?.email,
+            userName: userData?.playername || userData?.email,
+            details: {
+              gameId,
+              gameName: gameData?.name,
+              riderNameId,
+              riderName,
+              attemptedAmount: amount,
+              lostBidAmount: oldBidData?.amount,
+              createError: createError instanceof Error ? createError.message : 'Unknown error creating bid',
+              restoreError: restoreError instanceof Error ? restoreError.message : 'Unknown error restoring bid',
+              severity: 'CRITICAL',
+              dataLoss: true,
+            },
+            timestamp: new Date().toISOString(),
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          });
+        }
+      }
+      throw createError; // Re-throw to be caught by outer catch
+    }
 
     // Log the activity
     await db.collection('activityLogs').add({
