@@ -23,12 +23,14 @@ import { qualifiesAsNeoProf } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
+// Increment this version whenever you add/change rider data to force a cache refresh for all users
+const CACHE_VERSION = 2;
 
 // Helper functions for sessionStorage cache
 const getCachedRankings = (year: number): Rider[] | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = sessionStorage.getItem(`rankings_${year}`);
+    const cached = sessionStorage.getItem(`rankings_${year}_v${CACHE_VERSION}`);
     if (cached) {
       return JSON.parse(cached);
     }
@@ -41,7 +43,7 @@ const getCachedRankings = (year: number): Rider[] | null => {
 const setCachedRankings = (year: number, riders: Rider[]): void => {
   if (typeof window === 'undefined') return;
   try {
-    sessionStorage.setItem(`rankings_${year}`, JSON.stringify(riders));
+    sessionStorage.setItem(`rankings_${year}_v${CACHE_VERSION}`, JSON.stringify(riders));
   } catch (error) {
     console.error('Error writing to cache:', error);
   }
