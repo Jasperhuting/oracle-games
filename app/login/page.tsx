@@ -3,8 +3,10 @@ export const dynamic = "force-dynamic";
 
 import { LoginForm } from "@/components/LoginForm";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-row h-screen">
             <div className="w-full md:w-full xl:w-[600px] md:max-w-[600px] flex flex-col items-center content-center justify-center overflow-y-scroll">
@@ -18,8 +20,8 @@ export default function LoginPage() {
                     </div>
                 </div>
                 <div className="flex flex-col items-center mt-4">
-                    <span className="font-bold">Welcome back!</span>
-                    <span className="font-light">Log in with your details</span>
+                    <span className="font-bold">{t('login.title')}</span>
+                    <span className="font-light">{t('login.description')}</span>
                 </div>
 
                 <div className="my-4 w-[300px]">

@@ -7,6 +7,7 @@ import { Mail, MailOpened, X, Trash, Send, Edit, AlertCircle } from 'tabler-icon
 import { db } from '@/lib/firebase/client';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 type TabType = 'inbox' | 'outbox' | 'compose';
 
@@ -33,6 +34,8 @@ export default function InboxComponent() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     const checkBannerCookie = () => {
@@ -390,7 +393,7 @@ export default function InboxComponent() {
           }`}
         >
           <Edit className="w-5 h-5" />
-          Nieuw bericht
+          {t('inbox.newMessage')}
         </button>
       </div>
 
@@ -401,21 +404,22 @@ export default function InboxComponent() {
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-yellow-800 mb-1">Privacywaarschuwing</h3>
+              <h3 className="font-semibold text-yellow-800 mb-1">{t('inbox.privacyWarningTitle')}</h3>
               <p className="text-sm text-yellow-700">
-                Administrators kunnen alle berichten inzien die via dit systeem worden verzonden.
-                Verstuur geen gevoelige of persoonlijke informatie via dit berichtensysteem.
+                {t('inbox.privacyWarningDescription')}
               </p>
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold mb-6">Nieuw bericht verzenden</h2>
+          
+
+          <h2 className="text-2xl font-bold mb-6">{t('inbox.newMessage')}</h2>
 
           <form onSubmit={handleSendMessage} className="space-y-4">
             {/* Recipient Selection */}
             <div>
               <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 mb-2">
-                Ontvanger *
+                {t('inbox.recipient')}
               </label>
               <select
                 id="recipient"
@@ -424,7 +428,7 @@ export default function InboxComponent() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
-                <option value="">Selecteer een gebruiker...</option>
+                <option value="">{t('inbox.selectRecipient')}</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.displayName}
@@ -436,7 +440,7 @@ export default function InboxComponent() {
             {/* Subject */}
             <div>
               <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                Onderwerp *
+                {t('inbox.subject')}
               </label>
               <input
                 type="text"
@@ -444,7 +448,7 @@ export default function InboxComponent() {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Onderwerp van het bericht"
+                placeholder={t('inbox.subjectPlaceholder')}
                 required
               />
             </div>
@@ -452,14 +456,14 @@ export default function InboxComponent() {
             {/* Message */}
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                Bericht *
+                {t('inbox.message')}
               </label>
               <textarea
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[200px]"
-                placeholder="Typ je bericht hier..."
+                placeholder={t('inbox.messagePlaceholder')}
                 required
               />
             </div>
@@ -479,14 +483,14 @@ export default function InboxComponent() {
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 <Send className="w-5 h-5" />
-                {sending ? 'Bezig met verzenden...' : 'Verzenden'}
+                {sending ? t('inbox.sending') : t('inbox.send')}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('inbox')}
                 className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
               >
-                Annuleren
+                {t('global.cancel')}
               </button>
             </div>
           </form>
@@ -497,11 +501,11 @@ export default function InboxComponent() {
           <div className="lg:col-span-1 bg-white rounded-lg shadow">
           <div className="p-4 border-b">
             <h2 className="text-xl font-semibold">
-              {activeTab === 'inbox' ? 'Received' : 'Sent'} ({messages.length})
+              {activeTab === 'inbox' ? t('inbox.received') : t('inbox.sent')} ({messages.length})
             </h2>
             {activeTab === 'inbox' && (
               <p className="text-sm text-gray-600">
-                {inboxMessages.filter((m) => !m.read).length} unread
+                {inboxMessages.filter((m) => !m.read).length} {t('inbox.unread')}
               </p>
             )}
           </div>
@@ -513,7 +517,7 @@ export default function InboxComponent() {
                 ) : (
                   <Send className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 )}
-                <p>{activeTab === 'inbox' ? 'No messages yet' : 'No sent messages yet'}</p>
+                <p>{activeTab === 'inbox' ? t('inbox.noMessages') : t('inbox.noSentMessages')}</p>
               </div>
             ) : (
               messages.map((message) => (
@@ -544,13 +548,13 @@ export default function InboxComponent() {
                         <div className="flex items-center gap-2">
                           {message.type === 'broadcast' && (
                             <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
-                              Broadcast
+                              {t('inbox.broadcast')}
                             </span>
                           )}
                           <button
                             onClick={(e) => deleteMessage(message.id!, e)}
                             className="p-1 hover:bg-red-100 rounded cursor-pointer transition-colors"
-                            title="Delete message"
+                            title={t('inbox.deleteMessage')}
                           >
                             <Trash className="w-4 h-4 text-red-600" />
                           </button>
@@ -585,15 +589,15 @@ export default function InboxComponent() {
                     <h2 className="text-2xl font-bold">{selectedMessage.subject}</h2>
                     {selectedMessage.type === 'broadcast' && (
                       <span className="text-sm bg-purple-100 text-purple-800 px-3 py-1 rounded">
-                        Broadcast
+                        {t('inbox.broadcast')}
                       </span>
                     )}
                   </div>
                   <div className="text-sm text-gray-600">
                     {activeTab === 'inbox' ? (
-                      <p>From: <span className="font-medium">{selectedMessage.senderName}</span></p>
+                      <p>{t('inbox.from')}: <span className="font-medium">{selectedMessage.senderName}</span></p>
                     ) : (
-                      <p>To: <span className="font-medium">{selectedMessage.recipientName || 'All users (Broadcast)'}</span></p>
+                      <p>{t('inbox.to')}: <span className="font-medium">{selectedMessage.recipientName || t('inbox.allBroadcastUsers')}</span></p>
                     )}
                     <p>
                       {new Date(selectedMessage.sentAt).toLocaleDateString('nl-NL', {
@@ -641,7 +645,7 @@ export default function InboxComponent() {
             <div className="h-full flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <Mail className="w-16 h-16 mx-auto mb-4" />
-                <p>Select a message to read</p>
+                <p>{t('inbox.selectMessage')}</p>
               </div>
             </div>
           )}

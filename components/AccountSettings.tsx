@@ -143,7 +143,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-600">Laden...</div>
+        <div className="text-gray-600">{t('global.loading')}</div>
       </div>
     );
   }
@@ -151,25 +151,26 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   return (
     <div className="w-full">
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Account Information</h2>
+        <h2 className="text-xl font-semibold mb-4">{t('account.accountInformation')}</h2>
         
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email address
+              
+              {t('account.emailAddress')}
             </label>
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
               {email}
             </div>
-            <p className="text-xs text-gray-500 mt-1">Your email address cannot be changed</p>
+            <p className="text-xs text-gray-500 mt-1">{t('account.emailAddressCannotBeChanged')}</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <TextInput
-                  label="First name"
-                  placeholder="First name"
+                  label={t('global.firstName')}
+                  placeholder={t('global.firstName')}
                   {...register('firstName', {
                     maxLength: {
                       value: 50,
@@ -184,8 +185,8 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
               <div>
                 <TextInput
-                  label="Last name"
-                  placeholder="Last name"
+                  label={t('global.lastName')}
+                  placeholder={t('global.lastName')}
                   {...register('lastName', {
                     maxLength: {
                       value: 50,
@@ -201,8 +202,8 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
             <div className="mt-4">
               <TextInput
-                label="Player name"
-                placeholder="Player name"
+                label={t('global.playerName')}
+                placeholder={t('global.playerName')}
                 {...register('playername', {
                   required: 'Player name is required',
                   minLength: {
@@ -222,7 +223,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date of birth
+                {t('global.dateOfBirth')}
               </label>
               <Controller
                 name="dateOfBirth"
@@ -257,7 +258,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
                     scrollableYearDropdown
                     yearDropdownItemNumber={100}
                     maxDate={new Date()}
-                    placeholderText="Select date of birth"
+                    placeholderText={t('global.selectDateOfBirth')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     wrapperClassName="w-full"
                   />
@@ -298,7 +299,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
             <Button
               className="mt-4 px-6 py-2"
-              text={isSubmitting ? "Busy saving..." : "Save"}
+              text={isSubmitting ? t('global.busySaving') : t('global.save')}
               type="submit"
               disabled={isSubmitting}
             />
@@ -308,7 +309,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
       {/* Passkey Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mt-5">
-        <h2 className="text-xl font-semibold mb-4">Security</h2>
+        <h2 className="text-xl font-semibold mb-4">{t('account.security')}</h2>
         
         {passkeyInfo.hasPasskey ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
@@ -320,13 +321,13 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-green-800">
-                  Passkey active 🔑
+                  {t('account.passkeyActive')} 🔑
                 </h3>
                 <div className="mt-2 text-sm text-green-700">
-                  <p>You have a passkey set up for faster and safer login.</p>
+                  <p>{t('account.passkeyActiveDescription')}</p>
                   {passkeyInfo.lastUsedAt && (
                     <p className="mt-1 text-xs">
-                      Last used: {new Date(passkeyInfo.lastUsedAt).toLocaleDateString('nl-NL', {
+                      {t('account.lastUsedAt')}: {new Date(passkeyInfo.lastUsedAt).toLocaleDateString('nl-NL', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',

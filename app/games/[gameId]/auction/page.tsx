@@ -542,13 +542,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     return riderPoints;
   };
 
-
-
-
-
-
-
-
   // Determine if the current auction period is restricted to top 200 riders
   const isTop200Restricted = (() => {
     if (!game || (game.gameType !== 'auctioneer')) return false;
@@ -573,20 +566,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       const end = toDate(p.endDate);
       if (!start || !end) return false;
 
-      console.log(`Checking period "${p.name}":`, {
-        start: start.toISOString(),
-        end: end.toISOString(),
-        now: now.toISOString(),
-        inWindow: now >= start && now <= end
-      });
-
       const inWindow = now >= start && now <= end;
       return inWindow;
     });
-
-    // No fallback: if no period matches, no restrictions apply
-    // This means between periods, all riders are available
-    console.log('Current active period:', activePeriod?.name || 'None (no restrictions)', 'top200Only:', activePeriod?.top200Only || false);
 
     return !!activePeriod?.top200Only;
   })();
@@ -713,12 +695,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         const filtered = prev.filter(b => b.riderNameId !== riderNameId);
         return [...filtered, newBid];
       });
-      // setAllBids(prev => {
-      //   const filtered = prev.filter(b =>
-      //     !(b.userId === user.uid && b.riderNameId === riderNameId)
-      //   );
-      //   return [...filtered, newBid];
-      // });
 
       // Update the rider's bid info
       setAvailableRiders(prev => prev.map(r => {
@@ -956,7 +932,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen p-8 bg-gray-50">
-        <div className="text-center text-gray-600">Loading auction...</div>
+        <div className="text-center text-gray-600">{t('global.loading')}</div>
       </div>
     );
   }
@@ -965,7 +941,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     return (
       <div className="flex items-center justify-center min-h-screen p-8 bg-gray-50">
         <div className="bg-white border border-red-200 rounded-lg p-6 max-w-md">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
+          <h2 className="text-xl font-bold text-red-600 mb-2">{t('global.error')}</h2>
           <p className="text-gray-700 mb-4">{error}</p>
           <Button
             type="button"
@@ -1062,14 +1038,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                       game={game} />
                   }
                 ]} />
-
-
-
-
-
-
-
-
 
             </div>
             <div className="bg-white rounded-md border border-gray-200 p-4 flex-3/12 sticky top-[142px] z-20 self-start">{/* sidebar */}
@@ -1452,7 +1420,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
           {filteredRiders.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              No riders found matching your search.
+              {t('auction.noRidersFound')}
             </div>
           )}
         </div>
@@ -1462,19 +1430,19 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       {cancelConfirmModal && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Cancel Bid</h2>
+            <h2 className="text-xl font-bold mb-4">{t('auction.cancelBid')}</h2>
             <p className="text-gray-700 mb-6">
               Are you sure you want to cancel your bid on {cancelConfirmModal.riderName}?
             </p>
             <div className="flex justify-end space-x-3">
               <Button
-                text="No, Keep Bid"
+                text={t('auction.noKeepBid')}
                 onClick={() => setCancelConfirmModal(null)}
                 disabled={cancellingBid !== null}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 hover:text-white"
               />
               <Button
-                text={cancellingBid === cancelConfirmModal.bidId ? "Cancelling..." : "Yes, Cancel Bid"}
+                text={cancellingBid === cancelConfirmModal.bidId ? t('global.loading') : t('auction.cancelBidConfirm')}
                 onClick={handleCancelBidConfirm}
                 disabled={cancellingBid !== null}
                 className="px-4 py-2"
@@ -1488,18 +1456,18 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       {resetConfirmModal && (
         <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Reset All Bids</h2>
+            <h2 className="text-xl font-bold mb-4">{t('auction.resetAllBids')}</h2>
             <p className="text-gray-700 mb-6">
               Are you sure you want to reset all your bid amounts? This will clear all the amounts you&apos;ve entered in the input fields.
             </p>
             <div className="flex justify-end space-x-3">
               <Button
-                text="No, Keep Them"
+                text={t('auction.noKeepBid')}
                 onClick={() => setResetConfirmModal(false)}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 hover:text-white"
               />
               <Button
-                text="Yes, Reset All"
+                text={t('auction.yesResetAll')}
                 onClick={handleResetBidsConfirm}
                 className="px-4 py-2"
               />
@@ -1516,8 +1484,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           onConfirm={() => setInfoDialog(null)}
           title={infoDialog.title}
           description={infoDialog.description}
-          confirmText="OK"
-          cancelText="Close"
+          confirmText={t('global.ok')}
+          cancelText={t('global.close')}
         />
       )}
     </div>

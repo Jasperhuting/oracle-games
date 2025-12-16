@@ -1,7 +1,9 @@
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import Image from 'next/image';
+import { useTranslation } from "react-i18next";
 
 export default function ResetPasswordPage() {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-row h-screen">
             <div className="w-full md:w-full xl:w-[600px] md:max-w-[600px] flex flex-col items-center content-center justify-center">
@@ -16,9 +18,9 @@ export default function ResetPasswordPage() {
                 </div>
                 
                 <div className="flex flex-col items-center mt-4 mb-6">
-                    <span className="font-bold">Forget password?</span>
+                    <span className="font-bold">{t('resetPassword.title')}</span>
                     <span className="font-light text-sm text-gray-600 text-center max-w-[300px] mt-2">
-                        No problem! Enter your email address and we will send you a link to reset your password.
+                        {t('resetPassword.description')}
                     </span>
                 </div>
 

@@ -512,7 +512,136 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
     );
   }
 
-  const rows = flattenTranslations(enTranslations);
+  const sortRowsByUntranslated = (rows: TranslationRow[]): TranslationRow[] => {
+    if (selectedLanguages.length === 0) return rows;
+
+    // Helper to check if a row is untranslated in any selected language
+    const hasUntranslated = (row: TranslationRow): boolean => {
+      if (row.enValue === '') return false; // Skip section headers
+      return selectedLanguages.some(locale => {
+        const value = getTranslationValue(locale, row.path);
+        return !value || value.trim() === '';
+      });
+    };
+
+    // Build a tree structure to maintain hierarchy
+    interface RowGroup {
+      header?: TranslationRow;
+      children: (TranslationRow | RowGroup)[];
+    }
+
+    const buildTree = (rows: TranslationRow[], startIdx = 0, parentDepth = -1): { group: RowGroup, nextIdx: number } => {
+      const group: RowGroup = { children: [] };
+      let i = startIdx;
+
+      while (i < rows.length) {
+        const row = rows[i];
+
+        // If we hit a row at same or lower depth than parent, we're done with this group
+        if (row.depth <= parentDepth) {
+          break;
+        }
+
+        // If this is a section header
+        if (row.enValue === '') {
+          const subResult = buildTree(rows, i + 1, row.depth);
+          group.children.push({
+            header: row,
+            children: subResult.group.children
+          });
+          i = subResult.nextIdx;
+        } else {
+          // Regular content row
+          group.children.push(row);
+          i++;
+        }
+      }
+
+      return { group, nextIdx: i };
+    };
+
+    const getUntranslatedFromGroup = (group: RowGroup): RowGroup | null => {
+      const untranslatedChildren: (TranslationRow | RowGroup)[] = [];
+
+      group.children.forEach(child => {
+        if ('header' in child) {
+          // It's a subgroup
+          const subGroup = child as RowGroup;
+          const untranslatedSubGroup = getUntranslatedFromGroup(subGroup);
+          if (untranslatedSubGroup) {
+            untranslatedChildren.push(untranslatedSubGroup);
+          }
+        } else {
+          // It's a content row
+          const row = child as TranslationRow;
+          if (hasUntranslated(row)) {
+            untranslatedChildren.push(row);
+          }
+        }
+      });
+
+      // Only return this group if it has untranslated content
+      if (untranslatedChildren.length > 0) {
+        return {
+          header: group.header,
+          children: untranslatedChildren
+        };
+      }
+
+      return null;
+    };
+
+    const flattenGroup = (items: (TranslationRow | RowGroup)[], includeAll = true): TranslationRow[] => {
+      const result: TranslationRow[] = [];
+
+      items.forEach(item => {
+        if ('header' in item) {
+          const group = item as RowGroup;
+          if (group.header) {
+            result.push(group.header);
+          }
+          result.push(...flattenGroup(group.children, includeAll));
+        } else {
+          result.push(item as TranslationRow);
+        }
+      });
+
+      return result;
+    };
+
+    const tree = buildTree(rows);
+
+    // Get untranslated sections and track which section paths have untranslated items
+    const untranslatedSections: TranslationRow[] = [];
+    const sectionsWithUntranslated = new Set<string>();
+
+    tree.group.children.forEach(child => {
+      if ('header' in child) {
+        const childGroup = child as RowGroup;
+        const untranslatedGroup = getUntranslatedFromGroup(childGroup);
+        if (untranslatedGroup && childGroup.header) {
+          sectionsWithUntranslated.add(childGroup.header.path);
+          untranslatedSections.push(...flattenGroup([untranslatedGroup]));
+        }
+      }
+    });
+
+    // Get sections that don't have untranslated items (to avoid duplication)
+    const remainingSections: TranslationRow[] = [];
+    tree.group.children.forEach(child => {
+      if ('header' in child) {
+        const childGroup = child as RowGroup;
+        if (childGroup.header && !sectionsWithUntranslated.has(childGroup.header.path)) {
+          remainingSections.push(...flattenGroup([childGroup]));
+        }
+      }
+    });
+
+    // Return untranslated sections first, then remaining sections
+    return [...untranslatedSections, ...remainingSections];
+  };
+
+  const rows = sortRowsByUntranslated(flattenTranslations(enTranslations));
   const availableLanguages = languages.filter(l => l.locale !== 'en');
 
   return (

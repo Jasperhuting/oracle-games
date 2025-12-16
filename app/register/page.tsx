@@ -1,7 +1,9 @@
 import { RegisterForm } from "@/components/RegisterForm";
 import Image from 'next/image';
+import { useTranslation } from "react-i18next";
 
 export default function RegisterPage() {
+    const { t } = useTranslation();
     return (
         <div className="flex flex-row h-screen">
             <div className="w-full md:w-full xl:w-[600px] md:max-w-[600px] flex flex-col items-center content-center justify-center">
@@ -15,8 +17,8 @@ export default function RegisterPage() {
                     </div>
                 </div>
                 <div className="flex flex-col items-center mt-4">
-                    <span className="font-bold">Welcome to Oracle Games</span>
-                    <span className="font-light">Fill in your details</span>
+                    <span className="font-bold">{t('register.title')}</span>
+                    <span className="font-light">{t('register.description')}</span>
                 </div>
 
                 <div className="my-4 w-[300px]">
