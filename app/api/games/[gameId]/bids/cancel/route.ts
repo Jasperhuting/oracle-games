@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 
+// TEMPORARY: Toggle to disable bid modifications
+const BIDDING_DISABLED = true;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
 ) {
   try {
+    // Check if bidding is temporarily disabled
+    if (BIDDING_DISABLED) {
+      return NextResponse.json(
+        { error: 'Bid modifications are temporarily disabled for maintenance. Please try again later.' },
+        { status: 503 }
+      );
+    }
+
     const { gameId } = await params;
     const { userId, bidId } = await request.json();
 

@@ -3,14 +3,25 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, BidStatus } from '@/lib/types';
 import { placeBidSchema, validateRequest } from '@/lib/validation';
 
+// TEMPORARY: Toggle to disable bidding
+const BIDDING_DISABLED = true;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
 ): Promise<NextResponse<PlaceBidResponse | ApiErrorResponse>> {
   try {
+    // Check if bidding is temporarily disabled
+    if (BIDDING_DISABLED) {
+      return NextResponse.json(
+        { error: 'Bidding is temporarily disabled for maintenance. Please try again later.' },
+        { status: 503 }
+      );
+    }
+
     const { gameId } = await params;
     const body = await request.json();
-    
+
     // Validate request body
     const validation = validateRequest(placeBidSchema, body);
     if (!validation.success) {
