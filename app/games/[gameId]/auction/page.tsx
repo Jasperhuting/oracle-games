@@ -1422,7 +1422,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
           {!auctionClosed && (
             <MyTeamSelection
-              myTeamSelection={availableRiders.filter(r => r.myBid)}
+              myTeamSelection={availableRiders.filter(r => r.myBid).filter((r) => r.myBidStatus === 'active')}
               setMyTeamSelection={() => { }}
               onCancelBid={handleCancelBidClick}
               onAdjustBid={handleAdjustBid}
