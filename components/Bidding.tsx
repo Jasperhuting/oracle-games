@@ -10,9 +10,7 @@ import { PlayerRowBids } from "./PlayerRowBids";
 import React from "react";
 import { GameData, ParticipantData, RiderWithBid } from "@/app/games/[gameId]/auction/page";
 import { useTranslation } from "react-i18next";
-import Countdown from 'react-countdown';
-
-
+// import Countdown from 'react-countdown';
 
 
 export const Bidding = ({
@@ -60,17 +58,17 @@ export const Bidding = ({
 
   const { t } = useTranslation();
 
-  const Completionist = () => <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{t('bidding.theBiddingHasEnded')}</span>;
+  // const Completionist = () => <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{t('bidding.theBiddingHasEnded')}</span>;
 
-  const renderer = ({ hours, minutes, seconds, completed }: { hours: number, minutes: number, seconds: number, completed: boolean }) => {
-    if (completed) {
-      // Render a completed state
-      return <Completionist />;
-    } else {
-      // Render a countdown
-      return <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{hours} {t('global.hours')} : {minutes} {t('global.minutes')} : {seconds} {t('global.seconds')} {t('bidding.untilTheBiddingEnds')}</span>;
-    }
-  };
+  // const renderer = ({ hours, minutes, seconds, completed }: { hours: number, minutes: number, seconds: number, completed: boolean }) => {
+  //   if (completed) {
+  //     // Render a completed state
+  //     return <Completionist />;
+  //   } else {
+  //     // Render a countdown
+  //     return <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{hours} {t('global.hours')} : {minutes} {t('global.minutes')} : {seconds} {t('global.seconds')} {t('bidding.untilTheBiddingEnds')}</span>;
+  //   }
+  // };
 
 
   const [myTeamView, setMyTeamView] = useState('card');
@@ -94,7 +92,7 @@ export const Bidding = ({
     : new Date();
 
   return <>
-    <Countdown date={countdownDate} renderer={renderer} />
+    {/* <Countdown date={countdownDate} renderer={renderer} /> */}
 
 
     {/* My Bids Section - Only show when auction is active */}
