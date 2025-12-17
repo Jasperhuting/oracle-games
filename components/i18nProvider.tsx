@@ -32,7 +32,6 @@ export default function I18nProvider({
 
         // Listen for translation updates - use the imported i18n instance
         unsubscribe = listenTranslations(locale, (translations) => {
-          console.log('Received translations:', translations);
           i18n.addResourceBundle(locale, 'translation', translations, true, true);
         });
 

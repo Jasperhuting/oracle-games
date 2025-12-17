@@ -114,7 +114,6 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
         // Load translations for the new language
         await new Promise<void>((resolve) => {
           listenTranslations(data.preferredLanguage, (translations) => {
-            console.log('Loading translations for:', data.preferredLanguage, translations);
             i18n.addResourceBundle(data.preferredLanguage, 'translation', translations, true, true);
             resolve();
           });

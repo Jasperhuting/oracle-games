@@ -55,6 +55,9 @@ export interface Rider {
   team?: Team;
   country: string;
   id: string;
+  firstName?: string;
+  lastName?: string;
+  teamId?: string;
 }
 
 export interface RankedRider {
@@ -93,6 +96,8 @@ export interface Team {
   slug?: string;
   class?: string;
   teamImage?: string;
+  uciRank?: number;
+  jerseyImage?: string;
 }
 
 export interface RankedTeamsResult {

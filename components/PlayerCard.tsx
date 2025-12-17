@@ -103,7 +103,7 @@ export const PlayerCard = (
                         {formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {player.effectiveMinBid && player.effectiveMinBid < player.points && (
                             <span className="text-xs text-gray-500 line-through ml-1">
-                                {formatCurrencyWhole(player.points)}
+                                {player.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(player.points)}
                             </span>
                         )}
                     </span>
@@ -166,7 +166,7 @@ export const PlayerCard = (
 
                 {isSold ? (
                     participant?.playername === soldTo ? <></> : <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">Sold to {soldTo}</div>
-                ): (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <IconPlus color="currentColor" size={20} />} />)}
+                ): (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />)}
             </div>
         </div>
     );

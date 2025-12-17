@@ -171,14 +171,6 @@ export const MyAuctionBidsBig = ({
                               // During an active auction period, users should NOT see active bids from other players
                               const isAuctionPeriodActive = now >= startDate && now <= endDate
 
-                              console.log({ startDate });
-                              console.log({ endDate });
-
-                              const bids = alleBiedingen
-                                .filter((bid) => {
-                                  return new Date(bid.bidAt) >= startDate && new Date(bid.bidAt) <= endDate ? bid : null
-                                })
-
                               // Use selectedPlayerBids if a player is selected, otherwise use myBids
                               const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
 
@@ -221,9 +213,7 @@ export const MyAuctionBidsBig = ({
                                         return true;
                                       })
                                       .sort((a: Bid, b: Bid) => b.amount - a.amount)
-                                      .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
-              
-                                    console.log('riderBidders', riderBidders)
+                                      .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))            
               
                                     return rider ? (
                                       <PlayerCard

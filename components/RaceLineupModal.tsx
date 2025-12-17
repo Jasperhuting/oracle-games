@@ -34,11 +34,8 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
         }
         const data = await response.json();
 
-        console.log('data.teams', data.teams);
-
         // Convert API teams to Team type
-        // TODO: Remove any
-        const teams: Team[] = (data.teams || []).map((t: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        const teams: Team[] = (data.teams || []).map((t: Team) => ({
           id: t.id,
           name: t.name,
           shortName: t.shortName,
@@ -52,8 +49,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
         }));
 
         // Convert API riders to Rider type
-        // TODO: Remove any
-        const riders: Rider[] = (data.riders || []).map((r: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        const riders: Rider[] = (data.riders || []).map((r: Rider) => ({
           id: r.id,
           name: r.name,
           firstName: r.firstName,

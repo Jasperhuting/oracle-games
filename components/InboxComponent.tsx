@@ -180,7 +180,6 @@ export default function InboxComponent() {
         return;
       }
       const data = await response.json();
-      console.log('data', data)
       const usersData = data.users
         .map((u: any) => ({
           id: u.uid,
