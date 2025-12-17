@@ -20,29 +20,30 @@ export default function I18nProvider({
   useEffect(() => {
     let isMounted = true;
     let unsubscribe: (() => void) | undefined;
+    let timeoutId: NodeJS.Timeout | undefined;
 
     const initialize = async () => {
       try {
         // Initialize with empty resources
         await initI18n(locale, {});
-        
-        if (isMounted) {
-          setReady(true);
-        }
 
         // Listen for translation updates - use the imported i18n instance
+        let translationsLoaded = false;
         unsubscribe = listenTranslations(locale, (translations) => {
           i18n.addResourceBundle(locale, 'translation', translations, true, true);
+          if (!translationsLoaded && isMounted) {
+            translationsLoaded = true;
+            setReady(true);
+          }
         });
 
         // Fallback in case translations take too long
-        const timeout = setTimeout(() => {
-          if (isMounted) {
+        timeoutId = setTimeout(() => {
+          if (isMounted && !translationsLoaded) {
+            console.warn('Translations not loaded within 3 seconds, proceeding anyway');
             setReady(true);
           }
         }, 3000);
-
-        return () => clearTimeout(timeout);
       } catch (error) {
         console.error('Error initializing i18n:', error);
         if (isMounted) {
@@ -50,13 +51,16 @@ export default function I18nProvider({
         }
       }
     };
-    
+
     initialize();
 
     return () => {
       isMounted = false;
       if (unsubscribe) {
         unsubscribe();
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     };
   }, [locale]);
