@@ -1,3 +1,4 @@
+'use client'
 import { RegisterForm } from "@/components/RegisterForm";
 import Image from 'next/image';
 import { useTranslation } from "react-i18next";
