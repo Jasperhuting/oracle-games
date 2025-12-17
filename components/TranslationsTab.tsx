@@ -39,6 +39,9 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
   const [addingKey, setAddingKey] = useState(false);
   const [translatingKeys, setTranslatingKeys] = useState<Set<string>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [editingValues, setEditingValues] = useState<Map<string, string>>(new Map());
+  const [autoSort, setAutoSort] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { t } = useTranslation();
 
@@ -223,6 +226,11 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
     Object.entries(obj).forEach(([key, value]) => {
       const path = prefix ? `${prefix}.${key}` : key;
 
+      // Debug logging for login keys
+      if (path.startsWith('login')) {
+        console.log('Processing:', path, 'Type:', typeof value, 'Value:', value);
+      }
+
       if (typeof value === 'object' && value !== null) {
         rows.push({
           key,
@@ -245,6 +253,12 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
   };
 
   const getTranslationValue = (locale: string, path: string): string => {
+    // Check if we're currently editing this field
+    const editKey = `${locale}-${path}`;
+    if (editingValues.has(editKey)) {
+      return editingValues.get(editKey)!;
+    }
+
     const translations = translationsMap.get(locale);
     if (!translations) return '';
 
@@ -263,34 +277,44 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
   };
 
   const handleUpdateTranslation = (locale: string, path: string, value: string) => {
-    const translations = translationsMap.get(locale);
-    if (!translations) return;
-
-    const keys = path.split('.');
-    const updated = JSON.parse(JSON.stringify(translations));
-
-    let current: any = updated;
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) current[keys[i]] = {};
-      current = current[keys[i]];
-    }
-
-    // If value is empty, delete the key instead of setting it to empty string
-    if (value.trim() === '') {
-      delete current[keys[keys.length - 1]];
-    } else {
-      current[keys[keys.length - 1]] = value;
-    }
-
-    const newMap = new Map(translationsMap);
-    newMap.set(locale, updated);
-    setTranslationsMap(newMap);
+    // Only update the editing state, don't update translationsMap yet
+    const editKey = `${locale}-${path}`;
+    const newEditingValues = new Map(editingValues);
+    newEditingValues.set(editKey, value);
+    setEditingValues(newEditingValues);
   };
 
-  const handleSaveTranslation = async (locale: string) => {
+  const handleSaveTranslation = async (locale: string, path: string) => {
     try {
+      const editKey = `${locale}-${path}`;
+      const value = editingValues.get(editKey);
+
+      // Clear the editing state for this field
+      const newEditingValues = new Map(editingValues);
+      newEditingValues.delete(editKey);
+      setEditingValues(newEditingValues);
+
+      // If no value was being edited, nothing to save
+      if (value === undefined) return;
+
       const translations = translationsMap.get(locale);
       if (!translations) return;
+
+      const keys = path.split('.');
+      const updated = JSON.parse(JSON.stringify(translations));
+
+      let current: any = updated;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+
+      // If value is empty, delete the key instead of setting it to empty string
+      if (value.trim() === '') {
+        delete current[keys[keys.length - 1]];
+      } else {
+        current[keys[keys.length - 1]] = value;
+      }
 
       // Clean up empty strings from translations before saving
       const cleanTranslations = (obj: Translation): Translation => {
@@ -312,7 +336,7 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
         return cleaned;
       };
 
-      const cleanedTranslations = cleanTranslations(translations);
+      const cleanedTranslations = cleanTranslations(updated);
 
       const db = getFirestore(getApp());
       await setDoc(doc(db, 'translations', locale), cleanedTranslations, { merge: true });
@@ -333,8 +357,14 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
       const newMap = new Map(translationsMap);
       newMap.set(locale, cleanedTranslations);
       setTranslationsMap(newMap);
+
+      // Show success message only if a non-empty value was saved
+      if (value.trim() !== '') {
+        toast.success(`Translation saved for ${locale}`);
+      }
     } catch (error) {
       console.error('Error saving translation:', error);
+      toast.error('Failed to save translation');
     }
   };
 
@@ -513,13 +543,28 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
   }
 
   const sortRowsByUntranslated = (rows: TranslationRow[]): TranslationRow[] => {
-    if (selectedLanguages.length === 0) return rows;
+    if (selectedLanguages.length === 0 || !autoSort) return rows;
 
     // Helper to check if a row is untranslated in any selected language
     const hasUntranslated = (row: TranslationRow): boolean => {
       if (row.enValue === '') return false; // Skip section headers
       return selectedLanguages.some(locale => {
-        const value = getTranslationValue(locale, row.path);
+        // Check the actual saved translation, not the editing value
+        const translations = translationsMap.get(locale);
+        if (!translations) return true;
+
+        const keys = row.path.split('.');
+        let current: any = translations;
+
+        for (const key of keys) {
+          if (current && typeof current === 'object' && key in current) {
+            current = current[key];
+          } else {
+            return true;
+          }
+        }
+
+        const value = typeof current === 'string' ? current : '';
         return !value || value.trim() === '';
       });
     };
@@ -562,6 +607,7 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
 
     const getUntranslatedFromGroup = (group: RowGroup): RowGroup | null => {
       const untranslatedChildren: (TranslationRow | RowGroup)[] = [];
+      const translatedChildren: (TranslationRow | RowGroup)[] = [];
 
       group.children.forEach(child => {
         if ('header' in child) {
@@ -576,15 +622,18 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
           const row = child as TranslationRow;
           if (hasUntranslated(row)) {
             untranslatedChildren.push(row);
+          } else {
+            translatedChildren.push(row);
           }
         }
       });
 
-      // Only return this group if it has untranslated content
+      // If this group has any untranslated content, return ALL children (both untranslated and translated)
+      // This ensures translated items in the same section aren't lost
       if (untranslatedChildren.length > 0) {
         return {
           header: group.header,
-          children: untranslatedChildren
+          children: [...untranslatedChildren, ...translatedChildren]
         };
       }
 
@@ -641,11 +690,78 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
     return [...untranslatedSections, ...remainingSections];
   };
 
-  const rows = sortRowsByUntranslated(flattenTranslations(enTranslations));
+  const allRows = sortRowsByUntranslated(flattenTranslations(enTranslations));
+
+  // Filter rows based on search query
+  const rows = searchQuery.trim() === ''
+    ? allRows
+    : allRows.filter(row => {
+        const query = searchQuery.toLowerCase();
+        // Search in key path
+        if (row.path.toLowerCase().includes(query)) return true;
+        // Search in English value
+        if (row.enValue.toLowerCase().includes(query)) return true;
+        // Search in translations
+        return selectedLanguages.some(locale => {
+          const value = getTranslationValue(locale, row.path);
+          return value.toLowerCase().includes(query);
+        });
+      });
+
   const availableLanguages = languages.filter(l => l.locale !== 'en');
 
   return (
     <div className="space-y-6">
+      {/* Debug info */}
+      {isProgrammer && (
+        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <h3 className="font-semibold text-purple-900 mb-2">Debug Info</h3>
+          <div className="text-sm space-y-1">
+            <p>Total English keys: {allRows.length}</p>
+            <p>Filtered results: {rows.length}</p>
+            <p>English translations loaded: {Object.keys(enTranslations).length} top-level keys</p>
+            <details className="mt-2">
+              <summary className="cursor-pointer font-medium text-purple-800">View all top-level keys</summary>
+              <pre className="mt-2 p-2 bg-white rounded text-xs overflow-auto max-h-40">
+                {JSON.stringify(Object.keys(enTranslations), null, 2)}
+              </pre>
+            </details>
+            <details className="mt-2">
+              <summary className="cursor-pointer font-medium text-purple-800">View full English translations</summary>
+              <pre className="mt-2 p-2 bg-white rounded text-xs overflow-auto max-h-60">
+                {JSON.stringify(enTranslations, null, 2)}
+              </pre>
+            </details>
+            <details className="mt-2">
+              <summary className="cursor-pointer font-medium text-purple-800">Check login.title specifically</summary>
+              <div className="mt-2 p-2 bg-white rounded text-xs">
+                <p>enTranslations.login exists: {enTranslations.login ? 'YES' : 'NO'}</p>
+                {enTranslations.login && (
+                  <>
+                    <p>enTranslations.login.title exists: {(enTranslations.login as any).title ? 'YES' : 'NO'}</p>
+                    <p>Value: {(enTranslations.login as any).title || 'UNDEFINED'}</p>
+                  </>
+                )}
+                <p className="mt-2">Dutch translation of login.title:</p>
+                <p>Value: {getTranslationValue('nl', 'login.title') || 'EMPTY'}</p>
+                <p className="mt-2">translationsMap.get('nl').login:</p>
+                <pre className="mt-1 text-xs">
+                  {JSON.stringify((translationsMap.get('nl') as any)?.login, null, 2)}
+                </pre>
+                <p className="mt-2">All rows containing "login" (before filtering):</p>
+                <pre className="mt-1 text-xs">
+                  {JSON.stringify(flattenTranslations(enTranslations).filter(r => r.path.includes('login')), null, 2)}
+                </pre>
+                <p className="mt-2">All rows containing "login" (after sorting):</p>
+                <pre className="mt-1 text-xs">
+                  {JSON.stringify(allRows.filter(r => r.path.includes('login')), null, 2)}
+                </pre>
+              </div>
+            </details>
+          </div>
+        </div>
+      )}
+
       {/* Add new language */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Add New Language</h2>
@@ -731,13 +847,48 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
       {/* Translation editor */}
       {selectedLanguages.length > 0 && (
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold">
-              Translations
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Changes are saved automatically when you leave an input field
-            </p>
+          <div className="mb-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  Translations
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Changes are saved automatically when you leave an input field
+                </p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSort}
+                  onChange={(e) => setAutoSort(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Auto-sort (untranslated first)</span>
+              </label>
+            </div>
+
+            {/* Search bar */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search by key path, English text, or translation..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  Clear
+                </button>
+              )}
+              <span className="text-sm text-gray-500 whitespace-nowrap">
+                {rows.length} {rows.length === 1 ? 'result' : 'results'}
+              </span>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -816,7 +967,7 @@ export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) 
                                 type="text"
                                 value={getTranslationValue(locale, row.path)}
                                 onChange={(e) => handleUpdateTranslation(locale, row.path, e.target.value)}
-                                onBlur={() => handleSaveTranslation(locale)}
+                                onBlur={() => handleSaveTranslation(locale, row.path)}
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
                                 placeholder={`Translate from: ${row.enValue}`}
                                 disabled={isTranslating}

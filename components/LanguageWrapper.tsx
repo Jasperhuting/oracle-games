@@ -7,7 +7,6 @@ import I18nProvider from '@/components/i18nProvider';
 export default function LanguageWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [locale, setLocale] = useState<string>('nl');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserLanguage = async () => {
@@ -25,20 +24,10 @@ export default function LanguageWrapper({ children }: { children: React.ReactNod
       } else {
         setLocale('nl');
       }
-      setLoading(false);
     };
 
     fetchUserLanguage();
   }, [user]);
-
-  // Show loading state briefly while fetching language preference
-  if (loading && user) {
-    return (
-      <I18nProvider locale="nl">
-        {children}
-      </I18nProvider>
-    );
-  }
 
   return (
     <I18nProvider locale={locale}>
