@@ -21,31 +21,37 @@ import { AuctionStats } from "@/components/AuctionStats";
 import { AuctionFilters } from "@/components/AuctionFilters";
 import { qualifiesAsNeoProf } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
+import { getFromCache, saveToCache, clearOldVersions } from "@/lib/utils/indexedDBCache";
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 // Increment this version whenever you add/change rider data to force a cache refresh for all users
 const CACHE_VERSION = 2;
 
-// Helper functions for sessionStorage cache
-const getCachedRankings = (year: number): Rider[] | null => {
+// Helper functions for IndexedDB cache
+const getCachedRankings = async (year: number): Promise<Rider[] | null> => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = sessionStorage.getItem(`rankings_${year}_v${CACHE_VERSION}`);
+    const cacheKey = `rankings_${year}`;
+    const cached = await getFromCache<Rider[]>(cacheKey, CACHE_VERSION);
     if (cached) {
-      return JSON.parse(cached);
+      console.log('Using cached rankings data from IndexedDB');
     }
+    return cached;
   } catch (error) {
-    console.error('Error reading from cache:', error);
+    console.error('Error reading from IndexedDB cache:', error);
+    return null;
   }
-  return null;
 };
 
-const setCachedRankings = (year: number, riders: Rider[]): void => {
+const setCachedRankings = async (year: number, riders: Rider[]): Promise<void> => {
   if (typeof window === 'undefined') return;
   try {
-    sessionStorage.setItem(`rankings_${year}_v${CACHE_VERSION}`, JSON.stringify(riders));
+    const cacheKey = `rankings_${year}`;
+    await saveToCache(cacheKey, riders, CACHE_VERSION);
+    // Clean up old cache versions
+    await clearOldVersions(CACHE_VERSION);
   } catch (error) {
-    console.error('Error writing to cache:', error);
+    console.error('Error writing to IndexedDB cache:', error);
   }
 };
 
@@ -309,12 +315,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       // Load eligible riders - use cache if available
       const year = gameData.game.year || YEAR;
-      const cached = getCachedRankings(year);
+      const cached = await getCachedRankings(year);
       let riders: Rider[] = [];
 
       // Use cache if available, otherwise fetch
       if (cached) {
-        console.log('Using cached rankings data from sessionStorage');
         riders = cached;
       } else {
         console.log('Fetching fresh rankings data');
@@ -335,7 +340,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           offset += limit;
         }
 
-        // Store in sessionStorage (persists across page refreshes)
+        // Store in IndexedDB for future use (no await to avoid blocking)
         setCachedRankings(year, riders);
       }
 
@@ -536,9 +541,17 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const getEffectiveMinimumBid = (riderPoints: number): number => {
     const maxMinBid = game?.config?.maxMinimumBid;
+    const isWorldTourManager = game?.gameType === 'worldtour-manager';
+
     if (maxMinBid && riderPoints > maxMinBid) {
       return maxMinBid;
     }
+
+    // For worldtour-manager, minimum price is always 1 (even for riders with 0 points)
+    if (isWorldTourManager && riderPoints === 0) {
+      return 1;
+    }
+
     return riderPoints;
   };
 

@@ -142,6 +142,7 @@ export const Bidding = ({
                                 className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                                 placeholder={`${t('global.current')}: ${rider.myBid || 0}`}
                                 prefix="€"
+                                min={1}
                                 decimalsLimit={0}
                                 disabled={placingBid === riderNameId}
                                 defaultValue={bidAmountsRef.current[riderNameId] || ''}

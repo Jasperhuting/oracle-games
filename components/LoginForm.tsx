@@ -77,7 +77,7 @@ export const LoginForm = () => {
             router.push('/home');
         } catch (error: unknown) {
             console.error('Login error:', error);
-            
+
             // User-friendly error messages in English
             let errorMessage = 'Something went wrong logging in';
             if (error && typeof error === 'object' && 'code' in error) {
@@ -92,9 +92,13 @@ export const LoginForm = () => {
                     errorMessage = 'Invalid email address';
                 } else if (firebaseError.code === 'auth/user-disabled') {
                     errorMessage = 'This account is disabled. Contact the administrator.';
+                } else if (firebaseError.code === 'auth/network-request-failed') {
+                    errorMessage = 'Network error. Please check your connection and try disabling browser extensions (ad blockers).';
                 }
+            } else if (error instanceof Error && error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+                errorMessage = 'Connection blocked by browser extension. Please disable your ad blocker or try in incognito mode.';
             }
-            
+
             setError(errorMessage);
             setIsSubmitting(false);
         }
@@ -144,9 +148,13 @@ export const LoginForm = () => {
                     setError('Login cancelled');
                 } else if (firebaseError.code === 'auth/popup-blocked') {
                     setError('Pop-up blocked. Enable pop-ups for this site.');
+                } else if (firebaseError.code === 'auth/network-request-failed') {
+                    setError('Network error. Please check your connection and try disabling browser extensions (ad blockers).');
                 } else {
                     setError('Something went wrong logging in with Google');
                 }
+            } else if (error instanceof Error && error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+                setError('Connection blocked by browser extension. Please disable your ad blocker or try in incognito mode.');
             } else {
                 setError('Something went wrong logging in with Google');
             }
