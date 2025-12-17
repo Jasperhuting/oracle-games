@@ -5,7 +5,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { senderId, senderName, type, recipientId, recipientName, subject, message } = body;
+    const { senderId, senderName, type, recipientId, recipientName, gameId, gameName, division, subject, message } = body;
 
     // Validate required fields
     if (!senderId || !senderName || !type || !subject || !message) {
@@ -131,6 +131,114 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Message sent successfully',
         messageId: messageRef.id,
+      });
+    } else if (type === 'game' || type === 'game_division') {
+      // Only admins can send game messages
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'Unauthorized: Only admins can send game messages' },
+          { status: 403 }
+        );
+      }
+
+      // Validate game ID
+      if (!gameId) {
+        return NextResponse.json(
+          { error: 'Game ID is required for game messages' },
+          { status: 400 }
+        );
+      }
+
+      // Validate division for game_division type
+      if (type === 'game_division' && !division) {
+        return NextResponse.json(
+          { error: 'Division is required for division messages' },
+          { status: 400 }
+        );
+      }
+
+      // Fetch game participants
+      let participantsQuery = adminDb.collection('gameParticipants').where('gameId', '==', gameId);
+
+      // Filter by division if specified
+      if (type === 'game_division' && division) {
+        participantsQuery = participantsQuery.where('assignedDivision', '==', division);
+      }
+
+      const participantsSnapshot = await participantsQuery.get();
+
+      if (participantsSnapshot.empty) {
+        return NextResponse.json(
+          { error: 'No participants found for this game' + (division ? ' and division' : '') },
+          { status: 404 }
+        );
+      }
+
+      // Send message to all participants
+      const batch = adminDb.batch();
+      let messageCount = 0;
+
+      participantsSnapshot.docs.forEach((participantDoc) => {
+        const participant = participantDoc.data();
+        const userId = participant.userId;
+
+        // Don't send to the sender themselves
+        if (userId !== senderId) {
+          const messageRef = adminDb.collection('messages').doc();
+
+          // Build message data object, only including defined fields
+          const messageData: any = {
+            type,
+            senderId,
+            senderName,
+            recipientId: userId,
+            recipientName: participant.playername || 'Player',
+            gameId,
+            gameName,
+            subject,
+            message,
+            sentAt: Timestamp.now(),
+            read: false,
+          };
+
+          // Only add division field if it exists
+          if (type === 'game_division' && division) {
+            messageData.division = division;
+          }
+
+          batch.set(messageRef, messageData);
+          messageCount++;
+        }
+      });
+
+      await batch.commit();
+
+      // Log activity
+      const activityLogRef = adminDb.collection('activityLogs').doc();
+      const activityDetails: any = {
+        subject,
+        gameId,
+        gameName,
+        recipientCount: messageCount,
+      };
+
+      // Only add division to details if it exists
+      if (type === 'game_division' && division) {
+        activityDetails.division = division;
+      }
+
+      await activityLogRef.set({
+        action: type === 'game_division' ? 'message_game_division' : 'message_game',
+        userId: senderId,
+        userName: senderName,
+        details: activityDetails,
+        timestamp: new Date().toISOString(),
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Message sent to ${messageCount} participant${messageCount !== 1 ? 's' : ''} of ${gameName}${type === 'game_division' ? ` (${division})` : ''}`,
+        messageCount,
       });
     } else {
       return NextResponse.json(

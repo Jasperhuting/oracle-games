@@ -579,28 +579,33 @@ export type ClientDraftPick = Omit<DraftPick, 'pickedAt'> & {
 // MESSAGES (Inbox/Communication System)
 // ============================================================================
 
-export const MESSAGE_TYPES = ['broadcast', 'individual'] as const;
+export const MESSAGE_TYPES = ['broadcast', 'individual', 'game', 'game_division'] as const;
 export type MessageType = typeof MESSAGE_TYPES[number];
 
 export interface Message {
   id?: string;                      // Document ID
-  type: MessageType;                // 'broadcast' or 'individual'
-  
+  type: MessageType;                // 'broadcast', 'individual', 'game', or 'game_division'
+
   // Sender info
   senderId: string;                 // Admin UID
   senderName: string;               // Admin display name
-  
+
   // Recipient info
   recipientId?: string;             // For individual messages, the user UID
   recipientName?: string;           // For individual messages, the user display name
-  
+
+  // Game-specific info (for 'game' and 'game_division' types)
+  gameId?: string;                  // ID of the game
+  gameName?: string;                // Name of the game (for display)
+  division?: string;                // For 'game_division' type: specific division
+
   // Message content
   subject: string;
   message: string;
-  
+
   // Timestamps
   sentAt: Timestamp | Date;
-  
+
   // Read status (for individual messages)
   read?: boolean;
   readAt?: Timestamp | Date;
