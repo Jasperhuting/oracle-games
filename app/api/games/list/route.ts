@@ -47,10 +47,51 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
     // Limit results
     games = games.slice(0, limit);
 
+    // Detect divisions for games with multiple divisions
+    // Group games by exact name match
+    const gameGroups = new Map<string, typeof games>();
+
+    for (const game of games) {
+      const key = `${game.name}-${game.gameType}-${game.year}`;
+
+      if (!gameGroups.has(key)) {
+        gameGroups.set(key, []);
+      }
+      gameGroups.get(key)!.push(game);
+    }
+
+    // Add divisions array to games that have multiple instances (divisions)
+    const gamesWithDivisions = games.map(game => {
+      const key = `${game.name}-${game.gameType}-${game.year}`;
+      const relatedGames = gameGroups.get(key) || [];
+
+      // If there are multiple games with the same name, gameType, and year, they are divisions
+      if (relatedGames.length > 1) {
+        // Extract division names from the game data or create them based on the division field
+        const divisions = relatedGames
+          .map((g, index) => {
+            // If game has division field, use it
+            if (g.division) {
+              return g.division;
+            }
+            // Otherwise, create division names like "Division 1", "Division 2", etc.
+            return `Division ${index + 1}`;
+          })
+          .filter(Boolean) as string[];
+
+        return {
+          ...game,
+          divisions: divisions.length > 0 ? divisions : undefined,
+        };
+      }
+
+      return game;
+    });
+
     return NextResponse.json({
       success: true,
-      games,
-      count: games.length,
+      games: gamesWithDivisions,
+      count: gamesWithDivisions.length,
     });
   } catch (error) {
     console.error('Error fetching games:', error);

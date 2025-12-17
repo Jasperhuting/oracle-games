@@ -82,7 +82,29 @@ export default function MessagingTab() {
           const data = await response.json();
           // Filter games with participants
           const gamesWithPlayers = (data.games || []).filter((g: GameOption) => g.playerCount > 0);
-          setGames(gamesWithPlayers);
+
+          // De-duplicate games: keep only one instance per unique game (by name, gameType, year)
+          const uniqueGames = new Map<string, GameOption>();
+
+          gamesWithPlayers.forEach((game: GameOption) => {
+            const key = `${game.name}-${game.gameType}-${game.year}`;
+
+            if (!uniqueGames.has(key)) {
+              // First instance of this game
+              uniqueGames.set(key, game);
+            } else {
+              // Update player count to total across all divisions
+              const existingGame = uniqueGames.get(key)!;
+              existingGame.playerCount += game.playerCount;
+
+              // Ensure divisions array is set if multiple instances exist
+              if (!existingGame.divisions) {
+                existingGame.divisions = [];
+              }
+            }
+          });
+
+          setGames(Array.from(uniqueGames.values()));
         } else {
           console.error('Failed to fetch games:', await response.text());
         }
@@ -406,6 +428,7 @@ export default function MessagingTab() {
                       <span className="text-gray-900">{selectedGameDisplay}</span>
                       <div className="text-sm text-gray-500">
                         {selectedGame?.playerCount} participant{selectedGame?.playerCount !== 1 ? 's' : ''}
+                        {messageType === 'game_division' && selectedDivision && ` • ${selectedDivision}`}
                       </div>
                     </div>
                     <button
