@@ -1,9 +1,11 @@
+
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
+import { t } from "i18next";
 import Image from 'next/image';
-import { useTranslation } from "react-i18next";
+
 
 export default function ResetPasswordPage() {
-    const { t } = useTranslation();
+
     return (
         <div className="flex flex-row h-screen">
             <div className="w-full md:w-full xl:w-[600px] md:max-w-[600px] flex flex-col items-center content-center justify-center">
