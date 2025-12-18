@@ -35,6 +35,7 @@ export interface User {
   blockedBy?: string;
   blockedReason?: string;
   preferredLanguage?: 'en' | 'nl';
+  emailNotifications?: boolean; // Receive email notifications for new messages
   deletedAt?: string;
 }
 
@@ -134,6 +135,7 @@ export interface UserResponse {
   createdAt: string;
   updatedAt: string;
   userType: 'admin' | 'user';
+  emailNotifications?: boolean;
 }
 
 // GET /api/getUsers

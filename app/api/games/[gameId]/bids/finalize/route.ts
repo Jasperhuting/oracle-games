@@ -8,6 +8,12 @@ export async function POST(
   try {
     const { gameId } = await params;
 
+    // Parse request body to get auction period name
+    const body = await request.json().catch(() => ({}));
+    const { auctionPeriodName } = body;
+
+    console.log(`[FINALIZE] Request for gameId: ${gameId}, auctionPeriodName: ${auctionPeriodName || 'ALL'}`);
+
     const db = getServerFirebase();
 
     // Get game data
@@ -29,6 +35,32 @@ export async function POST(
       );
     }
 
+    // If game has auction periods, validate that auctionPeriodName is provided
+    const auctionPeriods = gameData?.config?.auctionPeriods;
+    if (auctionPeriods && auctionPeriods.length > 0) {
+      if (!auctionPeriodName) {
+        return NextResponse.json(
+          { error: 'auctionPeriodName is required for games with multiple auction periods' },
+          { status: 400 }
+        );
+      }
+
+      // Validate that the period exists
+      const periodExists = auctionPeriods.some((p: any) => p.name === auctionPeriodName);
+      if (!periodExists) {
+        return NextResponse.json(
+          { error: `Auction period "${auctionPeriodName}" not found` },
+          { status: 404 }
+        );
+      }
+
+      // Get the period start date to filter bids
+      const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
+      const periodStartDate = period?.startDate?.toDate?.() || new Date(period?.startDate);
+
+      console.log(`[FINALIZE] Filtering bids for period "${auctionPeriodName}" starting from ${periodStartDate.toISOString()}`);
+    }
+
     // Get all bids for this game (without status filter to avoid index requirement)
     console.log(`[FINALIZE] Querying all bids for gameId: ${gameId}`);
     const allBidsForGameSnapshot = await db.collection('bids')
@@ -38,9 +70,27 @@ export async function POST(
     console.log(`[FINALIZE] Found ${allBidsForGameSnapshot.size} total bids for game`);
 
     // Filter for active and outbid bids in memory (outbid status may exist from legacy data)
+    // AND filter by auction period if specified
     const activeBidsDocs = allBidsForGameSnapshot.docs.filter(doc => {
-      const status = doc.data().status;
-      return status === 'active' || status === 'outbid';
+      const bidData = doc.data();
+      const status = bidData.status;
+
+      // Filter by status
+      if (status !== 'active' && status !== 'outbid') {
+        return false;
+      }
+
+      // Filter by auction period if specified
+      if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
+        const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
+        const periodStartDate = period?.startDate?.toDate?.() || new Date(period?.startDate);
+        const bidAt = bidData.bidAt?.toDate?.() || new Date(bidData.bidAt);
+
+        // Only include bids made during or after the period start
+        return bidAt >= periodStartDate;
+      }
+
+      return true;
     });
     console.log(`[FINALIZE] Found ${activeBidsDocs.length} active/outbid bids after filtering`);
 
@@ -235,12 +285,36 @@ export async function POST(
 
     console.log('[FINALIZE] All participants updated successfully');
 
-    // Update game status to 'active' after finalization
-    await gameDoc.ref.update({
+    // Update game status and period status
+    const updateData: any = {
       status: 'active',
-      'config.auctionStatus': 'finalized',
       finalizedAt: new Date().toISOString(),
-    });
+    };
+
+    // If this is a specific auction period, update that period's status to 'finalized'
+    if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
+      const updatedPeriods = auctionPeriods.map((p: any) => {
+        if (p.name === auctionPeriodName) {
+          console.log(`[FINALIZE] Marking period "${auctionPeriodName}" as finalized`);
+          return { ...p, status: 'finalized' };
+        }
+        return p;
+      });
+
+      updateData['config.auctionPeriods'] = updatedPeriods;
+
+      // Check if all periods are finalized
+      const allPeriodsFinalized = updatedPeriods.every((p: any) => p.status === 'finalized');
+      if (allPeriodsFinalized) {
+        updateData['config.auctionStatus'] = 'finalized';
+        console.log(`[FINALIZE] All auction periods finalized, marking game auction as finalized`);
+      }
+    } else {
+      // For games without periods, mark the whole auction as finalized
+      updateData['config.auctionStatus'] = 'finalized';
+    }
+
+    await gameDoc.ref.update(updateData);
 
     // Log the activity
     await db.collection('activityLogs').add({

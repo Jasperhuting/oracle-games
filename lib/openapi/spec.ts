@@ -11,7 +11,7 @@ export const openApiSpec = {
     description: 'REST API for Oracle Games - Fantasy Cycling Platform',
     contact: {
       name: 'Oracle Games',
-      email: 'support@oraclegames.com',
+      email: 'support@oraclegames.online',
     },
   },
   servers: [
@@ -20,7 +20,7 @@ export const openApiSpec = {
       description: 'Development server',
     },
     {
-      url: 'https://api.oraclegames.com',
+      url: 'https://api.oraclegames.online',
       description: 'Production server',
     },
   ],

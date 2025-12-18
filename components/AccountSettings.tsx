@@ -23,6 +23,7 @@ interface AccountFormData {
   lastName: string;
   dateOfBirth: string;
   preferredLanguage: 'en' | 'nl';
+  emailNotifications: boolean;
 }
 
 interface PasskeyInfo {
@@ -43,7 +44,8 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
   const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<AccountFormData>({
     defaultValues: {
-      preferredLanguage: 'nl'
+      preferredLanguage: 'nl',
+      emailNotifications: true
     }
   });
 
@@ -61,6 +63,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
           setValue('lastName', data.lastName || '');
           setValue('dateOfBirth', data.dateOfBirth || '');
           setValue('preferredLanguage', data.preferredLanguage || 'nl');
+          setValue('emailNotifications', data.emailNotifications !== false); // Default to true
         }
 
         // Check if user has passkey
@@ -99,6 +102,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
           lastName: data.lastName,
           dateOfBirth: data.dateOfBirth,
           preferredLanguage: data.preferredLanguage,
+          emailNotifications: data.emailNotifications,
         }),
       });
 
@@ -129,7 +133,8 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
         firstName: data.firstName,
         lastName: data.lastName,
         dateOfBirth: data.dateOfBirth,
-        preferredLanguage: data.preferredLanguage
+        preferredLanguage: data.preferredLanguage,
+        emailNotifications: data.emailNotifications
       });
     } catch (error: unknown) {
       console.error('Update error:', error);
@@ -282,6 +287,22 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
               {errors.preferredLanguage && (
                 <span className="text-red-500 text-xs mt-1 block">{errors.preferredLanguage.message}</span>
               )}
+            </div>
+
+            <div className="mt-4">
+              <label className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  {...register('emailNotifications')}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {t('account.emailNotifications')}
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1 ml-7">
+                {t('account.emailNotificationsDescription')}
+              </p>
             </div>
 
             {error && (

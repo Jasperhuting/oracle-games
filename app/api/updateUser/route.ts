@@ -3,7 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage } = await request.json();
+    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications } = await request.json();
 
     if (!userId || !playername) {
       return NextResponse.json(
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
     if (lastName !== undefined) updateData.lastName = lastName;
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
     if (preferredLanguage !== undefined) updateData.preferredLanguage = preferredLanguage;
+    if (emailNotifications !== undefined) updateData.emailNotifications = emailNotifications;
 
     // Get old user data for comparison
     const oldUserData = userDoc.data();
@@ -118,6 +119,9 @@ export async function POST(request: NextRequest) {
     }
     if (preferredLanguage !== undefined && oldUserData?.preferredLanguage !== preferredLanguage) {
       changes.preferredLanguage = { old: oldUserData?.preferredLanguage, new: preferredLanguage };
+    }
+    if (emailNotifications !== undefined && oldUserData?.emailNotifications !== emailNotifications) {
+      changes.emailNotifications = { old: oldUserData?.emailNotifications, new: emailNotifications };
     }
 
     // Only log if there were actual changes

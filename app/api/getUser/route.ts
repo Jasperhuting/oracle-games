@@ -38,6 +38,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
       userType: userData?.userType,
       programmer: userData?.programmer || false,
       preferredLanguage: userData?.preferredLanguage || 'nl',
+      emailNotifications: userData?.emailNotifications !== false, // Default to true
     });
   } catch (error) {
     console.error('Error fetching user:', error);

@@ -610,6 +610,10 @@ export interface Message {
   read?: boolean;
   readAt?: Timestamp | Date;
 
+  // Email notification status
+  emailNotificationSent?: boolean;
+  emailNotificationSentAt?: Timestamp | Date;
+
   // Soft delete (separate for sender and recipient)
   deletedAt?: Timestamp | Date; // Legacy field
   deletedBySender?: boolean;
