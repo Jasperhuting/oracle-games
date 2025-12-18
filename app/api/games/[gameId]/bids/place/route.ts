@@ -181,24 +181,44 @@ export async function POST(
       }
     }
 
-    // Get user's active bids to calculate available budget and check maxRiders limit
+    // Get user's active bids to calculate available budget
     const activeBidsSnapshot = await db.collection('bids')
       .where('gameId', '==', gameId)
       .where('userId', '==', userId)
       .where('status', '==', 'active')
       .get();
 
-    // Check maxRiders limit - count unique riders (excluding current rider if updating)
-    const uniqueRiderIds = new Set<string>();
-    activeBidsSnapshot.docs.forEach(doc => {
+    // For maxRiders check, we need to count BOTH active AND won bids
+    // (won bids represent riders already on the team)
+    const allBidsSnapshot = await db.collection('bids')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .where('status', 'in', ['active', 'won'])
+      .get();
+
+    // Filter out ALL bids on the current rider (to handle duplicate bids edge case)
+    // This ensures we don't double-count any bids on this rider
+    const activeBidsExcludingCurrentRider = activeBidsSnapshot.docs.filter(doc => {
       const data = doc.data();
+      // If we're updating an existing bid, exclude ALL bids on this rider
+      return !isUpdatingOwnBid || data.riderNameId !== riderNameId;
+    });
+
+    // Check maxRiders limit - count unique riders from BOTH active and won bids
+    const uniqueRiderIds = new Set<string>();
+    allBidsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      // Exclude current rider only if updating an existing bid
       if (!isUpdatingOwnBid || data.riderNameId !== riderNameId) {
         uniqueRiderIds.add(data.riderNameId);
       }
     });
 
     const maxRiders = gameData?.config?.maxRiders;
-    if (maxRiders && uniqueRiderIds.size >= maxRiders && !isUpdatingOwnBid) {
+
+    // Only block NEW bids if we're at or over the limit
+    // Allow updating existing bids even if over the limit (e.g., if admin reduced maxRiders after bids were placed)
+    if (maxRiders && !isUpdatingOwnBid && uniqueRiderIds.size >= maxRiders) {
       // Log maxRiders limit validation failure
       await db.collection('activityLogs').add({
         action: 'BID_VALIDATION_FAILED',
@@ -215,6 +235,7 @@ export async function POST(
           errorMessage: `Maximum number of riders reached (${maxRiders})`,
           currentRidersCount: uniqueRiderIds.size,
           maxRiders,
+          isNewBid: !isUpdatingOwnBid,
         },
         timestamp: new Date().toISOString(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
@@ -222,18 +243,15 @@ export async function POST(
       });
 
       return NextResponse.json(
-        { error: `Maximum number of riders reached (${maxRiders}). Cancel a bid to place a new one.` },
+        { error: `Maximum number of riders reached (${uniqueRiderIds.size}/${maxRiders}). Cancel a bid before placing a new one.` },
         { status: 400 }
       );
     }
 
-    // Calculate total active bids, excluding the current bid on this rider (if updating)
-    const totalActiveBids = activeBidsSnapshot.docs.reduce((sum, doc) => {
+    // Calculate total active bids from the filtered list
+    // This correctly handles duplicate bids by excluding ALL bids on the current rider
+    const totalActiveBids = activeBidsExcludingCurrentRider.reduce((sum, doc) => {
       const data = doc.data();
-      // Skip the existing bid on this rider when calculating total
-      if (isUpdatingOwnBid && data.riderNameId === riderNameId) {
-        return sum;
-      }
       return sum + (data.amount || 0);
     }, 0);
 

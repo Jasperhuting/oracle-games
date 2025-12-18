@@ -689,11 +689,17 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
     // Check maxRiders limit before placing a new bid (not when updating existing)
     const maxRiders = game?.config?.maxRiders;
-    const activeBidsCount = myBids.filter(b => b.status === 'active' || b.status === 'outbid').length;
+    // Count UNIQUE riders, not total bids (in case there are duplicate bids)
+    const uniqueActiveRiders = new Set(
+      myBids
+        .filter(b => b.status === 'active' || b.status === 'outbid')
+        .map(b => b.riderNameId)
+    );
+    const activeBidsCount = uniqueActiveRiders.size;
     const isUpdatingExistingBid = rider.myBid !== undefined;
 
     if (maxRiders && activeBidsCount >= maxRiders && !isUpdatingExistingBid) {
-      setError(`Maximum number of riders reached (${maxRiders}/${maxRiders}). Cancel a bid to place a new one.`);
+      setError(`Maximum number of riders reached (${activeBidsCount}/${maxRiders}). Cancel a bid to place a new one.`);
       return;
     }
 
@@ -706,17 +712,26 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     // WorldTour Manager: Check neo-prof requirements
     // Rule: If you want 28+ riders, you need at least 1 neo-prof in your team
     if (game && game.gameType === 'worldtour-manager') {
-      const totalActiveBids = myBids.filter(b => b.status === 'active' || b.status === 'outbid').length;
+      // Count UNIQUE riders with active/outbid status
+      const totalActiveBids = new Set(
+        myBids
+          .filter(b => b.status === 'active' || b.status === 'outbid')
+          .map(b => b.riderNameId)
+      ).size;
       const minRiders = game.config.minRiders || 27;
       const isThisRiderNeoProf = qualifiesAsNeoProf(rider, game?.config);
 
-      // Count current neo-profs in the team
-      const currentNeoProfBids = myBids.filter(b => {
-        if (b.status !== 'active' && b.status !== 'outbid') return false;
-        const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
-        return bidRider && qualifiesAsNeoProf(bidRider, game?.config);
-      });
-      const currentNeoProfCount = currentNeoProfBids.length;
+      // Count current neo-profs in the team (unique riders only)
+      const currentNeoProfRiders = new Set(
+        myBids
+          .filter(b => b.status === 'active' || b.status === 'outbid')
+          .filter(b => {
+            const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
+            return bidRider && qualifiesAsNeoProf(bidRider, game?.config);
+          })
+          .map(b => b.riderNameId)
+      );
+      const currentNeoProfCount = currentNeoProfRiders.size;
 
       // If we're trying to get to 28+ riders and this is NOT a neo-prof,
       // check if we already have at least one neo-prof
