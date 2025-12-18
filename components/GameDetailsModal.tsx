@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "./Button";
 import { useTranslation } from "react-i18next";
+import { formatDate } from "@/lib/utils";
 
 interface Game {
   id: string;
@@ -94,16 +95,6 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   return (
     <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">

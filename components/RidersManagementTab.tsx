@@ -6,27 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { TeamSelector } from "./TeamSelector";
 import { Team } from "@/lib/scraper/types";
 import { Flag } from "./Flag";
-import process from "process";
 import { normalizeString } from "@/lib/utils/stringUtils";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { Ranking } from "@/lib/types";
-
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
-
-interface Rider {
-  id: string;
-  name: string;
-  country: string;
-  team?: string;
-  teamId?: string;
-  jerseyImage?: string;
-  retired: boolean;
-  rank?: number;
-  points?: number;
-}
+import { Rider } from "@/lib/types/rider";
+import { useRankings } from "@/contexts/RankingsContext";
 
 export const RidersManagementTab = () => {
   const { user } = useAuth();
+  const { riders: rankingsRiders, refetch: refetchRankings, year } = useRankings();
   const [riders, setRiders] = useState<Rider[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -64,30 +51,13 @@ export const RidersManagementTab = () => {
     setError(null);
 
     try {
-      const response: Response = await fetch(`/api/getRankings?year=${YEAR}&limit=3000`);
-      if (!response.ok) {
-        throw new Error('Failed to load riders');
+      // Load from context
+      if (rankingsRiders.length === 0) {
+        await refetchRankings();
       }
-      const { riders } = await response.json();
 
-      // Transform riders data
-      const ridersData = (riders || []).map((r: Ranking) => ({
-        id: r.nameID || r.id,
-        name: r.name,
-        country: r.country,
-        team: r.team?.name,
-        teamId: r.team?.nameID || r.team?.slug,
-        jerseyImage: r.jerseyImage,
-        retired: r.retired || false,
-        rank: r.rank,
-        points: r.points,
-      }));
-
-      if (isLoadingMore) {
-        setRiders(prev => [...prev, ...ridersData]);
-      } else {
-        setRiders(ridersData);
-      }
+      // Use riders from context (already in the correct format)
+      setRiders(rankingsRiders);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error loading riders:', error);
@@ -119,7 +89,7 @@ export const RidersManagementTab = () => {
           adminUserId: user.uid,
           riderId,
           teamId, // Only send team reference ID, not the name
-          year: YEAR,
+          year: year,
         }),
       });
 
@@ -128,9 +98,15 @@ export const RidersManagementTab = () => {
         throw new Error(errorData.error || 'Failed to update rider team');
       }
 
-      // Update local state - keep teamName for display purposes only
+      // Update local state with properly formatted team object
       setRiders(riders.map(r =>
-        r.id === riderId ? { ...r, team: teamName || undefined, teamId: teamId || undefined } : r
+        r.id === riderId 
+          ? { 
+              ...r, 
+              team: teamName && teamId ? { name: teamName, id: teamId } : undefined,
+              teamId: teamId || undefined 
+            } 
+          : r
       ));
 
       setEditingRiderTeam(null);
@@ -163,7 +139,7 @@ export const RidersManagementTab = () => {
           adminUserId: user.uid,
           riderId,
           retired: !currentRetired,
-          year: YEAR,
+          year: year,
         }),
       });
 
@@ -193,11 +169,11 @@ export const RidersManagementTab = () => {
     const normalizedSearch = normalizeString(searchTerm);
     const lowerSearch = searchTerm.toLowerCase();
     const matchesSearch = normalizeString(rider.name).includes(normalizedSearch) ||
-      normalizeString(rider.team || '').includes(normalizedSearch) ||
+      normalizeString(rider.team?.name || '').includes(normalizedSearch) ||
       rider.country?.toLowerCase().includes(lowerSearch);
 
     // Team filter
-    const matchesTeamFilter = !showOnlyWithoutTeam || !rider.team || rider.team === '';
+    const matchesTeamFilter = !showOnlyWithoutTeam || !rider.team || rider.team?.name === '';
 
     return matchesSearch && matchesTeamFilter;
   });
@@ -313,9 +289,9 @@ export const RidersManagementTab = () => {
                                 setEditingRiderTeam(rider.id);
                               }}
                             >
-                              {rider.team || '-'}
+                              {rider.team?.name || '-'}
                             </span>
-                            {rider.team && (
+                            {rider.team?.name && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -337,8 +313,8 @@ export const RidersManagementTab = () => {
                       <td className="px-4 py-3 text-sm">
                         <input
                           type="checkbox"
-                          checked={rider.retired}
-                          onChange={() => handleToggleRetired(rider.id, rider.retired)}
+                          checked={rider.retired || false}
+                          onChange={() => handleToggleRetired(rider.id, rider.retired || false)}
                           className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer"
                         />
                       </td>

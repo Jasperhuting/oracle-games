@@ -6,26 +6,12 @@ import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { PlayerSelector } from "@/components/PlayerSelector";
 import { MyTeamSelection } from "@/components/MyTeamSelection";
-import { Rider } from "@/lib/scraper/types";
-import process from "process";
+import { Rider } from "@/lib/types/rider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTranslation } from "react-i18next";
+import { useRankings } from "@/contexts/RankingsContext";
+import { GameData } from "../auction/page";
 
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
-
-interface GameData {
-  id: string;
-  name: string;
-  gameType: string;
-  year: number;
-  config: {
-    budget?: number;
-    maxRiders?: number;
-    minRiders?: number;
-    teamSize?: number;
-  };
-  eligibleRiders: string[];
-}
 
 interface ParticipantData {
   id: string;
@@ -38,6 +24,7 @@ interface ParticipantData {
 export default function TeamSelectionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { riders: rankingsRiders, refetch: refetchRankings } = useRankings();
   const [gameId, setGameId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -93,16 +80,13 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
         setBudget(p.budget || gameData.game.config?.budget || 0);
         setSpentBudget(p.spentBudget || 0);
 
-        // Load eligible riders
-        const year = gameData.game.year || YEAR;
-        const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=500`);
-        if (!ridersResponse.ok) {
-          throw new Error('Failed to load riders');
+        // Load eligible riders from context
+        if (rankingsRiders.length === 0) {
+          await refetchRankings();
         }
-        const ridersData = await ridersResponse.json();
 
         // Filter to only eligible riders if specified
-        let riders = ridersData.riders;
+        let riders = rankingsRiders;
         if (gameData.game.eligibleRiders && gameData.game.eligibleRiders.length > 0) {
           const eligibleSet = new Set(gameData.game.eligibleRiders);
           riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
@@ -183,7 +167,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
   };
 
   const getMaxRiders = () => {
-    return game?.config?.maxRiders || game?.config?.teamSize || null;
+    return game?.config?.maxRiders || null;
   };
 
   const getMinRiders = () => {
@@ -401,6 +385,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
       {/* Floating Team Panel */}
       {selectedRiders.length > 0 && (
         <MyTeamSelection
+          game={game}
           myTeamSelection={selectedRiders}
           setMyTeamSelection={setSelectedRiders}
         />

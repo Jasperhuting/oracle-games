@@ -4,9 +4,9 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
-import { Rider } from "@/lib/scraper/types";
+import { Rider } from "@/lib/types/rider";
 import { MyTeamSelection } from "@/components/MyTeamSelection";
-import process from "process";
+import { useRankings } from "@/contexts/RankingsContext";
 import { useInView } from "react-intersection-observer";
 import 'react-range-slider-input/dist/style.css';
 import './range-slider-custom.css';
@@ -21,39 +21,7 @@ import { AuctionStats } from "@/components/AuctionStats";
 import { AuctionFilters } from "@/components/AuctionFilters";
 import { qualifiesAsNeoProf } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
-import { getFromCache, saveToCache, clearOldVersions } from "@/lib/utils/indexedDBCache";
-
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
-// Increment this version whenever you add/change rider data to force a cache refresh for all users
-const CACHE_VERSION = 2;
-
-// Helper functions for IndexedDB cache
-const getCachedRankings = async (year: number): Promise<Rider[] | null> => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const cacheKey = `rankings_${year}`;
-    const cached = await getFromCache<Rider[]>(cacheKey, CACHE_VERSION);
-    if (cached) {
-      console.log('Using cached rankings data from IndexedDB');
-    }
-    return cached;
-  } catch (error) {
-    console.error('Error reading from IndexedDB cache:', error);
-    return null;
-  }
-};
-
-const setCachedRankings = async (year: number, riders: Rider[]): Promise<void> => {
-  if (typeof window === 'undefined') return;
-  try {
-    const cacheKey = `rankings_${year}`;
-    await saveToCache(cacheKey, riders, CACHE_VERSION);
-    // Clean up old cache versions
-    await clearOldVersions(CACHE_VERSION);
-  } catch (error) {
-    console.error('Error writing to IndexedDB cache:', error);
-  }
-};
+import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
 
 export interface GameData {
   id: string;
@@ -91,7 +59,6 @@ export interface ParticipantData {
 export interface RiderWithBid extends Rider {
   highestBid?: number;
   highestBidder?: string;
-  age?: string;
   myBid?: number;
   myBidStatus?: string;
   myBidId?: string;
@@ -104,6 +71,7 @@ export interface RiderWithBid extends Rider {
 export default function AuctionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
   const { user, loading: authLoading, impersonationStatus } = useAuth();
+  const { riders: rankingsRiders, loading: rankingsLoading } = useRankings();
   const [gameId, setGameId] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
@@ -127,6 +95,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [hideSoldPlayers, setHideSoldPlayers] = useState(false);
   const [showOnlyFillers, setshowOnlyFillers] = useState(false);
   const [adjustingBid, setAdjustingBid] = useState<string | null>(null);
+  const [forceRefresh, setForceRefresh] = useState(false);
 
   const { t } = useTranslation();
 
@@ -266,6 +235,110 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     try {
       setLoading(true);
 
+      // Wait for rankings to load if they're still loading
+      if (rankingsLoading) {
+        console.log('[AUCTION] Waiting for RankingsContext to finish loading...');
+        setLoading(true);
+        return;
+      }
+
+      // Try to load from cache first (unless forced to refresh)
+      const cachedData = !forceRefresh ? getCachedAuctionData(gameId) : null;
+      if (cachedData && rankingsRiders.length > 0) {
+        console.log('[AUCTION] Loading game/bids from cache, riders from RankingsContext');
+
+        // Set state from cache
+        setGame(cachedData.gameData.game);
+        setParticipant(cachedData.participantData.participants?.[0] || null);
+
+        const userBids = cachedData.allBidsData.filter((b: Bid) => b.userId === user.uid);
+        setAllBids(cachedData.allBidsData);
+        setMyBids(userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost'));
+
+        // Use riders from RankingsContext instead of cache
+        let riders = rankingsRiders;
+        if (cachedData.gameData.game.eligibleRiders && cachedData.gameData.game.eligibleRiders.length > 0) {
+          const eligibleSet = new Set(cachedData.gameData.game.eligibleRiders);
+          riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
+        }
+
+        // Build soldRidersMap from cached playerTeams
+        const soldRidersMap = new Map<string, { ownerName: string; pricePaid: number }>();
+        if (cachedData.playerTeamsData.success && cachedData.playerTeamsData.teams) {
+          cachedData.playerTeamsData.teams.forEach((teamRider: any) => {
+            if (teamRider.riderNameId && teamRider.active) {
+              const ownerName = teamRider.playername || teamRider.userName || 'Unknown Player';
+              const pricePaid = teamRider.pricePaid || 0;
+              soldRidersMap.set(teamRider.riderNameId, { ownerName, pricePaid });
+            }
+          });
+        }
+
+        // Enhance riders with bid information
+        const maxMinBid = cachedData.gameData.game?.config?.maxMinimumBid;
+        const ridersWithBids = riders.map((rider: Rider) => {
+          const riderNameId = rider.nameID || rider.id || '';
+          const myBid = userBids.find((b: Bid) =>
+            (b.riderNameId === rider.nameID || b.riderNameId === rider.id)
+          );
+
+          const soldData = soldRidersMap.get(riderNameId);
+          const isSold = !!soldData;
+          const soldTo = soldData?.ownerName;
+          const pricePaid = soldData?.pricePaid;
+
+          const riderPoints = rider.points || 0;
+          const effectiveMinBid = maxMinBid && riderPoints > maxMinBid ? maxMinBid : riderPoints;
+
+          let highestBid = 0;
+          let highestBidder = '';
+
+          if (myBid && (myBid.status === 'active' || myBid.status === 'outbid' || myBid.status === 'won')) {
+            highestBid = myBid.amount;
+          }
+
+          return {
+            ...rider,
+            highestBid: highestBid || undefined,
+            highestBidder: highestBidder || undefined,
+            myBid: myBid?.amount || undefined,
+            myBidStatus: myBid?.status || undefined,
+            myBidId: myBid?.id || undefined,
+            effectiveMinBid,
+            soldTo,
+            isSold,
+            pricePaid,
+          };
+        });
+
+        setAvailableRiders(ridersWithBids);
+
+        // Check admin status
+        try {
+          const userResponse = await fetch(`/api/getUser?userId=${user.uid}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setIsAdmin(userData.userType === 'admin');
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+
+        setLoading(false);
+        setError(null);
+
+        // Return early - don't fetch fresh data
+        return;
+      }
+
+      console.log('[AUCTION] No cache found - loading fresh data from API');
+
+      // Check if rankings are available
+      if (rankingsRiders.length === 0) {
+        console.error('[AUCTION] Rankings not available - this should not happen with autoLoad=true');
+        throw new Error('Rankings data not available');
+      }
+
       // Check admin status first
       let userIsAdmin = false;
       try {
@@ -313,36 +386,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         setParticipant(participantData.participants[0]);
       }
 
-      // Load eligible riders - use cache if available
-      const year = gameData.game.year || YEAR;
-      const cached = await getCachedRankings(year);
-      let riders: Rider[] = [];
-
-      // Use cache if available, otherwise fetch
-      if (cached) {
-        riders = cached;
-      } else {
-        console.log('Fetching fresh rankings data');
-        // Fetch all riders in batches
-        let offset = 0;
-        const limit = 500;
-        let hasMore = true;
-
-        while (hasMore) {
-          const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=${limit}&offset=${offset}`);
-          if (!ridersResponse.ok) throw new Error('Failed to load riders');
-          const ridersData = await ridersResponse.json();
-
-          riders = riders.concat(ridersData.riders);
-
-          // Check if there are more riders to fetch
-          hasMore = ridersData.riders.length === limit;
-          offset += limit;
-        }
-
-        // Store in IndexedDB for future use (no await to avoid blocking)
-        setCachedRankings(year, riders);
-      }
+      // Load eligible riders from RankingsContext
+      let riders: Rider[] = rankingsRiders;
 
       // Filter by eligible riders if specified
       if (gameData.game.eligibleRiders && gameData.game.eligibleRiders.length > 0) {
@@ -411,7 +456,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         const pricePaid = soldData?.pricePaid;
 
         // Calculate effective minimum bid (apply cap if configured)
-        const effectiveMinBid = maxMinBid && rider.points > maxMinBid ? maxMinBid : rider.points;
+        const riderPoints = rider.points || 0;
+        const effectiveMinBid = maxMinBid && riderPoints > maxMinBid ? maxMinBid : riderPoints;
 
         // Calculate highest bid for this rider
         let highestBid = 0;
@@ -456,12 +502,22 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       setAvailableRiders(ridersWithBids);
 
+      // Cache the loaded data (riders are already cached by RankingsContext)
+      setCachedAuctionData(
+        gameId,
+        gameData,
+        participantData,
+        allBidsData,
+        playerTeamsData
+      );
+
       setError(null);
     } catch (error) {
       console.error('Error loading auction data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load auction data');
     } finally {
       setLoading(false);
+      setForceRefresh(false); // Reset force refresh flag
     }
   });
 
@@ -472,9 +528,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       return;
     }
     if (!gameId) return;
+    // Wait for rankings to load before loading auction data
+    if (rankingsLoading) return;
 
     loadAuctionData();
-  }, [gameId, user, authLoading, router]);
+  }, [gameId, user, authLoading, router, forceRefresh, rankingsLoading]);
 
   // Load all participants in the same division
   useEffect(() => {
@@ -532,7 +590,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   // Calculate min/max prices from available riders and set initial price range
   useEffect(() => {
     if (availableRiders.length > 0) {
-      const prices = availableRiders.map(r => r.effectiveMinBid || r.points);
+      const prices = availableRiders.map(r => r.effectiveMinBid || r.points || 0);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       setPriceRange([minPrice, maxPrice]);
@@ -594,11 +652,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
     // For worldtour-manager, use the rider's effective minimum bid as the price
     // For auction games, use the entered bid amount
+    const riderPoints = rider.points || 0;
     const bidAmount = isWorldTourManager
-      ? getEffectiveMinimumBid(rider.points)
+      ? getEffectiveMinimumBid(riderPoints)
       : parseFloat(bidAmountsRef.current[riderNameId] || '0');
 
-    const effectiveMinBid = getEffectiveMinimumBid(rider.points);
+    const effectiveMinBid = getEffectiveMinimumBid(riderPoints);
 
     // Prevent bidding on sold riders
     if (rider.isSold) {
@@ -649,13 +708,13 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     if (game && game.gameType === 'worldtour-manager') {
       const totalActiveBids = myBids.filter(b => b.status === 'active' || b.status === 'outbid').length;
       const minRiders = game.config.minRiders || 27;
-      const isThisRiderNeoProf = qualifiesAsNeoProf(rider, game?.config?.maxNeoProAge || 0);
+      const isThisRiderNeoProf = qualifiesAsNeoProf(rider, game?.config);
 
       // Count current neo-profs in the team
       const currentNeoProfBids = myBids.filter(b => {
         if (b.status !== 'active' && b.status !== 'outbid') return false;
         const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
-        return bidRider && qualifiesAsNeoProf(bidRider, game?.config?.maxNeoProAge || 0);
+        return bidRider && qualifiesAsNeoProf(bidRider, game?.config);
       });
       const currentNeoProfCount = currentNeoProfBids.length;
 
@@ -669,8 +728,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       }
 
       // If this IS a neo-prof, check if they qualify based on points
-      if (isThisRiderNeoProf && game.config.maxNeoProPoints && rider.points > game.config.maxNeoProPoints) {
-        setError(`Deze renner heeft te veel punten (${rider.points}) om als neoprof te kwalificeren. Max toegestaan: ${game.config.maxNeoProPoints} punten.`);
+      const riderPoints = rider.points || 0;
+      if (isThisRiderNeoProf && game.config.maxNeoProPoints && riderPoints > game.config.maxNeoProPoints) {
+        setError(`Deze renner heeft te veel punten (${riderPoints}) om als neoprof te kwalificeren. Max toegestaan: ${game.config.maxNeoProPoints} punten.`);
         return;
       }
     }
@@ -698,6 +758,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       const result = await response.json();
       const newBid = result.bid;
+
+      // Invalidate cache when a bid is placed
+      invalidateAuctionCache(gameId);
 
       // Clear bid amount input
       bidAmountsRef.current[riderNameId] = '';
@@ -768,6 +831,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       await Promise.all(cancelPromises);
 
+      // Invalidate cache when all bids are reset
+      invalidateAuctionCache(gameId);
+
       // Clear all state
       bidAmountsRef.current = {};
       setMyBids([]);
@@ -825,6 +891,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         throw new Error(errorData.error || 'Failed to cancel bid');
       }
 
+      // Invalidate cache when a bid is cancelled
+      invalidateAuctionCache(gameId);
+
       // Update state directly instead of reloading
       // Remove the cancelled bid from myBids and allBids
       setMyBids(prev => prev.filter(b => b.id !== bidId));
@@ -869,9 +938,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   };
 
   const getTotalMyBids = (): number => {
-
-    console.log(myBids.filter(b => b.status === 'active' || b.status === 'won'));
-
     return myBids
       .filter(b => b.status === 'active' || b.status === 'won')
       .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
@@ -902,10 +968,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const filteredRiders = useMemo(() => {
     return availableRiders.filter(rider => {
-      const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) || rider.nameID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rider.team?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (rider.nameID || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (rider.team?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-      const riderPrice = rider.effectiveMinBid || rider.points;
+      const riderPrice = rider.effectiveMinBid || rider.points || 0;
       const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
 
       // Apply top-200 restriction at list level: only show riders in top 200 when enabled
@@ -939,8 +1006,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       //   );
       // })
       .filter((rider) => !hideSoldPlayers || !rider.isSold)
-      .filter((rider) => !showOnlyFillers || qualifiesAsNeoProf(rider, game?.config?.maxNeoProAge || 0));
-  }, [filteredRiders, myBids, hideSoldPlayers, showOnlyFillers]);
+      .filter((rider) => !showOnlyFillers || qualifiesAsNeoProf(rider, game?.config || {}));
+  }, [filteredRiders, myBids, hideSoldPlayers, showOnlyFillers, game]);
 
   if (authLoading || loading) {
     return (
@@ -974,7 +1041,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const auctionClosed = game.status === 'active' || game.status === 'finished';
 
   // Calculate min/max prices for the slider
-  const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points);
+  const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points || 0);
   const minRiderPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const maxRiderPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
 
@@ -991,11 +1058,23 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               </h1>
               <p className="text-gray-600">{game.division}</p>
             </div>
-            <Button
-              type="button"
-              text={t('global.backToGames')}
-              onClick={() => router.push('/games')}
-            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                text="🔄 Refresh"
+                onClick={() => {
+                  invalidateAuctionCache(gameId);
+                  setForceRefresh(true);
+                }}
+                ghost
+                title="Force refresh data from server"
+              />
+              <Button
+                type="button"
+                text={t('global.backToGames')}
+                onClick={() => router.push('/games')}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1053,7 +1132,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 ]} />
 
             </div>
-            <div className="bg-white rounded-md border border-gray-200 p-4 flex-3/12 sticky top-[142px] z-20 self-start">{/* sidebar */}
+            <div className={`bg-white rounded-md border border-gray-200 p-4 ${game.gameType === 'worldtour-manager' ? 'relative' : 'sticky top-[142px]'} z-20 self-start`}>{/* sidebar */}
 
               {!auctionActive && (
                 <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
@@ -1080,12 +1159,13 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               <div className="flex flex-col gap-4">
                 <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
                 <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
-                {myAuctionBids.length > 0 && <MyAuctionBids availableRiders={availableRiders} myBids={myAuctionBids} />}
-                <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
+                {myAuctionBids.length > 0 && <MyAuctionBids game={game} isWorldtour={game.gameType === 'worldtour-manager'} availableRiders={availableRiders} myBids={myAuctionBids} />}
+                {game.gameType !== 'worldtour-manager' && <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
                   ...period,
                   startDate: typeof period.startDate === 'string' ? period.startDate : period.startDate.toDate().toISOString(),
                   endDate: typeof period.endDate === 'string' ? period.endDate : period.endDate.toDate().toISOString()
                 }))} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
+                }
               </div>
 
 
@@ -1412,6 +1492,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               onCancelBid={handleCancelBidClick}
               onAdjustBid={handleAdjustBid}
               hideButton={!auctionActive}
+              game={game}
               adjustingBid={adjustingBid}
               isWorldTourManager={game?.gameType === 'worldtour-manager'}
             />
@@ -1424,6 +1505,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               onCancelBid={handleCancelBidClick}
               onAdjustBid={handleAdjustBid}
               hideButton={!auctionActive}
+              game={game}
               adjustingBid={adjustingBid}
               isWorldTourManager={game?.gameType === 'worldtour-manager'}
             />

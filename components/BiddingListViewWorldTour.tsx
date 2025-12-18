@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { Star } from "tabler-icons-react";
-import { isNeoProf } from "@/lib/utils";
+import { qualifiesAsNeoProf } from "@/lib/utils";
 
 export const BiddingListViewWorldTour = ({
   myBids,
@@ -51,7 +51,7 @@ export const BiddingListViewWorldTour = ({
           <span className="font-bold basis-[200px]"></span>
         </div>
       )}
-      <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-2">
 
 
 
@@ -64,14 +64,14 @@ export const BiddingListViewWorldTour = ({
             <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 p-2">
 
               <span className="w-full truncate my-1 font-medium block text-ellipsis whitespace-nowrap">
-                <div className="flex items-center min-w-0">
-                  {isNeoProf(rider, game.config.maxNeoProAge || 0) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
-                  <span className={`truncate ${isNeoProf(rider, game.config.maxNeoProAge || 0) ? 'ml-1' : ''}`}>{rider.name}</span>
-                </div>
-              </span>
-              <span className="w-full text-gray-600 text-xs my-1 mb-2 truncate block text-ellipsis whitespace-nowrap">{rider.team?.name || '-'}</span>
-              <span className="w-full flex items-center gap-2">
-                <span className="font-medium">{rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}</span>
+                <div className="flex items-center min-w-0 justify-between">
+                  <span className="flex items-center">
+                  {qualifiesAsNeoProf(rider, game.config) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
+                  <span className={`truncate max-w-[160px] ${qualifiesAsNeoProf(rider, game.config) ? 'ml-1' : ''}`}>{rider.name}</span>
+                  </span>
+                  
+                <span className="self-end flex gap-2 items-center">
+                  <span className="font-medium">{rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}</span>
                 {canCancel && (
                   <>
                     {adjustingBid === rider.myBidId ? (
@@ -125,8 +125,13 @@ export const BiddingListViewWorldTour = ({
                       </>
                     )}
                   </>
-                )}
+                )}</span>
+
+                </div>
+                
               </span>
+              <span className="w-full text-gray-600 text-xs truncate block text-ellipsis whitespace-nowrap">{rider.team?.name || '-'}</span>
+              
             </div> : null
 
         })}

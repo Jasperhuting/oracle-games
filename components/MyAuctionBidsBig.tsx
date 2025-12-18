@@ -47,8 +47,12 @@ export const MyAuctionBidsBig = ({
       if (i >= auctionPeriods.length) break;
 
       const period = auctionPeriods[i];
-      const startDate = new Date(period.startDate);
-      const endDate = new Date(period.endDate);
+      const startDate = typeof period.startDate === 'object' && 'toDate' in period.startDate
+        ? period.startDate.toDate()
+        : new Date(period.startDate as any);
+      const endDate = typeof period.endDate === 'object' && 'toDate' in period.endDate
+        ? period.endDate.toDate()
+        : new Date(period.endDate as any);
 
       // Find all won bids in this period
       const wonBidsInPeriod = playerBids.filter((bid) => {
@@ -163,8 +167,12 @@ export const MyAuctionBidsBig = ({
                               // help me filter them
                               // the bids are empty
               
-                              const startDate = new Date(auctionPeriod.startDate)
-                              const endDate = new Date(auctionPeriod.endDate)
+                              const startDate = typeof auctionPeriod.startDate === 'object' && 'toDate' in auctionPeriod.startDate
+                                ? auctionPeriod.startDate.toDate()
+                                : new Date(auctionPeriod.startDate as any);
+                              const endDate = typeof auctionPeriod.endDate === 'object' && 'toDate' in auctionPeriod.endDate
+                                ? auctionPeriod.endDate.toDate()
+                                : new Date(auctionPeriod.endDate as any);
                               const now = new Date()
 
                               // SECURITY: Check if this auction period is currently active
@@ -228,7 +236,7 @@ export const MyAuctionBidsBig = ({
                                         myTeam={true}
                                         onClick={() => { }}
                                         selected={false}
-                                        isNeoProf={qualifiesAsNeoProf(rider, game?.config?.maxNeoProAge || 0)}
+                                        isNeoProf={qualifiesAsNeoProf(rider, game?.config || {})}
                                         showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                                         buttonContainer={<></>}
                                       />

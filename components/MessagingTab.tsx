@@ -20,6 +20,7 @@ interface GameOption {
   year: number;
   division?: string;
   divisions?: string[];
+  divisionGameIds?: Record<string, string>; // Maps division name to its gameId
 }
 
 export default function MessagingTab() {
@@ -91,15 +92,34 @@ export default function MessagingTab() {
 
             if (!uniqueGames.has(key)) {
               // First instance of this game
-              uniqueGames.set(key, game);
+              const newGame = { ...game };
+
+              // If this game has a division, initialize the mapping
+              if (game.division) {
+                newGame.divisions = [game.division];
+                newGame.divisionGameIds = { [game.division]: game.id };
+              }
+
+              uniqueGames.set(key, newGame);
             } else {
               // Update player count to total across all divisions
               const existingGame = uniqueGames.get(key)!;
               existingGame.playerCount += game.playerCount;
 
-              // Ensure divisions array is set if multiple instances exist
-              if (!existingGame.divisions) {
-                existingGame.divisions = [];
+              // Add this division to the list if it exists and isn't already there
+              if (game.division) {
+                if (!existingGame.divisions) {
+                  existingGame.divisions = [];
+                }
+                if (!existingGame.divisions.includes(game.division)) {
+                  existingGame.divisions.push(game.division);
+                }
+
+                // Map this division to its gameId
+                if (!existingGame.divisionGameIds) {
+                  existingGame.divisionGameIds = {};
+                }
+                existingGame.divisionGameIds[game.division] = game.id;
               }
             }
           });
@@ -224,6 +244,12 @@ export default function MessagingTab() {
       const selectedUser = users.find((u) => u.id === selectedUserId);
       const selectedGame = games.find((g) => g.id === selectedGameId);
 
+      // For game_division messages, use the correct gameId for the selected division
+      let actualGameId = selectedGameId;
+      if (messageType === 'game_division' && selectedDivision && selectedGame?.divisionGameIds) {
+        actualGameId = selectedGame.divisionGameIds[selectedDivision] || selectedGameId;
+      }
+
       const response = await fetch('/api/messages/send', {
         method: 'POST',
         headers: {
@@ -235,7 +261,7 @@ export default function MessagingTab() {
           type: messageType,
           recipientId: messageType === 'individual' ? selectedUserId : undefined,
           recipientName: messageType === 'individual' ? selectedUser?.displayName || selectedUser?.email : undefined,
-          gameId: messageType === 'game' || messageType === 'game_division' ? selectedGameId : undefined,
+          gameId: messageType === 'game' || messageType === 'game_division' ? actualGameId : undefined,
           gameName: messageType === 'game' || messageType === 'game_division' ? selectedGame?.name : undefined,
           division: messageType === 'game_division' ? selectedDivision : undefined,
           subject,

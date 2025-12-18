@@ -1,5 +1,5 @@
 import { PlayerRow } from "./PlayerRow";
-import { Rider } from "@/lib/scraper/types";
+import { Rider } from "@/lib/types/rider";
 import { Selector } from "./Selector";
 import process from "process";
 

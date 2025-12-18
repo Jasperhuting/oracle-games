@@ -5,10 +5,8 @@ import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
 import { PlayerSelector } from "./PlayerSelector";
 import { MyTeamSelection } from "./MyTeamSelection";
-import { Rider } from "@/lib/scraper/types";
-import process from "process";
-
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
+import { Rider } from "@/lib/types/rider";
+import { useRankings } from "@/contexts/RankingsContext";
 
 interface TeamSelectionModalProps {
   gameId: string;
@@ -39,6 +37,7 @@ interface ParticipantData {
 
 export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelectionModalProps) => {
   const { user } = useAuth();
+  const { riders: rankingsRiders, refetch: refetchRankings } = useRankings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,16 +75,13 @@ export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelection
           setSpentBudget(p.spentBudget || 0);
         }
 
-          // Load eligible riders
-          const year = gameData.game.year || YEAR;
-        const ridersResponse = await fetch(`/api/getRankings?year=${year}&limit=500`);
-        if (!ridersResponse.ok) {
-          throw new Error('Failed to load riders');
+        // Load eligible riders from context
+        if (rankingsRiders.length === 0) {
+          await refetchRankings();
         }
-        const ridersData = await ridersResponse.json();
 
         // Filter to only eligible riders if specified
-        let riders = ridersData.riders;
+        let riders = rankingsRiders;
         if (gameData.game.eligibleRiders && gameData.game.eligibleRiders.length > 0) {
           const eligibleSet = new Set(gameData.game.eligibleRiders);
           riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
@@ -134,7 +130,7 @@ export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelection
           riders: selectedRiders.map(r => ({
             nameId: r.nameID || r.id,
             name: r.name,
-            team: r.team?.name || '',
+            team: r.team || '',
             country: r.country,
             rank: r.rank,
             points: r.points,

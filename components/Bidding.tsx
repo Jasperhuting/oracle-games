@@ -1,7 +1,7 @@
 import CurrencyInput from "react-currency-input-field";
 import { Button } from "./Button";
 import { PlayerCard } from "./PlayerCard";
-import { qualifiesAsNeoProf } from "@/lib/utils";
+import { formatDate, qualifiesAsNeoProf } from "@/lib/utils";
 import { useState } from "react";
 import { GridDots, List } from "tabler-icons-react";
 import { AuctionPeriod, Bid } from "@/lib/types";
@@ -14,7 +14,7 @@ import { ScrollToTop } from "./ScrollToTop";
 import { BiddingCardView } from "./BiddingCardView";
 import { BiddingListView } from "./BiddingListView";
 import { BiddingListViewWorldTour } from "./BiddingListViewWorldTour";
-// import Countdown from 'react-countdown';
+import Countdown from 'react-countdown';
 
 
 export const Bidding = ({
@@ -62,17 +62,21 @@ export const Bidding = ({
 
   const { t } = useTranslation();
 
-  // const Completionist = () => <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{t('bidding.theBiddingHasEnded')}</span>;
+  const Completionist = () => <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{t('bidding.theBiddingHasEnded')}</span>;
 
-  // const renderer = ({ hours, minutes, seconds, completed }: { hours: number, minutes: number, seconds: number, completed: boolean }) => {
-  //   if (completed) {
-  //     // Render a completed state
-  //     return <Completionist />;
-  //   } else {
-  //     // Render a countdown
-  //     return <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{hours} {t('global.hours')} : {minutes} {t('global.minutes')} : {seconds} {t('global.seconds')} {t('bidding.untilTheBiddingEnds')}</span>;
-  //   }
-  // };
+  const renderer = ({ days, hours, minutes, seconds, completed }: { days: number, hours: number, minutes: number, seconds: number, completed: boolean }) => {
+    if (completed) {
+      // Render a completed state
+      return <Completionist />;
+    } else {
+      // Render a countdown - toon dagen als er meer dan 0 dagen zijn
+      if (days > 0) {
+        return <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{days} {t('global.days', { count: days })} : {hours} {t('global.hours')} : {minutes} {t('global.minutes')} {t('bidding.untilTheBiddingEnds')}</span>;
+      } else {
+        return <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{hours} {t('global.hours')} : {minutes} {t('global.minutes')} : {seconds} {t('global.seconds')} {t('bidding.untilTheBiddingEnds')}</span>;
+      }
+    }
+  };
 
 
   const [myTeamView, setMyTeamView] = useState('card');
@@ -86,23 +90,49 @@ export const Bidding = ({
     const endDate = typeof period.endDate === 'string'
       ? new Date(period.endDate).getTime()
       : period.endDate.toDate().getTime();
-    return startDate < now && endDate > now;
+    return startDate <= now && endDate > now;
   });
 
-  const countdownDate = currentPeriod?.endDate
-    ? typeof currentPeriod.endDate === 'string'
-      ? new Date(currentPeriod.endDate)
-      : currentPeriod.endDate.toDate()
-    : new Date();
+  // Als er geen actieve periode is, zoek dan de eerstvolgende periode (die nog moet beginnen)
+  const nextPeriod = !currentPeriod
+    ? game?.config?.auctionPeriods
+        ?.filter((period: AuctionPeriod) => {
+          const now = Date.now();
+          const startDate = typeof period.startDate === 'string'
+            ? new Date(period.startDate).getTime()
+            : period.startDate.toDate().getTime();
+          return startDate > now;
+        })
+        .sort((a: AuctionPeriod, b: AuctionPeriod) => {
+          const aStart = typeof a.startDate === 'string'
+            ? new Date(a.startDate).getTime()
+            : a.startDate.toDate().getTime();
+          const bStart = typeof b.startDate === 'string'
+            ? new Date(b.startDate).getTime()
+            : b.startDate.toDate().getTime();
+          return aStart - bStart;
+        })[0]
+    : null;
+
+  const activePeriod = currentPeriod || nextPeriod;
+
+  const countdownDate = activePeriod?.endDate
+    ? typeof activePeriod.endDate === 'string'
+      ? new Date(activePeriod.endDate).getTime()
+      : activePeriod.endDate instanceof Date
+        ? activePeriod.endDate.getTime()
+        : activePeriod.endDate.toDate().getTime()
+    : Date.now();
 
   return <>
-    {/* <Countdown date={countdownDate} renderer={renderer} /> */}
+    <Countdown key={countdownDate} date={countdownDate} renderer={renderer} />
+    <span className="text-gray-500 text-xs">Einddatum: {activePeriod?.endDate ? formatDate(activePeriod.endDate instanceof Date ? activePeriod.endDate.toISOString() : typeof activePeriod.endDate === 'string' ? activePeriod.endDate : activePeriod.endDate.toDate().toISOString()) : 'onbekende datum'}</span>
 
 
     {/* My Bids Section - Only show when auction is active */}
     {!auctionClosed && (
       <div ref={myBidRef}>
-        <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
+        <div className="bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
           <h1 className="text-2xl font-bold mt-1">
             {game?.gameType === 'worldtour-manager' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
           </h1>
@@ -196,7 +226,7 @@ export const Bidding = ({
                       selected={false}
                       bidders={isAdmin ? riderBidders : undefined}
                       participant={participant}
-                      isNeoProf={qualifiesAsNeoProf(rider, game?.config?.maxNeoProAge || 0)}
+                      isNeoProf={qualifiesAsNeoProf(rider, game?.config)}
                       showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                       buttonContainer={<>
                         <div className="flex flex-row gap-2">

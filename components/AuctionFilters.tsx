@@ -80,7 +80,7 @@ export const AuctionFilters = ({
         {game.gameType === 'worldtour-manager' ? (
                   <Button onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
                     <span className={`flex flex-row gap-2 items-center`}>
-                      {showOnlyFillers ? <><Users />{t('global.showAllRiders')}</> : <><Star />{t('global.showOnlyFillers')}</>}
+                      {showOnlyFillers ? <><Users size="15" />{t('global.showAllRiders')}</> : <><Star size="15" />{t('global.showOnlyFillers')}</>}
                     </span>
                   </Button>
                 ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <Toggle

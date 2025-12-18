@@ -2,31 +2,34 @@ import { Minus, X } from "tabler-icons-react";
 import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { GameData } from "@/app/games/[gameId]/auction/page";
 
 // TODO: replace any with real type
 export const MyTeamSelectionRow = (
-    { 
-        rider, 
-        removeItem, 
-        showStage, 
-        stageText, 
-        removeAble, 
+    {
+        rider,
+        removeItem,
+        showStage,
+        stageText,
+        removeAble,
         onCancelBid,
-        onAdjustBid, 
+        onAdjustBid,
         hideButton,
         adjustingBid,
-        isWorldTourManager
-    }: { 
+        isWorldTourManager,
+        game
+    }: {
         rider: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
         removeItem: (rider: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
-        showStage?: boolean, 
-        stageText?: string, 
-        removeAble?: boolean, 
+        showStage?: boolean,
+        stageText?: string,
+        removeAble?: boolean,
         onCancelBid?: (bidId: string, riderName: string) => void,
-        onAdjustBid?: (bidId: string) => void, 
+        onAdjustBid?: (bidId: string) => void,
         hideButton?: boolean,
         adjustingBid?: string | null,
-        isWorldTourManager?: boolean
+        isWorldTourManager?: boolean,
+        game?: GameData
     }) => {
     const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name;
     // During bidding, only active bids can be cancelled (outbid status only appears after finalization)
@@ -52,12 +55,13 @@ export const MyTeamSelectionRow = (
                 {/* Show bid and cost information for auction games (without revealing outbid status live) */}
                 {rider.myBid !== undefined && (
                     <div className="flex flex-col items-end gap-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Bid:</span>
-                            <span className="font-bold text-sm text-green-600">
-                                {formatCurrency(rider.myBid)}
-                            </span>
-                        </div>
+                        {game?.gameType !== 'worldtour-manager' && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500">Bid:</span>
+                                <span className="font-bold text-sm text-green-600">
+                                    {formatCurrency(rider.myBid)}
+                                </span>
+                            </div>)}
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500">Cost:</span>
                             <span className={`text-sm font-medium ${rider.effectiveMinBid && rider.effectiveMinBid < rider.points ? 'text-green-600' : 'text-gray-700'}`}>

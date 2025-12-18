@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 
 // Helper to calculate rider's age
-  export const calculateAge = (birthDate: string): number => {
+  export const calculateAge = (birthDate: string | number): number => {
     const today = new Date();
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
@@ -32,11 +32,29 @@ export function cn(...inputs: ClassValue[]) {
     };
 
       // Helper to check if a rider qualifies as a neo-prof based on points
-  export const qualifiesAsNeoProf = (rider: RiderWithBid, maxNeoProPoints: number): boolean => {
-    if (!isNeoProf(rider, maxNeoProPoints || 0)) return false;
+export const qualifiesAsNeoProf = (rider: RiderWithBid, gameConfig: { maxNeoProPoints?: number, maxNeoProAge?: number }): boolean => {
+  // First check if rider meets the age requirement to be a neo-pro
+  if (!isNeoProf(rider, gameConfig.maxNeoProAge || 0)) return false;
 
-    const maxPoints = maxNeoProPoints;
-    if (maxPoints === undefined) return true; // No points limit
+  // If no points limit is set, consider them a neo-pro if they meet the age requirement
+  if (gameConfig.maxNeoProPoints === undefined) return true;
 
-    return rider.points <= maxPoints;
+  // A rider is a neo-pro if their points are LOWER than or equal to the maximum allowed
+  // IMPORTANT: If points is undefined, we should NOT default to 0 (which would incorrectly qualify them)
+  // Instead, if points is undefined/null, they don't qualify as neo-pro
+  const riderPoints = rider?.points ?? null;
+  if (riderPoints === null || riderPoints === undefined) return false;
+
+  return riderPoints <= gameConfig.maxNeoProPoints;
+};
+
+export  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };

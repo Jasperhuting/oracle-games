@@ -52,7 +52,7 @@ export const BiddingCardView = ({
                       player={rider}
                       onClick={() => { }}
                       selected={false}
-                      isNeoProf={qualifiesAsNeoProf(rider, game?.config?.maxNeoProAge || 0)}
+                      isNeoProf={qualifiesAsNeoProf(rider, game?.config)}
                       showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                       buttonContainer={
                         <>

@@ -8,6 +8,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import MessageNotification from "@/components/MessageNotification";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import { RankingsProvider } from "@/contexts/RankingsContext";
 import LanguageWrapper from "@/components/LanguageWrapper";
 
 const inter = Inter({
@@ -40,15 +41,17 @@ export default function RootLayout({
         <LanguageWrapper>
           <MotiaProvider address={process.env.NEXT_PUBLIC_MOTIA_WS ?? 'ws://localhost:3000'}>
             <ImpersonationProvider>
-              <Toaster position="top-center" />
-              <MessageNotification />
-              <AuthGuard>
-                <LayoutShell>
-                  <main>
-                    {children}
-                  </main>
-                </LayoutShell>
-              </AuthGuard>
+              <RankingsProvider autoLoad={true}>
+                <Toaster position="top-center" />
+                <MessageNotification />
+                <AuthGuard>
+                  <LayoutShell>
+                    <main>
+                      {children}
+                    </main>
+                  </LayoutShell>
+                </AuthGuard>
+              </RankingsProvider>
             </ImpersonationProvider>
           </MotiaProvider>
         </LanguageWrapper>
