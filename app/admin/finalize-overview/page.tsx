@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/app/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PlayerTeam {
   id: string;
@@ -48,11 +48,6 @@ export default function FinalizeOverviewPage() {
   useEffect(() => {
     if (user === null) {
       router.push('/login');
-      return;
-    }
-
-    if (user && user.userType !== 'admin') {
-      router.push('/');
       return;
     }
 
