@@ -17,6 +17,7 @@ import MessagingTab from "@/components/MessagingTab";
 import { DataMigrationsTab } from "@/components/DataMigrationsTab";
 import { TranslationsTab } from "@/components/TranslationsTab";
 import { BidBackupTab } from "@/components/BidBackupTab";
+import { FinalizeOverviewTab } from "@/components/FinalizeOverviewTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -161,6 +162,11 @@ export default function AdminPage() {
                                     id: 'bid-backup',
                                     label: 'Bid Backup',
                                     content: <BidBackupTab />
+                                },
+                                {
+                                    id: 'finalize-overview',
+                                    label: 'Finalize Overzicht',
+                                    content: <FinalizeOverviewTab />
                                 }
                             ]
                         },

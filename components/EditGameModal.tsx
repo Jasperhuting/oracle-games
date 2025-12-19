@@ -101,14 +101,27 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
         // Load auction periods if auctioneer game
         if (game.gameType === 'auctioneer' && game.config?.auctionPeriods) {
-          setAuctionPeriods(game.config.auctionPeriods.map((p: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
-            name: p.name,
-            startDate: p.startDate ? new Date(p.startDate).toISOString().slice(0, 16) : '',
-            endDate: p.endDate ? new Date(p.endDate).toISOString().slice(0, 16) : '',
-            finalizeDate: p.finalizeDate ? new Date(p.finalizeDate).toISOString().slice(0, 16) : '',
-            status: p.status,
-            top200Only: p.top200Only || false,
-          })));
+          setAuctionPeriods(game.config.auctionPeriods.map((p: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            // Convert UTC dates to local time for datetime-local input
+            const formatDateForInput = (dateString: string) => {
+              const date = new Date(dateString);
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            return {
+              name: p.name,
+              startDate: p.startDate ? formatDateForInput(p.startDate) : '',
+              endDate: p.endDate ? formatDateForInput(p.endDate) : '',
+              finalizeDate: p.finalizeDate ? formatDateForInput(p.finalizeDate) : '',
+              status: p.status,
+              top200Only: p.top200Only || false,
+            };
+          }));
         }
 
         // Load counting races if auctioneer game
@@ -249,11 +262,11 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           maxRiders: Number(data.maxRiders) || 8,
           auctionPeriods: auctionPeriods.map(period => {
             // datetime-local gives us "2025-12-14T00:00" format
-            // We need to treat this as the actual UTC time, not local time
-            // So we append 'Z' to indicate UTC timezone
-            const startDate = new Date(period.startDate + ':00Z');
-            const endDate = new Date(period.endDate + ':00Z');
-            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00Z') : undefined;
+            // We need to treat this as local time (browser timezone)
+            // Don't append 'Z' - let the browser interpret it as local time
+            const startDate = new Date(period.startDate + ':00');
+            const endDate = new Date(period.endDate + ':00');
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00') : undefined;
 
             return {
               name: period.name,

@@ -50,7 +50,7 @@ export const qualifiesAsNeoProf = (rider: RiderWithBid, gameConfig: { maxNeoProP
 
 export  const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString('nl-NL', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
