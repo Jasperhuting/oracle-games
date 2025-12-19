@@ -293,13 +293,40 @@ export async function POST(
 
     // If this is a specific auction period, update that period's status to 'finalized'
     if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
-      const updatedPeriods = auctionPeriods.map((p: any) => {
+      // Re-fetch the game document to ensure we have the latest auctionPeriods data
+      const latestGameDoc = await db.collection('games').doc(gameId).get();
+      const latestGameData = latestGameDoc.data();
+      const latestAuctionPeriods = latestGameData?.config?.auctionPeriods || [];
+
+      console.log(`[FINALIZE] Current periods count: ${latestAuctionPeriods.length}`);
+
+      const updatedPeriods = latestAuctionPeriods.map((p: any) => {
         if (p.name === auctionPeriodName) {
           console.log(`[FINALIZE] Marking period "${auctionPeriodName}" as finalized`);
           return { ...p, status: 'finalized' };
         }
         return p;
       });
+
+      console.log(`[FINALIZE] Updated periods count: ${updatedPeriods.length}`);
+
+      // CRITICAL SAFETY CHECK: Ensure no periods are deleted
+      if (updatedPeriods.length < latestAuctionPeriods.length) {
+        const errorMsg = `CRITICAL ERROR: Attempted to delete auction periods! Original: ${latestAuctionPeriods.length}, Updated: ${updatedPeriods.length}`;
+        console.error(`[FINALIZE] ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+
+      // CRITICAL SAFETY CHECK: Ensure period names match
+      const originalNames = new Set(latestAuctionPeriods.map((p: any) => p.name));
+      const updatedNames = new Set(updatedPeriods.map((p: any) => p.name));
+      const missingPeriods = [...originalNames].filter(name => !updatedNames.has(name));
+
+      if (missingPeriods.length > 0) {
+        const errorMsg = `CRITICAL ERROR: Missing periods after update: ${missingPeriods.join(', ')}`;
+        console.error(`[FINALIZE] ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
 
       updateData['config.auctionPeriods'] = updatedPeriods;
 
