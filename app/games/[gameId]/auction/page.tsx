@@ -1147,7 +1147,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 ]} />
 
             </div>
-            <div className={`bg-white rounded-md border border-gray-200 p-4 ${game.gameType === 'worldtour-manager' ? 'relative' : 'sticky top-[142px]'} z-20 self-start`}>{/* sidebar */}
+            {/* <div className={`bg-white rounded-md border border-gray-200 p-4 ${game.gameType === 'worldtour-manager' ? 'relative' : 'sticky top-[142px]'} z-20 self-start`}>sidebar */}
+            <div className={`bg-white rounded-md border border-gray-200 p-4 relative z-20 self-start`}>{/* sidebar */}
 
               {!auctionActive && (
                 <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
