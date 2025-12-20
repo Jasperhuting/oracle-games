@@ -745,24 +745,159 @@ export function FinalizeOverviewTab() {
 
                   console.log('divisionData', divisionData);
 
+                  // Bereken divisie-brede statistieken
+                  const allDivisionRiders = divisionData.userPurchases.flatMap(up => up.periods.flatMap(p => p.riders));
+                  const divisionRidersWithPrice = allDivisionRiders.filter(r => r.originalPrice && r.originalPrice > 0);
+
+                  const divisionBestBuy = divisionRidersWithPrice.reduce((best, rider) => {
+                    const diff = rider.pricePaid - (rider.originalPrice || 0);
+                    const bestDiff = best.pricePaid - (best.originalPrice || 0);
+                    return diff < bestDiff ? rider : best;
+                  }, divisionRidersWithPrice[0]);
+
+                  const divisionWorstBuy = divisionRidersWithPrice.reduce((worst, rider) => {
+                    const diff = rider.pricePaid - (rider.originalPrice || 0);
+                    const worstDiff = worst.pricePaid - (worst.originalPrice || 0);
+                    return diff > worstDiff ? rider : worst;
+                  }, divisionRidersWithPrice[0]);
+
+                  const divisionMostPopular = allDivisionRiders.reduce((popular, rider) => {
+                    const riderBids = rider.bidCount || 0;
+                    const popularBids = popular.bidCount || 0;
+                    return riderBids > popularBids ? rider : popular;
+                  }, allDivisionRiders[0]);
+
+                  const divisionMostExpensive = allDivisionRiders.reduce((expensive, rider) => {
+                    return rider.pricePaid > expensive.pricePaid ? rider : expensive;
+                  }, allDivisionRiders[0]);
+
+                  const divisionCheapest = allDivisionRiders.reduce((cheap, rider) => {
+                    return rider.pricePaid < cheap.pricePaid ? rider : cheap;
+                  }, allDivisionRiders[0]);
+
+                  // Player with most budget remaining
+                  const playerWithMostBudget = divisionData.userPurchases.reduce((player, curr) => {
+                    const playerBudgetLeft = (divisionData.game.config as any).budget - player.totalSpent;
+                    const currBudgetLeft = (divisionData.game.config as any).budget - curr.totalSpent;
+                    return currBudgetLeft > playerBudgetLeft ? curr : player;
+                  }, divisionData.userPurchases[0]);
+
+                  // Player with most riders
+                  const playerWithMostRiders = divisionData.userPurchases.reduce((player, curr) => {
+                    return curr.totalRiders > player.totalRiders ? curr : player;
+                  }, divisionData.userPurchases[0]);
+
+                  // Player with fewest riders
+                  const playerWithFewestRiders = divisionData.userPurchases.reduce((player, curr) => {
+                    return curr.totalRiders < player.totalRiders ? curr : player;
+                  }, divisionData.userPurchases[0]);
+
                   return (
                   <div key={String(divisionData.game.id)} className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                    <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-300">
-                      <h3 className="text-xl font-bold">
-                        {divisionData.game.division ? (
-                          <>Divisie {Number(divisionData.game.divisionLevel || 0)}</>
-                        ) : (
-                          <>{String(gameGroup.baseName)}</>
-                        )}
-                      </h3>
-                    <div className="text-sm text-gray-500">
-                      Status: <span className="capitalize">{String(divisionData.game.status || '')}</span>
-                      {' • '}
-                      {Number(divisionData.totalRiders || 0)} renners
-                      {' • '}
-                      Totaal: {formatCurrency(Number(divisionData.totalValue) || 0)}
+                    <div className="mb-6 pb-4 border-b-2 border-gray-300">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold">
+                          {divisionData.game.division ? (
+                            <>Divisie {Number(divisionData.game.divisionLevel || 0)}</>
+                          ) : (
+                            <>{String(gameGroup.baseName)}</>
+                          )}
+                        </h3>
+                        <div className="text-sm text-gray-500">
+                          Status: <span className="capitalize">{String(divisionData.game.status || '')}</span>
+                          {' • '}
+                          {Number(divisionData.totalRiders || 0)} renners
+                          {' • '}
+                          Totaal: {formatCurrency(Number(divisionData.totalValue) || 0)}
+                        </div>
+                      </div>
+
+                      {/* Divisie statistieken */}
+                      {allDivisionRiders.length > 0 && (
+                        <div className="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 rounded-lg">
+                          <div className="text-xs font-semibold text-indigo-700 mb-2 uppercase tracking-wide">Divisie Statistieken</div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {divisionBestBuy && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">🏆 Beste koop</span>
+                                <span className="text-sm font-semibold text-green-700">{divisionBestBuy.riderName}</span>
+                                <span className="text-xs text-gray-600">
+                                  {formatCurrency(divisionBestBuy.pricePaid)}
+                                  {divisionBestBuy.originalPrice && (
+                                    <span className="text-green-600 ml-1">
+                                      ({divisionBestBuy.pricePaid - divisionBestBuy.originalPrice >= 0 ? '+' : ''}{formatCurrency(divisionBestBuy.pricePaid - divisionBestBuy.originalPrice)})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            )}
+
+                            {divisionWorstBuy && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">💸 Slechtste koop</span>
+                                <span className="text-sm font-semibold text-red-700">{divisionWorstBuy.riderName}</span>
+                                <span className="text-xs text-gray-600">
+                                  {formatCurrency(divisionWorstBuy.pricePaid)}
+                                  {divisionWorstBuy.originalPrice && (
+                                    <span className="text-red-600 ml-1">
+                                      (+{formatCurrency(divisionWorstBuy.pricePaid - divisionWorstBuy.originalPrice)})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            )}
+
+                            {divisionMostPopular && (divisionMostPopular.bidCount || 0) > 1 && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">🔥 Meest gewild</span>
+                                <span className="text-sm font-semibold text-orange-700">{divisionMostPopular.riderName}</span>
+                                <span className="text-xs text-gray-600">{divisionMostPopular.bidCount} biedingen</span>
+                              </div>
+                            )}
+
+                            {divisionMostExpensive && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">💰 Duurste</span>
+                                <span className="text-sm font-semibold text-purple-700">{divisionMostExpensive.riderName}</span>
+                                <span className="text-xs text-gray-600">{formatCurrency(divisionMostExpensive.pricePaid)}</span>
+                              </div>
+                            )}
+
+                            {divisionCheapest && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">💵 Goedkoopste</span>
+                                <span className="text-sm font-semibold text-blue-700">{divisionCheapest.riderName}</span>
+                                <span className="text-xs text-gray-600">{formatCurrency(divisionCheapest.pricePaid)}</span>
+                              </div>
+                            )}
+
+                            {playerWithMostBudget && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">💰 Meeste budget over</span>
+                                <span className="text-sm font-semibold text-emerald-700">{playerWithMostBudget.playername}</span>
+                                <span className="text-xs text-gray-600">{formatCurrency((divisionData.game.config as any).budget - playerWithMostBudget.totalSpent)}</span>
+                              </div>
+                            )}
+
+                            {playerWithMostRiders && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">👥 Meeste renners</span>
+                                <span className="text-sm font-semibold text-cyan-700">{playerWithMostRiders.playername}</span>
+                                <span className="text-xs text-gray-600">{playerWithMostRiders.totalRiders} renners</span>
+                              </div>
+                            )}
+
+                            {playerWithFewestRiders && divisionData.userPurchases.length > 1 && (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-500 mb-1">👤 Minste renners</span>
+                                <span className="text-sm font-semibold text-amber-700">{playerWithFewestRiders.playername}</span>
+                                <span className="text-xs text-gray-600">{playerWithFewestRiders.totalRiders} renners</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
 
                   {divisionData.userPurchases.length === 0 ? (
                     <p className="text-gray-500 italic">Nog geen renners gekocht</p>
