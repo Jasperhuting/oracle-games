@@ -7,6 +7,7 @@ import { FeedbackModal } from "./FeedbackModal";
 import { BetaBanner } from "./BetaBanner";
 import { ImpersonationBanner } from "./ImpersonationBanner";
 import { useAuth } from "@/hooks/useAuth";
+import { BuyMeCoffeeWidget } from "./BuyMeCoffeeWidget";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -111,6 +112,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             <main>{children}</main>
             <button className="fixed bottom-[100px] rotate-90 -left-[40px] z-50 rounded-t-lg bg-primary text-white px-4 py-2 cursor-pointer hover:bg-[#357771] transition-colors" onClick={() => setShowFeedbackModal(true)}>Feedback</button>
             {showFeedbackModal && <FeedbackModal onClose={() => setShowFeedbackModal(false)} />}
+            <BuyMeCoffeeWidget />
         </>
     );
 }
