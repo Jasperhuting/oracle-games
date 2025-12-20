@@ -246,10 +246,10 @@ export const CreateGameTab = () => {
           gameType: data.gameType,
           raceSlug: data.raceSlug || undefined, // Optional for season games
           raceType: data.raceType,
-          year: data.year,
+          year: Number(data.year),
           status: 'draft',
           divisionCount: data.divisionCount,
-          maxPlayers: data.maxPlayers,
+          maxPlayers: data.maxPlayers ? Number(data.maxPlayers) : undefined,
           eligibleTeams: [], // TODO: set based on race lineup
           eligibleRiders: [], // TODO: set based on race lineup
           config,
@@ -411,6 +411,7 @@ export const CreateGameTab = () => {
               placeholder={`E.g. 2026`}
               {...register('year', {
                 required: 'Year is required',
+                valueAsNumber: true,
                 min: {
                   value: 2020,
                   message: 'Year must be at least 2020'
@@ -460,6 +461,7 @@ export const CreateGameTab = () => {
               label="Maximum Number of Players (optional)"
               placeholder="E.g. 50"
               {...register('maxPlayers', {
+                valueAsNumber: true,
                 min: {
                   value: 2,
                   message: 'At least 2 players required'

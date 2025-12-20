@@ -814,7 +814,7 @@ export function FinalizeOverviewTab() {
 
                       {/* Divisie statistieken */}
                       {allDivisionRiders.length > 0 && (
-                        <div className="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 rounded-lg">
+                        <div className="bg-gray-50 border border-gray-200 px-4 py-3 rounded-lg">
                           <div className="text-xs font-semibold text-indigo-700 mb-2 uppercase tracking-wide">Divisie Statistieken</div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {divisionBestBuy && (
