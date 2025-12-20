@@ -5,7 +5,6 @@ import type { RankingsResponse, ApiErrorResponse, Ranking } from "@/lib/types";
 
 export async function GET(request: NextRequest): Promise<NextResponse<RankingsResponse | ApiErrorResponse>> {
   const searchParams = request.nextUrl.searchParams;
-  const year = searchParams.get('year') || process.env.NEXT_PUBLIC_PLAYING_YEAR;
   const limit = parseInt(searchParams.get('limit') || '100');
   const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
     const db = getServerFirebase();
 
     // Get paginated results
-    let query = db.collection(`rankings_${year}`).orderBy('rank');
+    let query = db.collection(`rankings_2026`).orderBy('rank');
 
     // Apply offset and limit
     if (offset > 0) {
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
     // Get total count (only if offset is 0 to avoid extra reads)
     let totalCount = null;
     if (offset === 0) {
-      const countSnapshot = await db.collection(`rankings_${year}`).count().get();
+      const countSnapshot = await db.collection(`rankings_2026`).count().get();
       totalCount = countSnapshot.data().count;
     }
 

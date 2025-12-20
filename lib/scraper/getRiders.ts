@@ -2,7 +2,6 @@ import * as cheerio from 'cheerio';
 import { KNOWN_RACE_SLUGS, type RaceSlug, type StartlistResult, type Team, type Rider } from './types';
 import process from "process";
 
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 export interface GetRidersOptions {
   race: RaceSlug;
@@ -16,7 +15,7 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
 
   const yearNum = Number(year);
   if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 3000) {
-    throw new Error(`Year must be a valid year, e.g., ${YEAR}`);
+    throw new Error(`Year must be a valid year, e.g., 2026`);
   }
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/startlist`;

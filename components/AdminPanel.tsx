@@ -8,8 +8,6 @@ import { useTranslation } from "react-i18next";
 
 
 
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
-
 interface ScrapeResult {
   success: boolean;
   command?: string;
@@ -135,7 +133,7 @@ interface CommandButtonProps {
 
 function CommandButton({ command, onRun, loading }: CommandButtonProps) {
   const [stage, setStage] = useState<string>('');
-  const [year, setYear] = useState<string>(YEAR.toString());
+  const [year, setYear] = useState<string>('2026');
   const { t } = useTranslation();
 
   const handleRun = () => {

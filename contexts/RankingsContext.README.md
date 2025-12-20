@@ -102,7 +102,7 @@ import { RankingsProvider } from '@/contexts/RankingsContext';
 
 export default function HistoricalPage() {
   return (
-    <RankingsProvider year={2025} autoLoad={true}>
+    <RankingsProvider year={2026} autoLoad={true}>
       <MyComponent />
     </RankingsProvider>
   );

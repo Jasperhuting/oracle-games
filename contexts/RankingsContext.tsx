@@ -4,9 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { Rider } from '@/lib/types/rider';
 import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
 
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
-// Increment this version whenever you add/change rider data to force a cache refresh for all users
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 
 interface RankingsContextType {
   riders: Rider[];
@@ -15,20 +13,17 @@ interface RankingsContextType {
   refetch: () => Promise<void>;
   getRiderById: (id: string) => Rider | undefined;
   getRidersByIds: (ids: string[]) => Rider[];
-  year: number;
 }
 
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
 
 interface RankingsProviderProps {
   children: ReactNode;
-  year?: number;
   autoLoad?: boolean; // Whether to automatically load rankings on mount (default: true)
 }
 
 export function RankingsProvider({
   children,
-  year = YEAR,
   autoLoad = true
 }: RankingsProviderProps) {
   const [riders, setRiders] = useState<Rider[]>([]);
@@ -43,7 +38,7 @@ export function RankingsProvider({
 
     try {
       // Try to get from cache first
-      const cacheKey = `rankings_${year}`;
+      const cacheKey = `rankings_2026`;
       const cached = await getFromCache<Rider[]>(cacheKey, CACHE_VERSION);
 
       if (cached && cached.length > 0) {
@@ -61,7 +56,7 @@ export function RankingsProvider({
       let hasMore = true;
 
       while (hasMore) {
-        const response = await fetch(`/api/getRankings?year=${year}&limit=${limit}&offset=${offset}`);
+        const response = await fetch(`/api/getRankings?limit=${limit}&offset=${offset}`);
 
         if (!response.ok) {
           throw new Error('Failed to load rankings');
@@ -88,7 +83,7 @@ export function RankingsProvider({
     } finally {
       setLoading(false);
     }
-  }, [year]);
+  }, []);
 
   // Load rankings on mount if autoLoad is true
   useEffect(() => {
@@ -117,7 +112,6 @@ export function RankingsProvider({
         refetch: fetchRankings,
         getRiderById,
         getRidersByIds,
-        year,
       }}
     >
       {children}

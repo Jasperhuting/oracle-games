@@ -5,11 +5,8 @@ import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
-import { GAME_TYPES, GameType } from "@/lib/types/games";
-import process from "process";
+import { GameType } from "@/lib/types/games";
 import { useTranslation } from "react-i18next";
-
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 interface AuctionPeriodInput {
   name: string;
@@ -389,7 +386,7 @@ export const CreateGameTab = () => {
           <div>
             <TextInput
               label="Game Name"
-              placeholder={`E.g. Auctioneer - Tour de France ${YEAR}`}
+              placeholder={`E.g. Auctioneer - Tour de France 2026`}
               {...register('name', {
                 required: 'Game name is required',
                 minLength: {
@@ -411,7 +408,7 @@ export const CreateGameTab = () => {
             <TextInput
               type="number"
               label={t('global.year')}
-              placeholder={`E.g. ${YEAR}`}
+              placeholder={`E.g. 2026`}
               {...register('year', {
                 required: 'Year is required',
                 min: {

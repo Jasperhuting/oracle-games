@@ -10,7 +10,6 @@ import process from "process";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useTranslation } from "react-i18next";
 
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 interface Game {
   id: string;

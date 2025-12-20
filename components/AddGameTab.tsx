@@ -5,10 +5,7 @@ import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
-import process from "process";
 import { t } from "i18next";
-
-const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 
 interface RaceFormData {
   race: string;
@@ -117,7 +114,7 @@ export const AddGameTab = () => {
             <TextInput
               type="number"
               label={t('global.year')}
-              placeholder={`Bijv. ${YEAR}`}
+              placeholder={`Bijv. 2026`}
               {...register('year', {
                 required: 'Jaar is verplicht',
                 min: {
