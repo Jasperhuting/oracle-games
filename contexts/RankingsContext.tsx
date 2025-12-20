@@ -6,7 +6,7 @@ import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexed
 
 const YEAR = Number(process.env.NEXT_PUBLIC_PLAYING_YEAR || 2026);
 // Increment this version whenever you add/change rider data to force a cache refresh for all users
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 interface RankingsContextType {
   riders: Rider[];

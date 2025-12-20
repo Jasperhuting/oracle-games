@@ -182,11 +182,23 @@ export const MyAuctionBidsBig = ({
                               // Use selectedPlayerBids if a player is selected, otherwise use myBids
                               const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
 
+
                               // Filter bids to only show bids within this auction period
                               const bidsInPeriod = bidsToShow.filter((bid) => {
                                 const bidDate = new Date(bid.bidAt);
+                                if (bid.riderNameId === 'mattia-agostinacchio') {
+                                  console.log('bid', bid)
+                                  console.log('bidAt', bid.bidAt)
+                                  console.log('bidDate', bidDate)
+                                  console.log('startDate', startDate)
+                                  console.log('endDate', endDate)
+                                  console.log('bidDate >= startDate && bidDate <= endDate', bidDate >= startDate && bidDate <= endDate)
+                                }
                                 return bidDate >= startDate && bidDate <= endDate;
                               });
+
+                              console.log('bidsInPeriod', bidsInPeriod);
+                              console.log('availableRiders', availableRiders);
 
                               // Don't render this section if there are no bids in this period
                               if (bidsInPeriod.length === 0) return null;

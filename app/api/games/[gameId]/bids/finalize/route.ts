@@ -241,6 +241,19 @@ export async function POST(
           console.log(`[FINALIZE] Creating ${wins.length} PlayerTeam documents for user ${userId}`);
           for (const { riderNameId, bid } of wins) {
             try {
+              // Check if a PlayerTeam document already exists for this combination
+              const existingPlayerTeam = await db.collection('playerTeams')
+                .where('gameId', '==', gameId)
+                .where('userId', '==', userId)
+                .where('riderNameId', '==', riderNameId)
+                .limit(1)
+                .get();
+
+              if (!existingPlayerTeam.empty) {
+                console.log(`[FINALIZE]   - PlayerTeam already exists for ${bid.riderName}, skipping`);
+                continue;
+              }
+
               await db.collection('playerTeams').add({
                 gameId: gameId,
                 userId: userId,

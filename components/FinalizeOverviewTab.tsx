@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
+import { GameConfig } from '@/lib/types';
 
 interface PlayerTeam {
   id: string;
@@ -26,6 +28,7 @@ interface Game {
   gameType: string;
   status: string;
   year?: number;
+  config: GameConfig;
 }
 
 interface RiderData {
@@ -37,12 +40,19 @@ interface TeamData {
   name?: string;
 }
 
+interface PeriodRiders {
+  periodName: string;
+  riders: PlayerTeam[];
+  totalSpent: number;
+}
+
 interface UserPurchases {
   playername: string;
   userId: string;
   userEmail?: string;
-  riders: PlayerTeam[];
+  periods: PeriodRiders[];
   totalSpent: number;
+  totalRiders: number;
 }
 
 interface UserData {
@@ -69,6 +79,7 @@ export function FinalizeOverviewTab() {
   const [riderCache, setRiderCache] = useState<Map<string, RiderData>>(new Map());
   const [usersCache, setUsersCache] = useState<Map<string, UserData>>(new Map());
   const [teamsCache, setTeamsCache] = useState<Map<string, TeamData>>(new Map());
+  const [activeTab, setActiveTab] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -133,7 +144,59 @@ export function FinalizeOverviewTab() {
           ...doc.data()
         } as PlayerTeam));
 
+        // Laad ook alle bids voor dit spel om de bidAt datum te krijgen
+        const bidsRef = collection(db, 'bids');
+        const bidsQuery = query(
+          bidsRef,
+          where('gameId', '==', game.id),
+          where('status', '==', 'won')
+        );
+        const bidsSnapshot = await getDocs(bidsQuery);
+
+        // Maak een map van userId+riderNameId naar bidAt datum
+        const bidDatesMap = new Map<string, any>();
+        bidsSnapshot.docs.forEach(doc => {
+          const bidData = doc.data();
+          const key = `${bidData.userId}_${bidData.riderNameId}`;
+          bidDatesMap.set(key, bidData.bidAt);
+        });
+
+        // Voeg bidAt toe aan purchases
+        purchases.forEach(purchase => {
+          const key = `${purchase.userId}_${purchase.riderNameId}`;
+          const bidAt = bidDatesMap.get(key);
+          if (bidAt) {
+            (purchase as any).bidAt = bidAt;
+          }
+        });
+
         console.log(`Game ${game.name}: ${purchases.length} purchases`);
+
+        // Check for duplicate IDs
+        const purchaseIds = purchases.map(p => p.id);
+        const duplicateIds = purchaseIds.filter((id, index) => purchaseIds.indexOf(id) !== index);
+        if (duplicateIds.length > 0) {
+          console.warn(`Found duplicate purchase IDs in ${game.name}:`, duplicateIds);
+        }
+
+        // Check for duplicate rider + user combinations
+        const riderUserCombos = purchases.map(p => `${p.userId}_${p.riderNameId}`);
+        const duplicateRiderUsers = riderUserCombos.filter((combo, index) => riderUserCombos.indexOf(combo) !== index);
+        if (duplicateRiderUsers.length > 0) {
+          console.warn(`Found duplicate rider+user combinations in ${game.name}:`, duplicateRiderUsers);
+          // Log details of duplicates
+          duplicateRiderUsers.forEach(combo => {
+            const [userId, riderNameId] = combo.split('_');
+            const duplicatePurchases = purchases.filter(p => p.userId === userId && p.riderNameId === riderNameId);
+            console.warn(`  Details for ${combo}:`, duplicatePurchases.map(p => ({
+              id: p.id,
+              riderName: p.riderName,
+              playername: p.playername,
+              pricePaid: p.pricePaid,
+              acquisitionType: p.acquisitionType
+            })));
+          });
+        }
 
         // Verzamel alle unieke team IDs die opgehaald moeten worden
         const year = game.year || new Date().getFullYear();
@@ -286,7 +349,7 @@ export function FinalizeOverviewTab() {
                   teamName = JSON.stringify(data.team);
                 }
               }
-              const price = data?.price || 0;
+              const price = data?.points || 0;
               ridersDataMap.set(doc.id, { team: teamName, price });
             }
           });
@@ -318,14 +381,25 @@ export function FinalizeOverviewTab() {
           });
         }
 
-        // Groepeer purchases per user
+        // Haal auction periods op uit game config
+        const auctionPeriods = (game.config as any).auctionPeriods || [];
+
+        console.log(`[${game.name}] Total auction periods:`, auctionPeriods.length);
+        console.log(`[${game.name}] Total purchases:`, purchases.length);
+        if (purchases.length > 0) {
+          console.log(`[${game.name}] Sample acquiredAt dates:`, purchases.slice(0, 3).map(p => ({
+            rider: p.riderName,
+            acquiredAt: p.acquiredAt?.toDate?.() || new Date(p.acquiredAt)
+          })));
+        }
+
+        // Groepeer eerst alle purchases per user
         const userPurchasesMap = new Map<string, UserPurchases>();
 
         purchases.forEach(purchase => {
           const key = purchase.userId;
 
           if (!userPurchasesMap.has(key)) {
-            // Haal user data op uit cache
             const userData = usersMap.get(purchase.userId);
             const displayName = userData?.playername || userData?.displayName || userData?.email || purchase.userId;
 
@@ -333,23 +407,78 @@ export function FinalizeOverviewTab() {
               playername: displayName,
               userId: purchase.userId,
               userEmail: userData?.email,
-              riders: [],
-              totalSpent: 0
+              periods: [],
+              totalSpent: 0,
+              totalRiders: 0
             });
           }
-          const userPurchase = userPurchasesMap.get(key)!;
-          userPurchase.riders.push(purchase);
-          userPurchase.totalSpent += purchase.pricePaid;
         });
 
-        // Converteer naar array en sorteer riders binnen elke user op prijs
-        const userPurchases: UserPurchases[] = Array.from(userPurchasesMap.values()).map(up => {
-          up.riders.sort((a, b) => b.pricePaid - a.pricePaid);
-          return up;
-        });
+        // Als er auction periods zijn, groepeer renners per period binnen elke user
+        if (auctionPeriods.length > 0) {
+          // Voor elke user
+          userPurchasesMap.forEach((userPurchase, userId) => {
+            // Voor elke auction period
+            auctionPeriods.forEach((period: any) => {
+              const periodStartDate = period.startDate?.toDate?.() || new Date(period.startDate);
+              const periodEndDate = period.endDate?.toDate?.() || new Date(period.endDate);
 
-        // Sorteer users op totaal uitgegeven bedrag (hoogste eerst)
-        userPurchases.sort((a, b) => b.totalSpent - a.totalSpent);
+              // Filter purchases van deze user die in deze period vallen
+              const periodPurchases = purchases.filter(purchase => {
+                if (purchase.userId !== userId) return false;
+
+                // Gebruik bidAt als beschikbaar, anders acquiredAt als fallback
+                const bidAt = (purchase as any).bidAt;
+                const dateToCheck = bidAt
+                  ? (bidAt?.toDate?.() || new Date(bidAt))
+                  : (purchase.acquiredAt?.toDate?.() || new Date(purchase.acquiredAt));
+
+                // Check of de purchase binnen deze period valt
+                return dateToCheck >= periodStartDate && dateToCheck <= periodEndDate;
+              });
+
+              if (periodPurchases.length > 0) {
+                // Sorteer renners op prijs
+                periodPurchases.sort((a, b) => b.pricePaid - a.pricePaid);
+
+                const totalSpent = periodPurchases.reduce((sum, p) => sum + p.pricePaid, 0);
+
+                userPurchase.periods.push({
+                  periodName: period.name,
+                  riders: periodPurchases,
+                  totalSpent
+                });
+
+                userPurchase.totalSpent += totalSpent;
+                userPurchase.totalRiders += periodPurchases.length;
+              }
+            });
+          });
+        } else {
+          // Geen auction periods - alle renners in één groep
+          userPurchasesMap.forEach((userPurchase, userId) => {
+            const userPurchases = purchases.filter(p => p.userId === userId);
+
+            if (userPurchases.length > 0) {
+              userPurchases.sort((a, b) => b.pricePaid - a.pricePaid);
+              const totalSpent = userPurchases.reduce((sum, p) => sum + p.pricePaid, 0);
+
+              userPurchase.periods.push({
+                periodName: 'Alle renners',
+                riders: userPurchases,
+                totalSpent
+              });
+
+              userPurchase.totalSpent = totalSpent;
+              userPurchase.totalRiders = userPurchases.length;
+            }
+          });
+        }
+
+        // Verwijder users zonder renners en converteer naar array
+        const userPurchases: UserPurchases[] = Array.from(userPurchasesMap.values())
+          .filter(up => up.totalRiders > 0)
+          .sort((a, b) => b.totalSpent - a.totalSpent);
 
         const totalRiders = purchases.length;
         const totalValue = purchases.reduce((sum, p) => sum + p.pricePaid, 0);
@@ -386,6 +515,12 @@ export function FinalizeOverviewTab() {
       groupedData.sort((a, b) => a.baseName.localeCompare(b.baseName));
 
       setGameGroups(groupedData);
+
+      // Stel de eerste game in als active tab
+      if (groupedData.length > 0 && !activeTab) {
+        setActiveTab(groupedData[0].baseName);
+      }
+
       console.log('Final game groups:', groupedData);
     } catch (error) {
       console.error('Error loading finalize overview:', error);
@@ -499,25 +634,50 @@ export function FinalizeOverviewTab() {
           <p className="text-gray-500">Geen games gevonden</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {gameGroups.map((gameGroup) => (
-            <div key={String(gameGroup.baseName)} className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-xl font-bold mb-6">{String(gameGroup.baseName)}</h3>
+        <div>
+          {/* Tabs */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+              {gameGroups.map((gameGroup) => (
+                <button
+                  key={String(gameGroup.baseName)}
+                  onClick={() => setActiveTab(gameGroup.baseName)}
+                  className={`
+                    whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors
+                    ${activeTab === gameGroup.baseName
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  {String(gameGroup.baseName)}
+                </button>
+              ))}
+            </nav>
+          </div>
 
-              {gameGroup.divisions.map((divisionData) => {
-                
-                console.log(divisionData);
+          {/* Tab content */}
+          <div className="space-y-8">
+            {gameGroups.map((gameGroup) => {
+              if (activeTab !== gameGroup.baseName) return null;
 
-                return (
-                <div key={String(divisionData.game.id)} className="mb-8 last:mb-0">
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-300">
-                    <h4 className="text-lg font-semibold">
-                      {divisionData.game.division ? (
-                        <>Divisie {Number(divisionData.game.divisionLevel || 0)}</>
-                      ) : (
-                        <>Enkele divisie</>
-                      )}
-                    </h4>
+              console.log('gameGroup', gameGroup);
+              return (
+              <div key={String(gameGroup.baseName)}>
+                {gameGroup.divisions.map((divisionData) => {
+
+                  console.log('divisionData', divisionData);
+
+                  return (
+                  <div key={String(divisionData.game.id)} className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-300">
+                      <h3 className="text-xl font-bold">
+                        {divisionData.game.division ? (
+                          <>Divisie {Number(divisionData.game.divisionLevel || 0)}</>
+                        ) : (
+                          <>{String(gameGroup.baseName)}</>
+                        )}
+                      </h3>
                     <div className="text-sm text-gray-500">
                       Status: <span className="capitalize">{String(divisionData.game.status || '')}</span>
                       {' • '}
@@ -532,82 +692,110 @@ export function FinalizeOverviewTab() {
                   ) : (
                     <div className="space-y-6">
                       {divisionData.userPurchases.map((userPurchase) => (
-                        <div key={String(userPurchase.userId)} className="border-2 border-blue-300 rounded-lg overflow-hidden shadow-sm">
-                          <div className="bg-gradient-to-r from-blue-100 to-blue-50 px-5 py-4 border-b-2 border-blue-300">
+                        <div key={String(userPurchase.userId)} className="rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gradient-to-r from-blue-100 to-blue-50 px-5 py-4 ">
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="text-xs uppercase tracking-wide text-blue-600 font-semibold mb-1">Speler</div>
                                 <h5 className="font-bold text-xl text-blue-900">{String(userPurchase.playername || 'Onbekend')}</h5>
                               </div>
                               <div className="text-right">
-                                <div className="text-xs text-blue-600 mb-1">{Number(userPurchase.riders?.length || 0)} renners</div>
-                                <div className="font-bold text-lg text-green-700">{formatCurrency(Number(userPurchase.totalSpent) || 0)}</div>
+                                <div className="text-xs text-blue-600 mb-1">{Number(userPurchase.totalRiders || 0)} renners</div>
+                                <div className="font-bold text-lg flex flex-row gap-2">
+                                  <span className="flex flex-col justify-start">
+                                    <span className="text-xs text-gray-500 text-left">budget</span>
+                                    <span className="text-green-700">{formatCurrencyWhole((divisionData.game.config as any).budget)}</span>
+                                  </span>
+                                  <span className="flex flex-col justify-start">
+                                    <span className="text-xs text-gray-500 text-left">betaald</span>
+                                    <span className="text-blue-700">{formatCurrencyWhole(Number(userPurchase.totalSpent) || 0)}</span>
+                                  </span>
+                                  <span className="flex flex-col justify-start">
+                                    <span className="text-xs text-gray-500 text-left">over</span>
+                                    <span className="text-red-700">{formatCurrencyWhole(Number((divisionData.game.config as any).budget) - Number(userPurchase.totalSpent) || 0)}</span>
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                          <div className="overflow-x-auto">
-                            <table className="w-full">
-                              <thead>
-                                <tr className="bg-gray-50 border-b border-gray-200">
-                                  <th className="text-left py-2 px-4 text-sm font-semibold">Renner</th>
-                                  <th className="text-left py-2 px-4 text-sm font-semibold">Team</th>
-                                  <th className="text-right py-2 px-4 text-sm font-semibold">Origineel</th>
-                                  <th className="text-right py-2 px-4 text-sm font-semibold">Betaald</th>
-                                  <th className="text-right py-2 px-4 text-sm font-semibold">Verschil</th>
-                                  <th className="text-left py-2 px-4 text-sm font-semibold">Type</th>
-                                  <th className="text-left py-2 px-4 text-sm font-semibold">Datum</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {userPurchase.riders.map((purchase) => {
-                                  const originalPrice = purchase.originalPrice || 0;
-                                  const pricePaid = Number(purchase.pricePaid) || 0;
-                                  const difference = pricePaid - originalPrice;
-                                  const differencePercentage = originalPrice > 0 ? ((difference / originalPrice) * 100) : 0;
 
-                                  return (
-                                  <tr
-                                    key={String(purchase.id)}
-                                    className="border-b border-gray-100 hover:bg-blue-50"
-                                  >
-                                    <td className="py-2 px-4 font-medium">{String(purchase.riderName || '')}</td>
-                                    <td className="py-2 px-4 text-gray-600 text-sm">
-                                      {formatTeamName(purchase.riderTeam)}
-                                    </td>
-                                    <td className="py-2 px-4 text-right text-gray-600 text-sm">
-                                      {originalPrice > 0 ? formatCurrency(originalPrice) : '-'}
-                                    </td>
-                                    <td className="py-2 px-4 text-right font-semibold text-green-700">
-                                      {formatCurrency(pricePaid)}
-                                    </td>
-                                    <td className="py-2 px-4 text-right text-sm">
-                                      {originalPrice > 0 ? (
-                                        <span className={difference >= 0 ? 'text-red-600' : 'text-green-600'}>
-                                          {difference >= 0 ? '+' : ''}{formatCurrency(difference)}
-                                          <span className="text-xs ml-1">({differencePercentage >= 0 ? '+' : ''}{differencePercentage.toFixed(0)}%)</span>
-                                        </span>
-                                      ) : '-'}
-                                    </td>
-                                    <td className="py-2 px-4 text-sm text-gray-600 capitalize">
-                                      {String(purchase.acquisitionType || '')}
-                                    </td>
-                                    <td className="py-2 px-4 text-sm text-gray-500">
-                                      {formatDate(purchase.acquiredAt)}
-                                    </td>
-                                  </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
+                          {/* Per period */}
+                          {userPurchase.periods.map((periodData) => (
+                            <div key={String(periodData.periodName)} className="border-t-2 border-blue-200">
+                              <div className="bg-gradient-to-r from-purple-50 to-white px-5 py-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-purple-900">{String(periodData.periodName)}</span>
+                                  <span className="text-sm text-purple-700">
+                                    {periodData.riders.length} renners • {formatCurrency(periodData.totalSpent)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="bg-gray-50 border-b border-gray-200">
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">Renner</th>
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">Team</th>
+                                      <th className="text-right py-2 px-4 text-sm font-semibold">Origineel</th>
+                                      <th className="text-right py-2 px-4 text-sm font-semibold">Betaald</th>
+                                      <th className="text-right py-2 px-4 text-sm font-semibold">Verschil</th>
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">Type</th>
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">Datum</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {periodData.riders.map((purchase) => {
+                                      const originalPrice = purchase.originalPrice || 0;
+                                      const pricePaid = Number(purchase.pricePaid) || 0;
+                                      const difference = pricePaid - originalPrice;
+                                      const differencePercentage = originalPrice > 0 ? ((difference / originalPrice) * 100) : 0;
+
+                                      return (
+                                        <tr
+                                          key={String(purchase.id)}
+                                          className="border-b border-gray-100 hover:bg-blue-50"
+                                        >
+                                          <td className="py-2 px-4 font-medium">{String(purchase.riderName || '')}</td>
+                                          <td className="py-2 px-4 text-gray-600 text-sm">
+                                            {formatTeamName(purchase.riderTeam)}
+                                          </td>
+                                          <td className="py-2 px-4 text-right text-gray-600 text-sm">
+                                            {originalPrice > 0 ? formatCurrency(originalPrice) : '-'}
+                                          </td>
+                                          <td className="py-2 px-4 text-right font-semibold text-green-700">
+                                            {formatCurrency(pricePaid)}
+                                          </td>
+                                          <td className="py-2 px-4 text-right text-sm">
+                                            {originalPrice > 0 ? (
+                                              <span className={difference >= 0 ? 'text-red-600' : 'text-green-600'}>
+                                                {difference >= 0 ? '+' : ''}{formatCurrency(difference)}
+                                                <span className="text-xs ml-1">({differencePercentage >= 0 ? '+' : ''}{differencePercentage.toFixed(0)}%)</span>
+                                              </span>
+                                            ) : '-'}
+                                          </td>
+                                          <td className="py-2 px-4 text-sm text-gray-600 capitalize">
+                                            {String(purchase.acquisitionType || '')}
+                                          </td>
+                                          <td className="py-2 px-4 text-sm text-gray-500">
+                                            {formatDate(purchase.acquiredAt)}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
-              )})}
-            </div>
-          ))}
+                  </div>
+                )})}
+              </div>
+            )})}
+          </div>
         </div>
       )}
     </div>

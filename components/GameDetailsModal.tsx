@@ -35,7 +35,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const t = useTranslation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadGame = async () => {
