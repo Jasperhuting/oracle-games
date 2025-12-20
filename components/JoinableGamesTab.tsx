@@ -258,7 +258,12 @@ export const JoinableGamesTab = () => {
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string, gameType?: string) => {
+    // WorldTour Manager uses "selecteren" instead of "bidding"
+    if (status === 'bidding' && gameType === 'worldtour-manager') {
+      return 'selecteren';
+    }
+
     switch (status) {
       case 'draft': return 'draft';
       case 'registration': return 'registration';
@@ -469,7 +474,7 @@ export const JoinableGamesTab = () => {
                         </span>
                       )}
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(game.status)}`}>
-                        {t(`games.statuses.${getStatusLabel(game.status)}`)}
+                        {t(`games.statuses.${getStatusLabel(game.status, game.gameType)}`)}
                       </span>
                     </div>
 
@@ -693,7 +698,7 @@ export const JoinableGamesTab = () => {
                                 </span>
                               )}
                               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(game.status)}`}>
-                                {t(`games.statuses.${getStatusLabel(game.status)}`)}
+                                {t(`games.statuses.${getStatusLabel(game.status, game.gameType)}`)}
                               </span>
                             </div>
 
