@@ -225,14 +225,26 @@ export async function POST(
           });
 
           const newTeam = [...currentTeam, ...newRiders];
-          const newSpentBudget = currentSpentBudget + totalWonAmount;
 
-          console.log(`[FINALIZE] User ${userId}: new spentBudget=${newSpentBudget} (added ${totalWonAmount}), teamSize=${newTeam.length}`);
+          // IMPORTANT FIX: Calculate spentBudget from ALL won bids instead of accumulating
+          // This prevents double-counting when running finalization multiple times for different periods
+          const allWonBidsSnapshot = await db.collection('bids')
+            .where('gameId', '==', gameId)
+            .where('userId', '==', userId)
+            .where('status', '==', 'won')
+            .get();
+
+          let correctSpentBudget = 0;
+          allWonBidsSnapshot.docs.forEach(bidDoc => {
+            correctSpentBudget += bidDoc.data().amount || 0;
+          });
+
+          console.log(`[FINALIZE] User ${userId}: correct spentBudget=${correctSpentBudget} (calculated from ${allWonBidsSnapshot.size} won bids), teamSize=${newTeam.length}`);
 
           // Update participant with all wins at once
           await participantDoc.ref.update({
             team: newTeam,
-            spentBudget: newSpentBudget,
+            spentBudget: correctSpentBudget,
             rosterSize: newTeam.length,
           });
 
