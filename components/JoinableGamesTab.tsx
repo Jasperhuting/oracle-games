@@ -303,6 +303,12 @@ export const JoinableGamesTab = () => {
 
     if (openDate && openDate > now) return false;
     if (closeDate && closeDate < now) return false;
+
+    // For worldtour-manager, allow joining during bidding status as well
+    if (game.gameType === 'worldtour-manager') {
+      return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding' || game.status === 'active';
+    }
+
     return game.status === 'registration' || game.status === 'draft' || game.status === 'active';
   };
 
