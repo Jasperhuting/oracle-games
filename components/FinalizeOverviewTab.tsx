@@ -18,6 +18,7 @@ interface PlayerTeam {
   acquiredAt: any;
   acquisitionType: string;
   originalPrice?: number;
+  bidCount?: number;
 }
 
 interface Game {
@@ -79,7 +80,8 @@ export function FinalizeOverviewTab() {
   const [riderCache, setRiderCache] = useState<Map<string, RiderData>>(new Map());
   const [usersCache, setUsersCache] = useState<Map<string, UserData>>(new Map());
   const [teamsCache, setTeamsCache] = useState<Map<string, TeamData>>(new Map());
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [activeGameTab, setActiveGameTab] = useState<string>('');
+  const [activeDivisionTabs, setActiveDivisionTabs] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     loadData();
@@ -144,29 +146,61 @@ export function FinalizeOverviewTab() {
           ...doc.data()
         } as PlayerTeam));
 
-        // Laad ook alle bids voor dit spel om de bidAt datum te krijgen
+        // Laad ook alle bids voor dit spel om de bidAt datum en bid count te krijgen
         const bidsRef = collection(db, 'bids');
-        const bidsQuery = query(
+        const wonBidsQuery = query(
           bidsRef,
           where('gameId', '==', game.id),
           where('status', '==', 'won')
         );
-        const bidsSnapshot = await getDocs(bidsQuery);
+        const wonBidsSnapshot = await getDocs(wonBidsQuery);
 
         // Maak een map van userId+riderNameId naar bidAt datum
         const bidDatesMap = new Map<string, any>();
-        bidsSnapshot.docs.forEach(doc => {
+        wonBidsSnapshot.docs.forEach(doc => {
           const bidData = doc.data();
           const key = `${bidData.userId}_${bidData.riderNameId}`;
           bidDatesMap.set(key, bidData.bidAt);
         });
 
-        // Voeg bidAt toe aan purchases
+        // Laad ALLE bids (inclusief lost) om bid count te tellen
+        const allBidsQuery = query(
+          bidsRef,
+          where('gameId', '==', game.id)
+        );
+        const allBidsSnapshot = await getDocs(allBidsQuery);
+
+        console.log(`[${game.name}] Total bids found:`, allBidsSnapshot.docs.length);
+
+        // Tel aantal biedingen per renner
+        const bidCountMap = new Map<string, number>();
+        allBidsSnapshot.docs.forEach(doc => {
+          const bidData = doc.data();
+          const riderKey = bidData.riderNameId;
+          bidCountMap.set(riderKey, (bidCountMap.get(riderKey) || 0) + 1);
+        });
+
+        console.log(`[${game.name}] Bid counts per rider:`, Array.from(bidCountMap.entries()).slice(0, 5));
+
+        // Voeg bidAt en bidCount toe aan purchases
         purchases.forEach(purchase => {
           const key = `${purchase.userId}_${purchase.riderNameId}`;
           const bidAt = bidDatesMap.get(key);
           if (bidAt) {
             (purchase as any).bidAt = bidAt;
+          }
+
+          // Voeg bid count toe
+          const bidCount = bidCountMap.get(purchase.riderNameId) || 0;
+          purchase.bidCount = bidCount;
+
+          // Debug log voor de eerste paar purchases
+          if (purchases.indexOf(purchase) < 3) {
+            console.log(`[${game.name}] Purchase ${purchase.riderName}:`, {
+              riderNameId: purchase.riderNameId,
+              bidCount: bidCount,
+              foundInMap: bidCountMap.has(purchase.riderNameId)
+            });
           }
         });
 
@@ -517,8 +551,16 @@ export function FinalizeOverviewTab() {
       setGameGroups(groupedData);
 
       // Stel de eerste game in als active tab
-      if (groupedData.length > 0 && !activeTab) {
-        setActiveTab(groupedData[0].baseName);
+      if (groupedData.length > 0 && !activeGameTab) {
+        setActiveGameTab(groupedData[0].baseName);
+        // Stel de eerste divisie in als active voor elke game
+        const initialDivisionTabs = new Map<string, string>();
+        groupedData.forEach(gameGroup => {
+          if (gameGroup.divisions.length > 0) {
+            initialDivisionTabs.set(gameGroup.baseName, gameGroup.divisions[0].game.id);
+          }
+        });
+        setActiveDivisionTabs(initialDivisionTabs);
       }
 
       console.log('Final game groups:', groupedData);
@@ -635,16 +677,16 @@ export function FinalizeOverviewTab() {
         </div>
       ) : (
         <div>
-          {/* Tabs */}
+          {/* Game Tabs */}
           <div className="border-b border-gray-200 mb-6">
             <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
               {gameGroups.map((gameGroup) => (
                 <button
                   key={String(gameGroup.baseName)}
-                  onClick={() => setActiveTab(gameGroup.baseName)}
+                  onClick={() => setActiveGameTab(gameGroup.baseName)}
                   className={`
                     whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors
-                    ${activeTab === gameGroup.baseName
+                    ${activeGameTab === gameGroup.baseName
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }
@@ -659,12 +701,47 @@ export function FinalizeOverviewTab() {
           {/* Tab content */}
           <div className="space-y-8">
             {gameGroups.map((gameGroup) => {
-              if (activeTab !== gameGroup.baseName) return null;
+              if (activeGameTab !== gameGroup.baseName) return null;
+
+              const activeDivisionId = activeDivisionTabs.get(gameGroup.baseName) || gameGroup.divisions[0]?.game.id;
 
               console.log('gameGroup', gameGroup);
               return (
               <div key={String(gameGroup.baseName)}>
+                {/* Divisie Tabs - alleen tonen als er meerdere divisies zijn */}
+                {gameGroup.divisions.length > 1 && (
+                  <div className="border-b border-gray-300 mb-6">
+                    <nav className="-mb-px flex space-x-2 overflow-x-auto" aria-label="Division Tabs">
+                      {gameGroup.divisions.map((divisionData) => (
+                        <button
+                          key={String(divisionData.game.id)}
+                          onClick={() => {
+                            const newTabs = new Map(activeDivisionTabs);
+                            newTabs.set(gameGroup.baseName, divisionData.game.id);
+                            setActiveDivisionTabs(newTabs);
+                          }}
+                          className={`
+                            whitespace-nowrap py-2 px-4 border-b-2 font-medium text-sm transition-colors
+                            ${activeDivisionId === divisionData.game.id
+                              ? 'border-purple-500 text-purple-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }
+                          `}
+                        >
+                          {divisionData.game.division ? (
+                            <>Divisie {Number(divisionData.game.divisionLevel || 0)}</>
+                          ) : (
+                            <>{String(gameGroup.baseName)}</>
+                          )}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                )}
+
                 {gameGroup.divisions.map((divisionData) => {
+                  // Toon alleen de actieve divisie
+                  if (activeDivisionId !== divisionData.game.id) return null;
 
                   console.log('divisionData', divisionData);
 
@@ -691,7 +768,43 @@ export function FinalizeOverviewTab() {
                     <p className="text-gray-500 italic">Nog geen renners gekocht</p>
                   ) : (
                     <div className="space-y-6">
-                      {divisionData.userPurchases.map((userPurchase) => (
+                      {divisionData.userPurchases.map((userPurchase) => {
+                        // Bereken statistieken
+                        const allRiders = userPurchase.periods.flatMap(p => p.riders);
+                        const ridersWithOriginalPrice = allRiders.filter(r => r.originalPrice && r.originalPrice > 0);
+
+                        // Beste koop (dichtst bij kostprijs, liefst onder)
+                        const bestBuy = ridersWithOriginalPrice.reduce((best, rider) => {
+                          const diff = rider.pricePaid - (rider.originalPrice || 0);
+                          const bestDiff = best.pricePaid - (best.originalPrice || 0);
+                          return diff < bestDiff ? rider : best;
+                        }, ridersWithOriginalPrice[0]);
+
+                        // Slechtste koop (verst boven kostprijs)
+                        const worstBuy = ridersWithOriginalPrice.reduce((worst, rider) => {
+                          const diff = rider.pricePaid - (rider.originalPrice || 0);
+                          const worstDiff = worst.pricePaid - (worst.originalPrice || 0);
+                          return diff > worstDiff ? rider : worst;
+                        }, ridersWithOriginalPrice[0]);
+
+                        // Meest gewilde renner (hoogste aantal biedingen, alleen als > 1)
+                        const mostPopular = allRiders.reduce((popular, rider) => {
+                          const riderBids = rider.bidCount || 0;
+                          const popularBids = popular.bidCount || 0;
+                          return riderBids > popularBids ? rider : popular;
+                        }, allRiders[0]);
+
+                        // Duurste renner
+                        const mostExpensive = allRiders.reduce((expensive, rider) => {
+                          return rider.pricePaid > expensive.pricePaid ? rider : expensive;
+                        }, allRiders[0]);
+
+                        // Goedkoopste renner
+                        const cheapest = allRiders.reduce((cheap, rider) => {
+                          return rider.pricePaid < cheap.pricePaid ? rider : cheap;
+                        }, allRiders[0]);
+
+                        return (
                         <div key={String(userPurchase.userId)} className="rounded-lg overflow-hidden shadow-sm">
                           <div className="bg-gradient-to-r from-blue-100 to-blue-50 px-5 py-4 ">
                             <div className="flex items-center justify-between">
@@ -708,14 +821,78 @@ export function FinalizeOverviewTab() {
                                   </span>
                                   <span className="flex flex-col justify-start">
                                     <span className="text-xs text-gray-500 text-left">betaald</span>
-                                    <span className="text-blue-700">{formatCurrencyWhole(Number(userPurchase.totalSpent) || 0)}</span>
+                                    <span className="text-red-700">{formatCurrencyWhole(Number(userPurchase.totalSpent) || 0)}</span>
                                   </span>
                                   <span className="flex flex-col justify-start">
                                     <span className="text-xs text-gray-500 text-left">over</span>
-                                    <span className="text-red-700">{formatCurrencyWhole(Number((divisionData.game.config as any).budget) - Number(userPurchase.totalSpent) || 0)}</span>
+                                    <span className="text-blue-700">{formatCurrencyWhole(Number((divisionData.game.config as any).budget) - Number(userPurchase.totalSpent) || 0)}</span>
                                   </span>
                                 </div>
                               </div>
+                            </div>
+                          </div>
+
+                          {/* Statistieken */}
+                          <div className="bg-gradient-to-r from-gray-50 to-white px-5 py-3 border-t border-blue-200">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                              {/* Beste koop */}
+                              {bestBuy && (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-500 mb-1">🏆 Beste koop</span>
+                                  <span className="text-sm font-semibold text-green-700">{bestBuy.riderName}</span>
+                                  <span className="text-xs text-gray-600">
+                                    {formatCurrency(bestBuy.pricePaid)}
+                                    {bestBuy.originalPrice && (
+                                      <span className="text-green-600 ml-1">
+                                        ({bestBuy.pricePaid - bestBuy.originalPrice >= 0 ? '+' : ''}{formatCurrency(bestBuy.pricePaid - bestBuy.originalPrice)})
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Slechtste koop */}
+                              {worstBuy && (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-500 mb-1">💸 Slechtste koop</span>
+                                  <span className="text-sm font-semibold text-red-700">{worstBuy.riderName}</span>
+                                  <span className="text-xs text-gray-600">
+                                    {formatCurrency(worstBuy.pricePaid)}
+                                    {worstBuy.originalPrice && (
+                                      <span className="text-red-600 ml-1">
+                                        (+{formatCurrency(worstBuy.pricePaid - worstBuy.originalPrice)})
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Meest gewilde */}
+                              {mostPopular && (mostPopular.bidCount || 0) > 1 && (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-500 mb-1">🔥 Meest gewild</span>
+                                  <span className="text-sm font-semibold text-orange-700">{mostPopular.riderName}</span>
+                                  <span className="text-xs text-gray-600">{mostPopular.bidCount} biedingen</span>
+                                </div>
+                              )}
+
+                              {/* Duurste renner */}
+                              {mostExpensive && (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-500 mb-1">💰 Duurste</span>
+                                  <span className="text-sm font-semibold text-purple-700">{mostExpensive.riderName}</span>
+                                  <span className="text-xs text-gray-600">{formatCurrency(mostExpensive.pricePaid)}</span>
+                                </div>
+                              )}
+
+                              {/* Goedkoopste renner */}
+                              {cheapest && (
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-500 mb-1">💵 Goedkoopste</span>
+                                  <span className="text-sm font-semibold text-blue-700">{cheapest.riderName}</span>
+                                  <span className="text-xs text-gray-600">{formatCurrency(cheapest.pricePaid)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -739,6 +916,7 @@ export function FinalizeOverviewTab() {
                                       <th className="text-right py-2 px-4 text-sm font-semibold">Origineel</th>
                                       <th className="text-right py-2 px-4 text-sm font-semibold">Betaald</th>
                                       <th className="text-right py-2 px-4 text-sm font-semibold">Verschil</th>
+                                      <th className="text-center py-2 px-4 text-sm font-semibold">Biedingen</th>
                                       <th className="text-left py-2 px-4 text-sm font-semibold">Type</th>
                                       <th className="text-left py-2 px-4 text-sm font-semibold">Datum</th>
                                     </tr>
@@ -773,6 +951,11 @@ export function FinalizeOverviewTab() {
                                               </span>
                                             ) : '-'}
                                           </td>
+                                          <td className="py-2 px-4 text-center">
+                                            <span className="inline-flex items-center justify-center min-w-[24px] px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                              {purchase.bidCount || 0}
+                                            </span>
+                                          </td>
                                           <td className="py-2 px-4 text-sm text-gray-600 capitalize">
                                             {String(purchase.acquisitionType || '')}
                                           </td>
@@ -788,7 +971,8 @@ export function FinalizeOverviewTab() {
                             </div>
                           ))}
                         </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   )}
                   </div>
