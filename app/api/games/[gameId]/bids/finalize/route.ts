@@ -28,12 +28,15 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game type supports bidding/selection
-    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager') {
+    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager' && gameData?.gameType !== 'marginal-gains') {
       return NextResponse.json(
         { error: 'Game does not support bidding' },
         { status: 400 }
       );
     }
+
+    // Determine if this is a selection-based game (where multiple users can select the same rider)
+    const isSelectionBased = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains';
 
     // If game has auction periods, validate that auctionPeriodName is provided
     const auctionPeriods = gameData?.config?.auctionPeriods;
@@ -132,8 +135,8 @@ export async function POST(
       riderNameId: string;
       userId: string;
       amount: number;
-      bidAt: unknown;
-      [key: string]: unknown;
+      bidAt: any;
+      [key: string]: any;
     }
     const bidsByRider = new Map<string, BidWithId[]>();
 
@@ -159,33 +162,51 @@ export async function POST(
     const winsByParticipant = new Map<string, Array<{riderNameId: string, bid: BidWithId}>>();
 
     for (const [riderNameId, bids] of bidsByRider.entries()) {
-      // Sort bids: highest amount first, then earliest timestamp
-      bids.sort((a, b) => {
-        if (b.amount !== a.amount) {
-          return b.amount - a.amount; // Higher bid wins
+      if (isSelectionBased) {
+        // For selection-based games (WorldTour Manager, Marginal Gains):
+        // ALL bids win - multiple users can select the same rider
+        console.log(`[FINALIZE] Selection-based game: all ${bids.length} bids for ${riderNameId} win`);
+
+        for (const bid of bids) {
+          // Collect wins by participant
+          if (!winsByParticipant.has(bid.userId)) {
+            winsByParticipant.set(bid.userId, []);
+          }
+          winsByParticipant.get(bid.userId)!.push({ riderNameId, bid });
+
+          // Mark bid as "won"
+          await db.collection('bids').doc(bid.id).update({ status: 'won' });
         }
-        // If amounts are equal, earlier bid wins
-        const timeA = a.bidAt?.toDate?.() || new Date(a.bidAt);
-        const timeB = b.bidAt?.toDate?.() || new Date(b.bidAt);
-        return timeA.getTime() - timeB.getTime();
-      });
+      } else {
+        // For auction-based games (Auctioneer):
+        // Only the highest bid wins
+        bids.sort((a, b) => {
+          if (b.amount !== a.amount) {
+            return b.amount - a.amount; // Higher bid wins
+          }
+          // If amounts are equal, earlier bid wins
+          const timeA = a.bidAt?.toDate?.() || new Date(a.bidAt);
+          const timeB = b.bidAt?.toDate?.() || new Date(b.bidAt);
+          return timeA.getTime() - timeB.getTime();
+        });
 
-      const winningBid = bids[0];
-      const losingBids = bids.slice(1);
+        const winningBid = bids[0];
+        const losingBids = bids.slice(1);
 
-      // Collect wins by participant
-      if (!winsByParticipant.has(winningBid.userId)) {
-        winsByParticipant.set(winningBid.userId, []);
-      }
-      winsByParticipant.get(winningBid.userId)!.push({ riderNameId, bid: winningBid });
+        // Collect wins by participant
+        if (!winsByParticipant.has(winningBid.userId)) {
+          winsByParticipant.set(winningBid.userId, []);
+        }
+        winsByParticipant.get(winningBid.userId)!.push({ riderNameId, bid: winningBid });
 
-      // Mark winning bid as "won"
-      await db.collection('bids').doc(winningBid.id).update({ status: 'won' });
+        // Mark winning bid as "won"
+        await db.collection('bids').doc(winningBid.id).update({ status: 'won' });
 
-      // Mark losing bids as "lost"
-      for (const losingBid of losingBids) {
-        await db.collection('bids').doc(losingBid.id).update({ status: 'lost' });
-        results.losersRefunded++;
+        // Mark losing bids as "lost"
+        for (const losingBid of losingBids) {
+          await db.collection('bids').doc(losingBid.id).update({ status: 'lost' });
+          results.losersRefunded++;
+        }
       }
     }
 
@@ -270,10 +291,10 @@ export async function POST(
                 gameId: gameId,
                 userId: userId,
                 riderNameId: riderNameId,
-                
+
                 // Acquisition info
                 acquiredAt: new Date(),
-                acquisitionType: 'auction',
+                acquisitionType: isSelectionBased ? 'selection' : 'auction',
                 pricePaid: bid.amount,
                 
                 // Rider info (denormalized)

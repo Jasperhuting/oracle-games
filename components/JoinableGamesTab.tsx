@@ -258,9 +258,14 @@ export const JoinableGamesTab = () => {
     }
   };
 
+  // Helper to check if a game type uses selection-based bidding
+  const isSelectionBasedGame = (gameType: string) => {
+    return gameType === 'auction' || gameType === 'auctioneer' || gameType === 'worldtour-manager' || gameType === 'marginal-gains';
+  };
+
   const getStatusLabel = (status: string, gameType?: string) => {
-    // WorldTour Manager uses "selecteren" instead of "bidding"
-    if (status === 'bidding' && gameType === 'worldtour-manager') {
+    // WorldTour Manager and Marginal Gains use "selecteren" instead of "bidding"
+    if (status === 'bidding' && (gameType === 'worldtour-manager' || gameType === 'marginal-gains')) {
       return 'selecteren';
     }
 
@@ -304,8 +309,8 @@ export const JoinableGamesTab = () => {
     if (openDate && openDate > now) return false;
     if (closeDate && closeDate < now) return false;
 
-    // For worldtour-manager, allow joining during bidding status as well
-    if (game.gameType === 'worldtour-manager') {
+    // For worldtour-manager and marginal-gains, allow joining during bidding status as well
+    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {
       return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding' || game.status === 'active';
     }
 
@@ -554,7 +559,7 @@ export const JoinableGamesTab = () => {
                               key={divisionGame.id}
                               text={`${t('games.viewGameAdmin')} - ${divisionGame.division || `Division ${divisionGame.divisionLevel}`}`}
                               onClick={() => {
-                                if (divisionGame.gameType === 'auction' || divisionGame.gameType === 'auctioneer' || divisionGame.gameType === 'worldtour-manager') {
+                                if (isSelectionBasedGame(divisionGame.gameType)) {
                                   router.push(`/games/${divisionGame.id}/auction`);
                                 } else {
                                   router.push(`/games/${divisionGame.id}/team`);
@@ -568,7 +573,7 @@ export const JoinableGamesTab = () => {
                           <Button
                             text={t('games.viewGameAdmin')}
                             onClick={() => {
-                              if (game.gameType === 'auction' || game.gameType === 'auctioneer' || game.gameType === 'worldtour-manager') {
+                              if (isSelectionBasedGame(game.gameType)) {
                                 router.push(`/games/${game.id}/auction`);
                               } else {
                                 router.push(`/games/${game.id}/team`);
@@ -587,7 +592,7 @@ export const JoinableGamesTab = () => {
                         onClick={() => {
                           // Navigate to first division if multi-division, otherwise stay on current game
                           const targetGame = group.isMultiDivision ? group.games[0] : joinedGame;
-                          if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
+                          if (isSelectionBasedGame(targetGame.gameType)) {
                             router.push(`/games/${targetGame.id}/auction`);
                           } else {
                             router.push(`/games/${targetGame.id}/team`);
@@ -606,14 +611,14 @@ export const JoinableGamesTab = () => {
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
-                    {isJoined && !isWaitingForDivision && joinedGame && (game.gameType === 'auction' || game.gameType === 'auctioneer' || game.gameType === 'worldtour-manager') && (
+                    {isJoined && !isWaitingForDivision && joinedGame && isSelectionBasedGame(game.gameType) && (
                       <Button
                         text={t('games.auction')}
                         onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
-                    {isJoined && !isWaitingForDivision && joinedGame && game.gameType !== 'auction' && game.gameType !== 'auctioneer' && game.gameType !== 'worldtour-manager' && (
+                    {isJoined && !isWaitingForDivision && joinedGame && !isSelectionBasedGame(game.gameType) && (
                       <Button
                         text={t('games.selectTeam')}
                         onClick={() => router.push(`/games/${joinedGame.id}/team`)}
@@ -775,7 +780,7 @@ export const JoinableGamesTab = () => {
                                 onClick={() => {
                                   // Navigate to first division if multi-division, otherwise to the game
                                   const targetGame = group.isMultiDivision ? group.games[0] : game;
-                                  if (targetGame.gameType === 'auction' || targetGame.gameType === 'auctioneer' || targetGame.gameType === 'worldtour-manager') {
+                                  if (isSelectionBasedGame(targetGame.gameType)) {
                                     router.push(`/games/${targetGame.id}/auction`);
                                   } else {
                                     router.push(`/games/${targetGame.id}/team`);

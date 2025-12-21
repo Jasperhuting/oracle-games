@@ -1052,7 +1052,6 @@ export function FinalizeOverviewTab() {
                                       <th className="text-right py-2 px-4 text-sm font-semibold">Betaald</th>
                                       <th className="text-right py-2 px-4 text-sm font-semibold">Verschil</th>
                                       <th className="text-center py-2 px-4 text-sm font-semibold">Biedingen</th>
-                                      <th className="text-left py-2 px-4 text-sm font-semibold">Type</th>
                                       <th className="text-left py-2 px-4 text-sm font-semibold">Datum</th>
                                     </tr>
                                   </thead>
@@ -1090,9 +1089,6 @@ export function FinalizeOverviewTab() {
                                             <span className="inline-flex items-center justify-center min-w-[24px] px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                               {purchase.bidCount || 0}
                                             </span>
-                                          </td>
-                                          <td className="py-2 px-4 text-sm text-gray-600 capitalize">
-                                            {String(purchase.acquisitionType || '')}
                                           </td>
                                           <td className="py-2 px-4 text-sm text-gray-500">
                                             {formatDate(purchase.acquiredAt)}

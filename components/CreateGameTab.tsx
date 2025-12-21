@@ -37,6 +37,10 @@ interface GameFormData {
   wtmMaxRiders?: number;
   wtmMaxNeoProPoints?: number;
   wtmMaxNeoProAge?: number;
+
+  // Marginal Gains config
+  mgTeamSize?: number;
+  mgCurrentYear?: number;
 }
 
 interface Race {
@@ -232,6 +236,25 @@ export const CreateGameTab = () => {
           }),
           auctionStatus: 'pending',
         };
+      } else if (data.gameType === 'marginal-gains') {
+        config = {
+          teamSize: Number(data.mgTeamSize) || 20,
+          currentYear: Number(data.mgCurrentYear) || new Date().getFullYear(),
+          auctionPeriods: auctionPeriods.length > 0 ? auctionPeriods.map(period => {
+            const startDate = new Date(period.startDate + ':00Z');
+            const endDate = new Date(period.endDate + ':00Z');
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00Z') : undefined;
+
+            return {
+              name: period.name,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              finalizeDate: finalizeDate?.toISOString(),
+              status: 'pending',
+            };
+          }) : undefined,
+          auctionStatus: auctionPeriods.length > 0 ? 'pending' : undefined,
+        };
       }
       // Add more game type configs here as needed
 
@@ -291,6 +314,7 @@ export const CreateGameTab = () => {
     { value: 'rising-stars', label: 'Rising Stars - Growth potential' },
     { value: 'country-roads', label: 'Country Roads - Pool system' },
     { value: 'worldtour-manager', label: 'WorldTour Manager - Full team' },
+    { value: 'marginal-gains', label: 'Marginal Gains - Season improvement' },
     { value: 'fan-flandrien', label: 'Fan Flandrien - Predict top 15' },
     { value: 'giorgio-armada', label: 'Giorgio Armada - Budget riders' },
   ];
@@ -836,6 +860,159 @@ export const CreateGameTab = () => {
                                 : 'Leave empty for manual finalization'}
                             </p>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Marginal Gains Specific Fields */}
+          {selectedGameType === 'marginal-gains' && (
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">Marginal Gains Configuration</h3>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Game Concept:</strong> Find the 20 riders who gain the most points compared to the previous season.
+                  Riders start with <strong>negative</strong> points equal to their UCI ranking points from the start of the current year.
+                  During the season, they work towards positive territory. The team with the most improvement wins!
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Team Size"
+                    placeholder="E.g. 20"
+                    defaultValue="20"
+                    {...register('mgTeamSize', {
+                      min: {
+                        value: 1,
+                        message: 'Team size must be at least 1'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Number of riders each player can select
+                  </p>
+                </div>
+
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Season Year"
+                    placeholder="E.g. 2026"
+                    defaultValue={new Date().getFullYear().toString()}
+                    {...register('mgCurrentYear', {
+                      min: {
+                        value: 2024,
+                        message: 'Year must be 2024 or later'
+                      },
+                      max: {
+                        value: 2030,
+                        message: 'Year cannot exceed 2030'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    The current season year (starting points come from rankings_{'{year}'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Auction Periods (Optional) */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Selection Periods (Optional)
+                  </label>
+                  <Button
+                    type="button"
+                    text="+ Add Period"
+                    onClick={addAuctionPeriod}
+                    className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700"
+                  />
+                </div>
+
+                {auctionPeriods.length === 0 && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    No selection periods added. Click &quot;+ Add Period&quot; to add one.
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {auctionPeriods.map((period, index) => (
+                    <div key={index} className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm font-medium text-gray-700">Period {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAuctionPeriod(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Period Name
+                          </label>
+                          <input
+                            type="text"
+                            value={period.name}
+                            onChange={(e) => updateAuctionPeriod(index, 'name', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                            placeholder="E.g., Initial Selection"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Start Date & Time (UTC)
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={period.startDate}
+                            onChange={(e) => updateAuctionPeriod(index, 'startDate', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            End Date & Time (UTC)
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={period.endDate}
+                            onChange={(e) => updateAuctionPeriod(index, 'endDate', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Finalize Date & Time (UTC, Optional)
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={period.finalizeDate || ''}
+                            onChange={(e) => updateAuctionPeriod(index, 'finalizeDate', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            When to automatically finalize selections
+                          </p>
                         </div>
                       </div>
                     </div>

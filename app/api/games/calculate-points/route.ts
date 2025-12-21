@@ -313,6 +313,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[CALCULATE_POINTS] Completed: ${results.gamesProcessed} games, ${results.participantsUpdated} participants, ${results.pointsAwarded} points awarded`);
 
+    // Update season points for all riders who scored
+    console.log(`[CALCULATE_POINTS] Updating season points for ${year}`);
+    try {
+      await updateSeasonPoints(db, raceSlug, stage, year, stageData);
+    } catch (error) {
+      console.error('[CALCULATE_POINTS] Error updating season points:', error);
+      // Don't fail the whole request if season points update fails
+    }
+
+    // Update Marginal Gains games
+    console.log(`[CALCULATE_POINTS] Checking for Marginal Gains games to update`);
+    try {
+      await updateMarginalGainsGames(db, year);
+    } catch (error) {
+      console.error('[CALCULATE_POINTS] Error updating Marginal Gains games:', error);
+      // Don't fail the whole request if Marginal Gains update fails
+    }
+
     // Log the activity
     await db.collection('activityLogs').add({
       action: 'POINTS_CALCULATED',
@@ -388,4 +406,361 @@ async function updateGameRankings(db: FirebaseFirestore.Firestore, gameId: strin
   }
 
   console.log(`[UPDATE_RANKINGS] Updated ${participantsSnapshot.size} participants`);
+}
+
+/**
+ * Update season points for all riders who scored in this stage
+ * This is used for tracking rider performance across the entire season
+ */
+async function updateSeasonPoints(
+  db: FirebaseFirestore.Firestore,
+  raceSlug: string,
+  stage: string | number,
+  year: string | number,
+  stageData: any
+): Promise<void> {
+  console.log(`[SEASON_POINTS] Updating season points for ${raceSlug} stage ${stage}`);
+
+  const yearNum = typeof year === 'string' ? parseInt(year) : year;
+  const stageNum = typeof stage === 'string' ? parseInt(stage) : stage;
+  const stageResults: StageResult[] = stageData.stageResults || [];
+
+  // Extract race name from slug (e.g., "tour-de-france_2025" -> "Tour de France")
+  const raceName = raceSlug.replace(/_\d{4}$/, '').split('-').map((word: string) =>
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+
+  // Get multipliers for this stage (using same logic as main calculation)
+  const totalStages = 21; // Default for Grand Tours
+  const gcMultiplier = getGCMultiplier(stageNum, totalStages, []);
+  const pointsClassMultiplier = getClassificationMultiplier('points', stageNum, totalStages);
+  const mountainsClassMultiplier = getClassificationMultiplier('mountains', stageNum, totalStages);
+  const youthClassMultiplier = getClassificationMultiplier('youth', stageNum, totalStages);
+
+  // Track all riders who scored points
+  const ridersWithPoints = new Map<string, {
+    nameID: string;
+    name: string;
+    stageResult?: number;
+    gcPoints?: number;
+    pointsClass?: number;
+    mountainsClass?: number;
+    youthClass?: number;
+    total: number;
+  }>();
+
+  // 1. Process stage results
+  for (const riderResult of stageResults) {
+    if (riderResult.rank && riderResult.nameID) {
+      const stagePoints = calculateStagePoints(riderResult.rank);
+      if (stagePoints > 0) {
+        const existing = ridersWithPoints.get(riderResult.nameID) || {
+          nameID: riderResult.nameID,
+          name: riderResult.shortName || riderResult.nameID,
+          total: 0,
+        };
+        existing.stageResult = stagePoints;
+        existing.total += stagePoints;
+        ridersWithPoints.set(riderResult.nameID, existing);
+      }
+    }
+  }
+
+  // 2. Process GC points (if applicable)
+  if (gcMultiplier > 0 && stageData.generalClassification) {
+    for (const gcResult of stageData.generalClassification) {
+      if (gcResult.rank && gcResult.nameID) {
+        const gcPoints = calculateStagePoints(gcResult.rank) * gcMultiplier;
+        if (gcPoints > 0) {
+          const existing = ridersWithPoints.get(gcResult.nameID) || {
+            nameID: gcResult.nameID,
+            name: gcResult.shortName || gcResult.nameID,
+            total: 0,
+          };
+          existing.gcPoints = gcPoints;
+          existing.total += gcPoints;
+          ridersWithPoints.set(gcResult.nameID, existing);
+        }
+      }
+    }
+  }
+
+  // 3. Process Points Classification (if applicable)
+  if (pointsClassMultiplier > 0 && stageData.pointsClassification) {
+    for (const pointsResult of stageData.pointsClassification) {
+      if (pointsResult.rank && pointsResult.nameID) {
+        const pointsClassPoints = calculateStagePoints(pointsResult.rank);
+        if (pointsClassPoints > 0) {
+          const existing = ridersWithPoints.get(pointsResult.nameID) || {
+            nameID: pointsResult.nameID,
+            name: pointsResult.shortName || pointsResult.nameID,
+            total: 0,
+          };
+          existing.pointsClass = pointsClassPoints;
+          existing.total += pointsClassPoints;
+          ridersWithPoints.set(pointsResult.nameID, existing);
+        }
+      }
+    }
+  }
+
+  // 4. Process Mountains Classification (if applicable)
+  if (mountainsClassMultiplier > 0 && stageData.mountainsClassification) {
+    for (const mountainsResult of stageData.mountainsClassification) {
+      if (mountainsResult.rank && mountainsResult.nameID) {
+        const mountainsClassPoints = calculateStagePoints(mountainsResult.rank);
+        if (mountainsClassPoints > 0) {
+          const existing = ridersWithPoints.get(mountainsResult.nameID) || {
+            nameID: mountainsResult.nameID,
+            name: mountainsResult.shortName || mountainsResult.nameID,
+            total: 0,
+          };
+          existing.mountainsClass = mountainsClassPoints;
+          existing.total += mountainsClassPoints;
+          ridersWithPoints.set(mountainsResult.nameID, existing);
+        }
+      }
+    }
+  }
+
+  // 5. Process Youth Classification (if applicable)
+  if (youthClassMultiplier > 0 && stageData.youthClassification) {
+    for (const youthResult of stageData.youthClassification) {
+      if (youthResult.rank && youthResult.nameID) {
+        const youthClassPoints = calculateStagePoints(youthResult.rank);
+        if (youthClassPoints > 0) {
+          const existing = ridersWithPoints.get(youthResult.nameID) || {
+            nameID: youthResult.nameID,
+            name: youthResult.shortName || youthResult.nameID,
+            total: 0,
+          };
+          existing.youthClass = youthClassPoints;
+          existing.total += youthClassPoints;
+          ridersWithPoints.set(youthResult.nameID, existing);
+        }
+      }
+    }
+  }
+
+  console.log(`[SEASON_POINTS] Found ${ridersWithPoints.size} riders with points`);
+
+  // Update seasonPoints collection for each rider
+  for (const [riderNameId, pointsData] of ridersWithPoints.entries()) {
+    try {
+      const seasonPointsDocRef = db.collection('seasonPoints').doc(`${riderNameId}_${yearNum}`);
+      const seasonPointsDoc = await seasonPointsDocRef.get();
+
+      if (seasonPointsDoc.exists) {
+        // Update existing document
+        const existingData = seasonPointsDoc.data();
+        const races = existingData?.races || {};
+        const raceData = races[raceSlug] || { raceName, totalPoints: 0, stages: {} };
+
+        // Add this stage's points
+        const stageKey = stage.toString();
+        raceData.stages[stageKey] = {
+          stageResult: pointsData.stageResult,
+          gcPoints: pointsData.gcPoints,
+          pointsClass: pointsData.pointsClass,
+          mountainsClass: pointsData.mountainsClass,
+          youthClass: pointsData.youthClass,
+          total: pointsData.total,
+        };
+
+        // Recalculate race total
+        let raceTotalPoints = 0;
+        for (const stagePoints of Object.values(raceData.stages)) {
+          raceTotalPoints += (stagePoints as any).total || 0;
+        }
+        raceData.totalPoints = raceTotalPoints;
+
+        races[raceSlug] = raceData;
+
+        // Recalculate season total
+        let seasonTotalPoints = 0;
+        for (const race of Object.values(races)) {
+          seasonTotalPoints += (race as any).totalPoints || 0;
+        }
+
+        await seasonPointsDocRef.update({
+          races,
+          totalPoints: seasonTotalPoints,
+          updatedAt: new Date(),
+        });
+
+        console.log(`[SEASON_POINTS] Updated ${pointsData.name}: +${pointsData.total} pts (season total: ${seasonTotalPoints})`);
+
+      } else {
+        // Create new document
+        const newSeasonPoints = {
+          riderNameId,
+          riderName: pointsData.name,
+          year: yearNum,
+          totalPoints: pointsData.total,
+          races: {
+            [raceSlug]: {
+              raceName,
+              totalPoints: pointsData.total,
+              stages: {
+                [stage.toString()]: {
+                  stageResult: pointsData.stageResult,
+                  gcPoints: pointsData.gcPoints,
+                  pointsClass: pointsData.pointsClass,
+                  mountainsClass: pointsData.mountainsClass,
+                  youthClass: pointsData.youthClass,
+                  total: pointsData.total,
+                },
+              },
+            },
+          },
+          updatedAt: new Date(),
+        };
+
+        await seasonPointsDocRef.set(newSeasonPoints);
+        console.log(`[SEASON_POINTS] Created new season points for ${pointsData.name}: ${pointsData.total} pts`);
+      }
+
+    } catch (error) {
+      console.error(`[SEASON_POINTS] Error updating ${riderNameId}:`, error);
+    }
+  }
+
+  console.log(`[SEASON_POINTS] Season points update complete`);
+}
+
+/**
+ * Update Marginal Gains games after season points are updated
+ * This recalculates the gain for all riders in active Marginal Gains games
+ */
+async function updateMarginalGainsGames(
+  db: FirebaseFirestore.Firestore,
+  year: string | number
+): Promise<void> {
+  const yearNum = typeof year === 'string' ? parseInt(year) : year;
+
+  console.log(`[MARGINAL_GAINS_UPDATE] Checking for active Marginal Gains games for year ${yearNum}`);
+
+  // Find all active Marginal Gains games for this year
+  const marginalGainsGamesSnapshot = await db.collection('games')
+    .where('gameType', '==', 'marginal-gains')
+    .where('status', 'in', ['active', 'bidding'])
+    .get();
+
+  if (marginalGainsGamesSnapshot.empty) {
+    console.log(`[MARGINAL_GAINS_UPDATE] No active Marginal Gains games found`);
+    return;
+  }
+
+  console.log(`[MARGINAL_GAINS_UPDATE] Found ${marginalGainsGamesSnapshot.size} active Marginal Gains games`);
+
+  // Helper functions to get points
+  const getStartingPoints = async (riderNameId: string): Promise<number> => {
+    try {
+      const rankingDoc = await db.collection(`rankings_${yearNum}`).doc(riderNameId).get();
+      if (rankingDoc.exists) {
+        const data = rankingDoc.data();
+        return data?.points || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error(`[MARGINAL_GAINS_UPDATE] Error fetching ranking for ${riderNameId}:`, error);
+      return 0;
+    }
+  };
+
+  const getCurrentSeasonPoints = async (riderNameId: string): Promise<number> => {
+    try {
+      const seasonPointsDoc = await db.collection('seasonPoints').doc(`${riderNameId}_${yearNum}`).get();
+      if (seasonPointsDoc.exists) {
+        const data = seasonPointsDoc.data();
+        return data?.totalPoints || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error(`[MARGINAL_GAINS_UPDATE] Error fetching season points for ${riderNameId}:`, error);
+      return 0;
+    }
+  };
+
+  // Process each game
+  for (const gameDoc of marginalGainsGamesSnapshot.docs) {
+    try {
+      const gameData = gameDoc.data();
+      const game = { id: gameDoc.id, ...gameData } as any;
+      const config = game.config;
+
+      // Check if this game is for the current year
+      if (config.currentYear !== yearNum) {
+        console.log(`[MARGINAL_GAINS_UPDATE] Skipping game ${game.name} (year ${config.currentYear} != ${yearNum})`);
+        continue;
+      }
+
+      console.log(`[MARGINAL_GAINS_UPDATE] Processing game: ${game.name}`);
+
+      // Get all participants
+      const participantsSnapshot = await db.collection('gameParticipants')
+        .where('gameId', '==', game.id)
+        .where('status', '==', 'active')
+        .get();
+
+      // Update each participant's score
+      for (const participantDoc of participantsSnapshot.docs) {
+        const participantData = participantDoc.data();
+        const userId = participantData.userId;
+
+        // Get team
+        const teamSnapshot = await db.collection('playerTeams')
+          .where('gameId', '==', game.id)
+          .where('userId', '==', userId)
+          .where('active', '==', true)
+          .get();
+
+        if (teamSnapshot.empty) continue;
+
+        let totalScore = 0;
+
+        // Calculate gain for each rider
+        for (const teamDoc of teamSnapshot.docs) {
+          const teamData = teamDoc.data();
+          const riderNameId = teamData.riderNameId;
+
+          const startingPoints = await getStartingPoints(riderNameId);
+          const currentPoints = await getCurrentSeasonPoints(riderNameId);
+          const gain = currentPoints - startingPoints;
+
+          totalScore += gain;
+
+          // Update PlayerTeam
+          await teamDoc.ref.update({
+            pointsScored: gain,
+          });
+        }
+
+        // Update participant total
+        await participantDoc.ref.update({
+          totalPoints: totalScore,
+        });
+      }
+
+      // Update rankings for this game
+      const rankedParticipants = await db.collection('gameParticipants')
+        .where('gameId', '==', game.id)
+        .where('status', '==', 'active')
+        .orderBy('totalPoints', 'desc')
+        .get();
+
+      let ranking = 1;
+      for (const participantDoc of rankedParticipants.docs) {
+        await participantDoc.ref.update({ ranking });
+        ranking++;
+      }
+
+      console.log(`[MARGINAL_GAINS_UPDATE] Updated game ${game.name}`);
+
+    } catch (error) {
+      console.error(`[MARGINAL_GAINS_UPDATE] Error processing game ${gameDoc.id}:`, error);
+    }
+  }
+
+  console.log(`[MARGINAL_GAINS_UPDATE] Marginal Gains games update complete`);
 }

@@ -67,6 +67,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
       'rising-stars': 'Rising Stars',
       'country-roads': 'Country Roads',
       'worldtour-manager': 'WorldTour Manager',
+      'marginal-gains': 'Marginal Gains',
       'fan-flandrien': 'Fan Flandrien',
       'giorgio-armada': 'Giorgio Armada',
     };

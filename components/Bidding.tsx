@@ -134,7 +134,7 @@ export const Bidding = ({
       <div ref={myBidRef}>
         <div className="bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
           <h1 className="text-2xl font-bold mt-1">
-            {game?.gameType === 'worldtour-manager' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
+            {game?.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
           </h1>
           <span className="flex flex-row gap-2">
             <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
@@ -156,7 +156,7 @@ export const Bidding = ({
             handlePlaceBid={handlePlaceBid}
             setAdjustingBid={setAdjustingBid}
           />
-        ) : (game.gameType === 'worldtour-manager' ?
+        ) : (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' ?
           <BiddingListViewWorldTour
             myBids={myBids}
             game={game}
@@ -229,13 +229,13 @@ export const Bidding = ({
                       isNeoProf={qualifiesAsNeoProf(rider, game?.config)}
                       showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                       buttonContainer={<>
-                        <div className="flex flex-row gap-2">
+                  {/* it should check if the game.gameType is not worldtour-manager or marginal-gains */}
+                        <div className={`flex flex-row ${game?.gameType === 'auctioneer' ? 'gap-2' : ''}`}> 
 
 
                           <div className="flex-1">
                             {auctionActive ? (<>
-                              {game?.gameType !== 'worldtour-manager' && (
-                                // For auction games, show bid input
+                              {(game?.gameType === 'auctioneer') ? (
                                 <CurrencyInput
                                   id="input-example"
                                   name="input-name"
@@ -248,6 +248,8 @@ export const Bidding = ({
                                     bidAmountsRef.current[riderNameId] = value || '0';
                                   }}
                                 />
+                              ) : (
+                                <></>
                               )}
                             </>
                             ) : (
@@ -274,20 +276,20 @@ export const Bidding = ({
                               {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') && (
                                 <Button
                                   type="button"
-                                  text={cancellingBid === rider.myBidId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.remove') : t('games.auctions.resetBid')}
+                                  text={cancellingBid === rider.myBidId ? t('global.loading') : game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? t('global.remove') : t('games.auctions.resetBid')}
                                   onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                                   disabled={cancellingBid === rider.myBidId}
                                   className="px-2 py-1 text-sm"
-                                  title={game?.gameType === 'worldtour-manager' ? t('games.auctions.removeRider') : t('games.auctions.cancelBid')}
+                                  title={game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? t('games.auctions.removeRider') : t('games.auctions.cancelBid')}
                                   variant="danger"
                                 />
                               )}
                               <Button
                                 type="button"
-                                text={placingBid === riderNameId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.select') : t('games.auctions.bid')}
+                                text={placingBid === riderNameId ? t('global.loading') : game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? t('global.select') : t('games.auctions.bid')}
                                 onClick={() => handlePlaceBid(rider)}
                                 disabled={placingBid === riderNameId}
-                                className={`py-1 text-sm ${game?.gameType === 'worldtour-manager' ? 'w-full' : ''}`}
+                                className={`py-1 text-sm ${game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? 'w-full' : ''}`}
                                 variant="primary"
                               />
                             </>
@@ -297,12 +299,12 @@ export const Bidding = ({
                       </>} />
                     :
                     <PlayerRowBids player={rider} showPoints showRank fullWidth selectPlayer={() => handlePlaceBid(rider)} index={index} rightContent={<>
-                      <div className={`flex flex-row ${game?.gameType !== 'worldtour-manager' && 'gap-2'}`}>
+                      <div className={`flex flex-row ${(game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains') ? 'gap-2' : ''}`}>
 
 
                         <div className="flex-1">
                           {auctionActive && !rider.isSold ? (<>
-                            {game?.gameType !== 'worldtour-manager' ? (
+                            {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' ? (
                               <CurrencyInput
                                 id="input-example"
                                 name="input-name"
@@ -346,16 +348,16 @@ export const Bidding = ({
                             {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') ? (
                               <Button
                                 type="button"
-                                text={cancellingBid === rider.myBidId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.remove') : t('games.auctions.resetBid')}
+                                text={cancellingBid === rider.myBidId ? t('global.loading') : game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? t('global.remove') : t('games.auctions.resetBid')}
                                 onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                                 disabled={cancellingBid === rider.myBidId}
                                 className="px-2 py-1 text-sm"
-                                title={game?.gameType === 'worldtour-manager' ? t('games.auctions.removeRider') : t('games.auctions.cancelBid')}
+                                title={game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? t('games.auctions.removeRider') : t('games.auctions.cancelBid')}
                                 variant="danger"
                               />
                             ) : (<Button
                               type="button"
-                              text={placingBid === riderNameId ? t('global.loading') : game?.gameType === 'worldtour-manager' ? t('global.select') : t('games.auctions.bid')}
+                              text={placingBid === riderNameId ? t('global.loading') : game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? t('global.select') : t('games.auctions.bid')}
                               onClick={() => handlePlaceBid(rider)}
                               disabled={placingBid === riderNameId}
                               className="px-3 py-1 text-sm"

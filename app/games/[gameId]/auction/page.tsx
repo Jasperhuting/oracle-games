@@ -368,7 +368,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       if (!gameResponse.ok) throw new Error('Failed to load game');
       const gameData = await gameResponse.json();
 
-      if (gameData.game.gameType !== 'auction' && gameData.game.gameType !== 'auctioneer' && gameData.game.gameType !== 'worldtour-manager') {
+      if (gameData.game.gameType !== 'auction' && gameData.game.gameType !== 'marginal-gains' && gameData.game.gameType !== 'auctioneer' && gameData.game.gameType !== 'worldtour-manager') {
         throw new Error('This game is not an auction game');
       }
 
@@ -614,7 +614,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const getEffectiveMinimumBid = (riderPoints: number): number => {
     const maxMinBid = game?.config?.maxMinimumBid;
-    const isWorldTourManager = game?.gameType === 'worldtour-manager';
+    const isWorldTourManager = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
 
     if (maxMinBid && riderPoints > maxMinBid) {
       return maxMinBid;
@@ -663,9 +663,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     if (!user || !participant) return;
 
     const riderNameId = rider.nameID || rider.id || '';
-    const isWorldTourManager = game?.gameType === 'worldtour-manager';
+    const isWorldTourManager = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
 
-    // For worldtour-manager, use the rider's effective minimum bid as the price
+    // For worldtour-manager and marginal-gains, use the rider's effective minimum bid as the price
     // For auction games, use the entered bid amount
     const riderPoints = rider.points || 0;
     const bidAmount = isWorldTourManager
@@ -724,9 +724,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       return;
     }
 
-    // WorldTour Manager: Check neo-prof requirements
+    // WorldTour Manager & Marginal Gains: Check neo-prof requirements
     // Rule: If you want 28+ riders, you need at least 1 neo-prof in your team
-    if (game && game.gameType === 'worldtour-manager') {
+    if (game && (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains')) {
       // Count UNIQUE riders with active/outbid status
       const totalActiveBids = new Set(
         myBids
@@ -1084,7 +1084,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold">
-                {game.gameType === 'worldtour-manager' ? 'Team Selection' : 'Auction'} - {game.name}
+                {(game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') ? 'Team Selection' : 'Auction'} - {game.name}
               </h1>
               <p className="text-gray-600">{game.division}</p>
             </div>
@@ -1171,10 +1171,10 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
                     }`}>
                     {auctionClosed
-                      ? game.gameType === 'worldtour-manager'
+                      ? (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains')
                         ? 'Team selection has ended. No more riders can be selected.'
                         : 'The auction has ended. No more bids can be placed.'
-                      : game.gameType === 'worldtour-manager'
+                      : (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains')
                         ? 'Team selection has not started yet. Selection will open soon.'
                         : 'The auction has not started yet. Bidding will open soon.'}
                   </p>
@@ -1190,8 +1190,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               <div className="flex flex-col gap-4">
                 <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
                 <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
-                {myAuctionBids.length > 0 && <MyAuctionBids game={game} isWorldtour={game.gameType === 'worldtour-manager'} availableRiders={availableRiders} myBids={myAuctionBids} />}
-                {game.gameType !== 'worldtour-manager' && <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
+                {myAuctionBids.length > 0 && <MyAuctionBids game={game} isWorldtour={game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains'} availableRiders={availableRiders} myBids={myAuctionBids} />}
+                {game.gameType !== 'worldtour-manager' && game.gameType !== 'marginal-gains' && <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
                   ...period,
                   startDate: typeof period.startDate === 'string' ? period.startDate : period.startDate.toDate().toISOString(),
                   endDate: typeof period.endDate === 'string' ? period.endDate : period.endDate.toDate().toISOString()
@@ -1279,7 +1279,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           //               })}
           //             {myBids.filter(bid => bid.status === 'won').length === 0 && (
           //               <div className="p-4 text-center text-gray-500">
-          //                 {game?.gameType === 'worldtour-manager' ? 'No riders won yet.' : 'No winning bids yet.'}
+          //                 {(game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains') ? 'No riders won yet.' : 'No winning bids yet.'}
           //               </div>
           //             )}
           //           </div>
@@ -1294,7 +1294,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             <div ref={myBidRef}>
               <div className="mt-4 bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
                 <h1 className="text-2xl font-bold mt-1">
-                  {game?.gameType === 'worldtour-manager' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myTeam')}
+                  {(game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains') ? t('games.auctions.mySelectedRiders') : t('games.auctions.myTeam')}
                 </h1>
                 <span className="flex flex-row gap-2">
                   <Button ghost={myTeamBidsWonView === 'card'} onClick={() => setMyTeamBidsWonView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
@@ -1305,7 +1305,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
               {myTeamBidsWonView === 'card' ? (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-start flex-wrap gap-4 py-4">
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-                  {game?.gameType === 'worldtour-manager' ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
+                  {(game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains') ? t('games.auctions.noRidersSelected') : t('games.auctions.noBidsPlaced')}
                 </div>}
                 {(() => {
                   console.log('DEBUG - Won bids section - total myBids:', myBids.length, 'won bids:', myBids.filter((bid) => bid.status === 'won').length, 'availableRiders:', availableRiders.length);
@@ -1336,7 +1336,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                         myTeam={true}
                         selected={false}
                         isNeoProf={qualifiesAsNeoProf(rider, game?.config?.maxNeoProAge || 0)}
-                        showNeoProfBadge={game?.gameType === 'worldtour-manager'}
+                        showNeoProfBadge={game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains'}
                         buttonContainer={
                           <>
                             {rider && canCancel && (
@@ -1411,7 +1411,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 })}
               </div>) : (<div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
                 {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-                  {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
+                  {(game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains') ? 'No riders selected yet.' : 'No bids placed yet.'}
                 </div>}
                 {myBids.length > 0 && (
                   <div className="flex flex-row w-full p-2">
@@ -1525,7 +1525,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               hideButton={!auctionActive}
               game={game}
               adjustingBid={adjustingBid}
-              isWorldTourManager={game?.gameType === 'worldtour-manager'}
+              isWorldTourManager={game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains'}
             />
           )}
 
@@ -1538,7 +1538,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               hideButton={!auctionActive}
               game={game}
               adjustingBid={adjustingBid}
-              isWorldTourManager={game?.gameType === 'worldtour-manager'}
+              isWorldTourManager={game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains'}
             />
           )}
 

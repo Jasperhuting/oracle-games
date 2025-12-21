@@ -15,6 +15,7 @@ export const GAME_TYPES = [
   'worldtour-manager',
   'fan-flandrien',
   'giorgio-armada',
+  'marginal-gains',
 ] as const;
 
 export type GameType = typeof GAME_TYPES[number];
@@ -136,6 +137,15 @@ export interface GiorgioArmadaConfig {
   riderValues: Record<string, number>; // nameId -> value (1-10)
 }
 
+export interface MarginalGainsConfig {
+  teamSize: number;                 // e.g., 20 riders
+  auctionPeriods?: AuctionPeriod[]; // Auction periods with optional rules
+  auctionStatus?: AuctionStatus;    // Overall auction status
+  currentYear: number;              // e.g., 2026 (the year we're tracking)
+  // Note: Starting points come from rankings_{currentYear} (UCI points earned in previous year)
+  // Current points come from seasonPoints_{currentYear} (points earned during current season)
+}
+
 export type GameConfig =
   | AuctioneerConfig
   | CarryMeHomeConfig
@@ -146,7 +156,8 @@ export type GameConfig =
   | CountryRoadsConfig
   | WorldTourManagerConfig
   | FanFlandrienConfig
-  | GiorgioArmadaConfig;
+  | GiorgioArmadaConfig
+  | MarginalGainsConfig;
 
 // ============================================================================
 // GAME DOCUMENT
@@ -454,6 +465,43 @@ export interface DraftPick {
 }
 
 // ============================================================================
+// SEASON POINTS (for tracking rider points across seasons)
+// ============================================================================
+
+export interface SeasonPoints {
+  id?: string;                      // Document ID (riderNameId)
+  riderNameId: string;
+  riderName: string;
+  year: number;                     // e.g., 2025, 2026
+  totalPoints: number;              // Total points for the season
+
+  // Breakdown by race
+  races: Record<string, {           // Key: raceSlug (e.g., "tour-de-france_2025")
+    raceName: string;
+    totalPoints: number;            // Total points for this race
+
+    stages: Record<string, {        // Key: stage number (e.g., "1", "2")
+      stageResult?: number;         // Points from stage finish
+      gcPoints?: number;            // Points from GC
+      pointsClass?: number;         // Points from points classification
+      mountainsClass?: number;      // Points from mountains classification
+      youthClass?: number;          // Points from youth classification
+      mountainPoints?: number;      // Points from mountain points during stage
+      sprintPoints?: number;        // Points from sprint points during stage
+      combativityBonus?: number;    // Combativity bonus
+      teamPoints?: number;          // Team classification points
+      total: number;                // Total points for this stage
+    }>;
+  }>;
+
+  updatedAt: Date | string;
+}
+
+export type ClientSeasonPoints = Omit<SeasonPoints, 'updatedAt'> & {
+  updatedAt: string;
+};
+
+// ============================================================================
 // RIDER POOLS (for Country Roads)
 // ============================================================================
 
@@ -535,6 +583,14 @@ export function isCarryMeHome(game: Game): game is Game & { config: CarryMeHomeC
 
 export function isPoisonedCup(game: Game): game is Game & { config: PoisonedCupConfig } {
   return game.gameType === 'poisoned-cup';
+}
+
+export function isMarginalGains(game: Game): game is Game & { config: MarginalGainsConfig } {
+  return game.gameType === 'marginal-gains';
+}
+
+export function isWorldTourManager(game: Game): game is Game & { config: WorldTourManagerConfig } {
+  return game.gameType === 'worldtour-manager';
 }
 
 // Helper type for client-side game data (with string dates instead of Timestamps)
