@@ -139,7 +139,15 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [alleBiedingen, setAlleBiedingen] = useState<Bid[]>([]); // Naam aanpassen TODO:
 
   useEffect(() => {
-    params.then(p => setGameId(p.gameId));
+    params.then(p => {
+      setGameId(p.gameId);
+      // Invalidate cache on initial page load to ensure fresh data
+      // This prevents showing stale bids after a page refresh
+      if (p.gameId) {
+        console.log('[AUCTION] Invalidating cache on page load for gameId:', p.gameId);
+        invalidateAuctionCache(p.gameId);
+      }
+    });
   }, [params]);
 
 
@@ -238,22 +246,25 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       // Wait for rankings to load if they're still loading
       if (rankingsLoading) {
         console.log('[AUCTION] Waiting for RankingsContext to finish loading...');
-        setLoading(true);
+        // Don't return early - this causes the loading state to get stuck
+        // The useEffect will re-trigger when rankingsLoading becomes false
+        setLoading(false);
         return;
       }
 
       // Try to load from cache first (unless forced to refresh)
+      // NOTE: Cache is invalidated on page load, so this will only be used during the session
       const cachedData = !forceRefresh ? getCachedAuctionData(gameId) : null;
       if (cachedData && rankingsRiders.length > 0) {
-        console.log('[AUCTION] Loading game/bids from cache, riders from RankingsContext');
 
         // Set state from cache
         setGame(cachedData.gameData.game);
         setParticipant(cachedData.participantData.participants?.[0] || null);
 
         const userBids = cachedData.allBidsData.filter((b: Bid) => b.userId === user.uid);
+        const filteredUserBids = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
         setAllBids(cachedData.allBidsData);
-        setMyBids(userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost'));
+        setMyBids(filteredUserBids);
 
         // Use riders from RankingsContext instead of cache
         let riders = rankingsRiders;
@@ -421,9 +432,13 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
       allBidsData = userBids.filter((b: Bid) => b.status !== 'active'); // For non-admins, allBids is just their bids
 
+      const filteredUserBidsFromAPI = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
+
+      console.log('[AUCTION] User bids from API - total:', userBids.length, 'filtered:', filteredUserBidsFromAPI.length);
+      console.log('[AUCTION] Bid statuses from API:', userBids.map(b => ({ id: b.id, status: b.status, riderNameId: b.riderNameId })));
+
       setAllBids(allBidsData);
-      userBids = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
-      setMyBids(userBids);
+      setMyBids(filteredUserBidsFromAPI);
 
       // Load all sold riders from playerTeams collection (properly filtered by gameId)
       const playerTeamsResponse = await fetch(`/api/games/${gameId}/team/list-all`);
