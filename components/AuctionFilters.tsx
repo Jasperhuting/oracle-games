@@ -1,5 +1,4 @@
 import { Bid } from "@/lib/types";
-import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { useTranslation } from "react-i18next";
 import RangeSlider from 'react-range-slider-input';
 import { Button } from "./Button";
@@ -59,7 +58,7 @@ export const AuctionFilters = ({
         </span>
         <span className="flex flex-col flex-1 justify-center">
             <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                {t('games.auctions.priceRangeLabel')}: {formatCurrencyWhole(priceRange[0])} - {formatCurrencyWhole(priceRange[1])}
+                {t('games.auctions.priceRangeLabel')}
             </label>
             <div className="py-2 mt-2">
                 <RangeSlider
@@ -67,6 +66,30 @@ export const AuctionFilters = ({
                     max={maxRiderPrice}
                     value={priceRange}
                     onInput={(value: number[]) => setPriceRange([value[0], value[1]])}
+                />
+            </div>
+            <div className="flex items-center justify-between mt-1">
+                <input
+                    type="number"
+                    min={minRiderPrice}
+                    max={priceRange[1]}
+                    value={priceRange[0]}
+                    onChange={(e) => {
+                        const value = Math.max(minRiderPrice, Math.min(Number(e.target.value), priceRange[1]));
+                        setPriceRange([value, priceRange[1]]);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                />
+                <input
+                    type="number"
+                    min={priceRange[0]}
+                    max={maxRiderPrice}
+                    value={priceRange[1]}
+                    onChange={(e) => {
+                        const value = Math.min(maxRiderPrice, Math.max(Number(e.target.value), priceRange[0]));
+                        setPriceRange([priceRange[0], value]);
+                    }}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
             </div>
         </span>

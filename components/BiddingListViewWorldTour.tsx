@@ -51,7 +51,7 @@ export const BiddingListViewWorldTour = ({
           <span className="font-bold basis-[200px]"></span>
         </div>
       )}
-      <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-2">
+      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
 
 
 
@@ -61,25 +61,28 @@ export const BiddingListViewWorldTour = ({
           const riderNameId = rider?.nameID || rider?.id || '';
 
           return rider ?
-            <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 p-2">
+            <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 p-2 flex flex-col gap-2">
+              <div className="flex items-center min-w-0">
+                {qualifiesAsNeoProf(rider, game.config) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
+                <span className={`truncate font-medium ${qualifiesAsNeoProf(rider, game.config) ? 'ml-1' : ''}`}>
+                  {rider.name}
+                </span>
+              </div>
 
-              <span className="w-full truncate my-1 font-medium block text-ellipsis whitespace-nowrap">
-                <div className="flex items-center min-w-0 justify-between">
-                  <span className="flex items-center">
-                  {qualifiesAsNeoProf(rider, game.config) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
-                  <span className={`truncate max-w-[160px] ${qualifiesAsNeoProf(rider, game.config) ? 'ml-1' : ''}`}>{rider.name}</span>
-                  </span>
-                  
-                <span className="self-end flex gap-2 items-center">
-                  <span className="font-medium">{rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}</span>
+              <span className="text-gray-600 text-xs truncate">{rider.team?.name || '-'}</span>
+
+              <div className="flex gap-2 items-center justify-between mt-1">
+                <span className="font-medium whitespace-nowrap text-sm">
+                  {rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}
+                </span>
                 {canCancel && (
                   <>
                     {adjustingBid === rider.myBidId ? (
-                      <div className="flex gap-2 items-center w-full">
+                      <div className="flex gap-2 items-center flex-1">
                         <CurrencyInput
                           id={`adjust-bid-list-${rider.myBidId}`}
                           name="adjust-bid"
-                          className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder={`${rider.myBid || 0}`}
                           decimalsLimit={0}
                           disabled={placingBid === riderNameId}
@@ -110,28 +113,21 @@ export const BiddingListViewWorldTour = ({
                         />
                       </div>
                     ) : (
-                      <>
-                        <Button
-                          type="button"
-                          text={cancellingBid === rider.myBidId ? t('global.loading') : t('global.reset')}
-                          onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
-                          disabled={cancellingBid === rider.myBidId}
-                          className="px-2 py-1 text-sm"
-                          ghost
-                          size="sm"
-                          title={t('global.cancelBid')}
-                          variant="danger"
-                        />
-                      </>
+                      <Button
+                        type="button"
+                        text={cancellingBid === rider.myBidId ? t('global.loading') : t('global.reset')}
+                        onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
+                        disabled={cancellingBid === rider.myBidId}
+                        className="px-2 py-1 text-sm whitespace-nowrap"
+                        ghost
+                        size="sm"
+                        title={t('global.cancelBid')}
+                        variant="danger"
+                      />
                     )}
                   </>
-                )}</span>
-
-                </div>
-                
-              </span>
-              <span className="w-full text-gray-600 text-xs truncate block text-ellipsis whitespace-nowrap">{rider.team?.name || '-'}</span>
-              
+                )}
+              </div>
             </div> : null
 
         })}
