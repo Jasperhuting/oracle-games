@@ -71,10 +71,11 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
 
         // Support hyphenated names: capitalize each sub-part
         // Also capitalize letter after apostrophe (e.g., O'brien → O'Brien)
+        // Also capitalize letter after Mc/Mac prefix (e.g., Mcnulty → McNulty)
         return part
           .split('-')
           .map(sub => {
-            // Handle apostrophes within the sub-part
+            // Handle apostrophes and Mc/Mac prefixes within the sub-part
             return sub
               .toLowerCase()
               .split('')
@@ -83,6 +84,8 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
                 if (index === 0) return char.toUpperCase();
                 // Capitalize character after apostrophe (both ' and ')
                 if (index > 0 && (arr[index - 1] === "'" || arr[index - 1] === "'")) return char.toUpperCase();
+                // Capitalize character after Mc prefix (e.g., McNulty, McLay, McDonald)
+                if (index === 2 && arr[0] === 'm' && arr[1] === 'c') return char.toUpperCase();
                 return char;
               })
               .join('');
