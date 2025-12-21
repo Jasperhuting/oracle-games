@@ -106,13 +106,17 @@ export const AuctionFilters = ({
                       {showOnlyFillers ? <><Users size="15" />{t('global.showAllRiders')}</> : <><Star size="15" />{t('global.showOnlyFillers')}</>}
                     </span>
                   </Button>
-                ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <Toggle
+                ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <>
+                <div><label className="text-sm font-bold text-gray-700" htmlFor="hide-sold-players">{t('global.soldPlayersLabel')}</label>
+                <Toggle
                   toggleOn={() => setHideSoldPlayers(false)}
                   toggleOff={() => setHideSoldPlayers(true)}
-                  status={!hideSoldPlayers}
-                  onText={t('global.showSoldPlayers')}
-                  offText={t('global.hideSoldPlayers')}
-                />}
+                  status={!hideSoldPlayers}                  
+                  onText={t('global.show')}
+                  offText={t('global.hide')}
+                />
+                </div>
+                </>}
         </div>
     </Collapsible>
 }
