@@ -52,7 +52,13 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game is accepting registrations
-    if (gameData?.status !== 'registration' && gameData?.status !== 'draft' && gameData?.status !== 'active') {
+    // For worldtour-manager, also allow joining during 'bidding' status
+    const allowedStatuses = ['registration', 'draft', 'active'];
+    if (gameData?.gameType === 'worldtour-manager') {
+      allowedStatuses.push('bidding');
+    }
+
+    if (!allowedStatuses.includes(gameData?.status)) {
       return NextResponse.json(
         { error: 'Game is not accepting registrations' },
         { status: 400 }
