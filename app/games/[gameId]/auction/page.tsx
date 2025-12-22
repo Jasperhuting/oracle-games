@@ -1076,7 +1076,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const maxRiderPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
 
   const myAuctionBids = myBids.map((bid: Bid) => ({ ...bid, price: sortedAndFilteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points })).filter((bid: Bid) => bid.status === 'active')
-
+  const isSelectionBasedGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
   return (
     <div className={`min-h-screen bg-gray-50 relative `}>
       <div className="bg-white border-b border-gray-200 z-10 px-8">
@@ -1114,7 +1114,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         <div className="container mx-auto">
           <div className=" w-full flex flex-row gap-4 mb-4 relative">{/* container */}
             <div className="bg-white rounded-md flex-9/12">{/* content */}
-
+                
               <Tabs
                 defaultTab="bidding"
                 tabs={[
@@ -1144,7 +1144,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
                     />
                   },
-                  {
+                  ...(!isSelectionBasedGame ? [{
                     id: 'my-bids', label: 'Bidding history', content: <MyAuctionBidsBig
                       selectedPlayerBids={selectedPlayerBids}
                       alleBiedingen={alleBiedingen}
@@ -1158,7 +1158,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                       availableRiders={availableRiders}
                       participant={participant}
                       game={game} />
-                  }
+                  }] : [])
                 ]} />
 
             </div>
