@@ -207,6 +207,7 @@ export interface CreateGameRequest {
   minPlayers?: number;
   eligibleTeams?: string[];
   eligibleRiders?: string[];
+  bidding: boolean;
   config: GameConfig; // Game-specific config (properly typed)
 }
 

@@ -95,9 +95,9 @@ export const AuctionFilters = ({
         </span>
         <span className="flex flex-col flex-1 justify-center">
             <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                {t('games.auctions.resetAllBids')}
+                {game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')}
             </label>
-            <Button text={t('games.auctions.resetAllBids')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
+            <Button text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
         </span>
 
         {game.gameType === 'worldtour-manager' ? (

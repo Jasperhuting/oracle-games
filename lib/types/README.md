@@ -23,7 +23,7 @@ import { AuctioneerConfig, GameType } from '@/lib/types/games';
 
 #### 1. Game Types
 - `Game` - Main game document
-- `GameType` - Union type of all game types ('auctioneer', 'carry-me-home', etc.)
+- `GameType` - Union type of all game types ('auctioneer', 'carry-on', etc.)
 - `GameStatus` - Game lifecycle status
 - `RaceType` - Type of race (season, grand-tour, classics, single-race)
 

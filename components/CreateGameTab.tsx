@@ -23,6 +23,7 @@ interface GameFormData {
   year: number;
   divisionCount?: number;
   maxPlayers?: number;
+  bidding: boolean;
 
   // Auctioneer config
   budget?: number;
@@ -272,6 +273,7 @@ export const CreateGameTab = () => {
           year: Number(data.year),
           status: 'draft',
           divisionCount: data.divisionCount,
+          bidding: data.gameType === 'auctioneer',
           maxPlayers: data.maxPlayers ? Number(data.maxPlayers) : undefined,
           eligibleTeams: [], // TODO: set based on race lineup
           eligibleRiders: [], // TODO: set based on race lineup
@@ -307,7 +309,7 @@ export const CreateGameTab = () => {
 
   const GAME_TYPE_OPTIONS = [
     { value: 'auctioneer', label: 'Auctioneer - Bid on riders' },
-    { value: 'carry-me-home', label: 'Carry Me Home - Pick per stage' },
+    { value: 'carry-on', label: 'Carry On - Pick per stage' },
     { value: 'last-man-standing', label: 'Last Man Standing - Elimination' },
     { value: 'poisoned-cup', label: 'Poisoned Cup - Snake Draft' },
     { value: 'nations-cup', label: 'Nations Cup - By country/region' },

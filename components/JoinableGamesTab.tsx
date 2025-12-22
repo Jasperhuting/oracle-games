@@ -27,6 +27,7 @@ interface Game {
   registrationCloseDate?: string;
   createdAt: string;
   raceRef?: string;
+  bidding?: boolean;
 }
 
 interface GameGroup {
@@ -263,19 +264,19 @@ export const JoinableGamesTab = () => {
     return gameType === 'auction' || gameType === 'auctioneer' || gameType === 'worldtour-manager' || gameType === 'marginal-gains';
   };
 
-  const getStatusLabel = (status: string, gameType?: string) => {
+  const getStatusLabel = (game: Game) => {
     // WorldTour Manager and Marginal Gains use "selecteren" instead of "bidding"
-    if (status === 'bidding' && (gameType === 'worldtour-manager' || gameType === 'marginal-gains')) {
+    if (game.status === 'bidding' && (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains')) {
       return 'selecteren';
     }
 
-    switch (status) {
+    switch (game.status) {
       case 'draft': return 'draft';
       case 'registration': return 'registration';
-      case 'bidding': return 'bidding';
+      case 'bidding': return game.bidding ? 'bidding' : 'selecteren';
       case 'active': return 'active';
       case 'finished': return 'finished';
-      default: return status;
+      default: return game.status;
     }
   };
 
@@ -485,7 +486,7 @@ export const JoinableGamesTab = () => {
                         </span>
                       )}
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(game.status)}`}>
-                        {t(`games.statuses.${getStatusLabel(game.status, game.gameType)}`)}
+                        {t(`games.statuses.${getStatusLabel(game)}`)}
                       </span>
                     </div>
 
@@ -613,7 +614,7 @@ export const JoinableGamesTab = () => {
                     )}
                     {isJoined && !isWaitingForDivision && joinedGame && isSelectionBasedGame(game.gameType) && (
                       <Button
-                        text={t('games.auction')}
+                        text={game.bidding ? t('games.auction') : t('games.selectTeam')}
                         onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
@@ -709,7 +710,7 @@ export const JoinableGamesTab = () => {
                                 </span>
                               )}
                               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(game.status)}`}>
-                                {t(`games.statuses.${getStatusLabel(game.status, game.gameType)}`)}
+                                {t(`games.statuses.${getStatusLabel(game)}`)}
                               </span>
                             </div>
 

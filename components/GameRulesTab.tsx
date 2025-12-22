@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 const GAME_TYPE_LABELS: Record<GameType, string> = {
   'auctioneer': 'Auction Master',
-  'carry-me-home': 'Carry Me Home',
+  'carry-on': 'Carry On',
   'last-man-standing': 'Last Man Standing',
   'poisoned-cup': 'Poisoned Cup',
   'nations-cup': 'Nations Cup',
@@ -18,6 +18,7 @@ const GAME_TYPE_LABELS: Record<GameType, string> = {
   'worldtour-manager': 'WorldTour Manager',
   'fan-flandrien': 'Fan Flandrien',
   'giorgio-armada': 'Giorgio Armada',
+  'marginal-gains': 'Marginal Gains',
 };
 
 export const GameRulesTab = () => {

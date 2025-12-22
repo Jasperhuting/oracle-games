@@ -111,6 +111,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
           minPlayers: gameData.minPlayers,
           eligibleTeams: gameData.eligibleTeams || [],
           eligibleRiders: gameData.eligibleRiders || [],
+          bidding: gameData.bidding,
           config: gameData.config,
         };
 
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
         gameType: gameData.gameType,
         ...(raceRefPath && { raceRef: raceRefPath }), // Only include raceRef if it exists
         raceType: gameData.raceType || 'grand-tour',
-        year: parseInt(gameData.year),
+        year: gameData.year,
         createdBy: adminUserId,
         createdAt: now,
         updatedAt: now,
@@ -171,6 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
         minPlayers: gameData.minPlayers,
         eligibleTeams: gameData.eligibleTeams || [],
         eligibleRiders: gameData.eligibleRiders || [],
+        bidding: gameData.bidding,
         config: gameData.config,
       };
 

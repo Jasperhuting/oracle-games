@@ -6,7 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 
 export const GAME_TYPES = [
   'auctioneer',
-  'carry-me-home',
+  'carry-on',
   'last-man-standing',
   'poisoned-cup',
   'nations-cup',
@@ -75,7 +75,7 @@ export interface AuctioneerConfig {
   allowSharedRiders?: boolean;      // Allow multiple users to buy the same rider (default: false)
   maxOwnersPerRider?: number;       // Maximum number of users who can own the same rider (only applies if allowSharedRiders is true, default: unlimited)
   countingRaces?: CountingRace[];   // Specific races that count for points
-  countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])
+  countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])  
 }
 
 export interface CarryMeHomeConfig {
@@ -197,8 +197,12 @@ export interface Game {
   eligibleTeams: string[];          // Team slugs
   eligibleRiders: string[];         // Rider nameIDs
 
+  // Bidding flag
+  bidding: boolean;                 // true for auctioneer games, false otherwise
+
   // Game-specific configuration
   config: GameConfig;
+     
 }
 
 // ============================================================================
@@ -578,7 +582,7 @@ export function isAuctioneer(game: Game): game is Game & { config: AuctioneerCon
 }
 
 export function isCarryMeHome(game: Game): game is Game & { config: CarryMeHomeConfig } {
-  return game.gameType === 'carry-me-home';
+  return game.gameType === 'carry-on';
 }
 
 export function isPoisonedCup(game: Game): game is Game & { config: PoisonedCupConfig } {

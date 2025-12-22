@@ -38,6 +38,7 @@ export const createGameSchema = z.object({
   minPlayers: z.number().int().positive().optional(),
   eligibleTeams: z.array(z.string()).optional(),
   eligibleRiders: z.array(z.string()).optional(),
+  bidding: z.boolean(),
   config: z.any(), // Game-specific config - validated separately per game type
 });
 

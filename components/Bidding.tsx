@@ -19,7 +19,6 @@ import Countdown from 'react-countdown';
 
 export const Bidding = ({
   auctionClosed,
-  myBidRef,
   game,
   auctionActive,
   isAdmin,
@@ -37,7 +36,6 @@ export const Bidding = ({
   bidAmountsRef,
 }: {
   auctionClosed: boolean,
-  myBidRef: (node?: Element | null | undefined) => void,
   game: GameData,
   myBids: Bid[],
   participant: ParticipantData | null,
@@ -131,7 +129,7 @@ export const Bidding = ({
 
     {/* My Bids Section - Only show when auction is active */}
     {!auctionClosed && (
-      <div ref={myBidRef}>
+      <div>
         <div className="bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
           <h1 className="text-2xl font-bold mt-1">
             {game?.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
@@ -230,10 +228,8 @@ export const Bidding = ({
                       showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                       buttonContainer={<>
                   {/* it should check if the game.gameType is not worldtour-manager or marginal-gains */}
-                        <div className={`flex flex-row ${game?.gameType === 'auctioneer' ? 'gap-2' : ''}`}> 
-
-
-                          <div className="flex-1">
+                        <div className={`flex flex-row gap-2`}> 
+                          
                             {auctionActive ? (<>
                               {(game?.gameType === 'auctioneer') ? (
                                 <CurrencyInput
@@ -270,7 +266,6 @@ export const Bidding = ({
                                 <span className="text-xs text-gray-400">{t('global.noBid')}</span>
                               )
                             )}
-                          </div>
                           {auctionActive && !rider.isSold && (
                             <>
                               {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') && (

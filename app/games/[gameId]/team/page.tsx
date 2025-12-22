@@ -38,6 +38,8 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
   const { t } = useTranslation();
 
+  console.log('rankingsRiders', rankingsRiders)
+
   useEffect(() => {
     params.then(p => setGameId(p.gameId));
   }, [params]);
@@ -51,6 +53,8 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
       router.push('/login');
       return;
     }
+
+    console.log("gameId", gameId)
 
     if (!gameId) return;
 
@@ -82,6 +86,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
 
         // Load eligible riders from context
         if (rankingsRiders.length === 0) {
+          console.log('kom je hier?', rankingsRiders)
           await refetchRankings();
         }
 
@@ -91,6 +96,8 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
           const eligibleSet = new Set(gameData.game.eligibleRiders);
           riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
         }
+
+        console.log('riders', riders)
 
         setAvailableRiders(riders);
 
@@ -111,7 +118,7 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
     };
 
     loadGameData();
-  }, [gameId, user, authLoading, router]);
+  }, [gameId, user, authLoading, router, rankingsRiders]);
 
   const handleRiderToggle = (newRiders: Rider[]) => {
     setSelectedRiders(newRiders);
@@ -297,13 +304,13 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
             {maxRiders && ` Maximum ${maxRiders} riders.`}
             {minRiders && ` Minimum ${minRiders} riders.`}
           </p>
-          <PlayerSelector
+          {availableRiders && availableRiders.length > 0 && <PlayerSelector
             selectedPlayers={selectedRiders}
             setSelectedPlayers={handleRiderToggle}
             multiSelect={true}
             multiSelectShowSelected={false}
             items={availableRiders}
-          />
+          />}
         </div>
 
         {selectedRiders.length > 0 && (
