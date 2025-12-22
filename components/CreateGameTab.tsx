@@ -877,7 +877,7 @@ export const CreateGameTab = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
                 <p className="text-sm text-blue-800">
                   <strong>Game Concept:</strong> Find the 20 riders who gain the most points compared to the previous season.
-                  Riders start with <strong>negative</strong> points equal to their UCI ranking points from the start of the current year.
+                  Riders start with <strong>negative</strong> points equal to their ranking from the start of the current year.
                   During the season, they work towards positive territory. The team with the most improvement wins!
                 </p>
               </div>
