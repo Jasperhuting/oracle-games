@@ -647,7 +647,7 @@ export const JoinableGamesTab = () => {
           })}
 
           {/* Test Games Section */}
-          {testGameGroups.length > 0 && (
+          {isAdmin && testGameGroups.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-lg">
               <button
                 onClick={() => setShowTestGames(!showTestGames)}
