@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { MotiaProvider } from "@/components/MotiaProvider";
 import { Toaster } from 'react-hot-toast';
 import { LayoutShell } from "@/components/LayoutShell";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -39,21 +38,19 @@ export default function RootLayout({
       >
         <SpeedInsights />
         <LanguageWrapper>
-          <MotiaProvider address={process.env.NEXT_PUBLIC_MOTIA_WS ?? 'ws://localhost:3000'}>
-            <ImpersonationProvider>
-              <RankingsProvider autoLoad={true}>
-                <Toaster position="top-center" />
-                <MessageNotification />
-                <AuthGuard>
-                  <LayoutShell>
-                    <main>
-                      {children}
-                    </main>
-                  </LayoutShell>
-                </AuthGuard>
-              </RankingsProvider>
-            </ImpersonationProvider>
-          </MotiaProvider>
+          <ImpersonationProvider>
+            <RankingsProvider autoLoad={true}>
+              <Toaster position="top-center" />
+              <MessageNotification />
+              <AuthGuard>
+                <LayoutShell>
+                  <main>
+                    {children}
+                  </main>
+                </LayoutShell>
+              </AuthGuard>
+            </RankingsProvider>
+          </ImpersonationProvider>
         </LanguageWrapper>
       </body>
     </html>
