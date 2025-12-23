@@ -21,7 +21,7 @@ import { useRankings } from "@/contexts/RankingsContext";
 
 export default function CreateRankingPage() {
   const router = useRouter();
-  const { riders: rankingsRiders, refetch: refetchRankings, year } = useRankings();
+  const { riders: rankingsRiders, refetch: refetchRankings } = useRankings();
   const [isLoading, setIsLoading] = useState(false);
   const [rankedRiders, setRankedRiders] = useState<Rider[]>([]);
   const [teamsList, setTeamsList] = useState<Team[]>([]);
@@ -95,7 +95,7 @@ export default function CreateRankingPage() {
 
 
   // Use job progress polling instead of WebSocket
-  const { progress } = useJobProgress(jobId, {
+  const { progress: jobProgress } = useJobProgress(jobId, {
     onProgress: (data) => {
       // Show toast based on progress stage
       const stage = data.progress.stage;
@@ -142,7 +142,7 @@ export default function CreateRankingPage() {
 
       try {
         console.log(`[${i + 1}/${teamsArray.length}] Enriching riders for team: ${teamSlug}`);
-        const response = await fetch(`/api/setEnrichedRiders?year=${year}&team=${teamSlug}`);
+        const response = await fetch(`/api/setEnrichedRiders?year=2026&team=${teamSlug}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -176,7 +176,7 @@ export default function CreateRankingPage() {
 
       try {
         console.log(`[${i + 1}/${teamsArray.length}] Enriching team: ${teamSlug}`);
-        const response = await fetch(`/api/setEnrichedTeams?year=${year}&team=${teamSlug}`);
+        const response = await fetch(`/api/setEnrichedTeams?year=2026&team=${teamSlug}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -326,7 +326,7 @@ export default function CreateRankingPage() {
       const response = await fetch('/api/updateRiderTeam', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ riderId, teamSlug, year }),
+        body: JSON.stringify({ riderId, teamSlug, year: 2026 }),
       });
 
       if (!response.ok) {
@@ -408,7 +408,7 @@ export default function CreateRankingPage() {
 
   const loadMoreRiders = () => {
     if (!loadingMore && totalCount && rankedRiders.length < totalCount) {
-      fetchData({ year: year, append: true });
+      fetchData({ year: 2026, append: true });
     }
   };
 
@@ -430,7 +430,7 @@ export default function CreateRankingPage() {
       setTotalCount(rankingsRiders.length);
 
       // Now save everything to cache
-      saveToCache(year, rankingsRiders, teamsList, rankingsRiders.length);
+      saveToCache(2026, rankingsRiders, teamsList, rankingsRiders.length);
 
     } catch (error) {
     } finally {
@@ -441,9 +441,9 @@ export default function CreateRankingPage() {
   useEffect(() => {
     // Only load data if not already loaded
     if (rankedRiders.length === 0 && !loadingMore) {
-      fetchData({ year });
+      fetchData({ year: 2026 });
     }
-  }, [year, rankedRiders.length, loadingMore]);
+  }, [rankedRiders.length, loadingMore]);
 
   useEffect(() => {
     let filtered = rankedRiders;
@@ -522,13 +522,13 @@ export default function CreateRankingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ year: year, offset: 0 }),
+        body: JSON.stringify({ year: 2026, offset: 0 }),
       });
 
       const data = await response.json();
 
       // Refresh data after creation
-      await fetchData({ year: year });
+      await fetchData({ year: 2026 });
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -551,7 +551,7 @@ export default function CreateRankingPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ year: year, offset: currentOffset }),
+          body: JSON.stringify({ year: 2026, offset: currentOffset }),
         });
 
         if (!response.ok) {
@@ -579,7 +579,7 @@ export default function CreateRankingPage() {
     }
 
     // Refresh data after all rankings are created
-    await fetchData({ year: year });
+    await fetchData({ year: 2026 });
     setProgress({ current: 0, total: 0, isRunning: false });
     router.refresh();
   };
@@ -597,7 +597,7 @@ export default function CreateRankingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ year: year, teamName: 'q365-pro-cycling-team-2025' }),
+        body: JSON.stringify({ year: 2026, teamName: 'q365-pro-cycling-team-2025' }),
       });
 
       const data = await response.json();
@@ -640,15 +640,15 @@ export default function CreateRankingPage() {
           <Button onClick={() => getEnrichedTeams()} text="Get Enriched Teams" />
           <Button onClick={() => getEnrichedRiders()} text="Get Enriched Riders" />
           <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} />
-          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: year, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
-          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year: year, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
           <Button
             onClick={() => {
-              clearCache(year);
+              clearCache(2026);
               setRankedRiders([]);
               setTeamsList([]);
               setTotalCount(null);
-              fetchData({ year: year, forceRefresh: true });
+              fetchData({ year: 2026, forceRefresh: true });
             }}
             disabled={isLoading || progress.isRunning || loadingMore}
             className={`mr-[10px] ${usingCache ? 'bg-red-500' : 'bg-gray-500'}`}
