@@ -633,7 +633,11 @@ export default function CreateRankingPage() {
 
         <div className="flex items-center justify-start gap-5 my-5">
 
-          <Button text="update team" onClick={updateTeam} />
+          <Button
+            text={jobProgress?.status === 'running' ? `Updating... (${jobProgress.progress.percentage}%)` : 'Update Team'}
+            onClick={updateTeam}
+            disabled={isLoading || jobProgress?.status === 'running'}
+          />
 
           <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={createRanking} disabled={isLoading || progress.isRunning} />
 
@@ -666,6 +670,20 @@ export default function CreateRankingPage() {
           <div className="mb-2.5 p-2 bg-yellow-100 rounded text-sm">
             ⚠️ Only {rankedRiders.length} of {totalCount} riders loaded.
             Click <strong>&quot;Load All & Cache&quot;</strong> to load and save all data for later (one-time database cost).
+          </div>
+        )}
+
+        {jobProgress?.status === 'running' && (
+          <div className="mb-5 p-2.5 bg-blue-100 rounded">
+            <div className="mb-1">
+              Team Update Progress: {jobProgress.progress.percentage}% {jobProgress.progress.stage && `- ${jobProgress.progress.stage}`}
+            </div>
+            <div className="w-full bg-gray-300 rounded h-5">
+              <div
+                className="bg-blue-500 h-full rounded transition-all duration-300 ease-in-out"
+                style={{ width: `${jobProgress.progress.percentage}%` }}
+              />
+            </div>
           </div>
         )}
 
