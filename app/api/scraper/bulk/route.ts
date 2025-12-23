@@ -1,80 +1,63 @@
 import { NextRequest } from 'next/server';
-import { getStageResult, type RaceSlug } from '@/lib/scraper';
-import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
-
-// In-memory storage for progress tracking (use Redis in production)
-const bulkJobs = new Map<string, BulkScrapingJob>();
-
-interface BulkScrapingJob {
-  id: string;
-  race: string;
-  year: number;
-  totalStages: number;
-  status: 'running' | 'completed' | 'failed';
-  progress: {
-    current: number;
-    total: number;
-    percentage: number;
-  };
-  results: Array<{
-    stage: number;
-    success: boolean;
-    dataCount?: number;
-    error?: string;
-  }>;
-  errors: Array<{
-    stage: number;
-    error: string;
-  }>;
-  startedAt: string;
-  completedAt?: string;
-}
+import { createJob } from '@/lib/firebase/job-queue';
 
 export async function POST(request: NextRequest) {
   try {
-    const { race, year } = await request.json();
+    const { race, year, totalStages = 21 } = await request.json();
 
     if (!race || !year) {
-      return Response.json({ 
-        error: 'Missing required fields: race, year' 
-      }, { status: 400 });
+      return Response.json(
+        { error: 'Missing required fields: race, year' },
+        { status: 400 }
+      );
     }
 
-    // Create job
-    const jobId = `bulk-${race}-${year}-${Date.now()}`;
-    const job: BulkScrapingJob = {
-      id: jobId,
-      race,
-      year: Number(year),
-      totalStages: 21,
-      status: 'running',
+    // Create job in Firestore
+    const jobId = await createJob({
+      type: 'bulk-scrape',
+      status: 'pending',
+      priority: 5,
       progress: {
         current: 0,
-        total: 21,
+        total: totalStages,
         percentage: 0,
       },
-      results: [],
-      errors: [],
-      startedAt: new Date().toISOString(),
-    };
+      data: {
+        race,
+        year: Number(year),
+        totalStages,
+      },
+    });
 
-    bulkJobs.set(jobId, job);
+    // Trigger background processing
+    // We'll call the process endpoint asynchronously (fire and forget)
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3210';
 
-    // Start background scraping
-    scrapeAllStagesBackground(job);
+    fetch(`${baseUrl}/api/jobs/process/${jobId}`, {
+      method: 'POST',
+      headers: {
+        'x-internal-key': process.env.INTERNAL_API_KEY || 'dev-key',
+      },
+    }).catch((error) => {
+      console.error('Failed to trigger job processing:', error);
+    });
 
     return Response.json({
       success: true,
       jobId,
       message: 'Bulk scraping job started',
-      totalStages: 21,
-      checkStatusUrl: `/api/scraper/bulk/${jobId}`,
+      totalStages,
+      checkStatusUrl: `/api/jobs/${jobId}`,
     });
-
   } catch (_error) {
-    return Response.json({
-      error: _error instanceof Error ? _error.message : 'Unknown error'
-    }, { status: 500 });
+    return Response.json(
+      {
+        error: _error instanceof Error ? _error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -83,74 +66,11 @@ export async function GET(request: NextRequest) {
   const jobId = searchParams.get('jobId');
 
   if (jobId) {
-    const job = bulkJobs.get(jobId);
-    if (!job) {
-      return Response.json({ error: 'Job not found' }, { status: 404 });
-    }
-    return Response.json(job);
+    // Redirect to new job endpoint
+    return Response.redirect(`/api/jobs/${jobId}`);
   }
 
-  // Return all jobs
   return Response.json({
-    jobs: Array.from(bulkJobs.values()),
+    message: 'Use /api/jobs/{jobId} to check job status',
   });
-}
-
-async function scrapeAllStagesBackground(job: BulkScrapingJob) {
-  try {
-    for (let stageNum = 1; stageNum <= job.totalStages; stageNum++) {
-      // Update progress
-      job.progress.current = stageNum;
-      job.progress.percentage = Math.round((stageNum / job.totalStages) * 100);
-      bulkJobs.set(job.id, job);
-
-      try {
-        const stageData = await getStageResult({
-          race: job.race as RaceSlug,
-          year: job.year,
-          stage: stageNum
-        });
-
-        const stageKey: ScraperDataKey = {
-          race: job.race,
-          year: job.year,
-          type: 'stage',
-          stage: stageNum,
-        };
-
-        await saveScraperData(stageKey, stageData);
-        
-        const stageCount = 'stageResults' in stageData ? stageData.stageResults.length : 0;
-        
-        job.results.push({
-          stage: stageNum,
-          success: true,
-          dataCount: stageCount
-        });
-
-      } catch (_error) {
-        const errorMsg = _error instanceof Error ? _error.message : 'Unknown error';
-        job.errors.push({ stage: stageNum, error: errorMsg });
-        job.results.push({
-          stage: stageNum,
-          success: false,
-          error: errorMsg
-        });
-      }
-
-      // Update job in map
-      bulkJobs.set(job.id, job);
-    }
-
-    // Mark job as completed
-    job.status = 'completed';
-    job.completedAt = new Date().toISOString();
-    job.progress.percentage = 100;
-    bulkJobs.set(job.id, job);
-
-  } catch (_error) {
-    job.status = 'failed';
-    job.completedAt = new Date().toISOString();
-    bulkJobs.set(job.id, job);
-  }
 }

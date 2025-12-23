@@ -14,21 +14,19 @@ import { List } from 'react-window';
 import { Flag } from "@/components/Flag";
 import countriesList from '@/lib/country.json';
 import toast from "react-hot-toast";
-import { useStreamGroup } from "@motiadev/stream-client-react";
+import { useJobProgress } from "@/hooks/useJobProgress";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRankings } from "@/contexts/RankingsContext";
 
 export default function CreateRankingPage() {
   const router = useRouter();
-  const { riders: rankingsRiders, refetch: refetchRankings, year } = useRankings();
+  const { riders: rankingsRiders, refetch: refetchRankings } = useRankings();
   const [isLoading, setIsLoading] = useState(false);
   const [rankedRiders, setRankedRiders] = useState<Rider[]>([]);
   const [teamsList, setTeamsList] = useState<Team[]>([]);
   const [teamsArray, setTeamsArray] = useState<Team[]>([]);
-  const [traceId, setTraceId] = useState<string | null>(null);
-  const [loadingToastId, setLoadingToastId] = useState<string | undefined>(undefined);
-  const [processedStages, setProcessedStages] = useState<Set<string>>(new Set());
+  const [jobId, setJobId] = useState<string | null>(null);
 
   const [selectedPlayers, setSelectedPlayers] = useState<Rider[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
@@ -96,59 +94,38 @@ export default function CreateRankingPage() {
   }, []);
 
 
-  const streamGroup = useStreamGroup<{ id: string, stage: string, year: number, teamName: string, dataTeams?: Team[], dataRiders?: Rider[] }>({
-    streamName: 'updates',
-    groupId: traceId || 'default'
-  })
+  // Use job progress polling instead of WebSocket
+  const { progress: jobProgress } = useJobProgress(jobId, {
+    onProgress: (data) => {
+      // Show toast based on progress stage
+      const stage = data.progress.stage;
 
-
-  useEffect(() => {
-    if (streamGroup && streamGroup.data && streamGroup.data.length > 0) {
-      // Get all stages from the stream group data array
-      const stages = streamGroup.data.filter((item: Record<string, unknown>) => item && item.stage).map((item: Record<string, unknown>) => item.stage);
-
-      // Process stages in order: fetching-team, update-team, fetching-riders, update-riders
-      const stageOrder = ['fetching-team', 'update-team', 'fetching-riders', 'update-riders'];
-
-      // Find new stages to process
-      const newStagesToProcess = stageOrder.filter(
-        (expectedStage) => stages.includes(expectedStage) && !processedStages.has(expectedStage)
-      );
-
-      if (newStagesToProcess.length > 0) {
-        // Process stages sequentially with delays
-        let delay = 0;
-        newStagesToProcess.forEach((expectedStage) => {
-          setTimeout(() => {
-
-            // Dismiss initial loading toast on first stage
-            if (expectedStage === 'fetching-team' && loadingToastId) {
-              toast.dismiss(loadingToastId);
-            }
-
-            // Show different toasts based on the stage
-            if (expectedStage === 'fetching-team') {
-              toast.loading('Fetching team data...', { id: 'progress-toast' });
-            } else if (expectedStage === 'update-team') {
-              toast.dismiss('progress-toast');
-              toast.success('Team data updated! 🏆', { duration: 2000 });
-            } else if (expectedStage === 'fetching-riders') {
-              toast.loading('Fetching riders data...', { id: 'progress-toast' });
-            } else if (expectedStage === 'update-riders') {
-              toast.dismiss('progress-toast');
-              toast.success('Riders data updated! 🚴', { duration: 3000 });
-            }
-
-            // Mark this stage as processed
-            setProcessedStages(prev => new Set([...prev, expectedStage]));
-          }, delay);
-
-          // Add delay for next stage (500ms between stages)
-          delay += 500;
-        });
+      if (stage === 'fetching-team') {
+        toast.loading('Fetching team data...', { id: 'progress-toast' });
+      } else if (stage === 'update-team') {
+        toast.dismiss('progress-toast');
+        toast.success('Team data updated! 🏆', { duration: 2000 });
+        toast.loading('Fetching riders data...', { id: 'progress-toast' });
+      } else if (stage === 'fetching-riders') {
+        toast.loading('Fetching riders data...', { id: 'progress-toast' });
+      } else if (stage === 'update-riders') {
+        toast.dismiss('progress-toast');
+        toast.success('Riders data updated! 🚴', { duration: 3000 });
       }
-    }
-  }, [streamGroup, processedStages, loadingToastId])
+    },
+    onComplete: () => {
+      toast.dismiss('progress-toast');
+      toast.success('Team update completed!');
+      setJobId(null); // Stop polling
+      setIsLoading(false);
+    },
+    onError: (error) => {
+      toast.dismiss('progress-toast');
+      toast.error(error.error || 'Team update failed');
+      setJobId(null);
+      setIsLoading(false);
+    },
+  })
 
 
 
@@ -165,7 +142,7 @@ export default function CreateRankingPage() {
 
       try {
         console.log(`[${i + 1}/${teamsArray.length}] Enriching riders for team: ${teamSlug}`);
-        const response = await fetch(`/api/setEnrichedRiders?year=${year}&team=${teamSlug}`);
+        const response = await fetch(`/api/setEnrichedRiders?year=2026&team=${teamSlug}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -199,7 +176,7 @@ export default function CreateRankingPage() {
 
       try {
         console.log(`[${i + 1}/${teamsArray.length}] Enriching team: ${teamSlug}`);
-        const response = await fetch(`/api/setEnrichedTeams?year=${year}&team=${teamSlug}`);
+        const response = await fetch(`/api/setEnrichedTeams?year=2026&team=${teamSlug}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -349,7 +326,7 @@ export default function CreateRankingPage() {
       const response = await fetch('/api/updateRiderTeam', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ riderId, teamSlug, year }),
+        body: JSON.stringify({ riderId, teamSlug, year: 2026 }),
       });
 
       if (!response.ok) {
@@ -431,7 +408,7 @@ export default function CreateRankingPage() {
 
   const loadMoreRiders = () => {
     if (!loadingMore && totalCount && rankedRiders.length < totalCount) {
-      fetchData({ year: year, append: true });
+      fetchData({ year: 2026, append: true });
     }
   };
 
@@ -453,7 +430,7 @@ export default function CreateRankingPage() {
       setTotalCount(rankingsRiders.length);
 
       // Now save everything to cache
-      saveToCache(year, rankingsRiders, teamsList, rankingsRiders.length);
+      saveToCache(2026, rankingsRiders, teamsList, rankingsRiders.length);
 
     } catch (error) {
     } finally {
@@ -464,9 +441,9 @@ export default function CreateRankingPage() {
   useEffect(() => {
     // Only load data if not already loaded
     if (rankedRiders.length === 0 && !loadingMore) {
-      fetchData({ year });
+      fetchData({ year: 2026 });
     }
-  }, [year, rankedRiders.length, loadingMore]);
+  }, [rankedRiders.length, loadingMore]);
 
   useEffect(() => {
     let filtered = rankedRiders;
@@ -545,13 +522,13 @@ export default function CreateRankingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ year: year, offset: 0 }),
+        body: JSON.stringify({ year: 2026, offset: 0 }),
       });
 
       const data = await response.json();
 
       // Refresh data after creation
-      await fetchData({ year: year });
+      await fetchData({ year: 2026 });
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -574,7 +551,7 @@ export default function CreateRankingPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ year: year, offset: currentOffset }),
+          body: JSON.stringify({ year: 2026, offset: currentOffset }),
         });
 
         if (!response.ok) {
@@ -602,7 +579,7 @@ export default function CreateRankingPage() {
     }
 
     // Refresh data after all rankings are created
-    await fetchData({ year: year });
+    await fetchData({ year: 2026 });
     setProgress({ current: 0, total: 0, isRunning: false });
     router.refresh();
   };
@@ -612,9 +589,7 @@ export default function CreateRankingPage() {
     setIsLoading(true);
 
     // Show loading toast immediately
-    const toastId = toast.loading('Starting update...');
-    setLoadingToastId(toastId);
-    setProcessedStages(new Set()); // Reset for the new update
+    toast.loading('Starting team update...', { id: 'progress-toast' });
 
     try {
       const response = await fetch('/api/updateTeam', {
@@ -622,27 +597,29 @@ export default function CreateRankingPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ year: year, teamName: 'q365-pro-cycling-team-2025' }),
+        body: JSON.stringify({ year: 2026, teamName: 'q365-pro-cycling-team-2025' }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        toast.dismiss(toastId);
-        toast.error('Failed to update team');
+        toast.dismiss('progress-toast');
+        toast.error('Failed to start team update');
+        setIsLoading(false);
       } else {
-        if (data.traceId) {
-          setTraceId(data.traceId);
+        if (data.jobId) {
+          setJobId(data.jobId); // Start polling
         } else {
-          console.warn('No traceId in response');
-          toast.dismiss(toastId);
+          console.warn('No jobId in response');
+          toast.dismiss('progress-toast');
+          toast.error('No job ID returned');
+          setIsLoading(false);
         }
       }
     } catch (error) {
-      console.error(error)
-      toast.dismiss(toastId);
+      console.error(error);
+      toast.dismiss('progress-toast');
       toast.error('An error occurred');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -663,15 +640,15 @@ export default function CreateRankingPage() {
           <Button onClick={() => getEnrichedTeams()} text="Get Enriched Teams" />
           <Button onClick={() => getEnrichedRiders()} text="Get Enriched Riders" />
           <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} />
-          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: year, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
-          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year: year, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
           <Button
             onClick={() => {
-              clearCache(year);
+              clearCache(2026);
               setRankedRiders([]);
               setTeamsList([]);
               setTotalCount(null);
-              fetchData({ year: year, forceRefresh: true });
+              fetchData({ year: 2026, forceRefresh: true });
             }}
             disabled={isLoading || progress.isRunning || loadingMore}
             className={`mr-[10px] ${usingCache ? 'bg-red-500' : 'bg-gray-500'}`}

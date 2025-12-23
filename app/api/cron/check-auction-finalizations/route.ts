@@ -1,0 +1,228 @@
+import { NextRequest } from 'next/server';
+import { adminDb as db } from '@/lib/firebase/server';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes
+
+/**
+ * Cron job to check and finalize auction periods
+ * Runs every minute (same as Motia finalization-checker)
+ *
+ * This replaces:
+ * - finalization-checker.step.ts
+ * - check-pending-finalizations.step.ts
+ * - auction-finalize.step.ts
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // Verify Vercel Cron secret
+    const authHeader = request.headers.get('authorization');
+    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+
+    if (authHeader !== expectedAuth) {
+      console.error('[CRON] Unauthorized access attempt');
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const checkTime = new Date();
+    console.log('[CRON] Checking auction finalizations and status updates', {
+      checkTime: checkTime.toISOString(),
+    });
+
+    const results = {
+      gamesChecked: 0,
+      statusUpdates: 0,
+      finalizationsTriggered: 0,
+      errors: [] as string[],
+    };
+
+    // Get all games with auction periods
+    const gamesSnapshot = await db.collection('games').get();
+
+    results.gamesChecked = gamesSnapshot.size;
+    console.log(`[CRON] Found ${gamesSnapshot.size} games to check`);
+
+    for (const gameDoc of gamesSnapshot.docs) {
+      const game = gameDoc.data();
+      const gameId = gameDoc.id;
+
+      // Only process games with auction periods
+      if (!game.config?.auctionPeriods || !Array.isArray(game.config.auctionPeriods)) {
+        continue;
+      }
+
+      try {
+        let gameNeedsUpdate = false;
+        let gameStatusNeedsUpdate = false;
+        let newGameStatus = game.status;
+        const updatedPeriods = [];
+
+        for (const period of game.config.auctionPeriods) {
+          let updatedPeriod = { ...period };
+          let periodChanged = false;
+
+          // Convert dates to Date objects
+          const toDate = (value: any): Date | null => {
+            if (!value) return null;
+            if (value instanceof Date) return value;
+            if (typeof value === 'string') return new Date(value);
+            if (typeof value.toDate === 'function') return value.toDate();
+            return null;
+          };
+
+          const startDate = toDate(period.startDate);
+          const endDate = toDate(period.endDate);
+          const finalizeDate = period.finalizeDate ? toDate(period.finalizeDate) : null;
+
+          // Automatic status transitions based on dates
+          if (startDate && endDate) {
+            // 1. Check if auction should become active
+            if (period.status === 'pending' && checkTime >= startDate && checkTime < endDate) {
+              updatedPeriod.status = 'active';
+              periodChanged = true;
+              console.log('[CRON] Auto-updating period status to active', {
+                gameId,
+                periodName: period.name,
+              });
+
+              // Also update game status to 'bidding' if not already
+              if (game.status === 'registration') {
+                newGameStatus = 'bidding';
+                gameStatusNeedsUpdate = true;
+                console.log('[CRON] Auto-updating game status to bidding', {
+                  gameId,
+                  periodName: period.name,
+                });
+              }
+            }
+
+            // 2. Check if auction should be closed (but not finalized yet)
+            if (period.status === 'active' && checkTime >= endDate) {
+              // Only close if we don't have a finalize date, or if finalize date hasn't been reached
+              if (!finalizeDate || checkTime < finalizeDate) {
+                updatedPeriod.status = 'closed';
+                periodChanged = true;
+                console.log('[CRON] Auto-updating period status to closed', {
+                  gameId,
+                  periodName: period.name,
+                });
+              }
+            }
+          }
+
+          // 3. Check if auction should be finalized
+          if (finalizeDate && checkTime >= finalizeDate) {
+            // Only finalize if status is active or closed (NOT if already finalized or pending)
+            if (period.status === 'active' || period.status === 'closed') {
+              console.log('[CRON] Finalizing auction period', {
+                gameId,
+                gameName: game.name,
+                periodName: period.name,
+                finalizeDate: finalizeDate.toISOString(),
+                currentStatus: period.status,
+              });
+
+              // Call the finalize API endpoint
+              try {
+                const apiBaseUrl = process.env.VERCEL_URL
+                  ? `https://${process.env.VERCEL_URL}`
+                  : 'https://oracle-games.online';
+
+                const response = await fetch(`${apiBaseUrl}/api/games/${gameId}/bids/finalize`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    auctionPeriodName: period.name,
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                  console.error('[CRON] Finalize API failed', {
+                    gameId,
+                    periodName: period.name,
+                    status: response.status,
+                    error: errorData.error,
+                  });
+                  results.errors.push(`Finalize failed for ${gameId}/${period.name}: ${errorData.error}`);
+                } else {
+                  results.finalizationsTriggered++;
+                  console.log('[CRON] Auction finalized successfully', {
+                    gameId,
+                    periodName: period.name,
+                  });
+                }
+              } catch (error) {
+                console.error('[CRON] Error finalizing auction', {
+                  gameId,
+                  periodName: period.name,
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                });
+                results.errors.push(`Finalize error for ${gameId}/${period.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
+
+              // Status will be updated to 'finalized' by the finalize endpoint
+              // So we don't update it here to avoid race conditions
+              continue;
+            } else if (period.status === 'finalized') {
+              // Skip periods that are already finalized
+              continue;
+            }
+          }
+
+          if (periodChanged) {
+            results.statusUpdates++;
+            gameNeedsUpdate = true;
+          }
+
+          updatedPeriods.push(updatedPeriod);
+        }
+
+        // Update game if any periods changed or game status needs update
+        if (gameNeedsUpdate || gameStatusNeedsUpdate) {
+          const updateData: any = {
+            updatedAt: new Date().toISOString(),
+          };
+
+          if (gameStatusNeedsUpdate) {
+            updateData.status = newGameStatus;
+          }
+
+          if (gameNeedsUpdate) {
+            updateData['config.auctionPeriods'] = updatedPeriods;
+          }
+
+          await gameDoc.ref.update(updateData);
+
+          console.log('[CRON] Successfully auto-updated game', {
+            gameId,
+            statusUpdated: gameStatusNeedsUpdate,
+            periodsUpdated: gameNeedsUpdate,
+          });
+        }
+      } catch (error) {
+        console.error(`[CRON] Error processing game ${gameId}:`, error);
+        results.errors.push(`Error processing ${gameId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    console.log('[CRON] Check complete', results);
+
+    return Response.json({
+      success: true,
+      timestamp: checkTime.toISOString(),
+      ...results,
+    });
+  } catch (error) {
+    console.error('[CRON] Error in check-auction-finalizations:', error);
+    return Response.json(
+      {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+}

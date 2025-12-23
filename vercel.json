@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-auction-finalizations",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/send-message-notifications",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-expired-jobs",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

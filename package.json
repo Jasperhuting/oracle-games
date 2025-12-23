@@ -25,7 +25,6 @@
   "dependencies": {
     "@ariakit/react": "^0.4.20",
     "@floating-ui/dom": "^1.7.4",
-    "@motiadev/stream-client-react": "^0.8.4-beta.141",
     "@tabler/icons-react": "^3.36.0",
     "@tiptap/core": "^3.12.1",
     "@tiptap/extension-link": "^3.11.1",
@@ -45,7 +44,6 @@
     "framer-motion": "^12.23.24",
     "i18next": "^25.7.2",
     "i18next-icu": "^2.4.1",
-    "mailersend": "^2.6.0",
     "next": "15.5.7",
     "openai": "^6.8.0",
     "puppeteer": "^24.31.0",
@@ -63,6 +61,7 @@
     "react-range-slider-input": "^3.3.2",
     "react-virtualized-auto-sizer": "^1.0.26",
     "react-window": "^2.2.1",
+    "resend": "^6.6.0",
     "tabler-icons-react": "^1.56.0",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.76"
