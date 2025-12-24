@@ -17,9 +17,9 @@ export const MyAuctionBids = ({ isWorldtour, myBids, className, availableRiders,
         <div>
             {myBids.map((bid, idx) => {
                 const rider: Rider = availableRiders.find((rider: any) => rider.id === bid.riderNameId || rider.nameID === bid.riderNameId);
-                return <div key={bid.id} className={`relative flex border rounded-md border-gray-100 px-2 justify-start gap-4 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                return <div key={bid.id} className={`relative -z-10 flex border rounded-md border-gray-100 px-2 justify-start gap-4 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
                     <span className="flex-1 text-xs truncate absolute bottom-0 text-gray-400 max-w-[170px]">{rider?.team?.name || ''}</span>
-                    <span className="flex-1 pb-4 text-sm pt-1 flex items-center gap-1">
+                    <span className={`flex-1 ${rider.team?.name ? 'pb-4' : ''} text-sm pt-1 flex items-center gap-1 whitespace-nowrap`}>
                         {qualifiesAsNeoProf(rider, game?.config || {}) ? <Star size="8" /> : null}
                         {bid.riderName}
                     </span>

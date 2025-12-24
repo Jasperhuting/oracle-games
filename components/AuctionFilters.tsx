@@ -43,7 +43,7 @@ export const AuctionFilters = ({
 
     const { t } = useTranslation();
 
-    return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 rounded-md p-2">
+    return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 sticky top-0 rounded-md p-2">
         <div className="flex flex-col gap-4">
 
         <span className="flex flex-col flex-1">
@@ -93,19 +93,19 @@ export const AuctionFilters = ({
                 />
             </div>
         </span>
+        <div className="flex flex-row flex-1 gap-2 justify-start">
         <span className="flex flex-col flex-1 justify-center">
-            <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                {game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')}
-            </label>
-            <Button text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
+            <Button className="whitespace-nowrap" text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
         </span>
 
         {game.gameType === 'worldtour-manager' ? (
-                  <Button onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
-                    <span className={`flex flex-row gap-2 items-center`}>
+            <span>
+                  <Button  onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
+                    <span className={`flex flex-row gap-2 items-center whitespace-nowrap`}>
                       {showOnlyFillers ? <><Users size="15" />{t('global.showAllRiders')}</> : <><Star size="15" />{t('global.showOnlyFillers')}</>}
                     </span>
                   </Button>
+                  </span>
                 ) : (sortedAndFilteredRiders.find((rider) => rider.soldTo) || hideSoldPlayers) && <>
                 <div><label className="text-sm font-bold text-gray-700" htmlFor="hide-sold-players">{t('global.soldPlayersLabel')}</label>
                 <Toggle
@@ -117,6 +117,7 @@ export const AuctionFilters = ({
                 />
                 </div>
                 </>}
+                </div>
         </div>
     </Collapsible>
 }

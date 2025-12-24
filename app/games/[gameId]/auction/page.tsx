@@ -22,6 +22,35 @@ import { AuctionFilters } from "@/components/AuctionFilters";
 import { qualifiesAsNeoProf } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
 import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
+import { AddRiderTab } from "@/components/AddRiderTab";
+
+// Custom hook to monitor cookie changes
+function useCookieValue(cookieName: string) {
+  const [value, setValue] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getCookie = () => {
+      const cookies = document.cookie.split('; ');
+      const cookie = cookies.find(c => c.startsWith(`${cookieName}=`));
+      return cookie ? cookie.split('=')[1] : null;
+    };
+
+    // Set initial value
+    setValue(getCookie());
+
+    // Check for cookie changes periodically
+    const interval = setInterval(() => {
+      const newValue = getCookie();
+      if (newValue !== value) {
+        setValue(newValue);
+      }
+    }, 1000); // Check every second
+
+    return () => clearInterval(interval);
+  }, [cookieName]);
+
+  return value;
+}
 
 export interface GameData {
   id: string;
@@ -136,6 +165,10 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [activeAuctionPeriodTab, setActiveAuctionPeriodTab] = useState(0);
 
   const [alleBiedingen, setAlleBiedingen] = useState<Bid[]>([]); // Naam aanpassen TODO:
+
+  // Get banner visibility from cookie with change detection
+  const hideBannerCookie = useCookieValue('hide-beta-banner');
+  const hideBanner = hideBannerCookie === 'true';
 
   useEffect(() => {
     params.then(p => {
@@ -1108,8 +1141,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 ]} />
 
             </div>
-            {/* <div className={`bg-white rounded-md border border-gray-200 p-4 ${game.gameType === 'worldtour-manager' ? 'relative' : 'sticky top-[142px]'} z-20 self-start`}>sidebar */}
-            <div className={`bg-white rounded-md border border-gray-200 p-4 relative z-20 self-start`}>{/* sidebar */}
+            
+            <div className={`bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start`} style={{ top: hideBanner ? '107px' : '142px' }}>
+            
 
               {!auctionActive && (
                 <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
@@ -1133,7 +1167,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 </div>
               )}
 
-              <div className="flex flex-col gap-4">
+              <div className="flex relative h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
                 <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
                 <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
                 {myAuctionBids.length > 0 && <MyAuctionBids game={game} isWorldtour={game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains'} availableRiders={availableRiders} myBids={myAuctionBids} />}
