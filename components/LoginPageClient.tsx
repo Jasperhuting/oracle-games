@@ -33,6 +33,8 @@ export default function LoginPageClient() {
                 <Image
                     src="/homepage_picture_5.jpg"
                     alt="Oracle Games"
+                    width={1920}
+                    height={1080}
                     fill
                     className="object-cover object-[25%_50%]"
                     priority

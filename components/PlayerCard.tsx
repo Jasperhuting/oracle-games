@@ -3,6 +3,7 @@ import { Flag } from "./Flag";
 import { Minus, Plus } from "tabler-icons-react";
 import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { ReactNode } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Rider } from "@/lib/scraper";
 import { ParticipantData } from "@/app/games/[gameId]/auction/page";
@@ -51,7 +52,23 @@ export const PlayerCard = (
         <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && !myTeam && "opacity-60 bg-gray-50", className)}>        
             <div className="flex items-center justify-start gap-3 divide-[#CAC4D0] divide-x-2 pb-2">
                 <span className="pr-0 min-w-[55px]">
-                    {jerseyImage ? <img src={`https://www.procyclingstats.com/${jerseyImage}`} alt={player?.name} style={{ width: '50px' }} className={isSold ? 'opacity-50' : ''} /> : <img src="/jersey-transparent.png" alt={player?.name} style={{ width: '50px' }} className={isSold ? 'opacity-50' : ''} />}
+                    {jerseyImage ? (
+                        <Image
+                            src={`https://www.procyclingstats.com/${jerseyImage}`}
+                            alt={player?.name}
+                            width={50}
+                            height={50}
+                            className={isSold ? 'opacity-50' : ''}
+                        />
+                    ) : (
+                        <Image
+                            src="/jersey-transparent.png"
+                            alt={player?.name}
+                            width={50}
+                            height={50}
+                            className={isSold ? 'opacity-50' : ''}
+                        />
+                    )}
                 </span>
                 <div className="flex flex-col gap-2 min-w-0 flex-1">
                     <span className="flex items-end content-end gap-2 min-w-0">

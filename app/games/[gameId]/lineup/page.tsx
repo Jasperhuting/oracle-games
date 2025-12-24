@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { TeamGroupedRiderSelector } from "@/components/TeamGroupedRiderSelector";
@@ -479,7 +480,15 @@ Riders removed: ${result.ridersRemoved}`,
                         <div className="col-span-2 text-sm text-gray-600">{team.class || '-'}</div>
                         <div className="col-span-2 text-sm">{team.points || 0}</div>
                         <div className="col-span-1">
-                          {team.image && <img src={`https://www.procyclingstats.com/${team.image}`} alt={team.name} className="w-6 h-6" />}
+                          {team.image && (
+                            <Image
+                              src={`https://www.procyclingstats.com/${team.image}`}
+                              alt={team.name}
+                              width={24}
+                              height={24}
+                              className="w-6 h-6"
+                            />
+                          )}
                         </div>
                         <div className="col-span-1 flex justify-end">
                           <button

@@ -72,7 +72,7 @@ export default function VerifyEmailPageClient() {
 
                 <div className="flex flex-row border-b border-gray-200 pb-4 max-w-[300px] items-center mb-8">
                     <div>
-                        <img src="/logo.png" alt="" />
+                        <Image src="/logo.png" alt="" width={50} height={50} />
                     </div>
                     <div className="flex-1 whitespace-nowrap text-3xl">
                         Oracle Games
@@ -132,8 +132,8 @@ export default function VerifyEmailPageClient() {
                     </div>
                 </div>
             </div>
-            <div className="w-0 md:flex-1">
-                <img src="/homepage_picture_3.jpg" className="w-full h-full object-cover object-[25%_50%]" alt="" />
+            <div className="w-0 md:flex-1 relative">
+                <Image src="/homepage_picture_3.jpg" fill className="object-cover object-[25%_50%]" alt="" />
             </div>
         </div>
     );

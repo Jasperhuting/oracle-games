@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { useDebounce } from "@uidotdev/usehooks";
 import { Rider } from "@/lib/scraper/types";
 import { PlayerRow } from "./PlayerRow";
@@ -246,7 +247,25 @@ export const TeamGroupedRiderSelector = ({
                         className="flex-1 flex items-center justify-between text-left font-medium text-gray-900 hover:text-primary transition-colors cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <span>{group.teamImage ? <img src={`https://www.procyclingstats.com/${group?.teamImage}`} alt={group.teamName} className="w-8 h-8" /> : <img src="/jersey-transparent.png" className="w-8 h-8" />}</span>
+                          <span>
+                            {group.teamImage ? (
+                              <Image
+                                src={`https://www.procyclingstats.com/${group?.teamImage}`}
+                                alt={group.teamName}
+                                width={32}
+                                height={32}
+                                className="w-8 h-8"
+                              />
+                            ) : (
+                              <Image
+                                src="/jersey-transparent.png"
+                                alt={group.teamName}
+                                width={32}
+                                height={32}
+                                className="w-8 h-8"
+                              />
+                            )}
+                          </span>
                           <span>{group.teamName}</span>
                           <span className="text-sm text-gray-500">
                             ({group.riders.length} riders)

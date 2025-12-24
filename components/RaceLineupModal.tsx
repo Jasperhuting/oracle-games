@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
 import { PlayerSelector } from "./PlayerSelector";
 import { TeamSelector } from "./TeamSelector";
-import { Team, Rider } from "@/lib/scraper/types";
+import { Team } from "@/lib/scraper/types";
+import { Rider } from "@/lib/types/rider";
 import { Flag } from "./Flag";
 
 interface RaceLineupModalProps {
@@ -49,26 +51,20 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
         }));
 
         // Convert API riders to Rider type
-        const riders: Rider[] = (data.riders || []).map((r: Rider) => ({
+        const riders: Rider[] = (data.riders || []).map((r: any) => ({
           id: r.id,
           name: r.name,
           firstName: r.firstName,
           lastName: r.lastName,
           country: r.country,
-          startNumber: r.startNumber,
+          nameID: r.id,
           rank: r.rank || 0,
           points: r.points || 0,
-          team: {
+          team: r.team ? {
             name: r.team,
-            rank: 0,
-            nameID: r.teamId || '',
-            slug: r.teamId || '',
-            class: '',
-            country: r.country || '',
-            points: 0,
-          },
-          nameID: r.id,
-          dropout: false,
+            id: r.teamId || '',
+          } : undefined,
+          teamId: r.teamId,
         }));
 
         setAllTeams(teams);
@@ -361,7 +357,15 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                               <div className="col-span-2 text-sm text-gray-600">{team.class || '-'}</div>
                               <div className="col-span-2 text-sm">{team.points || 0}</div>
                               <div className="col-span-1">
-                                {team.image && <img src={`https://www.procyclingstats.com/${team.image}`} alt={team.name} className="w-6 h-6" />}
+                                {team.image && (
+                                  <Image
+                                    src={`https://www.procyclingstats.com/${team.image}`}
+                                    alt={team.name}
+                                    width={24}
+                                    height={24}
+                                    className="w-6 h-6"
+                                  />
+                                )}
                               </div>
                               <div className="col-span-1 flex justify-end">
                                 <button

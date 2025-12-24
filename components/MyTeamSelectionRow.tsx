@@ -1,4 +1,5 @@
 import { Minus, X } from "tabler-icons-react";
+import Image from "next/image";
 import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
@@ -42,7 +43,15 @@ export const MyTeamSelectionRow = (
                     #{rider.rank}
                 </div>
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {rider.team?.teamImage && <img src={`https://www.procyclingstats.com/${rider.team?.teamImage}`} alt={rider?.name} style={{ width: '30px' }} className="flex-shrink-0" />}
+                    {rider.team?.teamImage && (
+                        <Image
+                            src={`https://www.procyclingstats.com/${rider.team?.teamImage}`}
+                            alt={rider?.name}
+                            width={30}
+                            height={30}
+                            className="flex-shrink-0"
+                        />
+                    )}
                     <Flag countryCode={rider.country} />
                     <div className="flex flex-col min-w-0">
                         <span className="whitespace-nowrap font-medium">{rider.name}</span>

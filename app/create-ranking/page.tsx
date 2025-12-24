@@ -16,6 +16,7 @@ import countriesList from '@/lib/country.json';
 import toast from "react-hot-toast";
 import { useJobProgress } from "@/hooks/useJobProgress";
 import Link from "next/link";
+import Image from "next/image";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRankings } from "@/contexts/RankingsContext";
 
@@ -916,7 +917,27 @@ export default function CreateRankingPage() {
                             <Flag countryCode={team.country} />
                           </div>}</div>}
                           
-                          {viewImage && <div>{team?.teamImage ? <img src={`https://www.procyclingstats.com/${team?.teamImage}`} alt={team?.name} className="w-[30px] h-[30px]" /> : <img src="/jersey-transparent.png" className="w-[30px] h-[30px]" />}</div>}
+                          {viewImage && (
+                            <div>
+                              {team?.teamImage ? (
+                                <Image
+                                  src={`https://www.procyclingstats.com/${team?.teamImage}`}
+                                  alt={team?.name}
+                                  width={30}
+                                  height={30}
+                                  className="w-[30px] h-[30px]"
+                                />
+                              ) : (
+                                <Image
+                                  src="/jersey-transparent.png"
+                                  alt={team?.name}
+                                  width={30}
+                                  height={30}
+                                  className="w-[30px] h-[30px]"
+                                />
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     }}

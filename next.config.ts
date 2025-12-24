@@ -16,6 +16,20 @@ const nextConfig: NextConfig = {
     'puppeteer-extra-plugin-stealth',
     "@sparticuz/chromium-min"
   ],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'www.procyclingstats.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'storage.livescore.com',
+        pathname: '/images/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

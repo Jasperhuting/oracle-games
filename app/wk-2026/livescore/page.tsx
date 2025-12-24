@@ -27,7 +27,13 @@ export default async function LiveScorePage() {
 
                 return (<div key={game.Eid} className="mb-4 p-4 border rounded bg-gray-900 text-white flex items-center gap-4 justify-center">
                     <div className="flex items-center justify-end gap-2 w-[30%]">
-                        <img src={`https://storage.livescore.com/images/team/medium/${homeTeam.Img}`} alt={homeTeam.Nm} className="w-8 h-8" />
+                        <Image
+                            src={`https://storage.livescore.com/images/team/medium/${homeTeam.Img}`}
+                            alt={homeTeam.Nm}
+                            width={32}
+                            height={32}
+                            className="w-8 h-8"
+                        />
                         <strong className="text-lg">{homeTeam.Nm}</strong>
                         <span className={`ml-4 text-lg font-bold ${!gameIsFinished ? (isHomeWin ? 'text-green-400' : isDraw ? 'text-yellow-400' : 'text-gray-200') : ''}`}>{homeScore}</span>
                     </div>
@@ -38,7 +44,13 @@ export default async function LiveScorePage() {
                     <div className="flex items-center justify-start gap-2 w-[30%]">
                         <span className={`mr-4 text-lg font-bold ${!gameIsFinished ? (isAwayWin ? 'text-green-600' : isDraw ? 'text-yellow-400' : 'text-gray-200') : ''}`}>{awayScore}</span>
                         <strong className={`text-lg`}>{awayTeam.Nm}</strong>
-                        <img src={`https://storage.livescore.com/images/team/medium/${awayTeam.Img}`} alt={awayTeam.Nm} className="w-8 h-8" />
+                        <Image
+                            src={`https://storage.livescore.com/images/team/medium/${awayTeam.Img}`}
+                            alt={awayTeam.Nm}
+                            width={32}
+                            height={32}
+                            className="w-8 h-8"
+                        />
                     </div>
                 </div>)
             })}
