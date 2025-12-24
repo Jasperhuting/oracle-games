@@ -274,7 +274,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           );
 
           const soldData = soldRidersMap.get(riderNameId);
-          const isSold = !!soldData;
+          // Only mark riders as sold for bidding game types, not for selection games
+          const isBiddingGame = gameData.game.gameType === 'auction' || gameData.game.gameType === 'auctioneer';
+          const isSold = isBiddingGame && !!soldData;
           const soldTo = soldData?.ownerName;
           const pricePaid = soldData?.pricePaid;
 
@@ -446,7 +448,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
         // Check if rider is already sold
         const soldData = soldRidersMap.get(riderNameId);
-        const isSold = !!soldData;
+        // Only mark riders as sold for bidding game types, not for selection games
+        const isBiddingGame = gameData?.game?.gameType === 'auction' || gameData?.game?.gameType === 'auctioneer';
+        const isSold = isBiddingGame && !!soldData;
         const soldTo = soldData?.ownerName;
         const pricePaid = soldData?.pricePaid;
 
