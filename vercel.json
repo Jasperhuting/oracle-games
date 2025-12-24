@@ -13,6 +13,10 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/cron/send-birthday-notifications",
+      "schedule": "0 12 * * *"
+    },
+    {
       "path": "/api/cron/cleanup-expired-jobs",
       "schedule": "0 2 * * *"
     }
