@@ -12,6 +12,7 @@ export interface AddRiderRequest {
   points: number;
   rank: number;
   year?: number;
+  age?: string; // Date string in YYYY-MM-DD format
 }
 
 export async function POST(req: NextRequest) {
@@ -20,7 +21,10 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     const requiredFields = ['name', 'firstName', 'lastName', 'nameID', 'country', 'points', 'rank'];
-    const missingFields = requiredFields.filter(field => !riderData[field as keyof AddRiderRequest]);
+    const missingFields = requiredFields.filter(field => {
+      const value = riderData[field as keyof AddRiderRequest];
+      return value === undefined || value === null || value === '';
+    });
 
     if (missingFields.length > 0) {
       return NextResponse.json(
@@ -70,12 +74,35 @@ export async function POST(req: NextRequest) {
       firstName: riderData.firstName,
       lastName: riderData.lastName,
       ...(teamRef && { team: teamRef }),
+      ...(riderData.age && { age: riderData.age }),
     }, { merge: true });
+
+    // Add rider to all seasonal games for this year
+    const seasonalGamesSnapshot = await db.collection('games')
+      .where('raceType', '==', 'season')
+      .where('year', '==', year)
+      .get();
+
+    let addedToGamesCount = 0;
+    for (const gameDoc of seasonalGamesSnapshot.docs) {
+      const gameData = gameDoc.data();
+      const eligibleRiders = gameData.eligibleRiders || [];
+
+      // Only add if not already in the list
+      if (!eligibleRiders.includes(riderData.nameID)) {
+        await gameDoc.ref.update({
+          eligibleRiders: [...eligibleRiders, riderData.nameID],
+        });
+        addedToGamesCount++;
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Successfully added ${riderData.name} to rankings_${year}`,
+      message: `Successfully added ${riderData.name} to rankings_${year} and ${addedToGamesCount} seasonal game(s)`,
       docId,
+      addedToGames: addedToGamesCount,
+      cacheInvalidated: true, // Signal to client to increment cache version
     });
 
   } catch (error) {

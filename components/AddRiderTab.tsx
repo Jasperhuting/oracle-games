@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { incrementCacheVersionClient } from '@/lib/utils/auctionCache';
 
 interface RiderFormData {
   name: string;
@@ -12,6 +13,7 @@ interface RiderFormData {
   points: number;
   rank: number;
   year: number;
+  age?: string; // Date string in YYYY-MM-DD format
 }
 
 export function AddRiderTab() {
@@ -30,6 +32,28 @@ export function AddRiderTab() {
     year: 2026,
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [suggestedRank, setSuggestedRank] = useState<number | null>(null);
+
+  // Fetch next available rank when year changes
+  useEffect(() => {
+    const fetchNextRank = async () => {
+      try {
+        const response = await fetch(`/api/get-next-available-rank?year=${formData.year}`);
+        const data = await response.json();
+        if (response.ok) {
+          setSuggestedRank(data.nextAvailableRank);
+          // Auto-set rank if it's still 0
+          if (formData.rank === 0) {
+            setFormData(prev => ({ ...prev, rank: data.nextAvailableRank }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching next available rank:', error);
+      }
+    };
+
+    fetchNextRank();
+  }, [formData.year]);
 
   const handleScrape = async () => {
     if (!url) {
@@ -56,6 +80,9 @@ export function AddRiderTab() {
       }
 
       // Fill form with scraped data
+      // Use suggestedRank if scraped rank is 0 or invalid
+      const rankToUse = (data.rank && data.rank > 0 && data.rank < 9900) ? data.rank : (suggestedRank || 9999);
+
       setFormData({
         name: data.name || '',
         firstName: data.firstName || '',
@@ -64,8 +91,9 @@ export function AddRiderTab() {
         country: data.country || '',
         team: data.team || '',
         points: data.points || 0,
-        rank: data.rank || 0,
+        rank: rankToUse,
         year: formData.year,
+        age: data.age || '',
       });
 
       setMessage({ type: 'success', text: 'Data succesvol opgehaald! Controleer de velden en klik op "Voeg toe aan database"' });
@@ -97,9 +125,20 @@ export function AddRiderTab() {
         throw new Error(data.error || 'Failed to add rider');
       }
 
-      setMessage({ type: 'success', text: `${formData.name} succesvol toegevoegd aan rankings_${formData.year}!` });
+      const gamesMessage = data.addedToGames > 0
+        ? ` en ${data.addedToGames} seasonal game(s)`
+        : '';
+      setMessage({
+        type: 'success',
+        text: `${formData.name} succesvol toegevoegd aan rankings_${formData.year}${gamesMessage}!`
+      });
 
-      // Reset form
+      // Increment cache version to invalidate all caches
+      if (data.cacheInvalidated) {
+        incrementCacheVersionClient();
+      }
+
+      // Reset form and fetch new suggested rank
       setUrl('');
       setFormData({
         name: '',
@@ -112,6 +151,13 @@ export function AddRiderTab() {
         rank: 0,
         year: 2026,
       });
+
+      // Refresh suggested rank
+      const rankResponse = await fetch(`/api/get-next-available-rank?year=${formData.year}`);
+      const rankData = await rankResponse.json();
+      if (rankResponse.ok) {
+        setSuggestedRank(rankData.nextAvailableRank);
+      }
     } catch (error) {
       console.error('Error adding rider:', error);
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to add rider' });
@@ -254,7 +300,7 @@ export function AddRiderTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Pcs Rank *
+              Pcs Rank * {suggestedRank && <span className="text-gray-500 font-normal">(Volgende beschikbare: {suggestedRank})</span>}
             </label>
             <input
               type="number"
@@ -274,6 +320,18 @@ export function AddRiderTab() {
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || 2026 })}
               required
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Geboortedatum (YYYY-MM-DD)
+            </label>
+            <input
+              type="date"
+              value={formData.age || ''}
+              onChange={(e) => setFormData({ ...formData, age: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

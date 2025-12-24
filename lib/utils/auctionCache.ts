@@ -3,6 +3,8 @@
  * Caches game, bids, and participants data (NOT riders - that's handled by RankingsContext)
  */
 
+import { getCacheVersion, incrementCacheVersion } from './cacheVersion';
+
 interface CachedAuctionData {
   gameData: any;
   participantData: any;
@@ -10,8 +12,11 @@ interface CachedAuctionData {
   playerTeamsData: any;
   timestamp: number;
 }
-const cacheVersion = 6;
-const CACHE_KEY_PREFIX = `auction_cache_${cacheVersion}`;
+
+function getCacheKeyPrefix(): string {
+  return `auction_cache_${getCacheVersion()}_`;
+}
+
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -21,7 +26,7 @@ export function getCachedAuctionData(gameId: string): CachedAuctionData | null {
   if (typeof window === 'undefined') return null;
 
   try {
-    const cacheKey = `${CACHE_KEY_PREFIX}${gameId}`;
+    const cacheKey = `${getCacheKeyPrefix()}${gameId}`;
     const cached = sessionStorage.getItem(cacheKey);
 
     if (!cached) return null;
@@ -55,7 +60,7 @@ export function setCachedAuctionData(
   if (typeof window === 'undefined') return;
 
   try {
-    const cacheKey = `${CACHE_KEY_PREFIX}${gameId}`;
+    const cacheKey = `${getCacheKeyPrefix()}${gameId}`;
     const data: CachedAuctionData = {
       gameData,
       participantData,
@@ -70,7 +75,7 @@ export function setCachedAuctionData(
     // If sessionStorage is full, clear old caches
     try {
       clearOldCaches();
-      sessionStorage.setItem(`${CACHE_KEY_PREFIX}${gameId}`, JSON.stringify({
+      sessionStorage.setItem(`${getCacheKeyPrefix()}${gameId}`, JSON.stringify({
         gameData,
         participantData,
         allBidsData,
@@ -90,7 +95,7 @@ export function invalidateAuctionCache(gameId: string): void {
   if (typeof window === 'undefined') return;
 
   try {
-    const cacheKey = `${CACHE_KEY_PREFIX}${gameId}`;
+    const cacheKey = `${getCacheKeyPrefix()}${gameId}`;
     sessionStorage.removeItem(cacheKey);
   } catch (error) {
     console.error('Error invalidating auction cache:', error);
@@ -106,7 +111,7 @@ export function clearAllAuctionCaches(): void {
   try {
     const keys = Object.keys(sessionStorage);
     keys.forEach(key => {
-      if (key.startsWith(CACHE_KEY_PREFIX)) {
+      if (key.startsWith(getCacheKeyPrefix())) {
         sessionStorage.removeItem(key);
       }
     });
@@ -126,7 +131,7 @@ function clearOldCaches(): void {
     const keys = Object.keys(sessionStorage);
 
     keys.forEach(key => {
-      if (key.startsWith(CACHE_KEY_PREFIX)) {
+      if (key.startsWith(getCacheKeyPrefix())) {
         try {
           const data = JSON.parse(sessionStorage.getItem(key) || '');
           if (now - data.timestamp > CACHE_DURATION) {
@@ -141,4 +146,18 @@ function clearOldCaches(): void {
   } catch (error) {
     console.error('Error clearing old caches:', error);
   }
+}
+
+/**
+ * Increment cache version - called when riders data changes
+ * This invalidates all existing caches by changing the cache key prefix
+ */
+export function incrementCacheVersionClient(): void {
+  if (typeof window === 'undefined') return;
+
+  // Clear all old caches since they're now invalid
+  clearAllAuctionCaches();
+
+  // Use shared increment function which will also reload the page
+  incrementCacheVersion();
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRiderProfile } from '@/lib/scraper/getRiderProfile';
+import { getRiderProfilePuppeteer } from '@/lib/scraper/getRiderProfilePuppeteer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const riderData = await getRiderProfile(url);
+    const riderData = await getRiderProfilePuppeteer(url);
 
     return NextResponse.json(riderData);
   } catch (error) {

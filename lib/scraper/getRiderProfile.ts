@@ -52,10 +52,29 @@ export async function getRiderProfile(url: string): Promise<RiderProfileData> {
   // Extract rider name from page title
   const fullName = $('h1').first().text().trim();
 
-  // Parse name into first and last name
-  const nameParts = fullName.split(' ');
-  const firstName = nameParts.slice(0, -1).join(' ');
-  const lastName = nameParts[nameParts.length - 1];
+  // Parse name using the same logic as getRidersRanked.ts
+  // Match the all-caps last name at the start (handles special chars like Ž, Š, ß, etc.)
+  const lastNameMatch = fullName.match(/^[\p{Lu}ß\s'-]+(?=\s+\p{Lu}\p{L})/u);
+  const lastNameUppercase = String(lastNameMatch?.[0] || '').trim();
+
+  // Capitalize first letter, rest lowercase (preserves special chars)
+  // Also capitalize letter after apostrophe (e.g., O'brien → O'Brien)
+  const lastName = lastNameUppercase
+    .toLowerCase()
+    .split('')
+    .map((char, index, arr) => {
+      // Capitalize first character
+      if (index === 0) return char.toUpperCase();
+      // Capitalize character after apostrophe (both ' and ')
+      if (index > 0 && (arr[index - 1] === "'" || arr[index - 1] === "'")) return char.toUpperCase();
+      return char;
+    })
+    .join('');
+
+  // Extract everything after the last name (the first name part)
+  const afterLastName = fullName.substring(lastNameUppercase.length).trim();
+  // Match words that start with uppercase followed by any letters (handles Ž, É, etc.)
+  const firstName = String(afterLastName.match(/\p{Lu}\p{L}*/gu) || '').replace(/,/g, ' ');
 
   // Extract country from flag
   const country = $('.rdr-info-cont .flag').attr('class')?.split(' ')[1] || '';
@@ -80,20 +99,49 @@ export async function getRiderProfile(url: string): Promise<RiderProfileData> {
     }
   });
 
-  // Extract UCI ranking and points
+  // Extract ranking and points - prefer PCS, fallback to UCI or any other available ranking
   let rank = 0;
   let points = 0;
+  let foundPCSRank = false;
+  let foundPCSPoints = false;
 
+  // First pass: try to find PCS Rank and PCS Points
   $('.list.horizontal.rdrquickinfo li').each((_, el) => {
     const title = $(el).find('div:first-child').text().trim();
     const value = $(el).find('div:last-child').text().trim();
 
     if (title === 'PCS Rank') {
       rank = parseInt(value.replace(/\D/g, '')) || 0;
+      foundPCSRank = true;
     } else if (title === 'PCS Points') {
       points = parseInt(value.replace(/\D/g, '')) || 0;
+      foundPCSPoints = true;
     }
   });
+
+  // Second pass: fallback to UCI or any other ranking if PCS not found
+  if (!foundPCSRank || !foundPCSPoints) {
+    $('.list.horizontal.rdrquickinfo li').each((_, el) => {
+      const title = $(el).find('div:first-child').text().trim();
+      const value = $(el).find('div:last-child').text().trim();
+
+      // Fallback to UCI Rank if PCS Rank not found
+      if (!foundPCSRank && title === 'UCI Rank') {
+        rank = parseInt(value.replace(/\D/g, '')) || 0;
+      }
+      // Fallback to UCI Points if PCS Points not found
+      else if (!foundPCSPoints && title === 'UCI Points') {
+        points = parseInt(value.replace(/\D/g, '')) || 0;
+      }
+      // Generic fallback: any field containing "Rank" or "Points"
+      else if (!foundPCSRank && !rank && title.includes('Rank')) {
+        rank = parseInt(value.replace(/\D/g, '')) || 0;
+      }
+      else if (!foundPCSPoints && !points && title.includes('Points')) {
+        points = parseInt(value.replace(/\D/g, '')) || 0;
+      }
+    });
+  }
 
   return {
     name: fullName,

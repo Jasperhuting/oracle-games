@@ -3,8 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Rider } from '@/lib/types/rider';
 import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
-
-const CACHE_VERSION = 4;
+import { getCacheVersion } from '@/lib/utils/cacheVersion';
 
 interface RankingsContextType {
   riders: Rider[];
@@ -37,19 +36,22 @@ export function RankingsProvider({
     setError(null);
 
     try {
+      // Get current cache version dynamically
+      const cacheVersion = getCacheVersion();
+
       // Try to get from cache first
       const cacheKey = `rankings_2026`;
-      const cached = await getFromCache<Rider[]>(cacheKey, CACHE_VERSION);
+      const cached = await getFromCache<Rider[]>(cacheKey, cacheVersion);
 
       if (cached && cached.length > 0) {
-        console.log(`[RankingsContext] Using cached rankings data (${cached.length} riders)`);
+        console.log(`[RankingsContext] Using cached rankings data (${cached.length} riders, version ${cacheVersion})`);
         setRiders(cached);
         setLoading(false);
         return;
       }
 
       // Fetch fresh data if cache miss
-      console.log('[RankingsContext] Fetching fresh rankings data');
+      console.log(`[RankingsContext] Fetching fresh rankings data (cache version ${cacheVersion})`);
       let allRiders: Rider[] = [];
       let offset = 0;
       const limit = 500;
@@ -72,8 +74,8 @@ export function RankingsProvider({
       console.log(`[RankingsContext] Fetched ${allRiders.length} riders from API`);
 
       // Store in IndexedDB for future use
-      await saveToCache(cacheKey, allRiders, CACHE_VERSION);
-      await clearOldVersions(CACHE_VERSION);
+      await saveToCache(cacheKey, allRiders, cacheVersion);
+      await clearOldVersions(cacheVersion);
 
       setRiders(allRiders);
     } catch (err) {
