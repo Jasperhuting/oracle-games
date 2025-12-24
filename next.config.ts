@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
         pathname: '/images/**',
       },
     ],
+    // Limit image sizes to reduce optimization costs
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96],
+    // Cache optimized images for 60 days
+    minimumCacheTTL: 60 * 60 * 24 * 60,
   },
 };
 
