@@ -1,25 +1,13 @@
 import * as cheerio from 'cheerio';
 import { EnrichedRider } from './types';
+import { launchBrowser } from './browserHelper';
 
 export async function enrichRidersPuppeteer({ year, team }: { year: number, team: string }) {
     const url = `https://www.procyclingstats.com/team/${team}`;
 
     console.log('Enriching riders with Puppeteer:', url);
 
-    const puppeteer = await import('puppeteer');
-
-    const browser = await puppeteer.default.launch({
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu'
-        ]
-    });
+    const browser = await launchBrowser();
 
     try {
         const page = await browser.newPage();

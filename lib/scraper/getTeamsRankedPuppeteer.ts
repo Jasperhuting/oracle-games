@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { RankedTeamsResult, RankedTeam } from './types';
 import { toSlug } from '../firebase/utils';
+import { launchBrowser } from './browserHelper';
 
 export interface GetTeamsOptions {
   year: number;
@@ -15,21 +16,7 @@ export async function getTeamsRankedPuppeteer({ year }: GetTeamsOptions): Promis
 
   const url = `https://www.procyclingstats.com/rankings.php?p=season-teams&s=&date=${currentYear}-${currentMonth}-${currentDay}&nation=&level=&filter=Filter`;
 
-  // Use plain puppeteer instead of puppeteer-extra to avoid version issues
-  const puppeteer = await import('puppeteer');
-
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu'
-    ]
-  });
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage();

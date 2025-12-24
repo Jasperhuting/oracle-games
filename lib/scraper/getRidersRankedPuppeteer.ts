@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { Element as DomElement } from 'domhandler';
 import { RankedRider, RankedRidersResult } from './types';
+import { launchBrowser } from './browserHelper';
 
 export interface GetRidersOptions {
   offset: number;
@@ -14,21 +15,8 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
 
   const url = `https://www.procyclingstats.com/rankings.php?p=me&s=season-individual&date=${year}-${month}-${day}&nation=&age=&page=smallerorequal&team=&teamlevel=&offset=${offsetNum}&filter=Filter`;
 
-  // Use plain puppeteer instead of puppeteer-extra to avoid version issues
-  const puppeteer = await import('puppeteer');
-
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu'
-    ]
-  });
+  // Use browserHelper for automatic Vercel/local environment detection
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage();

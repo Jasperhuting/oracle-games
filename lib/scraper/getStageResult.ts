@@ -8,6 +8,7 @@ import {
   scrapeYouthClassification,
   scrapeTeamClassification,
 } from './getStageResultsItems';
+import { launchBrowser } from './browserHelper';
 
 export interface GetStageResultOptions {
   race: RaceSlug;
@@ -27,22 +28,8 @@ export async function getStageResult({ race, year, stage, riders }: GetStageResu
   }
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/stage-${stage}`;
-  
-  // Use Puppeteer to avoid being blocked
-  const puppeteer = await import('puppeteer');
 
-  const browser = await puppeteer.default.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu'
-    ]
-  });
+  const browser = await launchBrowser();
 
   let html: string;
   try {
