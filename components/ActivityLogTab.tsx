@@ -14,9 +14,18 @@ interface ActivityLog {
   targetUserName?: string;
   gameId?: string;
   gameName?: string;
-  details?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  details?: Record<string, any> & {
+    environment?: string;
+    branch?: string;
+    commit?: string;
+    commitMessage?: string;
+    deploymentId?: string;
+    deploymentStatus?: string;
+    deploymentUrl?: string;
+  };
   timestamp: string;
   ipAddress?: string;
+  userAgent?: string;
 }
 
 // Separate component for error details to avoid hook violation
@@ -96,6 +105,18 @@ export const ActivityLogTab = () => {
 
     fetchLogs();
   }, [user?.uid]);
+
+  // Format action for display
+  const formatAction = (action: string) => {
+    if (action.startsWith('VERCEL_')) {
+      return action
+        .replace('VERCEL_', '')
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, l => l.toUpperCase());
+    }
+    return action;
+  };
 
   const filteredLogs = logs.filter(log => {
     if (filter === "all") return true;
@@ -364,6 +385,44 @@ export const ActivityLogTab = () => {
       );
     }
 
+    // Vercel deployment events
+    if (log.action.startsWith('VERCEL_')) {
+      return (
+        <div className="mt-2 space-y-1">
+          {log.details.environment && (
+            <div className="flex items-center">
+              <span className="text-gray-500 w-24">Environment:</span>
+              <span className="font-medium">{log.details.environment}</span>
+            </div>
+          )}
+          {log.details.branch && (
+            <div className="flex items-center">
+              <span className="text-gray-500 w-24">Branch:</span>
+              <span className="font-mono text-sm">{log.details.branch}</span>
+            </div>
+          )}
+          {log.details.commit && (
+            <div className="flex items-center">
+              <span className="text-gray-500 w-24">Commit:</span>
+              <span className="font-mono text-xs">{log.details.commit}</span>
+            </div>
+          )}
+          {log.details.deploymentUrl && (
+            <div className="pt-2">
+              <a 
+                href={log.details.deploymentUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline text-sm"
+              >
+                View Deployment
+              </a>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // ERROR details
     if (log.action === 'ERROR') {
       return <ErrorDetails details={log.details} />;
@@ -459,6 +518,9 @@ export const ActivityLogTab = () => {
               <optgroup label="System">
                 <option value="ERROR">Errors</option>
               </optgroup>
+              <optgroup label="Vercel">
+                <option value="VERCEL_DEPLOYMENT">Deployments</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -479,7 +541,11 @@ export const ActivityLogTab = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
-                        {getActionLabel(log.action)}
+                        <span className={`font-medium ${
+                    log.action.startsWith('VERCEL_') ? 'text-blue-600' : ''
+                  }`}>
+                    {formatAction(log.action)}
+                  </span>
                       </span>
                       <span className="text-xs text-gray-500">
                         {formatDate(log.timestamp)}

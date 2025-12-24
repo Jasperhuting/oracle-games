@@ -49,7 +49,21 @@ export interface ActivityLog {
   userId: string;
   userEmail: string;
   userName: string;
-  details: Record<string, unknown>;
+  targetUserId?: string;
+  targetUserEmail?: string;
+  targetUserName?: string;
+  gameId?: string;
+  gameName?: string;
+  details: Record<string, unknown> & {
+    // Vercel deployment specific fields
+    environment?: string;
+    branch?: string;
+    commit?: string;
+    commitMessage?: string;
+    deploymentId?: string;
+    deploymentStatus?: string;
+    deploymentUrl?: string;
+  };
   timestamp: string;
   ipAddress: string;
   userAgent: string;

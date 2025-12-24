@@ -10,11 +10,16 @@ export async function launchBrowser() {
     // Use puppeteer-core with @sparticuz/chromium for Vercel
     const puppeteer = await import('puppeteer-core');
     const chromium = await import('@sparticuz/chromium');
-
+    
+    // Set the path to the brotli files
+    chromium.setHeadlessMode = true;
+    chromium.setGraphicsMode = false;
+    
     return await puppeteer.default.launch({
-      args: [...chromium.default.args, '--hide-scrollbars', '--disable-web-security'],
-      executablePath: await chromium.default.executablePath(),
-      headless: true,
+      args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
     });
   } else {
     // Use regular puppeteer locally for development
