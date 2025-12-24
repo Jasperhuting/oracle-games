@@ -8,9 +8,7 @@ export const maxDuration = 300; // 5 minutes
 
 /**
  * Cron job to send email notifications for unread messages
- * Runs every 5 minutes (same as Motia send-messages)
- *
- * This replaces: send-messages.step.ts
+ * Runs every 5 minutes via Vercel Cron
  */
 export async function GET(request: NextRequest) {
   try {

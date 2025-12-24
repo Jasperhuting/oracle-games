@@ -6,12 +6,12 @@ export const maxDuration = 300; // 5 minutes
 
 /**
  * Cron job to check and finalize auction periods
- * Runs every minute (same as Motia finalization-checker)
+ * Runs every minute via Vercel Cron
  *
- * This replaces:
- * - finalization-checker.step.ts
- * - check-pending-finalizations.step.ts
- * - auction-finalize.step.ts
+ * Handles:
+ * - Automatic period status transitions (pending → active → closed)
+ * - Automatic finalization when finalizeDate is reached
+ * - Game status updates (registration → bidding)
  */
 export async function GET(request: NextRequest) {
   try {

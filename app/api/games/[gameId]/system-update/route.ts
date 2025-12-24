@@ -3,7 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import type { ApiErrorResponse } from '@/lib/types';
 
 /**
- * System endpoint for automated updates from Motia cronjobs
+ * System endpoint for automated updates from Vercel Cron jobs
  * Uses API key authentication instead of admin user verification
  */
 export async function PATCH(
@@ -179,7 +179,7 @@ export async function PATCH(
       details: logDetails,
       timestamp: new Date().toISOString(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'system',
-      userAgent: 'motia-cronjob',
+      userAgent: 'vercel-cron',
     });
 
     return NextResponse.json({
