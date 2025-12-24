@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { incrementCacheVersionClient } from '@/lib/utils/auctionCache';
+import { CountrySelector } from './CountrySelector';
+import { Country } from '@/lib/scraper/types';
+import countriesList from '@/lib/country.json';
 
 interface RiderFormData {
   name: string;
@@ -260,15 +263,21 @@ export function AddRiderTab() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Land (code) *
+              Land *
             </label>
-            <input
-              type="text"
-              value={formData.country}
-              onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-              required
-              placeholder="fr"
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <CountrySelector
+              selectedCountries={
+                formData.country
+                  ? countriesList.filter((c: Country) => c.code?.toLowerCase() === formData.country.toLowerCase())
+                  : []
+              }
+              setSelectedCountries={(countries: Country[]) => {
+                // Extraheer de code van het geselecteerde land
+                const countryCode = countries.length > 0 ? countries[0].code : '';
+                setFormData({ ...formData, country: countryCode });
+              }}
+              multiSelect={false}
+              multiSelectShowSelected={false}
             />
           </div>
 
