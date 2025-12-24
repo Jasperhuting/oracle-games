@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
+import { sendMessageNotification, sendBroadcastNotification } from '@/lib/telegram';
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,6 +75,14 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       });
 
+      // Send Telegram notification
+      try {
+        await sendBroadcastNotification(senderName, subject, messageCount);
+        console.log(`[MESSAGE] Telegram notification sent for broadcast from ${senderName}`);
+      } catch (telegramError) {
+        console.error('[MESSAGE] Failed to send Telegram notification:', telegramError);
+      }
+
       return NextResponse.json({
         success: true,
         message: `Broadcast message sent to ${messageCount} users`,
@@ -126,6 +135,21 @@ export async function POST(request: NextRequest) {
         },
         timestamp: new Date().toISOString(),
       });
+
+      // Send Telegram notification
+      try {
+        const senderEmail = senderDoc.data()?.email || 'Onbekend';
+        await sendMessageNotification(
+          senderName,
+          senderEmail,
+          finalRecipientName,
+          subject,
+          message
+        );
+        console.log(`[MESSAGE] Telegram notification sent for message from ${senderName} to ${finalRecipientName}`);
+      } catch (telegramError) {
+        console.error('[MESSAGE] Failed to send Telegram notification:', telegramError);
+      }
 
       return NextResponse.json({
         success: true,

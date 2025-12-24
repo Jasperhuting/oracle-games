@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { sendErrorNotification } from '@/lib/telegram';
 
 export interface ActivityLog {
   action: string;
@@ -62,9 +63,30 @@ export async function POST(request: NextRequest) {
     // Save to Firestore
     await db.collection('activityLogs').add(activityLog);
 
-    return NextResponse.json({ 
+    // Send Telegram notification for errors
+    if (action === 'ERROR') {
+      try {
+        await sendErrorNotification(
+          userEmail || 'Onbekend',
+          userName || 'Onbekend',
+          details?.operation || 'Onbekende operatie',
+          details?.errorMessage || 'Geen error bericht beschikbaar',
+          {
+            gameId: details?.gameId,
+            endpoint: details?.endpoint,
+            errorDetails: details?.errorDetails,
+          }
+        );
+        console.log(`[ERROR] Telegram notification sent for error from ${userEmail}`);
+      } catch (telegramError) {
+        // Don't fail the activity log if Telegram fails
+        console.error('[ERROR] Failed to send Telegram notification:', telegramError);
+      }
+    }
+
+    return NextResponse.json({
       success: true,
-      message: 'Activity logged successfully' 
+      message: 'Activity logged successfully'
     });
   } catch (error) {
     console.error('Error logging activity:', error);

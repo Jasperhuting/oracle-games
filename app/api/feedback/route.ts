@@ -3,6 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Feedback } from '@/lib/types/games';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Resend } from 'resend';
+import { sendFeedbackNotification } from '@/lib/telegram';
 
 // GET /api/feedback - Get all feedback (admin only)
 export async function GET(request: NextRequest) {
@@ -138,6 +139,20 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       // Don't fail the feedback submission if email fails
       console.error('[FEEDBACK] Failed to send email notification:', emailError);
+    }
+
+    // Send Telegram notification
+    try {
+      await sendFeedbackNotification(
+        userEmail,
+        displayName,
+        currentPage || 'Niet opgegeven',
+        message.trim()
+      );
+      console.log(`[FEEDBACK] Telegram notification sent for feedback from ${userEmail}`);
+    } catch (telegramError) {
+      // Don't fail the feedback submission if Telegram fails
+      console.error('[FEEDBACK] Failed to send Telegram notification:', telegramError);
     }
 
     return NextResponse.json({
