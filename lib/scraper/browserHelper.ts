@@ -23,8 +23,9 @@ export async function launchBrowser() {
     chromium.setGraphicsMode = false;
 
     // Fetch Chromium binary from GitHub CDN (required for Vercel)
+    // Vercel runs on x64 architecture
     const executablePath = await chromium.executablePath(
-      `https://github.com/Sparticuz/chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar`
+      `https://github.com/Sparticuz/chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.x64.tar`
     );
 
     return puppeteer.launch({
