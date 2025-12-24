@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
             const resend = new Resend(apiKey);
 
             const result = await resend.emails.send({
-              from: 'Oracle Games <no-reply@oracle-games.online>',
+              from: 'Oracle Games <no-reply@send.oracle-games.online>',
               to: [email],
               subject: subject,
               html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">

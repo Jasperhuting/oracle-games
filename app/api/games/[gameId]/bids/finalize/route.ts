@@ -59,7 +59,7 @@ export async function POST(
 
       // Get the period start date to filter bids
       const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
-      const periodStartDate = period?.startDate?.toDate?.() || new Date(period?.startDate);
+      const periodStartDate = new Date(period?.startDate);
 
       console.log(`[FINALIZE] Filtering bids for period "${auctionPeriodName}" starting from ${periodStartDate.toISOString()}`);
     }
@@ -86,8 +86,8 @@ export async function POST(
       // Filter by auction period if specified
       if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
         const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
-        const periodStartDate = period?.startDate?.toDate?.() || new Date(period?.startDate);
-        const bidAt = bidData.bidAt?.toDate?.() || new Date(bidData.bidAt);
+        const periodStartDate = new Date(period?.startDate);
+        const bidAt = new Date(bidData.bidAt);
 
         // Only include bids made during or after the period start
         return bidAt >= periodStartDate;
@@ -185,8 +185,8 @@ export async function POST(
             return b.amount - a.amount; // Higher bid wins
           }
           // If amounts are equal, earlier bid wins
-          const timeA = a.bidAt?.toDate?.() || new Date(a.bidAt);
-          const timeB = b.bidAt?.toDate?.() || new Date(b.bidAt);
+          const timeA = new Date(a.bidAt);
+          const timeB = new Date(b.bidAt);
           return timeA.getTime() - timeB.getTime();
         });
 
@@ -241,7 +241,7 @@ export async function POST(
               riderTeam: bid.riderTeam,
               jerseyImage: bid.jerseyImage,
               pricePaid: bid.amount, // Use pricePaid instead of amount for consistency
-              acquiredAt: new Date().toISOString(),
+              acquiredAt: new Date().toISOString(), // Finalize timestamp as ISO string
             };
           });
 
@@ -293,7 +293,7 @@ export async function POST(
                 riderNameId: riderNameId,
 
                 // Acquisition info
-                acquiredAt: new Date(),
+                acquiredAt: new Date(), // Finalize timestamp as Firestore Timestamp
                 acquisitionType: isSelectionBased ? 'selection' : 'auction',
                 pricePaid: bid.amount,
                 

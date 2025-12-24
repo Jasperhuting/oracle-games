@@ -79,6 +79,78 @@ export async function PATCH(
 
     // Update auction periods if provided
     if (auctionPeriods && Array.isArray(auctionPeriods)) {
+      // CRITICAL SAFETY CHECK: Validate that periods are not being deleted
+      const currentPeriods = currentGameData?.config?.auctionPeriods || [];
+
+      // Check 1: Prevent complete deletion of all periods
+      if (currentPeriods.length > 0 && auctionPeriods.length === 0) {
+        const errorMsg = `CRITICAL ERROR: System update attempting to DELETE ALL auction periods!`;
+        console.error(`[SYSTEM_UPDATE] ${errorMsg}`, {
+          gameId,
+          currentPeriodCount: currentPeriods.length,
+          currentPeriods: currentPeriods.map((p: any) => p.name),
+        });
+
+        return NextResponse.json(
+          {
+            error: errorMsg,
+            details: JSON.stringify({
+              currentPeriods: currentPeriods.map((p: any) => p.name),
+              attemptedAction: 'DELETE_ALL_PERIODS',
+            })
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check 2: Prevent reducing the number of periods
+      if (currentPeriods.length > 0 && auctionPeriods.length < currentPeriods.length) {
+        const errorMsg = `CRITICAL ERROR: System update attempting to delete auction periods! Current: ${currentPeriods.length}, New: ${auctionPeriods.length}`;
+        console.error(`[SYSTEM_UPDATE] ${errorMsg}`, {
+          gameId,
+          currentPeriods: currentPeriods.map((p: any) => p.name),
+          newPeriods: auctionPeriods.map((p: any) => p.name),
+        });
+
+        return NextResponse.json(
+          {
+            error: errorMsg,
+            details: JSON.stringify({
+              currentPeriods: currentPeriods.map((p: any) => p.name),
+              newPeriods: auctionPeriods.map((p: any) => p.name),
+            })
+          },
+          { status: 400 }
+        );
+      }
+
+      // CRITICAL SAFETY CHECK: Validate that all period names are preserved
+      const currentNames = new Set(currentPeriods.map((p: any) => p.name));
+      const newNames = new Set(auctionPeriods.map((p: any) => p.name));
+      const missingPeriods = [...currentNames].filter(name => !newNames.has(name));
+
+      if (missingPeriods.length > 0) {
+        const errorMsg = `CRITICAL ERROR: System update missing periods: ${missingPeriods.join(', ')}`;
+        console.error(`[SYSTEM_UPDATE] ${errorMsg}`, {
+          gameId,
+          currentPeriods: currentPeriods.map((p: any) => p.name),
+          newPeriods: auctionPeriods.map((p: any) => p.name),
+          missingPeriods,
+        });
+
+        return NextResponse.json(
+          {
+            error: errorMsg,
+            details: JSON.stringify({
+              currentPeriods: currentPeriods.map((p: any) => p.name),
+              newPeriods: auctionPeriods.map((p: any) => p.name),
+              missingPeriods,
+            })
+          },
+          { status: 400 }
+        );
+      }
+
       updateData['config.auctionPeriods'] = auctionPeriods;
     }
 

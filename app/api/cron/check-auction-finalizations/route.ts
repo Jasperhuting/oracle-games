@@ -182,6 +182,20 @@ export async function GET(request: NextRequest) {
 
         // Update game if any periods changed or game status needs update
         if (gameNeedsUpdate || gameStatusNeedsUpdate) {
+          // CRITICAL SAFETY CHECK: Validate that we're not accidentally deleting periods
+          const originalPeriods = game.config?.auctionPeriods || [];
+          if (gameNeedsUpdate && originalPeriods.length > 0 && updatedPeriods.length !== originalPeriods.length) {
+            console.error('[CRON] CRITICAL ERROR: Period count mismatch detected!', {
+              gameId,
+              originalCount: originalPeriods.length,
+              updatedCount: updatedPeriods.length,
+              originalPeriods: originalPeriods.map((p: any) => p.name),
+              updatedPeriods: updatedPeriods.map((p: any) => p.name),
+            });
+            results.errors.push(`CRITICAL: Period count mismatch for ${gameId}. Skipping update to prevent data loss.`);
+            continue; // Skip this game to prevent data corruption
+          }
+
           const updateData: any = {
             updatedAt: new Date().toISOString(),
           };

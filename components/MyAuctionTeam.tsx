@@ -20,9 +20,6 @@ const periodsColors = [{
     border: 'border-green-100',
     bg: 'bg-green-50'
 },{
-    border: 'border-yellow-100',
-    bg: 'bg-yellow-50'
-},{
     border: 'border-red-100',
     bg: 'bg-red-50'
 },{
