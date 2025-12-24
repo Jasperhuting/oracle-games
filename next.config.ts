@@ -14,7 +14,11 @@ const nextConfig: NextConfig = {
     'puppeteer-core',
     'puppeteer-extra',
     'puppeteer-extra-plugin-stealth',
+    "puppeteer-core", "@sparticuz/chromium"
   ],
+  outputFileTracingIncludes: {
+    "/app/api/**": ["./node_modules/@sparticuz/chromium/**"],
+  },
 };
 
 export default nextConfig;
