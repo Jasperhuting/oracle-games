@@ -9,6 +9,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/check-auction-closing-soon",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/cleanup-expired-jobs",
       "schedule": "0 2 * * *"
     }
