@@ -309,7 +309,7 @@ export const CreateGameTab = () => {
 
   const GAME_TYPE_OPTIONS = [
     { value: 'auctioneer', label: 'Auctioneer - Bid on riders' },
-    { value: 'carry-on', label: 'Carry On - Pick per stage' },
+    { value: 'slipstream', label: 'Slipstream - Pick per stage' },
     { value: 'last-man-standing', label: 'Last Man Standing - Elimination' },
     { value: 'poisoned-cup', label: 'Poisoned Cup - Snake Draft' },
     { value: 'nations-cup', label: 'Nations Cup - By country/region' },

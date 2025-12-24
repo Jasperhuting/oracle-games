@@ -6,7 +6,7 @@ import { Timestamp } from 'firebase/firestore';
 
 export const GAME_TYPES = [
   'auctioneer',
-  'carry-on',
+  'slipstream',
   'last-man-standing',
   'poisoned-cup',
   'nations-cup',
@@ -581,8 +581,8 @@ export function isAuctioneer(game: Game): game is Game & { config: AuctioneerCon
   return game.gameType === 'auctioneer';
 }
 
-export function isCarryMeHome(game: Game): game is Game & { config: CarryMeHomeConfig } {
-  return game.gameType === 'carry-on';
+export function isSlipstream(game: Game): game is Game & { config: CarryMeHomeConfig } {
+  return game.gameType === 'slipstream';
 }
 
 export function isPoisonedCup(game: Game): game is Game & { config: PoisonedCupConfig } {

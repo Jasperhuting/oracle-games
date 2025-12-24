@@ -251,7 +251,7 @@ export const GamesManagementTab = () => {
   const getGameTypeLabel = (gameType: string) => {
     const labels: Record<string, string> = {
       'auctioneer': 'Auctioneer',
-      'carry-on': 'Carry On',
+      'slipstream': 'Slipstream',
       'last-man-standing': 'Last Man Standing',
       'poisoned-cup': 'Poisoned Cup',
       'nations-cup': 'Nations Cup',

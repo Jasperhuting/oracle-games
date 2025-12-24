@@ -507,7 +507,7 @@ export const openApiSpec = {
           name: { type: 'string', minLength: 1 },
           gameType: {
             type: 'string',
-            enum: ['auctioneer', 'carry-on', 'last-man-standing', 'poisoned-cup', 'nations-cup', 'rising-stars', 'country-roads', 'worldtour-manager', 'fan-flandrien', 'giorgio-armada'],
+            enum: ['auctioneer', 'slipstream', 'last-man-standing', 'poisoned-cup', 'nations-cup', 'rising-stars', 'country-roads', 'worldtour-manager', 'fan-flandrien', 'giorgio-armada'],
           },
           year: { type: 'integer', minimum: 2020, maximum: 2100 },
           raceType: { type: 'string', enum: ['season', 'grand-tour', 'classics', 'single-race'] },

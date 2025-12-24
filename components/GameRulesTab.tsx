@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 const GAME_TYPE_LABELS: Record<GameType, string> = {
   'auctioneer': 'Auction Master',
-  'carry-on': 'Carry On',
+  'slipstream': 'Slipstream',
   'last-man-standing': 'Last Man Standing',
   'poisoned-cup': 'Poisoned Cup',
   'nations-cup': 'Nations Cup',
