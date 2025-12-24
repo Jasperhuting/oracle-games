@@ -112,6 +112,16 @@ export async function GET(request: NextRequest) {
 
           // 3. Check if auction should be finalized
           if (finalizeDate && checkTime >= finalizeDate) {
+            // Skip periods that are already finalized
+            if (period.status === 'finalized') {
+              console.log('[CRON] Skipping already finalized period', {
+                gameId,
+                periodName: period.name,
+              });
+              updatedPeriods.push(updatedPeriod);
+              continue;
+            }
+
             // Only finalize if status is active or closed (NOT if already finalized or pending)
             if (period.status === 'active' || period.status === 'closed') {
               console.log('[CRON] Finalizing auction period', {
@@ -165,9 +175,6 @@ export async function GET(request: NextRequest) {
 
               // Status will be updated to 'finalized' by the finalize endpoint
               // So we don't update it here to avoid race conditions
-              continue;
-            } else if (period.status === 'finalized') {
-              // Skip periods that are already finalized
               continue;
             }
           }
