@@ -26,6 +26,7 @@
     "@ariakit/react": "^0.4.20",
     "@floating-ui/dom": "^1.7.4",
     "@sparticuz/chromium": "^143.0.0",
+    "@sparticuz/chromium-min": "^143.0.0",
     "@tabler/icons-react": "^3.36.0",
     "@tiptap/core": "^3.12.1",
     "@tiptap/extension-link": "^3.11.1",
