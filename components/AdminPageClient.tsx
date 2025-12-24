@@ -9,6 +9,7 @@ import { AddGameTab } from "@/components/AddGameTab";
 import { CreateGameTab } from "@/components/CreateGameTab";
 import { GamesManagementTab } from "@/components/GamesManagementTab";
 import { RidersManagementTab } from "@/components/RidersManagementTab";
+import { AddRiderTab } from "@/components/AddRiderTab";
 import { RacesScraperTab } from "@/components/RacesScraperTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
 import { FeedbackTab } from "@/components/FeedbackTab";
@@ -184,6 +185,11 @@ export default function AdminPageClient() {
                                     id: 'riders',
                                     label: t('admin.tabs.manageRiders'),
                                     content: <RidersManagementTab />
+                                },
+                                {
+                                    id: 'add-rider',
+                                    label: 'Voeg Renner Toe',
+                                    content: <AddRiderTab />
                                 },
                                 {
                                     id: 'game-rules',

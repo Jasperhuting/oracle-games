@@ -10,7 +10,7 @@ interface CachedAuctionData {
   playerTeamsData: any;
   timestamp: number;
 }
-const cacheVersion = 5;
+const cacheVersion = 6;
 const CACHE_KEY_PREFIX = `auction_cache_${cacheVersion}`;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
