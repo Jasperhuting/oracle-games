@@ -98,7 +98,7 @@ export const AuctionFilters = ({
             <Button className="whitespace-nowrap" text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
         </span>
 
-        {game.gameType === 'worldtour-manager' ? (
+        {!game.bidding ? (
             <span>
                   <Button  onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
                     <span className={`flex flex-row gap-2 items-center whitespace-nowrap`}>
