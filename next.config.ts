@@ -14,11 +14,8 @@ const nextConfig: NextConfig = {
     'puppeteer-core',
     'puppeteer-extra',
     'puppeteer-extra-plugin-stealth',
-    "@sparticuz/chromium"
+    "@sparticuz/chromium-min"
   ],
-  outputFileTracingIncludes: {
-    '/app/api/**/*': ['./node_modules/@sparticuz/chromium/bin/*'],
-  },
 };
 
 export default nextConfig;

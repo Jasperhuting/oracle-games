@@ -17,17 +17,21 @@ export async function launchBrowser() {
 
   if (isProduction) {
     const puppeteer = await import("puppeteer-core");
-    const chromium = (await import("@sparticuz/chromium")).default;
+    const chromium = (await import("@sparticuz/chromium-min")).default;
 
     // Set font config to prevent font-related issues
     chromium.setGraphicsMode = false;
 
+    // Fetch Chromium binary from GitHub CDN (required for Vercel)
+    const executablePath = await chromium.executablePath(
+      `https://github.com/Sparticuz/chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar`
+    );
+
     return puppeteer.launch({
-      args: [...chromium.args, '--disable-gpu', '--single-process'],
-      executablePath:
-        process.env.CHROME_EXECUTABLE_PATH ?? (await chromium.executablePath("/tmp")),
-      headless: true, // <- set explicitly (TS-safe)
+      args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
       defaultViewport: viewport,
+      executablePath,
+      headless: true,
     });
   }
 
