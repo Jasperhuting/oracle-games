@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Feedback } from '@/lib/types/games';
 import { Timestamp } from 'firebase-admin/firestore';
+import { Resend } from 'resend';
 
 // GET /api/feedback - Get all feedback (admin only)
 export async function GET(request: NextRequest) {
@@ -90,9 +91,8 @@ export async function POST(request: NextRequest) {
 
     const userData = userDoc.data();
     const userEmail = userData?.email || 'unknown';
+    const displayName = userData?.displayName || userData?.playername || userEmail;
 
-    
-    
     const feedbackData: Omit<Feedback, 'id'> = {
       userId,
       userEmail,
@@ -103,6 +103,42 @@ export async function POST(request: NextRequest) {
     };
 
     const feedbackRef = await db.collection('feedback').add(feedbackData);
+
+    // Send email notification to admin
+    try {
+      const apiKey = process.env.RESEND_API_KEY;
+
+      if (apiKey) {
+        const resend = new Resend(apiKey);
+
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'https://oracle-games.online';
+
+        const emailBody = `Er is nieuwe feedback ontvangen op Oracle Games.\n\n` +
+          `Van: ${displayName} (${userEmail})\n` +
+          `Pagina: ${currentPage || 'Niet opgegeven'}\n` +
+          `Tijdstip: ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}\n\n` +
+          `Bericht:\n${message.trim()}\n\n` +
+          `Bekijk alle feedback in het admin panel:\n${baseUrl}/admin`;
+
+        await resend.emails.send({
+          from: 'Oracle Games <no-reply@send.oracle-games.online>',
+          to: ['jasper.huting@gmail.com'],
+          subject: `Nieuwe feedback van ${displayName}`,
+          html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <p>${emailBody.replace(/\n/g, '<br>')}</p>
+          </div>`,
+        });
+
+        console.log(`[FEEDBACK] Email notification sent to admin for feedback from ${userEmail}`);
+      } else {
+        console.warn('[FEEDBACK] RESEND_API_KEY not configured, skipping email notification');
+      }
+    } catch (emailError) {
+      // Don't fail the feedback submission if email fails
+      console.error('[FEEDBACK] Failed to send email notification:', emailError);
+    }
 
     return NextResponse.json({
       success: true,
