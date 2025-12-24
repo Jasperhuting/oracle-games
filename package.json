@@ -44,7 +44,7 @@
     "framer-motion": "^12.23.24",
     "i18next": "^25.7.2",
     "i18next-icu": "^2.4.1",
-    "next": "15.5.7",
+    "next": "15.5.9",
     "openai": "^6.8.0",
     "puppeteer": "^24.31.0",
     "puppeteer-extra": "^3.3.6",
