@@ -17,7 +17,7 @@ export async function launchBrowser() {
 
   if (isProduction) {
     const puppeteer = await import("puppeteer-core");
-    const chromium = (await import("@sparticuz/chromium")).default;
+    const chromium = (await import("@sparticuz/chromium-min")).default;
 
     return puppeteer.launch({
       args: chromium.args,
