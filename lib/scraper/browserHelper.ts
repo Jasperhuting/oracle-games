@@ -17,12 +17,15 @@ export async function launchBrowser() {
 
   if (isProduction) {
     const puppeteer = await import("puppeteer-core");
-    const chromium = (await import("@sparticuz/chromium-min")).default;
+    const chromium = (await import("@sparticuz/chromium")).default;
+
+    // Set font config to prevent font-related issues
+    chromium.setGraphicsMode = false;
 
     return puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, '--disable-gpu', '--single-process'],
       executablePath:
-        process.env.CHROME_EXECUTABLE_PATH ?? (await chromium.executablePath()),
+        process.env.CHROME_EXECUTABLE_PATH ?? (await chromium.executablePath("/tmp")),
       headless: true, // <- set explicitly (TS-safe)
       defaultViewport: viewport,
     });
