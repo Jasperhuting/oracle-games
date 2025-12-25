@@ -166,11 +166,42 @@ export const GamesManagementTab = () => {
 
     setFinalizingGameId(pendingFinalizeGame.id);
     try {
+      // First, fetch the game data to get auction periods
+      const gameResponse = await fetch(`/api/games/${pendingFinalizeGame.id}`);
+      if (!gameResponse.ok) {
+        throw new Error('Failed to fetch game data');
+      }
+      const gameData = await gameResponse.json();
+
+      // Find the period that should be finalized (active/closed and past finalizeDate)
+      let periodToFinalize = null;
+      const now = new Date();
+
+      if (gameData.config?.auctionPeriods && gameData.config.auctionPeriods.length > 0) {
+        for (const period of gameData.config.auctionPeriods) {
+          const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate) : null;
+
+          // Find a period that is active or closed, not yet finalized, and past its finalize date
+          if (
+            (period.status === 'active' || period.status === 'closed') &&
+            period.status !== 'finalized' &&
+            finalizeDate &&
+            now >= finalizeDate
+          ) {
+            periodToFinalize = period.name;
+            break;
+          }
+        }
+      }
+
       const response = await fetch(`/api/games/${pendingFinalizeGame.id}/bids/finalize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          auctionPeriodName: periodToFinalize,
+        }),
       });
 
       if (!response.ok) {

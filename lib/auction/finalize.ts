@@ -56,16 +56,9 @@ export async function finalizeAuction(
     // Determine if this is a selection-based game (where multiple users can select the same rider)
     const isSelectionBased = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains';
 
-    // If game has auction periods, validate that auctionPeriodName is provided
+    // If game has auction periods and a specific period is specified, validate it
     const auctionPeriods = gameData?.config?.auctionPeriods;
-    if (auctionPeriods && auctionPeriods.length > 0) {
-      if (!auctionPeriodName) {
-        return {
-          success: false,
-          error: 'auctionPeriodName is required for games with multiple auction periods',
-        };
-      }
-
+    if (auctionPeriods && auctionPeriods.length > 0 && auctionPeriodName) {
       // Validate that the period exists
       const periodExists = auctionPeriods.some((p: any) => p.name === auctionPeriodName);
       if (!periodExists) {

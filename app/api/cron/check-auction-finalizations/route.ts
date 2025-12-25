@@ -153,6 +153,7 @@ export async function GET(request: NextRequest) {
                     details: result.details,
                   });
                   results.errors.push(`Finalize failed for ${gameId}/${period.name}: ${result.error}`);
+                  // Don't change the period status if finalization failed
                 } else {
                   results.finalizationsTriggered++;
                   console.log('[CRON] Auction finalized successfully', {
@@ -160,6 +161,10 @@ export async function GET(request: NextRequest) {
                     periodName: period.name,
                     winnersAssigned: result.results?.winnersAssigned,
                   });
+                  // Mark the period as finalized in our local copy
+                  updatedPeriod.status = 'finalized';
+                  periodChanged = true;
+                  gameNeedsUpdate = true;
                 }
               } catch (error) {
                 console.error('[CRON] Error finalizing auction', {
@@ -168,11 +173,10 @@ export async function GET(request: NextRequest) {
                   error: error instanceof Error ? error.message : 'Unknown error',
                 });
                 results.errors.push(`Finalize error for ${gameId}/${period.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                // Don't change the period status if finalization threw an error
               }
 
-              // Status will be updated to 'finalized' by the finalize endpoint
-              // So we don't update it here to avoid race conditions
-              continue;
+              // Continue processing - don't skip adding to updatedPeriods
             }
           }
 
