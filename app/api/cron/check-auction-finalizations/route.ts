@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { adminDb as db } from '@/lib/firebase/server';
+import { finalizeAuction } from '@/lib/auction/finalize';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
@@ -132,37 +133,32 @@ export async function GET(request: NextRequest) {
                 currentStatus: period.status,
               });
 
-              // Call the finalize API endpoint
+              // Call the finalize function directly (no HTTP call needed)
               try {
-                const apiBaseUrl = process.env.VERCEL_URL
-                  ? `https://${process.env.VERCEL_URL}`
-                  : 'https://oracle-games.online';
-
-                const response = await fetch(`${apiBaseUrl}/api/games/${gameId}/bids/finalize`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-internal-key': process.env.INTERNAL_API_KEY || '',
-                  },
-                  body: JSON.stringify({
-                    auctionPeriodName: period.name,
-                  }),
+                console.log('[CRON] Calling finalize function directly:', {
+                  gameId,
+                  periodName: period.name,
                 });
 
-                if (!response.ok) {
-                  const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                  console.error('[CRON] Finalize API failed', {
+                const result = await finalizeAuction({
+                  gameId,
+                  auctionPeriodName: period.name,
+                });
+
+                if (!result.success) {
+                  console.error('[CRON] Finalize failed', {
                     gameId,
                     periodName: period.name,
-                    status: response.status,
-                    error: errorData.error,
+                    error: result.error,
+                    details: result.details,
                   });
-                  results.errors.push(`Finalize failed for ${gameId}/${period.name}: ${errorData.error}`);
+                  results.errors.push(`Finalize failed for ${gameId}/${period.name}: ${result.error}`);
                 } else {
                   results.finalizationsTriggered++;
                   console.log('[CRON] Auction finalized successfully', {
                     gameId,
                     periodName: period.name,
+                    winnersAssigned: result.results?.winnersAssigned,
                   });
                 }
               } catch (error) {
