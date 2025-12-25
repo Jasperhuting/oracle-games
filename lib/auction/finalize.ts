@@ -130,7 +130,7 @@ export async function finalizeAuction(
       docs: activeBidsDocs
     };
 
-    // If no active bids, provide detailed error
+    // If no active bids, this is still a valid finalization (just with 0 winners)
     if (activeBidsSnapshot.empty) {
       if (allBidsForGameSnapshot.size > 0) {
         const statusCounts: Record<string, number> = {};
@@ -139,18 +139,97 @@ export async function finalizeAuction(
           statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
         console.log(`[FINALIZE] Bid status breakdown:`, statusCounts);
-
-        return {
-          success: false,
-          error: 'No active bids found',
-          details: `Found ${allBidsForGameSnapshot.size} total bids with statuses: ${JSON.stringify(statusCounts)}${auctionPeriodName ? ` for period "${auctionPeriodName}"` : ''}`,
-        };
+        console.log(`[FINALIZE] No active bids found, but ${allBidsForGameSnapshot.size} total bids exist - finalizing with 0 winners`);
+      } else {
+        console.log(`[FINALIZE] No bids found for ${auctionPeriodName ? `period "${auctionPeriodName}"` : 'this game'} - finalizing with 0 winners`);
       }
 
+      // Still update the period status and game, but with 0 winners
+      // This is a valid scenario - the period ended without any bids
+      const updateData: any = {
+        status: 'active',
+        finalizedAt: new Date().toISOString(),
+      };
+
+      // If this is a specific auction period, update that period's status to 'finalized'
+      if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
+        // Re-fetch the game document to ensure we have the latest auctionPeriods data
+        const latestGameDoc = await db.collection('games').doc(gameId).get();
+        const latestGameData = latestGameDoc.data();
+        const latestAuctionPeriods = latestGameData?.config?.auctionPeriods || [];
+
+        console.log(`[FINALIZE] Current periods count: ${latestAuctionPeriods.length}`);
+
+        const updatedPeriods = latestAuctionPeriods.map((p: any) => {
+          if (p.name === auctionPeriodName) {
+            console.log(`[FINALIZE] Marking period "${auctionPeriodName}" as finalized (0 bids)`);
+            return { ...p, status: 'finalized' };
+          }
+          return p;
+        });
+
+        console.log(`[FINALIZE] Updated periods count: ${updatedPeriods.length}`);
+
+        // CRITICAL SAFETY CHECK: Ensure no periods are deleted
+        if (updatedPeriods.length < latestAuctionPeriods.length) {
+          const errorMsg = `CRITICAL ERROR: Attempted to delete auction periods! Original: ${latestAuctionPeriods.length}, Updated: ${updatedPeriods.length}`;
+          console.error(`[FINALIZE] ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+
+        // CRITICAL SAFETY CHECK: Ensure period names match
+        const originalNames = new Set(latestAuctionPeriods.map((p: any) => p.name));
+        const updatedNames = new Set(updatedPeriods.map((p: any) => p.name));
+        const missingPeriods = [...originalNames].filter(name => !updatedNames.has(name));
+
+        if (missingPeriods.length > 0) {
+          const errorMsg = `CRITICAL ERROR: Missing periods after update: ${missingPeriods.join(', ')}`;
+          console.error(`[FINALIZE] ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+
+        updateData['config.auctionPeriods'] = updatedPeriods;
+
+        // Check if all periods are finalized
+        const allPeriodsFinalized = updatedPeriods.every((p: any) => p.status === 'finalized');
+        if (allPeriodsFinalized) {
+          updateData['config.auctionStatus'] = 'finalized';
+          console.log(`[FINALIZE] All auction periods finalized, marking game auction as finalized`);
+        }
+      } else {
+        // For games without periods, mark the whole auction as finalized
+        updateData['config.auctionStatus'] = 'finalized';
+      }
+
+      await gameDoc.ref.update(updateData);
+
+      // Log the activity
+      await db.collection('activityLogs').add({
+        action: 'AUCTION_FINALIZED',
+        details: {
+          gameId,
+          gameName: gameData?.name,
+          results: {
+            totalRiders: 0,
+            winnersAssigned: 0,
+            losersRefunded: 0,
+            errors: [],
+          },
+        },
+        timestamp: new Date().toISOString(),
+        ipAddress: 'internal',
+        userAgent: 'cron-job',
+      });
+
       return {
-        success: false,
-        error: 'No bids found for this game',
-        details: auctionPeriodName ? `No bids exist for period "${auctionPeriodName}"` : 'No bids exist for this game',
+        success: true,
+        message: `Auction period finalized successfully with 0 bids${auctionPeriodName ? ` for period "${auctionPeriodName}"` : ''}`,
+        results: {
+          totalRiders: 0,
+          winnersAssigned: 0,
+          losersRefunded: 0,
+          errors: [],
+        },
       };
     }
 
