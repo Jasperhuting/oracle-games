@@ -83,6 +83,16 @@ export async function finalizeAuction(
 
     console.log(`[FINALIZE] Found ${allBidsForGameSnapshot.size} total bids for game`);
 
+    // Helper to convert Firestore timestamp to ISO string
+    const toISOString = (value: any): string | null => {
+      if (!value) return null;
+      if (typeof value === 'string') return value;
+      if (value instanceof Date) return value.toISOString();
+      if (typeof value.toDate === 'function') return value.toDate().toISOString();
+      if (value._seconds) return new Date(value._seconds * 1000).toISOString();
+      return null;
+    };
+
     // Filter for active and outbid bids in memory (outbid status may exist from legacy data)
     // AND filter by auction period if specified
     const activeBidsDocs = allBidsForGameSnapshot.docs.filter(doc => {
@@ -97,11 +107,16 @@ export async function finalizeAuction(
       // Filter by auction period if specified
       if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
         const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
-        const periodStartDate = new Date(period?.startDate);
-        const bidAt = new Date(bidData.bidAt);
+        const periodStartDate = period?.startDate; // ISO string
+        const periodEndDate = period?.endDate; // ISO string
+        const bidAt = toISOString(bidData.bidAt); // Convert Firestore timestamp to ISO string
 
-        // Only include bids made during or after the period start
-        return bidAt >= periodStartDate;
+        if (!periodStartDate || !periodEndDate || !bidAt) {
+          return false;
+        }
+
+        // Only include bids made during this specific period (string comparison)
+        return bidAt >= periodStartDate && bidAt <= periodEndDate;
       }
 
       return true;
@@ -128,13 +143,14 @@ export async function finalizeAuction(
         return {
           success: false,
           error: 'No active bids found',
-          details: `Found ${allBidsForGameSnapshot.size} total bids with statuses: ${JSON.stringify(statusCounts)}`,
+          details: `Found ${allBidsForGameSnapshot.size} total bids with statuses: ${JSON.stringify(statusCounts)}${auctionPeriodName ? ` for period "${auctionPeriodName}"` : ''}`,
         };
       }
 
       return {
         success: false,
         error: 'No bids found for this game',
+        details: auctionPeriodName ? `No bids exist for period "${auctionPeriodName}"` : 'No bids exist for this game',
       };
     }
 
