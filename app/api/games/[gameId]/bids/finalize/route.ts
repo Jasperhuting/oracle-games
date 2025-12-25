@@ -8,6 +8,16 @@ export async function POST(
   try {
     const { gameId } = await params;
 
+    // Check for internal API key for CRON job authentication
+    const internalApiKey = request.headers.get('x-internal-key');
+    if (internalApiKey && internalApiKey !== process.env.INTERNAL_API_KEY) {
+      console.error('[FINALIZE] Invalid internal API key');
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Parse request body to get auction period name
     const body = await request.json().catch(() => ({}));
     const { auctionPeriodName } = body;
