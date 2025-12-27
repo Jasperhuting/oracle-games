@@ -5,7 +5,6 @@ import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency"
 import { ReactNode } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Rider } from "@/lib/scraper";
 import { ParticipantData } from "@/app/games/[gameId]/auction/page";
 
 // TODO: replace any with real type
@@ -43,7 +42,26 @@ export const PlayerCard = (
         showPointsInsteadOfPrice?: boolean,
     }) => {
 
-    const age = player?.team?.riders?.find((rider: Rider) => rider.name === player.id)?.age;
+    // Calculate age from birth date if available
+    let age: number | undefined;
+    if (player?.age) {
+        const ageValue = typeof player.age === 'string' ? player.age : String(player.age);
+        // Check if it's a date string (YYYY-MM-DD format)
+        if (ageValue.includes('-')) {
+            const birthDate = new Date(ageValue);
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                calculatedAge--;
+            }
+            age = calculatedAge;
+        } else {
+            // If it's already an age number, use it directly
+            age = parseInt(ageValue);
+        }
+    }
+
     const jerseyImage = player?.team?.teamImage;
     const teamName = player?.team?.name;
     const isSold = player?.isSold;
