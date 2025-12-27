@@ -125,7 +125,7 @@ export default function TeamsOverviewPage() {
     })
     .sort((a, b) => b.totalRiders - a.totalRiders);
 
-  const sortedTeams = [...teams].sort((a, b) => {
+  const sortedTeams = [...(teams || [])].sort((a, b) => {
     let comparison = 0;
 
     switch (sortBy) {
@@ -309,25 +309,25 @@ export default function TeamsOverviewPage() {
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">Totaal Teams</div>
               <div className="text-2xl font-bold text-gray-900">
-                {teams.length}
+                {teams?.length || 0}
               </div>
             </div>
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">Totaal Renners</div>
               <div className="text-2xl font-bold text-gray-900">
-                {teams.reduce((sum, t) => sum + t.totalRiders, 0)}
+                {teams?.reduce((sum, t) => sum + (t?.totalRiders || 0), 0) || 0}
               </div>
             </div>
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">Totaal Uitgegeven</div>
               <div className="text-2xl font-bold text-gray-900">
-                €{teams.reduce((sum, t) => sum + t.totalSpent, 0).toLocaleString()}
+                €{(teams?.reduce((sum, t) => sum + (t?.totalSpent || 0), 0) || 0).toLocaleString()}
               </div>
             </div>
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">Complete Teams</div>
               <div className="text-2xl font-bold text-gray-900">
-                {teams.filter(t => t.rosterComplete).length}
+                {teams?.filter(t => t?.rosterComplete).length || 0}
               </div>
             </div>
           </div>
