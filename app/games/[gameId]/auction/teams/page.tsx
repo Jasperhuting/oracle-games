@@ -91,13 +91,14 @@ export default function TeamsOverviewPage() {
 
   // Group riders by cycling team
   const cyclingTeamsMap = new Map<string, any[]>();
-  teams.forEach(team => {
-    team.riders.forEach(rider => {
+  teams?.forEach(team => {
+    team?.riders?.forEach(rider => {
+      if (!rider) return; // Skip if rider is undefined
       const cyclingTeam = rider.riderTeam || 'Onbekend';
       if (!cyclingTeamsMap.has(cyclingTeam)) {
         cyclingTeamsMap.set(cyclingTeam, []);
       }
-      cyclingTeamsMap.get(cyclingTeam)!.push({
+      cyclingTeamsMap.get(cyclingTeam)?.push({
         ...rider,
         playername: team.playername,
         userId: team.userId,
