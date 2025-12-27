@@ -89,10 +89,11 @@ export default function TeamsOverviewPage() {
     setExpandedTeams(newExpanded);
   };
 
-  // Group riders by cycling team
+  // Group riders by cycling team with null checks
   const cyclingTeamsMap = new Map<string, any[]>();
   teams?.forEach(team => {
-    team?.riders?.forEach(rider => {
+    if (!team) return; // Skip if team is undefined
+    team.riders?.forEach(rider => {
       if (!rider) return; // Skip if rider is undefined
       const cyclingTeam = rider.riderTeam || 'Onbekend';
       if (!cyclingTeamsMap.has(cyclingTeam)) {
@@ -100,8 +101,8 @@ export default function TeamsOverviewPage() {
       }
       cyclingTeamsMap.get(cyclingTeam)?.push({
         ...rider,
-        playername: team.playername,
-        userId: team.userId,
+        playername: team.playername || 'Unknown',
+        userId: team.userId || '',
       });
     });
   });
