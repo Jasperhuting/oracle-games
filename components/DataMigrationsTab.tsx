@@ -11,6 +11,11 @@ export const DataMigrationsTab = () => {
   const [result, setResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [error, setError] = useState<string | null>(null);
 
+  const [rosterGameId, setRosterGameId] = useState('');
+  const [fixingRoster, setFixingRoster] = useState(false);
+  const [rosterResult, setRosterResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [rosterError, setRosterError] = useState<string | null>(null);
+
   const handleMigrateParticipantTeams = async () => {
     if (!user || !gameId.trim()) {
       setError('Please enter a game ID');
@@ -42,6 +47,41 @@ export const DataMigrationsTab = () => {
     }
   };
 
+  const handleFixRosterComplete = async () => {
+    if (!user || !rosterGameId.trim()) {
+      setRosterError('Please enter a game ID');
+      return;
+    }
+
+    setFixingRoster(true);
+    setRosterError(null);
+    setRosterResult(null);
+
+    try {
+      const response = await fetch(`/api/admin/fix-roster-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: rosterGameId.trim(),
+          userId: user.uid,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fix failed');
+      }
+
+      setRosterResult(data);
+    } catch (error: unknown) {
+      console.error('Error fixing roster complete:', error);
+      setRosterError(error instanceof Error ? error.message : 'Failed to fix roster complete');
+    } finally {
+      setFixingRoster(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -49,6 +89,58 @@ export const DataMigrationsTab = () => {
         <p className="text-sm text-gray-600 mb-6">
           Run one-time data migrations to fix or update data structures.
         </p>
+
+        {/* Migration: Fix Roster Complete */}
+        <div className="border border-gray-200 rounded-lg p-4 mb-4">
+          <h3 className="text-lg font-semibold mb-2">Fix Roster Complete Status</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Updates the <code className="bg-gray-100 px-1 rounded">rosterComplete</code> field for all participants based on their current roster size.
+            Sets it to true if they have reached the maximum number of riders.
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="rosterGameId" className="block text-sm font-medium text-gray-700 mb-1">
+                Game ID
+              </label>
+              <input
+                id="rosterGameId"
+                type="text"
+                value={rosterGameId}
+                onChange={(e) => setRosterGameId(e.target.value)}
+                placeholder="Enter game ID (e.g., abc123)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={fixingRoster}
+              />
+            </div>
+
+            <Button
+              onClick={handleFixRosterComplete}
+              disabled={fixingRoster || !rosterGameId.trim()}
+              text={fixingRoster ? "Fixing..." : "Fix Roster Complete"}
+              className="w-full"
+            />
+          </div>
+
+          {/* Roster Error Display */}
+          {rosterError && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mt-4">
+              <p className="text-red-700 text-sm font-medium">Error</p>
+              <p className="text-red-600 text-sm">{rosterError}</p>
+            </div>
+          )}
+
+          {/* Roster Success Display */}
+          {rosterResult && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4 mt-4">
+              <p className="text-green-700 text-sm font-medium mb-2">Fix Complete</p>
+              <div className="text-sm text-gray-700 space-y-1">
+                <p><strong>Total participants:</strong> {rosterResult.total}</p>
+                <p><strong>Updated:</strong> {rosterResult.updated}</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Migration: Fix Participant Teams */}
         <div className="border border-gray-200 rounded-lg p-4 mb-4">

@@ -366,11 +366,16 @@ export async function finalizeAuction(
 
           console.log(`[FINALIZE] User ${userId}: correct spentBudget=${correctSpentBudget} (calculated from ${allWonBidsSnapshot.size} won bids), teamSize=${newTeam.length}`);
 
+          // Check if roster is complete
+          const maxRiders = gameData?.config?.maxRiders || 0;
+          const rosterComplete = newTeam.length >= maxRiders;
+
           // Update participant with all wins at once
           await participantDoc.ref.update({
             team: newTeam,
             spentBudget: correctSpentBudget,
             rosterSize: newTeam.length,
+            rosterComplete,
           });
 
           // IMPORTANT: Also create PlayerTeam documents for each won rider

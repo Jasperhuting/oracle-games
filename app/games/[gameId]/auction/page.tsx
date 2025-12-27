@@ -23,6 +23,7 @@ import { qualifiesAsNeoProf } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
 import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
 import { AddRiderTab } from "@/components/AddRiderTab";
+import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
 // Custom hook to monitor cookie changes
 function useCookieValue(cookieName: string) {
@@ -169,6 +170,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   // Get banner visibility from cookie with change detection
   const hideBannerCookie = useCookieValue('hide-beta-banner');
   const hideBanner = hideBannerCookie === 'true';
+
+  // Monitor cache invalidation from server-side changes
+  useCacheInvalidation(gameId);
 
   useEffect(() => {
     params.then(p => {
@@ -1083,6 +1087,15 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 ghost
                 title="Force refresh data from server"
               />
+              {game.bidding && (
+                <Button
+                  type="button"
+                  text="Teams Overzicht"
+                  onClick={() => router.push(`/games/${gameId}/auction/teams`)}
+                  ghost
+                  title="Bekijk alle teams in één overzicht"
+                />
+              )}
               <Button
                 type="button"
                 text={t('global.backToGames')}

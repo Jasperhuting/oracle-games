@@ -20,6 +20,7 @@ import { TranslationsTab } from "@/components/TranslationsTab";
 import { BidBackupTab } from "@/components/BidBackupTab";
 import { FinalizeOverviewTab } from "@/components/FinalizeOverviewTab";
 import { SimulateResultsTab } from "@/components/SimulateResultsTab";
+import { TodosTab } from "@/components/TodosTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -212,6 +213,11 @@ export default function AdminPageClient() {
                             id: 'system',
                             label: 'Systeem',
                             tabs: [
+                                {
+                                    id: 'todos',
+                                    label: 'Todo\'s',
+                                    content: <TodosTab />
+                                },
                                 {
                                     id: 'activity',
                                     label: t('admin.tabs.activityLog'),

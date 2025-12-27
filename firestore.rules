@@ -198,6 +198,18 @@ service cloud.firestore {
       allow write: if isProgrammer();
     }
 
+    // ========================================================================
+    // ADMIN TODOS
+    // ========================================================================
+
+    // Admin Todos - only admins can read and write
+    match /adminTodos/{todoId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // Default deny all other collections
     match /{document=**} {
       allow read, write: if false;
