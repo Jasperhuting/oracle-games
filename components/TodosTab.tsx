@@ -402,68 +402,99 @@ export function TodosTab() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
+    console.log('🔵 Drag end:', { activeId: active.id, overId: over?.id });
+
     if (!over || active.id === over.id || !user) {
+      console.log('❌ Early return:', { hasOver: !!over, sameId: active.id === over?.id, hasUser: !!user });
       return;
     }
 
-    // Get the category of the dragged item
-    const draggedTodo = todos.find(t => t.id === active.id);
-    if (!draggedTodo) return;
+    // Get the current view's todos (what the user sees on screen)
+    // Sort by global order only
+    let visibleTodos = [...todos].sort((a, b) => a.order - b.order);
 
-    // Calculate filtered todos inline (sorted by category then order)
-    let currentFilteredTodos = [...todos].sort((a, b) => {
-      if (a.category !== b.category) {
-        return a.category.localeCompare(b.category);
-      }
-      return a.order - b.order;
-    });
-
+    // Apply the same filters as the display
     if (selectedCategory !== 'all') {
-      currentFilteredTodos = currentFilteredTodos.filter(todo => todo.category === selectedCategory);
+      visibleTodos = visibleTodos.filter(todo => todo.category === selectedCategory);
     }
     if (hideDone) {
-      currentFilteredTodos = currentFilteredTodos.filter(todo => todo.status !== 'done');
+      visibleTodos = visibleTodos.filter(todo => todo.status !== 'done');
     }
 
-    const oldIndex = currentFilteredTodos.findIndex((todo) => todo.id === active.id);
-    const newIndex = currentFilteredTodos.findIndex((todo) => todo.id === over.id);
+    console.log('🔵 Visible todos:', visibleTodos.map(t => ({ id: t.id, title: t.title, order: t.order, category: t.category })));
+
+    // Find positions in the visible list
+    const oldIndex = visibleTodos.findIndex(t => t.id === active.id);
+    const newIndex = visibleTodos.findIndex(t => t.id === over.id);
+
+    console.log('🔵 Indices:', { oldIndex, newIndex });
 
     if (oldIndex === -1 || newIndex === -1) {
+      console.log('❌ Index not found');
       return;
     }
 
-    // Reorder within the filtered list
-    const reorderedFiltered = arrayMove(currentFilteredTodos, oldIndex, newIndex);
+    // Reorder within the visible list
+    const reorderedVisible = arrayMove(visibleTodos, oldIndex, newIndex);
 
-    // Track which todos actually changed order
+    console.log('🔵 Reordered:', reorderedVisible.map(t => ({ id: t.id, title: t.title, category: t.category })));
+
+    // Build a map of all todos with their new order
+    // Start by getting all todos sorted by current order
+    const allTodosSorted = [...todos].sort((a, b) => a.order - b.order);
+    const newOrderMap = new Map<string, number>();
     const changedTodos: { id: string; newOrder: number }[] = [];
 
-    // Update all todos - only update orders for items in the same category
-    const updatedTodos = todos.map(todo => {
-      if (todo.category !== draggedTodo.category) {
-        // Different category, don't change
-        return todo;
-      }
+    // Assign order values based on the reordered visible list and keeping invisible todos in place
+    let orderCounter = 0;
+    let visibleIndex = 0;
 
-      // Find this todo in the reordered filtered list
-      const newPosition = reorderedFiltered.findIndex(t => t.id === todo.id);
-      if (newPosition !== -1 && newPosition !== todo.order) {
-        // This todo was in the filtered list and its order changed
-        changedTodos.push({ id: todo.id, newOrder: newPosition });
-        return { ...todo, order: newPosition };
+    for (const todo of allTodosSorted) {
+      // Check if this todo is in the visible list
+      const indexInVisible = visibleTodos.findIndex(t => t.id === todo.id);
+
+      if (indexInVisible !== -1) {
+        // This todo is visible, use its position in the reordered list
+        const newOrder = orderCounter;
+        newOrderMap.set(reorderedVisible[visibleIndex].id, newOrder);
+
+        if (reorderedVisible[visibleIndex].order !== newOrder) {
+          changedTodos.push({ id: reorderedVisible[visibleIndex].id, newOrder });
+        }
+
+        visibleIndex++;
+        orderCounter++;
+      } else {
+        // This todo is not visible (filtered out), keep its relative position
+        newOrderMap.set(todo.id, orderCounter);
+        if (todo.order !== orderCounter) {
+          changedTodos.push({ id: todo.id, newOrder: orderCounter });
+        }
+        orderCounter++;
       }
-      // No change needed
+    }
+
+    console.log('🔵 Changed todos:', changedTodos);
+
+    // Update all todos with new order values (keep category unchanged)
+    const updatedTodos = todos.map(todo => {
+      const newOrder = newOrderMap.get(todo.id);
+      if (newOrder !== undefined) {
+        return { ...todo, order: newOrder };
+      }
       return todo;
     });
+
+    console.log('🔵 Updated todos:', updatedTodos.map(t => ({ id: t.id, title: t.title, order: t.order, category: t.category })));
 
     // Optimistically update UI
     setTodos(updatedTodos);
 
-    // Only update todos that actually changed in the database
+    // Update changed todos in database
     try {
       await Promise.all(
-        changedTodos.map(({ id, newOrder }) =>
-          fetch('/api/admin/todos', {
+        changedTodos.map(async ({ id, newOrder }) => {
+          const response = await fetch('/api/admin/todos', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -471,25 +502,23 @@ export function TodosTab() {
               todoId: id,
               order: newOrder,
             }),
-          })
-        )
+          });
+          const data = await response.json();
+          console.log('🔵 Update response:', { id, newOrder, response: data });
+          return response;
+        })
       );
+      console.log('✅ All updates complete');
     } catch (err) {
+      console.error('❌ Update failed:', err);
       setError(err instanceof Error ? err.message : 'Failed to update todo order');
       // Revert on error
       fetchTodos();
     }
   };
 
-  // Sort todos by order within each category
-  let filteredTodos = [...todos].sort((a, b) => {
-    // First sort by category (to keep categories together)
-    if (a.category !== b.category) {
-      return a.category.localeCompare(b.category);
-    }
-    // Then by order within the same category
-    return a.order - b.order;
-  });
+  // Sort todos by global order
+  let filteredTodos = [...todos].sort((a, b) => a.order - b.order);
 
   if (selectedCategory !== 'all') {
     filteredTodos = filteredTodos.filter(todo => todo.category === selectedCategory);

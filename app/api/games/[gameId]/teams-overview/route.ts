@@ -168,8 +168,8 @@ export async function GET(
       });
     });
 
-    // Combine participants with their teams
-    const teams = sortedDocs.map((doc, index) => {
+    // Combine participants with their teams and calculate rankings
+    const teams = sortedDocs.map((doc) => {
       const participant = doc.data();
       const userId = participant.userId;
       const riders = teamsMap.get(userId) || [];
@@ -195,7 +195,7 @@ export async function GET(
         rosterSize: participant.rosterSize || 0,
         rosterComplete: participant.rosterComplete || false,
         totalPoints: participant.totalPoints || 0,
-        ranking: participant.ranking || (index + 1), // Use actual ranking, or position in sorted list if ranking is 0
+        ranking: 0, // Will be calculated below
         riders,
         totalRiders: riders.length,
         totalBaseValue,
@@ -206,6 +206,18 @@ export async function GET(
           ? Math.round(riders.reduce((sum, r) => sum + (r.pricePaid || 0), 0) / riders.length)
           : 0
       };
+    });
+
+    // Calculate proper rankings based on totalPoints
+    // Teams with the same points get the same ranking
+    let currentRank = 1;
+    let previousPoints = -1;
+    teams.forEach((team, index) => {
+      if (team.totalPoints !== previousPoints) {
+        currentRank = index + 1;
+        previousPoints = team.totalPoints;
+      }
+      team.ranking = currentRank;
     });
 
     return NextResponse.json({ teams });
