@@ -187,17 +187,24 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   }, [params]);
 
 
-  const alleBeidingenLaden = (async () => {
-
+  const loadAllBids = async () => {
     if (!gameId) return;
-
-    const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${1000}&offset=${0}&notActive=true`);
-    const bidsData = await bidsResponse.json();
-    setAlleBiedingen(bidsData.bids);
-  })
+    
+    try {
+      const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=1000&offset=0&notActive=true`);
+      if (!bidsResponse.ok) {
+        throw new Error('Failed to load bids');
+      }
+      const bidsData = await bidsResponse.json();
+      setAlleBiedingen(bidsData.bids || []);
+    } catch (error) {
+      console.error('Error loading bids:', error);
+      setError('Failed to load bids. Please try again later.');
+    }
+  };
 
   useEffect(() => {
-    alleBeidingenLaden()
+    loadAllBids();
   }, [gameId])
 
 
