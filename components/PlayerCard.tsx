@@ -11,34 +11,36 @@ import { ParticipantData } from "@/app/games/[gameId]/auction/page";
 // TODO: replace any with real type
 
 export const PlayerCard = (
-    { 
-        player, 
-        onClick, 
-        selected, 
-        buttonContainer, 
-        showBid, 
-        bid, 
-        hideInfo, 
-        className, 
-        bidders, 
-        isNeoProf, 
+    {
+        player,
+        onClick,
+        selected,
+        buttonContainer,
+        showBid,
+        bid,
+        hideInfo,
+        className,
+        bidders,
+        isNeoProf,
         showNeoProfBadge,
         myTeam,
         participant,
-    }: { 
+        showPointsInsteadOfPrice,
+    }: {
         player: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
         onClick: (player: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
-        selected: boolean, 
-        buttonContainer?: ReactNode, 
-        showBid?: boolean, 
-        bid?: number, 
-        hideInfo?: boolean, 
-        className?: string, 
-        bidders?: Array<{ playername: string, amount: number, bidAt: string }>, 
-        isNeoProf?: boolean, 
+        selected: boolean,
+        buttonContainer?: ReactNode,
+        showBid?: boolean,
+        bid?: number,
+        hideInfo?: boolean,
+        className?: string,
+        bidders?: Array<{ playername: string, amount: number, bidAt: string }>,
+        isNeoProf?: boolean,
         showNeoProfBadge?: boolean,
         myTeam?: boolean,
         participant?: ParticipantData | null,
+        showPointsInsteadOfPrice?: boolean,
     }) => {
 
     const age = player?.team?.riders?.find((rider: Rider) => rider.name === player.id)?.age;
@@ -114,11 +116,11 @@ export const PlayerCard = (
                 {isSold ? (
                     <div className="flex flex-row gap-2 justify-between">
                     <span className="font-medium text-gray-700">
-                        Price:
+                        {showPointsInsteadOfPrice ? 'Points:' : 'Price:'}
                     </span>
                     <span className={`${player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""} line-through`}>
-                        {formatCurrencyWhole(player.effectiveMinBid || player.points)}
-                        {player.effectiveMinBid && player.effectiveMinBid < player.points && (
+                        {showPointsInsteadOfPrice ? player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
+                        {!showPointsInsteadOfPrice && player.effectiveMinBid && player.effectiveMinBid < player.points && (
                             <span className="text-xs text-gray-500 line-through ml-1">
                                 {player.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(player.points)}
                             </span>
@@ -128,11 +130,11 @@ export const PlayerCard = (
                 ) : (
                     <div className="flex flex-row gap-2 justify-between">
                     <span className="font-medium text-gray-700">
-                        Price:
+                        {showPointsInsteadOfPrice ? 'Points:' : 'Price:'}
                     </span>
                     <span className={player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""}>
-                        {formatCurrencyWhole(player.effectiveMinBid || player.points)}
-                        {player.effectiveMinBid && player.effectiveMinBid < player.points ? (
+                        {showPointsInsteadOfPrice ? player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
+                        {!showPointsInsteadOfPrice && player.effectiveMinBid && player.effectiveMinBid < player.points ? (
                             <span className="text-xs text-gray-500 line-through ml-1">
                                 {formatCurrencyWhole(player.points)}
                             </span>
@@ -141,7 +143,7 @@ export const PlayerCard = (
                 </div>
                 )}
                 
-                {showBid && !isSold && !showNeoProfBadge &&
+                {showBid && !isSold && !showNeoProfBadge && !showPointsInsteadOfPrice &&
                     <div className="flex flex-row gap-2 justify-between">
                         <span className="font-medium text-gray-700">
                             Bid:
@@ -151,7 +153,7 @@ export const PlayerCard = (
                         </span>
                     </div>
                 }
-                {showBid && isSold &&
+                {showBid && isSold && !showPointsInsteadOfPrice &&
                     <div className="flex flex-row gap-2 justify-between">
                         <span className="font-medium text-gray-700">
                             Winning bid:

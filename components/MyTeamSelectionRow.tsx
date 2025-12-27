@@ -64,7 +64,7 @@ export const MyTeamSelectionRow = (
                 {/* Show bid and cost information for auction games (without revealing outbid status live) */}
                 {rider.myBid !== undefined && (
                     <div className="flex flex-col items-end gap-1">
-                        {game?.gameType !== 'worldtour-manager' && (
+                        {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && (
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-500">Bid:</span>
                                 <span className="font-bold text-sm text-green-600">
@@ -72,10 +72,10 @@ export const MyTeamSelectionRow = (
                                 </span>
                             </div>)}
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Cost:</span>
+                            <span className="text-xs text-gray-500">{game?.gameType === 'marginal-gains' ? 'Points:' : 'Cost:'}</span>
                             <span className={`text-sm font-medium ${rider.effectiveMinBid && rider.effectiveMinBid < rider.points ? 'text-green-600' : 'text-gray-700'}`}>
-                                {formatCurrency(rider.effectiveMinBid || rider.points)}
-                                {rider.effectiveMinBid && rider.effectiveMinBid < rider.points && (
+                                {game?.gameType === 'marginal-gains' ? rider.myBid : formatCurrency(rider.effectiveMinBid || rider.points)}
+                                {game?.gameType !== 'marginal-gains' && rider.effectiveMinBid && rider.effectiveMinBid < rider.points && (
                                     <span className="text-xs text-gray-400 line-through ml-1">
                                         {formatCurrency(rider.points)}
                                     </span>
@@ -90,7 +90,7 @@ export const MyTeamSelectionRow = (
                 {/* Show adjust and cancel bid buttons for auction games - only for active/outbid bids */}
                 {rider.myBid !== undefined && onCancelBid && rider.myBidId && !hideButton && canCancelBid && (
                     <div className="flex gap-2">
-                        {!isWorldTourManager && onAdjustBid && (
+                        {!isWorldTourManager && game?.gameType !== 'marginal-gains' && onAdjustBid && (
                             <Button
                                 onClick={() => onAdjustBid(rider.myBidId)}
                                 selected={false}
@@ -102,7 +102,7 @@ export const MyTeamSelectionRow = (
                         <Button
                             onClick={() => onCancelBid(rider.myBidId, rider.name)}
                             selected={false}
-                            text="Reset bid"
+                            text={game?.gameType === 'marginal-gains' || game?.gameType === 'worldtour-manager' ? 'Remove' : 'Reset bid'}
                             endIcon={<X size={20} />}
                             variant="danger"
                             ghost

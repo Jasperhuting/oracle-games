@@ -52,7 +52,7 @@ interface Participant {
 
 export const JoinableGamesTab = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, impersonationStatus } = useAuth();
   const [games, setGames] = useState<Game[]>([]);
   const [myGames, setMyGames] = useState<Set<string>>(new Set());
   const [myParticipants, setMyParticipants] = useState<Map<string, Participant>>(new Map());
@@ -647,7 +647,7 @@ export const JoinableGamesTab = () => {
           })}
 
           {/* Test Games Section */}
-          {isAdmin && testGameGroups.length > 0 && (
+          {(isAdmin || impersonationStatus?.isImpersonating) && testGameGroups.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-lg">
               <button
                 onClick={() => setShowTestGames(!showTestGames)}

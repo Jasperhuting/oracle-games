@@ -4,6 +4,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 export interface AdminTodo {
   id: string;
   title: string;
+  description?: string;
   status: 'todo' | 'in_progress' | 'done';
   category: string;
   order: number;
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
       todos.push({
         id: doc.id,
         title: data.title,
+        description: data.description,
         status: data.status,
         category: data.category || 'global',
         order: data.order,
@@ -135,11 +137,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/admin/todos - Update a todo (title, status, category, or order)
+// PATCH /api/admin/todos - Update a todo (title, description, status, category, or order)
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, todoId, title, status, category, order } = body;
+    const { userId, todoId, title, description, status, category, order } = body;
 
     if (!userId || !todoId) {
       return NextResponse.json(
@@ -168,6 +170,7 @@ export async function PATCH(request: NextRequest) {
 
     const updateData: {
       title?: string;
+      description?: string;
       status?: 'todo' | 'in_progress' | 'done';
       category?: string;
       order?: number;
@@ -184,6 +187,10 @@ export async function PATCH(request: NextRequest) {
         );
       }
       updateData.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      updateData.description = description.trim();
     }
 
     if (status !== undefined) {

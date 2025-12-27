@@ -71,7 +71,7 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game type supports bidding/selection
-    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager') {
+    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager' && gameData?.gameType !== 'marginal-gains') {
       return NextResponse.json(
         { error: 'Game does not support bidding' },
         { status: 400 }
@@ -256,12 +256,13 @@ export async function POST(
     }, 0);
 
     // Check if user has enough budget (budget - spent - active bids)
+    // Skip budget validation for marginal-gains (no budget system)
     // Use game's budget (in case admin updated it) instead of participant's budget
     const budget = gameData?.config?.budget || 0;
     const spentBudget = participantData?.spentBudget || 0;
     const availableBudget = budget - spentBudget - totalActiveBids;
 
-    if (amount > availableBudget) {
+    if (gameData?.gameType !== 'marginal-gains' && amount > availableBudget) {
       // Log budget validation failure
       await db.collection('activityLogs').add({
         action: 'BID_VALIDATION_FAILED',

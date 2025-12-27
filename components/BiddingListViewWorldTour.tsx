@@ -73,7 +73,7 @@ export const BiddingListViewWorldTour = ({
 
               <div className="flex gap-2 items-center justify-between mt-1">
                 <span className="font-medium whitespace-nowrap text-sm">
-                  {rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}
+                  {game.gameType === 'marginal-gains' ? `${rider.myBid} points` : rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}
                 </span>
                 {canCancel && (
                   <>

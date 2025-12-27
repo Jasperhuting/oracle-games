@@ -250,6 +250,7 @@ export const MyAuctionBidsBig = ({
                                         selected={false}
                                         isNeoProf={qualifiesAsNeoProf(rider, game?.config || {})}
                                         showNeoProfBadge={game?.gameType === 'worldtour-manager'}
+                                        showPointsInsteadOfPrice={game?.gameType === 'marginal-gains'}
                                         buttonContainer={<></>}
                                       />
                                     ) : null;

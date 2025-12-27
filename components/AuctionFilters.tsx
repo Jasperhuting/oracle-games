@@ -14,6 +14,10 @@ export const AuctionFilters = ({
     setPriceRange,
     minRiderPrice,
     maxRiderPrice,
+    ageRange,
+    setAgeRange,
+    minRiderAge,
+    maxRiderAge,
     myBids,
     handleResetBidsClick,
     game,
@@ -30,6 +34,10 @@ export const AuctionFilters = ({
     setPriceRange: (priceRange: [number, number]) => void,
     minRiderPrice: number,
     maxRiderPrice: number,
+    ageRange?: [number, number],
+    setAgeRange?: (ageRange: [number, number]) => void,
+    minRiderAge?: number,
+    maxRiderAge?: number,
     myBids: Bid[],
     handleResetBidsClick: () => void,
     game: GameData,
@@ -37,10 +45,10 @@ export const AuctionFilters = ({
     setshowOnlyFillers: (showOnlyFillers: boolean) => void,
     hideSoldPlayers: boolean,
     setHideSoldPlayers: (hideSoldPlayers: boolean) => void
-    sortedAndFilteredRiders: RiderWithBid[] 
+    sortedAndFilteredRiders: RiderWithBid[]
 }) => {
 
-
+    const isMarginalGains = game?.gameType === 'marginal-gains';
     const { t } = useTranslation();
 
     return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 sticky top-0 rounded-md p-2">
@@ -58,7 +66,7 @@ export const AuctionFilters = ({
         </span>
         <span className="flex flex-col flex-1 justify-center">
             <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                {t('games.auctions.priceRangeLabel')}
+                {game?.gameType === 'marginal-gains' ? 'Puntenklasse' : t('games.auctions.priceRangeLabel')}
             </label>
             <div className="py-2 mt-2">
                 <RangeSlider
@@ -93,6 +101,45 @@ export const AuctionFilters = ({
                 />
             </div>
         </span>
+        {isMarginalGains && ageRange && setAgeRange && minRiderAge !== undefined && maxRiderAge !== undefined && (
+            <span className="flex flex-col flex-1 justify-center">
+                <label htmlFor="age-range" className="text-sm font-bold text-gray-700">
+                    Leeftijd
+                </label>
+                <div className="py-2 mt-2">
+                    <RangeSlider
+                        min={minRiderAge}
+                        max={maxRiderAge}
+                        value={ageRange}
+                        onInput={(value: number[]) => setAgeRange([value[0], value[1]])}
+                    />
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                    <input
+                        type="number"
+                        min={minRiderAge}
+                        max={ageRange[1]}
+                        value={ageRange[0]}
+                        onChange={(e) => {
+                            const value = Math.max(minRiderAge, Math.min(Number(e.target.value), ageRange[1]));
+                            setAgeRange([value, ageRange[1]]);
+                        }}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                    <input
+                        type="number"
+                        min={ageRange[0]}
+                        max={maxRiderAge}
+                        value={ageRange[1]}
+                        onChange={(e) => {
+                            const value = Math.min(maxRiderAge, Math.max(Number(e.target.value), ageRange[0]));
+                            setAgeRange([ageRange[0], value]);
+                        }}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                </div>
+            </span>
+        )}
         <div className="flex flex-row flex-1 gap-2 justify-start">
         <span className="flex flex-col flex-1 justify-center">
             <Button className="whitespace-nowrap" text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />

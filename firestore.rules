@@ -210,6 +210,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ========================================================================
+    // SYSTEM COLLECTION
+    // ========================================================================
+
+    // System collection - authenticated users can read (for cache invalidation monitoring)
+    match /system/{documentId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only server-side access
+    }
+
     // Default deny all other collections
     match /{document=**} {
       allow read, write: if false;

@@ -113,6 +113,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const [myBids, setMyBids] = useState<Bid[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [ageRange, setAgeRange] = useState<[number, number]>([18, 45]);
   const bidAmountsRef = useRef<Record<string, string>>({});
   const [placingBid, setPlacingBid] = useState<string | null>(null);
   const [cancellingBid, setCancellingBid] = useState<string | null>(null);
@@ -713,10 +714,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       return;
     }
 
-    // Check budget, excluding any existing bid on this rider (in case we're updating)
-    if (bidAmount > getRemainingBudget(riderNameId)) {
-      setError('Bid exceeds your remaining budget');
-      return;
+    // Check budget for auction games (not for marginal-gains which has no budget)
+    if (game?.gameType !== 'marginal-gains') {
+      if (bidAmount > getRemainingBudget(riderNameId)) {
+        setError('Bid exceeds your remaining budget');
+        return;
+      }
     }
 
     // WorldTour Manager & Marginal Gains: Check neo-prof requirements
@@ -993,6 +996,11 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const filteredRiders = useMemo(() => {
     return availableRiders.filter(rider => {
+      // Filter out retired riders
+      if (rider.retired) {
+        return false;
+      }
+
       const matchesSearch = rider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (rider.nameID || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (rider.team?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -1000,13 +1008,22 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       const riderPrice = rider.effectiveMinBid || rider.points || 0;
       const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
 
+      // Age filter for marginal-gains
+      // Convert birth year to actual age
+      const currentYear = new Date().getFullYear();
+      let riderAge = rider.age ? (typeof rider.age === 'string' ? parseInt(rider.age) : rider.age) : null;
+      if (riderAge && riderAge > 1900) {
+        riderAge = currentYear - riderAge;
+      }
+      const matchesAge = game?.gameType !== 'marginal-gains' || !riderAge || (riderAge >= ageRange[0] && riderAge <= ageRange[1]);
+
       // Apply top-200 restriction at list level: only show riders in top 200 when enabled
       const riderRank = (rider as any).rank; // eslint-disable-line @typescript-eslint/no-explicit-any
       const withinTop200 = !isTop200Restricted || (typeof riderRank === 'number' && riderRank <= 200);
 
-      return matchesSearch && matchesPrice && withinTop200;
+      return matchesSearch && matchesPrice && matchesAge && withinTop200;
     });
-  }, [availableRiders, searchTerm, priceRange, isTop200Restricted]);
+  }, [availableRiders, searchTerm, priceRange, ageRange, isTop200Restricted, game?.gameType]);
 
   const sortedAndFilteredRiders = useMemo(() => {
     return [...filteredRiders]
@@ -1069,6 +1086,23 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points || 0);
   const minRiderPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const maxRiderPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
+
+  // Calculate min/max ages for the slider (marginal-gains only)
+  // Convert birth years to actual ages
+  const currentYear = new Date().getFullYear();
+  const allAges = availableRiders
+    .map(r => {
+      if (!r.age) return null;
+      const ageValue = typeof r.age === 'string' ? parseInt(r.age) : r.age;
+      // If the value is > 1900, it's likely a birth year, convert to age
+      if (ageValue > 1900) {
+        return currentYear - ageValue;
+      }
+      return ageValue;
+    })
+    .filter((age): age is number => age !== null && !isNaN(age) && age > 0 && age < 100);
+  const minRiderAge = allAges.length > 0 ? Math.min(...allAges) : 18;
+  const maxRiderAge = allAges.length > 0 ? Math.max(...allAges) : 45;
 
   const myAuctionBids = myBids.map((bid: Bid) => ({ ...bid, price: sortedAndFilteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points })).filter((bid: Bid) => bid.status === 'active')
   const isSelectionBasedGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
@@ -1191,8 +1225,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 </div>
               )}
 
-              <div className="flex relative h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
-                <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
+              <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
+                <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} ageRange={ageRange} setAgeRange={setAgeRange} minRiderAge={minRiderAge} maxRiderAge={maxRiderAge} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
                 <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
                 {myAuctionBids.length > 0 && <MyAuctionBids game={game} isWorldtour={game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains'} availableRiders={availableRiders} myBids={myAuctionBids} />}
                 {game.gameType !== 'worldtour-manager' && game.gameType !== 'marginal-gains' && <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({

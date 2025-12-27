@@ -54,6 +54,7 @@ export const BiddingCardView = ({
                       selected={false}
                       isNeoProf={qualifiesAsNeoProf(rider, game?.config)}
                       showNeoProfBadge={game?.gameType === 'worldtour-manager'}
+                      showPointsInsteadOfPrice={game?.gameType === 'marginal-gains'}
                       buttonContainer={
                         <>
                           {rider && canCancel && (
@@ -97,7 +98,7 @@ export const BiddingCardView = ({
                                 </>
                               ) : (
                                 <>
-                                  {game?.gameType !== 'worldtour-manager' && (
+                                  {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && (
                                     <Button
                                       type="button"
                                       text={t('games.auctions.adjustBid')}

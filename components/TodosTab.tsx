@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   DndContext,
@@ -29,7 +29,96 @@ interface SortableTodoItemProps {
   onCategoryChange: (id: string, category: string) => void;
   onDelete: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
+  onOpenDetails: (todo: AdminTodo) => void;
   categories: string[];
+}
+
+interface TodoDetailsModalProps {
+  todo: AdminTodo;
+  onClose: () => void;
+  onUpdateDescription: (id: string, description: string) => void;
+  formatCategoryName: (category: string) => string;
+}
+
+function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryName }: TodoDetailsModalProps) {
+  const [localDescription, setLocalDescription] = useState(todo.description || '');
+
+  // Update local state when todo changes
+  useEffect(() => {
+    setLocalDescription(todo.description || '');
+  }, [todo.description]);
+
+  const handleDescriptionChange = (value: string) => {
+    setLocalDescription(value);
+    onUpdateDescription(todo.id, value);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold">{todo.title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={localDescription}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              placeholder="Add a detailed description..."
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[200px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="font-medium text-gray-700">Category:</span>
+              <span className="ml-2 text-gray-600">{formatCategoryName(todo.category)}</span>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">Status:</span>
+              <span className="ml-2 text-gray-600">
+                {todo.status === 'todo' ? 'To Do' :
+                 todo.status === 'in_progress' ? 'In Progress' : 'Done'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">Created:</span>
+              <span className="ml-2 text-gray-600">
+                {new Date(todo.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">Updated:</span>
+              <span className="ml-2 text-gray-600">
+                {new Date(todo.updatedAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SortableTodoItem({
@@ -38,6 +127,7 @@ function SortableTodoItem({
   onCategoryChange,
   onDelete,
   onTitleChange,
+  onOpenDetails,
   categories
 }: SortableTodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -121,13 +211,30 @@ function SortableTodoItem({
             autoFocus
           />
         ) : (
-          <div
-            onClick={() => setIsEditing(true)}
-            className={`flex-1 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded ${
-              todo.status === 'done' ? 'line-through' : ''
-            }`}
-          >
-            {todo.title}
+          <div className="flex-1 flex items-center gap-2">
+            <div
+              onClick={() => setIsEditing(true)}
+              className={`flex-1 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded ${
+                todo.status === 'done' ? 'line-through' : ''
+              }`}
+            >
+              {todo.title}
+            </div>
+            <button
+              onClick={() => onOpenDetails(todo)}
+              className="text-gray-400 hover:text-gray-600 p-1"
+              title="View details"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         )}
 
@@ -216,6 +323,8 @@ export function TodosTab() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newTodoCategory, setNewTodoCategory] = useState('global');
+  const [selectedTodo, setSelectedTodo] = useState<AdminTodo | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -376,6 +485,54 @@ export function TodosTab() {
     }
   };
 
+  const handleOpenDetails = (todo: AdminTodo) => {
+    setSelectedTodo(todo);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTodo(null);
+  };
+
+  const descriptionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleUpdateDescription = useCallback(async (id: string, description: string) => {
+    if (!user) return;
+
+    // Clear any existing timeout
+    if (descriptionUpdateTimeoutRef.current) {
+      clearTimeout(descriptionUpdateTimeoutRef.current);
+    }
+
+    // Debounce the API call
+    descriptionUpdateTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/admin/todos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            todoId: id,
+            description,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update todo');
+        }
+
+        setTodos(prevTodos => prevTodos.map(todo =>
+          todo.id === id
+            ? { ...todo, description, updatedAt: new Date().toISOString() }
+            : todo
+        ));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update todo');
+      }
+    }, 500); // Wait 500ms after user stops typing
+  }, [user]);
+
   const handleDelete = async (id: string) => {
     if (!user || !confirm('Are you sure you want to delete this todo?')) return;
 
@@ -402,10 +559,7 @@ export function TodosTab() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    console.log('🔵 Drag end:', { activeId: active.id, overId: over?.id });
-
     if (!over || active.id === over.id || !user) {
-      console.log('❌ Early return:', { hasOver: !!over, sameId: active.id === over?.id, hasUser: !!user });
       return;
     }
 
@@ -421,23 +575,16 @@ export function TodosTab() {
       visibleTodos = visibleTodos.filter(todo => todo.status !== 'done');
     }
 
-    console.log('🔵 Visible todos:', visibleTodos.map(t => ({ id: t.id, title: t.title, order: t.order, category: t.category })));
-
     // Find positions in the visible list
     const oldIndex = visibleTodos.findIndex(t => t.id === active.id);
     const newIndex = visibleTodos.findIndex(t => t.id === over.id);
 
-    console.log('🔵 Indices:', { oldIndex, newIndex });
-
     if (oldIndex === -1 || newIndex === -1) {
-      console.log('❌ Index not found');
       return;
     }
 
     // Reorder within the visible list
     const reorderedVisible = arrayMove(visibleTodos, oldIndex, newIndex);
-
-    console.log('🔵 Reordered:', reorderedVisible.map(t => ({ id: t.id, title: t.title, category: t.category })));
 
     // Build a map of all todos with their new order
     // Start by getting all todos sorted by current order
@@ -474,8 +621,6 @@ export function TodosTab() {
       }
     }
 
-    console.log('🔵 Changed todos:', changedTodos);
-
     // Update all todos with new order values (keep category unchanged)
     const updatedTodos = todos.map(todo => {
       const newOrder = newOrderMap.get(todo.id);
@@ -485,8 +630,6 @@ export function TodosTab() {
       return todo;
     });
 
-    console.log('🔵 Updated todos:', updatedTodos.map(t => ({ id: t.id, title: t.title, order: t.order, category: t.category })));
-
     // Optimistically update UI
     setTodos(updatedTodos);
 
@@ -494,7 +637,7 @@ export function TodosTab() {
     try {
       await Promise.all(
         changedTodos.map(async ({ id, newOrder }) => {
-          const response = await fetch('/api/admin/todos', {
+          await fetch('/api/admin/todos', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -503,14 +646,9 @@ export function TodosTab() {
               order: newOrder,
             }),
           });
-          const data = await response.json();
-          console.log('🔵 Update response:', { id, newOrder, response: data });
-          return response;
         })
       );
-      console.log('✅ All updates complete');
     } catch (err) {
-      console.error('❌ Update failed:', err);
       setError(err instanceof Error ? err.message : 'Failed to update todo order');
       // Revert on error
       fetchTodos();
@@ -740,6 +878,7 @@ export function TodosTab() {
                     onCategoryChange={handleCategoryChange}
                     onDelete={handleDelete}
                     onTitleChange={handleTitleChange}
+                    onOpenDetails={handleOpenDetails}
                     categories={categories}
                   />
                 ))}
@@ -748,6 +887,16 @@ export function TodosTab() {
           </DndContext>
         )}
       </div>
+
+      {/* Todo Details Modal */}
+      {isModalOpen && selectedTodo && (
+        <TodoDetailsModal
+          todo={selectedTodo}
+          onClose={handleCloseModal}
+          onUpdateDescription={handleUpdateDescription}
+          formatCategoryName={formatCategoryName}
+        />
+      )}
     </div>
   );
 }
