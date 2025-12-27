@@ -59,15 +59,6 @@ export default function TeamsOverviewPage() {
       if (!user) return;
 
       try {
-        // Check if user is admin
-        const userResponse = await fetch(`/api/getUser?userId=${user.uid}`);
-        const userData = await userResponse.json();
-
-        if (userData.userType !== 'admin') {
-          setError('Deze pagina is alleen toegankelijk voor de Auction Master');
-          setLoading(false);
-          return;
-        }
 
         // Load teams
         const teamsResponse = await fetch(`/api/games/${gameId}/teams-overview`);
