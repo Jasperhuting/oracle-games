@@ -188,23 +188,23 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   }, [params]);
 
 
-  const loadAllBids = async () => {
-    if (!gameId) return;
-    
-    try {
-      const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=1000&offset=0&notActive=true`);
-      if (!bidsResponse.ok) {
-        throw new Error('Failed to load bids');
-      }
-      const bidsData = await bidsResponse.json();
-      setAlleBiedingen(bidsData.bids || []);
-    } catch (error) {
-      console.error('Error loading bids:', error);
-      setError('Failed to load bids. Please try again later.');
-    }
-  };
-
   useEffect(() => {
+    const loadAllBids = async () => {
+      if (!gameId) return;
+
+      try {
+        const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=1000&offset=0&notActive=true`);
+        if (!bidsResponse.ok) {
+          throw new Error('Failed to load bids');
+        }
+        const bidsData = await bidsResponse.json();
+        setAlleBiedingen(bidsData.bids || []);
+      } catch (error) {
+        console.error('Error loading bids:', error);
+        setError('Failed to load bids. Please try again later.');
+      }
+    };
+
     loadAllBids();
   }, [gameId])
 
@@ -404,25 +404,14 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       let allBidsData: Bid[] = [];
       let userBids: Bid[] = [];
 
-
-      let bidsOffset = 0;
-      const bidsLimit = 1000;
-      let hasMoreBids = true;
-
-      while (hasMoreBids) {
-        const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${bidsLimit}&offset=${bidsOffset}`);
-        if (bidsResponse.ok) {
-          const bidsData = await bidsResponse.json();
-          const fetchedBids = bidsData.bids || [];
-          allBidsData = allBidsData.concat(fetchedBids);
-
-          // Check if there are more bids to fetch
-          hasMoreBids = fetchedBids.length === bidsLimit;
-          bidsOffset += bidsLimit;
-        } else {
-          hasMoreBids = false;
-        }
+      // API doesn't support offset-based pagination, so we just load with a high limit
+      const bidsLimit = 10000;
+      const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${bidsLimit}`);
+      if (bidsResponse.ok) {
+        const bidsData = await bidsResponse.json();
+        allBidsData = bidsData.bids || [];
       }
+
       userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
       allBidsData = userBids.filter((b: Bid) => b.status !== 'active'); // For non-admins, allBids is just their bids
 

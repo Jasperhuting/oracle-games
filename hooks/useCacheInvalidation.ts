@@ -3,18 +3,37 @@
  * Automatically invalidates local cache when server-side changes occur
  */
 
-import { useEffect, useRef } from 'react';
-import { db } from '@/lib/firebase/client';
+import { useEffect, useRef, useState } from 'react';
+import { db, auth } from '@/lib/firebase/client';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import { invalidateAuctionCache } from '@/lib/utils/auctionCache';
 
 const LAST_CHECK_KEY = 'oracle_last_cache_check';
 
 export function useCacheInvalidation(gameId: string | null) {
   const lastInvalidationRef = useRef<number | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Monitor auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!gameId) return;
+
+    // Wait for auth state to be determined
+    if (isAuthenticated === null) return;
+
+    // Only monitor cache invalidation if user is authenticated
+    if (!isAuthenticated) {
+      return;
+    }
 
     // Subscribe to cache invalidation document
     const unsubscribe = onSnapshot(
@@ -53,11 +72,14 @@ export function useCacheInvalidation(gameId: string | null) {
         lastInvalidationRef.current = lastInvalidated;
       },
       (error) => {
-        console.error('[CacheInvalidation] Error monitoring cache invalidation:', error);
+        // Silently ignore permission errors for non-authenticated users
+        if (error.code !== 'permission-denied') {
+          console.error('[CacheInvalidation] Error monitoring cache invalidation:', error);
+        }
       }
     );
 
     // Cleanup subscription
     return () => unsubscribe();
-  }, [gameId]);
+  }, [gameId, isAuthenticated]);
 }
