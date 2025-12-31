@@ -166,7 +166,7 @@ export async function POST(
         acquisitionType,
         pricePaid: pricePaid || 0,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

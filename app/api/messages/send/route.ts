@@ -65,14 +65,14 @@ export async function POST(request: NextRequest) {
       // Log activity
       const activityLogRef = adminDb.collection('activityLogs').doc();
       await activityLogRef.set({
-        action: 'message_broadcast',
+        action: 'MESSAGE_BROADCAST',
         userId: senderId,
         userName: senderName,
         details: {
           subject,
           recipientCount: messageCount,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
       });
 
       // Send Telegram notification
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       // Log activity
       const activityLogRef = adminDb.collection('activityLogs').doc();
       await activityLogRef.set({
-        action: 'message_sent',
+        action: 'MESSAGE_SENT',
         userId: senderId,
         userName: senderName,
         targetUserId: recipientId,
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
           subject,
           messageId: messageRef.id,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
       });
 
       // Send Telegram notification
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
         userId: senderId,
         userName: senderName,
         details: activityDetails,
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
       });
 
       return NextResponse.json({

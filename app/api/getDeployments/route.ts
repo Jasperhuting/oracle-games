@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import type { ActivityLogsResponse, ApiErrorResponse, ApiActivityLog } from '@/lib/types';
+import type { ApiErrorResponse, ApiActivityLog } from '@/lib/types';
 
-export async function GET(request: NextRequest): Promise<NextResponse<ActivityLogsResponse | ApiErrorResponse>> {
+interface DeploymentsResponse {
+  deployments: ApiActivityLog[];
+}
+
+export async function GET(request: NextRequest): Promise<NextResponse<DeploymentsResponse | ApiErrorResponse>> {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -26,31 +30,26 @@ export async function GET(request: NextRequest): Promise<NextResponse<ActivityLo
       );
     }
 
-    // Fetch activity logs, excluding deployment logs
+    // Fetch deployment logs (all VERCEL_DEPLOYMENT_* actions)
     const logsSnapshot = await db
       .collection('activityLogs')
+      .where('action', '>=', 'VERCEL_DEPLOYMENT')
+      .where('action', '<', 'VERCEL_DEPLOYMENU')
+      .orderBy('action')
       .orderBy('timestamp', 'desc')
       .limit(limit)
       .get();
 
-    // Filter out VERCEL_DEPLOYMENT_* actions since they have their own tab
-    const logs: ApiActivityLog[] = logsSnapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Convert Firestore Timestamp to ISO string
-          timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : data.timestamp
-        } as ApiActivityLog;
-      })
-      .filter((log) => !log.action.startsWith('VERCEL_DEPLOYMENT'));
+    const deployments: ApiActivityLog[] = logsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    } as ApiActivityLog));
 
-    return NextResponse.json({ logs });
+    return NextResponse.json({ deployments });
   } catch (error) {
-    console.error('Error fetching activity logs:', error);
+    console.error('Error fetching deployments:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch activity logs', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to fetch deployments', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

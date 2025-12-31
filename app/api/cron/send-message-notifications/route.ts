@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { adminDb as db } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { Resend } from 'resend';
 import admin from 'firebase-admin';
 
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       console.log('[CRON] No unread messages found that need email notifications');
       return Response.json({
         success: true,
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ...results,
       });
     }
@@ -238,7 +239,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json({
       success: true,
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ...results,
     });
   } catch (error) {
@@ -246,7 +247,7 @@ export async function GET(request: NextRequest) {
     return Response.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
       },
       { status: 500 }
     );

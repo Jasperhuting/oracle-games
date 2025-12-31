@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // POST - Recalculate player count for a game based on actual participants
 export async function POST(
@@ -66,7 +67,7 @@ export async function POST(
         newPlayerCount: actualPlayerCount,
         difference: actualPlayerCount - oldPlayerCount,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

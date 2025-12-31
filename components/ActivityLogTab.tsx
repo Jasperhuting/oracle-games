@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { ActivityLog } from "@/lib/types/activity";
 
@@ -49,20 +49,97 @@ const ErrorDetails = ({ details }: { details: Record<string, any> }) => { // esl
   );
 };
 
+// Category checkbox component with indeterminate support
+const CategoryCheckbox = ({
+  label,
+  checked,
+  indeterminate,
+  onChange
+}: {
+  label: string;
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: () => void;
+}) => {
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <label className="flex items-center gap-2 cursor-pointer mb-2">
+      <input
+        ref={checkboxRef}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="rounded border-gray-300 text-primary focus:ring-primary"
+      />
+      <span className="text-xs font-semibold text-gray-600">{label}</span>
+    </label>
+  );
+};
+
+const FILTER_OPTIONS = {
+  users: ['USER_REGISTERED', 'USER_BLOCKED', 'USER_UNBLOCKED', 'USER_PROFILE_UPDATED'],
+  games: ['GAME_JOINED', 'GAME_LEFT', 'GAME_UPDATED', 'GAME_CREATED', 'GAME_DELETED', 'GAME_STATUS_CHANGED', 'DIVISION_ASSIGNED', 'PARTICIPANT_REMOVED'],
+  bids: ['BID_PLACED', 'BID_CANCELLED'],
+  messaging: ['MESSAGE_SENT', 'MESSAGE_BROADCAST'],
+  system: ['ERROR', 'IMPERSONATION_STARTED', 'IMPERSONATION_STOPPED']
+};
+
 export const ActivityLogTab = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>("all");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [loadingPreferences, setLoadingPreferences] = useState(true);
 
+  // Load user preferences
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user?.uid) return;
+
+      try {
+        const response = await fetch(`/api/getUser?userId=${user.uid}`);
+        if (response.ok) {
+          const userData = await response.json();
+
+          // Check if activityLogFilters exists in the response
+          if ('activityLogFilters' in userData) {
+            // Use the saved filters (even if it's an empty array)
+            setSelectedFilters(userData.activityLogFilters || []);
+          } else {
+            // Only set all filters if the field doesn't exist (first time user)
+            const allFilters = Object.values(FILTER_OPTIONS).flat();
+            setSelectedFilters(allFilters);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+        // Default: all filters enabled on error
+        const allFilters = Object.values(FILTER_OPTIONS).flat();
+        setSelectedFilters(allFilters);
+      } finally {
+        setLoadingPreferences(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user?.uid]);
+
+  // Fetch activity logs
   useEffect(() => {
     const fetchLogs = async () => {
       if (!user?.uid) return;
 
       try {
         const response = await fetch(`/api/getActivityLogs?userId=${user.uid}&limit=5000`);
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to fetch activity logs');
@@ -82,6 +159,96 @@ export const ActivityLogTab = () => {
     fetchLogs();
   }, [user?.uid]);
 
+  // Save preferences when filters change
+  const handleFilterToggle = async (filterValue: string) => {
+    const newFilters = selectedFilters.includes(filterValue)
+      ? selectedFilters.filter(f => f !== filterValue)
+      : [...selectedFilters, filterValue];
+
+    setSelectedFilters(newFilters);
+
+    // Save to database
+    if (user?.uid) {
+      try {
+        await fetch('/api/updateUser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            updates: { activityLogFilters: newFilters }
+          })
+        });
+      } catch (error) {
+        console.error('Error saving preferences:', error);
+      }
+    }
+  };
+
+  const toggleAll = async (enabled: boolean) => {
+    const newFilters = enabled ? Object.values(FILTER_OPTIONS).flat() : [];
+    setSelectedFilters(newFilters);
+
+    if (user?.uid) {
+      try {
+        await fetch('/api/updateUser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            updates: { activityLogFilters: newFilters }
+          })
+        });
+      } catch (error) {
+        console.error('Error saving preferences:', error);
+      }
+    }
+  };
+
+  const toggleCategory = async (category: keyof typeof FILTER_OPTIONS) => {
+    const categoryFilters = FILTER_OPTIONS[category];
+    const allCategorySelected = categoryFilters.every(filter => selectedFilters.includes(filter));
+
+    let newFilters: string[];
+    if (allCategorySelected) {
+      // Deselect all in category
+      newFilters = selectedFilters.filter(f => !categoryFilters.includes(f));
+    } else {
+      // Select all in category
+      const filtersToAdd = categoryFilters.filter(f => !selectedFilters.includes(f));
+      newFilters = [...selectedFilters, ...filtersToAdd];
+    }
+
+    setSelectedFilters(newFilters);
+
+    if (user?.uid) {
+      try {
+        await fetch('/api/updateUser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            updates: { activityLogFilters: newFilters }
+          })
+        });
+      } catch (error) {
+        console.error('Error saving preferences:', error);
+      }
+    }
+  };
+
+  const getCategoryState = (category: keyof typeof FILTER_OPTIONS): { checked: boolean; indeterminate: boolean } => {
+    const categoryFilters = FILTER_OPTIONS[category];
+    const selectedCount = categoryFilters.filter(filter => selectedFilters.includes(filter)).length;
+
+    if (selectedCount === 0) {
+      return { checked: false, indeterminate: false };
+    } else if (selectedCount === categoryFilters.length) {
+      return { checked: true, indeterminate: false };
+    } else {
+      return { checked: false, indeterminate: true };
+    }
+  };
+
   // Format action for display
   const formatAction = (action: string) => {
     if (action.startsWith('VERCEL_')) {
@@ -95,16 +262,17 @@ export const ActivityLogTab = () => {
   };
 
   const filteredLogs = logs.filter(log => {
-    if (filter === "all") return true;
-    return log.action === filter;
+    return selectedFilters.length === 0 || selectedFilters.includes(log.action);
   });
 
   const formatDate = (timestamp: string | { toDate: () => Date }) => {
     try {
-      // Handle Firestore Timestamp objects
-      const date = typeof timestamp === 'string'
-        ? new Date(timestamp)
-        : timestamp.toDate();
+      const date = new Date(typeof timestamp === 'string' ? timestamp : timestamp.toDate());
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
 
       return date.toLocaleString('nl-NL', {
         day: '2-digit',
@@ -115,32 +283,10 @@ export const ActivityLogTab = () => {
         second: '2-digit',
         hour12: false,
       });
-    } catch {
-      return typeof timestamp === 'string' ? timestamp : 'Invalid date';
+    } catch (error) {
+      console.error('Error formatting date:', error, 'timestamp:', timestamp);
+      return 'Invalid date';
     }
-  };
-
-  const getActionLabel = (action: string) => {
-    const labels: Record<string, string> = {
-      'USER_REGISTERED': 'User Registered',
-      'USER_BLOCKED': 'User Blocked',
-      'USER_UNBLOCKED': 'User Unblocked',
-      'USER_PROFILE_UPDATED': 'Profile Updated',
-      'GAME_JOINED': 'Game Joined',
-      'GAME_LEFT': 'Game Left',
-      'GAME_UPDATED': 'Game Updated',
-      'GAME_CREATED': 'Game Created',
-      'GAME_DELETED': 'Game Deleted',
-      'BID_PLACED': 'Bid Placed',
-      'BID_CANCELLED': 'Bid Cancelled',
-      'DIVISION_ASSIGNED': 'Division Assigned',
-      'PARTICIPANT_REMOVED': 'Participant Removed',
-      'GAME_STATUS_CHANGED': 'Game Status Changed',
-      'message_sent': 'Message Sent',
-      'message_broadcast': 'Broadcast Message',
-      'ERROR': 'Error',
-    };
-    return labels[action] || action;
   };
 
   const getActionColor = (action: string) => {
@@ -159,9 +305,11 @@ export const ActivityLogTab = () => {
       'DIVISION_ASSIGNED': 'bg-indigo-100 text-indigo-800',
       'PARTICIPANT_REMOVED': 'bg-red-100 text-red-800',
       'GAME_STATUS_CHANGED': 'bg-yellow-100 text-yellow-800',
-      'message_sent': 'bg-blue-100 text-blue-800',
-      'message_broadcast': 'bg-purple-100 text-purple-800',
+      'MESSAGE_SENT': 'bg-blue-100 text-blue-800',
+      'MESSAGE_BROADCAST': 'bg-purple-100 text-purple-800',
       'ERROR': 'bg-red-100 text-red-800',
+      'IMPERSONATION_STARTED': 'bg-orange-100 text-orange-800',
+      'IMPERSONATION_STOPPED': 'bg-green-100 text-green-800',
     };
     return colors[action] || 'bg-gray-100 text-gray-800';
   };
@@ -404,6 +552,38 @@ export const ActivityLogTab = () => {
       );
     }
 
+    // IMPERSONATION_STARTED details
+    if (log.action === 'IMPERSONATION_STARTED') {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="text-sm text-gray-900">
+            <strong>Impersonating:</strong> {log.details.targetUserName || log.details.targetUserEmail || 'Unknown user'}
+          </div>
+          {log.details.targetUserEmail && log.details.targetUserName && (
+            <div className="text-xs text-gray-600">
+              Email: {log.details.targetUserEmail}
+            </div>
+          )}
+          {log.details.targetUserId && (
+            <div className="text-xs text-gray-500">
+              User ID: {log.details.targetUserId}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // IMPERSONATION_STOPPED details
+    if (log.action === 'IMPERSONATION_STOPPED') {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="text-sm text-gray-900">
+            <strong>Stopped impersonating:</strong> {log.details.targetUserName || log.details.targetUserEmail || 'Unknown user'}
+          </div>
+        </div>
+      );
+    }
+
     // ERROR details
     if (log.action === 'ERROR') {
       return <ErrorDetails details={log.details} />;
@@ -438,7 +618,32 @@ export const ActivityLogTab = () => {
     return null;
   };
 
-  if (loading) {
+  const getFilterLabel = (action: string) => {
+    const labels: Record<string, string> = {
+      'USER_REGISTERED': 'Registrations',
+      'USER_BLOCKED': 'Blocked',
+      'USER_UNBLOCKED': 'Unblocked',
+      'USER_PROFILE_UPDATED': 'Profile Updates',
+      'GAME_JOINED': 'Game Joined',
+      'GAME_LEFT': 'Game Left',
+      'GAME_UPDATED': 'Game Updated',
+      'GAME_CREATED': 'Game Created',
+      'GAME_DELETED': 'Game Deleted',
+      'GAME_STATUS_CHANGED': 'Status Changed',
+      'DIVISION_ASSIGNED': 'Division Assigned',
+      'PARTICIPANT_REMOVED': 'Participant Removed',
+      'BID_PLACED': 'Bid Placed',
+      'BID_CANCELLED': 'Bid Cancelled',
+      'MESSAGE_SENT': 'Messages Sent',
+      'MESSAGE_BROADCAST': 'Broadcast Messages',
+      'ERROR': 'Errors',
+      'IMPERSONATION_STARTED': 'Impersonation Started',
+      'IMPERSONATION_STOPPED': 'Impersonation Stopped',
+    };
+    return labels[action] || action;
+  };
+
+  if (loading || loadingPreferences) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-gray-600">Loading activities...</div>
@@ -454,55 +659,161 @@ export const ActivityLogTab = () => {
     );
   }
 
+  const allFilters = Object.values(FILTER_OPTIONS).flat();
+  const allSelected = selectedFilters.length === allFilters.length;
+  const noneSelected = selectedFilters.length === 0;
+
   return (
     <div className="space-y-4">
       {/* Header with filter */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-semibold">Activity Log</h2>
             <p className="text-sm text-gray-600">
               {filteredLogs.length} of {logs.length} activities
             </p>
           </div>
-          <div>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-700">Filters</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => toggleAll(true)}
+              disabled={allSelected}
+              className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              <option value="all">All activities</option>
-              <optgroup label="Users">
-                <option value="USER_REGISTERED">Registrations</option>
-                <option value="USER_BLOCKED">Blocked</option>
-                <option value="USER_UNBLOCKED">Unblocked</option>
-                <option value="USER_PROFILE_UPDATED">Profile Updates</option>
-              </optgroup>
-              <optgroup label="Games">
-                <option value="GAME_JOINED">Game Joined</option>
-                <option value="GAME_LEFT">Game Left</option>
-                <option value="GAME_UPDATED">Game Updated</option>
-                <option value="GAME_CREATED">Game Created</option>
-                <option value="GAME_DELETED">Game Deleted</option>
-                <option value="GAME_STATUS_CHANGED">Status Changed</option>
-                <option value="DIVISION_ASSIGNED">Division Assigned</option>
-                <option value="PARTICIPANT_REMOVED">Participant Removed</option>
-              </optgroup>
-              <optgroup label="Bids">
-                <option value="BID_PLACED">Bid Placed</option>
-                <option value="BID_CANCELLED">Bid Cancelled</option>
-              </optgroup>
-              <optgroup label="Messaging">
-                <option value="message_sent">Messages Sent</option>
-                <option value="message_broadcast">Broadcast Messages</option>
-              </optgroup>
-              <optgroup label="System">
-                <option value="ERROR">Errors</option>
-              </optgroup>
-              <optgroup label="Vercel">
-                <option value="VERCEL_DEPLOYMENT">Deployments</option>
-              </optgroup>
-            </select>
+              Select All
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              onClick={() => toggleAll(false)}
+              disabled={noneSelected}
+              className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              Deselect All
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Users */}
+          <div>
+            <CategoryCheckbox
+              label="Users"
+              checked={getCategoryState('users').checked}
+              indeterminate={getCategoryState('users').indeterminate}
+              onChange={() => toggleCategory('users')}
+            />
+            <div className="space-y-1.5">
+              {FILTER_OPTIONS.users.map((filterValue) => (
+                <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filterValue)}
+                    onChange={() => handleFilterToggle(filterValue)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{getFilterLabel(filterValue)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Games */}
+          <div>
+            <CategoryCheckbox
+              label="Games"
+              checked={getCategoryState('games').checked}
+              indeterminate={getCategoryState('games').indeterminate}
+              onChange={() => toggleCategory('games')}
+            />
+            <div className="space-y-1.5">
+              {FILTER_OPTIONS.games.map((filterValue) => (
+                <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filterValue)}
+                    onChange={() => handleFilterToggle(filterValue)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{getFilterLabel(filterValue)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Bids */}
+          <div>
+            <CategoryCheckbox
+              label="Bids"
+              checked={getCategoryState('bids').checked}
+              indeterminate={getCategoryState('bids').indeterminate}
+              onChange={() => toggleCategory('bids')}
+            />
+            <div className="space-y-1.5">
+              {FILTER_OPTIONS.bids.map((filterValue) => (
+                <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filterValue)}
+                    onChange={() => handleFilterToggle(filterValue)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{getFilterLabel(filterValue)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Messaging */}
+          <div>
+            <CategoryCheckbox
+              label="Messaging"
+              checked={getCategoryState('messaging').checked}
+              indeterminate={getCategoryState('messaging').indeterminate}
+              onChange={() => toggleCategory('messaging')}
+            />
+            <div className="space-y-1.5">
+              {FILTER_OPTIONS.messaging.map((filterValue) => (
+                <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filterValue)}
+                    onChange={() => handleFilterToggle(filterValue)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{getFilterLabel(filterValue)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* System */}
+          <div>
+            <CategoryCheckbox
+              label="System"
+              checked={getCategoryState('system').checked}
+              indeterminate={getCategoryState('system').indeterminate}
+              onChange={() => toggleCategory('system')}
+            />
+            <div className="space-y-1.5">
+              {FILTER_OPTIONS.system.map((filterValue) => (
+                <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filterValue)}
+                    onChange={() => handleFilterToggle(filterValue)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{getFilterLabel(filterValue)}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       </div>

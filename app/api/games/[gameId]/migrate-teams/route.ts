@@ -128,7 +128,7 @@ export async function POST(
         totalSkipped,
         errors,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

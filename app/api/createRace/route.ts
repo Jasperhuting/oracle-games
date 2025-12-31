@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { setStartingListRace } from '@/lib/scraper/setStartingListRace';
 import { saveRidersToRace } from '@/lib/scraper/saveRidersToRace';
 import { getRidersRanked } from '@/lib/scraper/getRidersRanked';
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
           reason: 'Starting list scraper failed',
           error: errorMessage,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest) {
         startingListStatus: 'success',
         ridersCount: ridersCount,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

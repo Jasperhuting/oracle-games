@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // TEMPORARY: Toggle to disable bid modifications
 const BIDDING_DISABLED = false;
@@ -115,7 +116,7 @@ export async function POST(
         wasHighestBid: bidData?.status === 'active',
         bidPlacedAt: bidData?.bidAt?.toDate?.()?.toISOString() || bidData?.bidAt,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -147,7 +148,7 @@ export async function POST(
             endpoint: `/api/games/${gameId}/bids/cancel`,
             bidId,
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });

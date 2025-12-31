@@ -39,6 +39,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
       programmer: userData?.programmer || false,
       preferredLanguage: userData?.preferredLanguage || 'nl',
       emailNotifications: userData?.emailNotifications !== false, // Default to true
+      activityLogFilters: userData?.activityLogFilters,
     });
   } catch (error) {
     console.error('Error fetching user:', error);

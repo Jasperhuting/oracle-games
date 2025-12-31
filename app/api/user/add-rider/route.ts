@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { getRiderProfilePuppeteer } from '@/lib/scraper/getRiderProfilePuppeteer';
 import { toSlug } from '@/lib/firebase/utils';
 import { sendRiderScriptNotification, sendRateLimitNotification } from '@/lib/telegram';
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
           currentCount: rateLimit.count,
           errorMessage: 'Dagelijkse limiet bereikt',
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
         userAgent: req.headers.get('user-agent') || 'unknown',
       });
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
           errorMessage,
           usedToday: rateLimit.count,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
         userAgent: req.headers.get('user-agent') || 'unknown',
       });
@@ -221,7 +222,7 @@ export async function POST(req: NextRequest) {
           errorMessage: `Ontbrekende verplichte velden: ${missingFields.join(', ')}`,
           usedToday: rateLimit.count,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
         userAgent: req.headers.get('user-agent') || 'unknown',
       });
@@ -307,7 +308,7 @@ export async function POST(req: NextRequest) {
         usedToday: rateLimit.count + 1,
         remainingToday: DAILY_RIDER_LIMIT - (rateLimit.count + 1),
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
       userAgent: req.headers.get('user-agent') || 'unknown',
     });
@@ -364,7 +365,7 @@ export async function POST(req: NextRequest) {
             errorMessage: error instanceof Error ? error.message : 'Unknown error',
             errorStack: error instanceof Error ? error.stack : undefined,
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
           userAgent: req.headers.get('user-agent') || 'unknown',
         });

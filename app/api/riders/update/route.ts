@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import process from "process";
 
 const DEFAULT_YEAR = process.env.NEXT_PUBLIC_PLAYING_YEAR;
@@ -83,7 +84,7 @@ export async function PATCH(request: NextRequest) {
         riderName: riderData?.name,
         updatedFields: Object.keys(updateData).filter(k => k !== 'updatedAt'),
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

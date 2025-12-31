@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // POST - Clean up orphaned pending participants (admin only)
 // This removes pending participants for divisions that no longer exist
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
         deletedCount,
         deletedParticipants,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

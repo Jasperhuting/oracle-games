@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { ApiErrorResponse } from '@/lib/types';
 
 /**
@@ -177,7 +178,7 @@ export async function PATCH(
       gameId: gameId,
       gameName: currentGameData?.name,
       details: logDetails,
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'system',
       userAgent: 'vercel-cron',
     });

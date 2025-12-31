@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
         targetUserEmail: targetAuthUser.email,
         targetUserName: targetUserData?.playername,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { sendErrorNotification } from '@/lib/telegram';
 
 export interface ActivityLog {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       targetUserEmail,
       targetUserName,
       details,
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress,
       userAgent,
     };

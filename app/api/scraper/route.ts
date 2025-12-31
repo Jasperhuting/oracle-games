@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { getRiders, getStageResult, type RaceSlug } from '@/lib/scraper';
 import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
         totalDataCount,
         results,
         errors: errors.length > 0 ? errors : undefined,
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
       });
     }
 
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
       message: 'Data scraped and saved to Firebase',
       key,
       dataCount,
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
     });
 
   } catch (error) {

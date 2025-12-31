@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { adminDb as db } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { finalizeAuction } from '@/lib/auction/finalize';
 
 export const dynamic = 'force-dynamic';
@@ -239,7 +240,7 @@ export async function GET(request: NextRequest) {
     return Response.json(
       {
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
       },
       { status: 500 }
     );

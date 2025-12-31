@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { ApiErrorResponse } from '@/lib/types';
 
 interface DeleteBidsResponse {
@@ -111,7 +112,7 @@ export async function POST(
         periodIndex: auctionPeriodIndex,
         deletedCount
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
     });
 
     return NextResponse.json({

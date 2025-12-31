@@ -5,6 +5,7 @@ import { NestedTabs } from "@/components/NestedTabs";
 import { GamesTab } from "@/components/GamesTab";
 import { ForumTab } from "@/components/ForumTab";
 import { ActivityLogTab } from "@/components/ActivityLogTab";
+import { DeploymentsTab } from "@/components/DeploymentsTab";
 import { AddGameTab } from "@/components/AddGameTab";
 import { CreateGameTab } from "@/components/CreateGameTab";
 import { GamesManagementTab } from "@/components/GamesManagementTab";
@@ -217,6 +218,11 @@ export default function AdminPageClient() {
                                     id: 'todos',
                                     label: 'Todo\'s',
                                     content: <TodosTab />
+                                },
+                                {
+                                    id: 'deployments',
+                                    label: t('admin.tabs.deployments'),
+                                    content: <DeploymentsTab />
                                 },
                                 {
                                     id: 'activity',

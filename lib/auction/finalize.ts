@@ -225,7 +225,7 @@ export async function finalizeAuction(
             errors: [],
           },
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: 'internal',
         userAgent: 'cron-job',
       });
@@ -525,7 +525,7 @@ export async function finalizeAuction(
         gameName: gameData?.name,
         results,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: 'internal',
       userAgent: 'cron-job',
     });

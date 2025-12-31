@@ -4,7 +4,33 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications } = await request.json();
+    const body = await request.json();
+    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications, updates } = body;
+
+    // If updates object is provided (for admin preferences), handle it separately
+    if (updates && userId) {
+      const db = getServerFirebase();
+
+      // Check if user exists
+      const userDoc = await db.collection('users').doc(userId).get();
+      if (!userDoc.exists) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+
+      // Update with the provided fields
+      await db.collection('users').doc(userId).update({
+        ...updates,
+        updatedAt: Timestamp.now(),
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'User preferences updated successfully'
+      });
+    }
 
     if (!userId || !playername) {
       return NextResponse.json(
@@ -135,7 +161,7 @@ export async function POST(request: NextRequest) {
         details: {
           changes: changes,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });

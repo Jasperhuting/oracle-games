@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, BidStatus } from '@/lib/types';
 import { placeBidSchema, validateRequest } from '@/lib/validation';
 
@@ -96,7 +97,7 @@ export async function POST(
           errorMessage: 'Auction is not active. Current game status: ' + (gameData?.status || 'unknown'),
           currentGameStatus: gameData?.status || 'unknown',
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });
@@ -237,7 +238,7 @@ export async function POST(
           maxRiders,
           isNewBid: !isUpdatingOwnBid,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });
@@ -284,7 +285,7 @@ export async function POST(
           isUpdate: isUpdatingOwnBid,
           previousAmount: isUpdatingOwnBid ? currentUserBidOnThisRider : null,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });
@@ -347,7 +348,7 @@ export async function POST(
               errorMessage: createError instanceof Error ? createError.message : 'Unknown error creating bid',
               errorType: 'BID_CREATE_FAILED',
             },
-            timestamp: new Date().toISOString(),
+            timestamp: Timestamp.now(),
             ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
             userAgent: request.headers.get('user-agent') || 'unknown',
           });
@@ -372,7 +373,7 @@ export async function POST(
               severity: 'CRITICAL',
               dataLoss: true,
             },
-            timestamp: new Date().toISOString(),
+            timestamp: Timestamp.now(),
             ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
             userAgent: request.headers.get('user-agent') || 'unknown',
           });
@@ -400,7 +401,7 @@ export async function POST(
         availableBudget: availableBudget.toFixed(1),
         totalActiveBids: (totalActiveBids + amount).toFixed(1),
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -438,7 +439,7 @@ export async function POST(
             riderNameId,
             attemptedAmount: amount,
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });

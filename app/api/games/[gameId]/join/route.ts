@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { GameParticipant, ClientGameParticipant } from '@/lib/types';
 import type { JoinGameRequest, JoinGameResponse, LeaveGameResponse, ApiErrorResponse } from '@/lib/types';
 import { joinGameSchema, validateRequest } from '@/lib/validation';
@@ -216,7 +217,7 @@ export async function POST(
         gameName: gameData?.name,
         participantId: participantRef.id,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -256,7 +257,7 @@ export async function POST(
             gameId,
             endpoint: `/api/games/${gameId}/join`,
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });
@@ -400,7 +401,7 @@ export async function DELETE(
         participantId: participantDoc.id,
         deletionStats,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -436,7 +437,7 @@ export async function DELETE(
             gameId,
             endpoint: `/api/games/${gameId}/join`,
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });

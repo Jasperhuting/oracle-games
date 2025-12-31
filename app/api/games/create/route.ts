@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { Game, ClientGame } from '@/lib/types/games';
 import { serializeGame } from '@/lib/utils/serializeGame';
 import type { CreateGameRequest, CreateGameResponse, CreateMultipleGamesResponse, ApiErrorResponse } from '@/lib/types';
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
             division: divisionName,
             divisionLevel: i,
           }),
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
           year: game.year,
           raceSlug: gameData.raceSlug,
         }),
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });

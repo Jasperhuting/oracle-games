@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import { getRiders, getStageResult, KNOWN_RACE_SLUGS, type RaceSlug } from '@/lib/scraper';
 
 const AVAILABLE_COMMANDS = {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       command: `${commandConfig.type} ${commandConfig.race}`,
       data: result,
-      timestamp: new Date().toISOString()
+      timestamp: Timestamp.now()
     });
   } catch (error) {
     return Response.json({ 

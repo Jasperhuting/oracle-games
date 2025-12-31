@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // POST - Assign a participant to a division (admin only)
 export async function POST(
@@ -107,7 +108,7 @@ export async function POST(
           newGameId: pendingGameId,
           playerName: participantData?.playername,
         },
-        timestamp: new Date().toISOString(),
+        timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });
@@ -236,7 +237,7 @@ export async function POST(
         playerName: participantData?.playername,
         assignedDivision: assignedDivision,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -275,7 +276,7 @@ export async function POST(
             errorDetails: error instanceof Error ? error.stack : undefined,
             endpoint: '/api/gameParticipants/[participantId]/assignDivision',
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });
@@ -366,7 +367,7 @@ export async function DELETE(
         assignedDivision: participantData?.assignedDivision,
         wasPending: isPending,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -399,7 +400,7 @@ export async function DELETE(
             errorDetails: error instanceof Error ? error.stack : undefined,
             endpoint: '/api/gameParticipants/[participantId]/assignDivision',
           },
-          timestamp: new Date().toISOString(),
+          timestamp: Timestamp.now(),
           ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
         });

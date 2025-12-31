@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,18 +24,17 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getServerFirebase();
-    const timestamp = new Date().toISOString();
-    
+
     // Map Vercel event types to our activity log actions
     let action = 'VERCEL_' + type.toUpperCase().replace(/\./g, '_');
-    
+
     // Create activity log entry
     await db.collection('activityLogs').add({
       action,
       userId: 'system', // or use a specific system user ID
       userEmail: 'deploy@oraclegames.com', // or your deployment email
       userName: 'Vercel Deploy Bot',
-      timestamp,
+      timestamp: Timestamp.now(),
       details: {
         ...eventPayload,
         // Add any additional details you want to track

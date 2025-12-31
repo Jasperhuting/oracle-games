@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 import type { GameResponse, ApiErrorResponse, ClientGame, UpdateGameResponse, DeleteGameResponse, UpdateGameRequest } from '@/lib/types';
 
 // Helper to remove undefined values from object (recursively)
@@ -155,7 +156,7 @@ export async function PATCH(
         updatedFields: Object.keys(cleanedUpdates).filter(k => k !== 'updatedAt'),
         changes,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
@@ -391,7 +392,7 @@ export async function DELETE(
         gameType: gameData?.gameType,
         deletionStats,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
