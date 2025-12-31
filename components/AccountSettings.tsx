@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { PasskeySetup } from "./PasskeySetup";
+import { RiderScriptsSection } from "./RiderScriptsSection";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -361,13 +362,16 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
             </div>
           </div>
         ) : (
-          <PasskeySetup 
-            userId={userId} 
-            email={email} 
-            displayName={userData?.playername || displayName} 
+          <PasskeySetup
+            userId={userId}
+            email={email}
+            displayName={userData?.playername || displayName}
           />
         )}
       </div>
+
+      {/* Scripts Section */}
+      <RiderScriptsSection userId={userId} />
     </div>
   );
 }

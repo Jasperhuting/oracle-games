@@ -173,3 +173,60 @@ export async function sendBroadcastNotification(
 
   return sendTelegramMessage(telegramMessage);
 }
+
+/**
+ * Send a rider script notification to Telegram
+ */
+export async function sendRiderScriptNotification(
+  userName: string,
+  userEmail: string,
+  riderName: string,
+  riderUrl: string,
+  year: number,
+  success: boolean,
+  errorMessage?: string
+): Promise<boolean> {
+  const statusIcon = success ? '✅' : '❌';
+  const statusText = success ? 'Succesvol toegevoegd' : 'Mislukt';
+
+  let telegramMessage = `
+${statusIcon} <b>Rider Script ${statusText}</b>
+
+👤 <b>Gebruiker:</b> ${userName} (${userEmail})
+🚴 <b>Renner:</b> ${riderName}
+🔗 <b>URL:</b> ${riderUrl}
+📅 <b>Jaar:</b> ${year}
+  `.trim();
+
+  if (!success && errorMessage) {
+    telegramMessage += `\n\n❌ <b>Fout:</b>\n${errorMessage}`;
+  }
+
+  telegramMessage += `\n\n⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}`;
+
+  return sendTelegramMessage(telegramMessage);
+}
+
+/**
+ * Send a rate limit notification to Telegram
+ */
+export async function sendRateLimitNotification(
+  userName: string,
+  userEmail: string,
+  action: string,
+  limit: number,
+  currentCount: number
+): Promise<boolean> {
+  const telegramMessage = `
+⚠️ <b>Rate Limit Bereikt</b>
+
+👤 <b>Gebruiker:</b> ${userName} (${userEmail})
+⚙️ <b>Actie:</b> ${action}
+📊 <b>Limiet:</b> ${limit} per dag
+📈 <b>Gebruikt:</b> ${currentCount}
+
+⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
+  `.trim();
+
+  return sendTelegramMessage(telegramMessage);
+}
