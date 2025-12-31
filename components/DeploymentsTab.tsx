@@ -38,9 +38,12 @@ export const DeploymentsTab = () => {
 
   const formatDate = (timestamp: string | { toDate: () => Date }) => {
     try {
-      const date = typeof timestamp === 'string'
-        ? new Date(timestamp)
-        : timestamp.toDate();
+      const date = new Date(typeof timestamp === 'string' ? timestamp : timestamp.toDate());
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
 
       return date.toLocaleString('nl-NL', {
         day: '2-digit',
@@ -51,8 +54,9 @@ export const DeploymentsTab = () => {
         second: '2-digit',
         hour12: false,
       });
-    } catch {
-      return typeof timestamp === 'string' ? timestamp : 'Invalid date';
+    } catch (error) {
+      console.error('Error formatting date:', error, 'timestamp:', timestamp);
+      return 'Invalid date';
     }
   };
 
