@@ -40,15 +40,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<Deployment
       .limit(limit)
       .get();
 
-    const deployments: ApiActivityLog[] = logsSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        // Convert Firestore Timestamp to ISO string
-        timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : data.timestamp
-      } as ApiActivityLog;
-    });
+    const deployments: ApiActivityLog[] = logsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    } as ApiActivityLog));
 
     return NextResponse.json({ deployments });
   } catch (error) {

@@ -467,12 +467,12 @@ export const UserList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
-                        {formatDate(user.lastLoginAt || '')}
+                        {formatDate(user.lastLoginAt?.toDate().toISOString() || '')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
-                        {formatDate(user.createdAt)}
+                        {formatDate(user.createdAt?.toDate().toISOString() || '')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -536,16 +536,6 @@ export const UserList = () => {
           </div>
         </div>
       </div>
-
-      {/* Email Modal */}
-      {selectedUser && (
-        <EmailUserModal
-          isOpen={emailModalOpen}
-          onClose={closeEmailModal}
-          userEmail={selectedUser.email}
-          userName={selectedUser.name}
-        />
-      )}
 
       {/* Confirm Dialogs */}
       <ConfirmDialog

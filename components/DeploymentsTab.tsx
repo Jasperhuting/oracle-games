@@ -36,27 +36,9 @@ export const DeploymentsTab = () => {
     fetchDeployments();
   }, [user?.uid]);
 
-  const formatDate = (timestamp: string | number | { toDate: () => Date }) => {
+  const formatDate = (timestamp: { toDate: () => Date }) => {
     try {
-      let date: Date;
-
-      if (typeof timestamp === 'number') {
-        // Unix timestamp in milliseconds
-        date = new Date(timestamp);
-      } else if (typeof timestamp === 'string') {
-        // ISO string
-        date = new Date(timestamp);
-      } else if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp) {
-        // Firestore Timestamp
-        date = timestamp.toDate();
-      } else {
-        return 'Invalid date';
-      }
-
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'Invalid date';
-      }
+      const date = timestamp.toDate();
 
       return date.toLocaleString('nl-NL', {
         day: '2-digit',
@@ -68,7 +50,7 @@ export const DeploymentsTab = () => {
         hour12: false,
       });
     } catch (error) {
-      console.error('Error formatting date:', error, 'timestamp:', timestamp);
+      console.error('Error formatting date:', error);
       return 'Invalid date';
     }
   };

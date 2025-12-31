@@ -3,6 +3,8 @@
  * Types for user data, profiles, and management
  */
 
+import { Timestamp } from 'firebase/firestore';
+
 export interface User {
   uid: string;
   email: string;
@@ -13,8 +15,8 @@ export interface User {
   userType: string;
   authMethod?: string;
   lastLoginMethod?: string;
-  lastLoginAt?: string;
-  createdAt: string;
+  lastLoginAt?: Timestamp;
+  createdAt: Timestamp;
   updatedAt?: string;
   blocked?: boolean;
   blockedAt?: string;
