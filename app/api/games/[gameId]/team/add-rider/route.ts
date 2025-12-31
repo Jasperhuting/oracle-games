@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(
   request: NextRequest,
@@ -116,7 +117,7 @@ export async function POST(
     }
 
     // Create player team entry
-    const now = new Date();
+    const now = Timestamp.now();
     const playerTeam = {
       gameId,
       userId,
@@ -176,7 +177,7 @@ export async function POST(
       playerTeam: {
         id: teamRef.id,
         ...playerTeam,
-        acquiredAt: playerTeam.acquiredAt.toISOString(),
+        acquiredAt: playerTeam.acquiredAt.toDate().toISOString(),
       },
       participant: {
         rosterSize: newRosterSize,

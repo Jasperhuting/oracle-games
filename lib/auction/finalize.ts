@@ -1,5 +1,6 @@
 import { getServerFirebase } from '@/lib/firebase/server';
 import { AuctioneerConfig, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export interface FinalizeAuctionOptions {
   gameId: string;
@@ -351,7 +352,7 @@ export async function finalizeAuction(
               riderTeam: bid.riderTeam,
               jerseyImage: bid.jerseyImage,
               pricePaid: bid.amount, // Use pricePaid instead of amount for consistency
-              acquiredAt: new Date().toISOString(), // Finalize timestamp as ISO string
+              acquiredAt: Timestamp.now(), // Finalize timestamp as Firestore Timestamp
             };
           });
 
@@ -418,7 +419,7 @@ export async function finalizeAuction(
                 riderNameId: riderNameId,
 
                 // Acquisition info
-                acquiredAt: new Date(), // Finalize timestamp as Firestore Timestamp
+                acquiredAt: Timestamp.now(), // Finalize timestamp as Firestore Timestamp
                 acquisitionType: isSelectionBased ? 'selection' : 'auction',
                 pricePaid: bid.amount,
 

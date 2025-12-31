@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 /**
  * Migrate existing team arrays in gameParticipants to playerTeams collection
@@ -83,7 +84,7 @@ export async function POST(
             riderNameId: rider.riderNameId,
             
             // Acquisition info
-            acquiredAt: rider.acquiredAt ? new Date(rider.acquiredAt) : new Date(),
+            acquiredAt: rider.acquiredAt ? Timestamp.fromDate(new Date(rider.acquiredAt)) : Timestamp.now(),
             acquisitionType: 'auction',
             pricePaid: rider.amount || 0,
             
