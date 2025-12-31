@@ -265,14 +265,9 @@ export const ActivityLogTab = () => {
     return selectedFilters.length === 0 || selectedFilters.includes(log.action);
   });
 
-  const formatDate = (timestamp: string | { toDate: () => Date }) => {
+  const formatDate = (timestamp: { toDate: () => Date }) => {
     try {
-      const date = new Date(typeof timestamp === 'string' ? timestamp : timestamp.toDate());
-
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'Invalid date';
-      }
+      const date = timestamp.toDate();
 
       return date.toLocaleString('nl-NL', {
         day: '2-digit',
@@ -284,7 +279,7 @@ export const ActivityLogTab = () => {
         hour12: false,
       });
     } catch (error) {
-      console.error('Error formatting date:', error, 'timestamp:', timestamp);
+      console.error('Error formatting date:', error);
       return 'Invalid date';
     }
   };
