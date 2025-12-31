@@ -18,7 +18,6 @@ export * from './hooks';
 
 // Export page types
 export * from './pages';
-export * from './wk2026';
 
 // Re-export scraper types for convenience
 export * from '../scraper/types';

@@ -5,7 +5,7 @@ import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency"
 import { ReactNode } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { ParticipantData } from "@/app/games/[gameId]/auction/page";
+import { ParticipantData } from "@/lib/types";
 
 // TODO: replace any with real type
 
@@ -137,7 +137,7 @@ export const PlayerCard = (
                         {showPointsInsteadOfPrice ? 'Points:' : 'Price:'}
                     </span>
                     <span className={`${player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""} line-through`}>
-                        {showPointsInsteadOfPrice ? player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
+                        {showPointsInsteadOfPrice ? player.points === 0 ? 1 : player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {!showPointsInsteadOfPrice && player.effectiveMinBid && player.effectiveMinBid < player.points && (
                             <span className="text-xs text-gray-500 line-through ml-1">
                                 {player.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(player.points)}
@@ -151,7 +151,7 @@ export const PlayerCard = (
                         {showPointsInsteadOfPrice ? 'Points:' : 'Price:'}
                     </span>
                     <span className={player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""}>
-                        {showPointsInsteadOfPrice ? player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
+                        {showPointsInsteadOfPrice ? player.points === 0 ? 1 : player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {!showPointsInsteadOfPrice && player.effectiveMinBid && player.effectiveMinBid < player.points ? (
                             <span className="text-xs text-gray-500 line-through ml-1">
                                 {formatCurrencyWhole(player.points)}

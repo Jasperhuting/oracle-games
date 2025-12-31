@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { PlayerTeam, FinalizeGame as Game, DivisionData, GameGroupData } from '@/lib/types/pages';
+import { FinalizePlayerTeam, FinalizeGame as Game, DivisionData, GameGroupData } from '@/lib/types/pages';
 
 export default function FinalizeOverviewPage() {
   const { user } = useAuth();
@@ -63,10 +63,10 @@ export default function FinalizeOverviewPage() {
         );
         const playerTeamsSnapshot = await getDocs(playerTeamsQuery);
 
-        const purchases: PlayerTeam[] = playerTeamsSnapshot.docs.map(doc => ({
+        const purchases: FinalizePlayerTeam[] = playerTeamsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        } as PlayerTeam));
+        } as FinalizePlayerTeam));
 
         const divisionData: DivisionData = {
           game,

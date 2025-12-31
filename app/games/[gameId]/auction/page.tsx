@@ -248,7 +248,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           const soldTo = soldData?.ownerName;
           const pricePaid = soldData?.pricePaid;
 
-          const riderPoints = rider.points || 0;
+          const riderPoints = rider.points || 1;
           const effectiveMinBid = maxMinBid && riderPoints > maxMinBid ? maxMinBid : riderPoints;
 
           let highestBid = 0;
@@ -412,7 +412,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         const pricePaid = soldData?.pricePaid;
 
         // Calculate effective minimum bid (apply cap if configured)
-        const riderPoints = rider.points || 0;
+        const riderPoints = rider.points || 1;
         const effectiveMinBid = maxMinBid && riderPoints > maxMinBid ? maxMinBid : riderPoints;
 
         // Calculate highest bid for this rider
@@ -546,7 +546,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   // Calculate min/max prices from available riders and set initial price range
   useEffect(() => {
     if (availableRiders.length > 0) {
-      const prices = availableRiders.map(r => r.effectiveMinBid || r.points || 0);
+      const prices = availableRiders.map(r => r.effectiveMinBid || r.points || 1);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       setPriceRange([minPrice, maxPrice]);

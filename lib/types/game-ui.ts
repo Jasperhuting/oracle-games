@@ -131,6 +131,7 @@ export interface ParticipantData {
   name: string;
   email: string;
   division?: string;
+  playername?: string;
 }
 
 export interface GameData {

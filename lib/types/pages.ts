@@ -90,7 +90,7 @@ export interface BulkJob {
 }
 
 // Admin Finalize Overview Page
-export interface PlayerTeam {
+export interface FinalizePlayerTeam {
   id: string;
   gameId: string;
   userId: string;
@@ -114,7 +114,7 @@ export interface FinalizeGame {
 
 export interface DivisionData {
   game: FinalizeGame;
-  purchases: PlayerTeam[];
+  purchases: FinalizePlayerTeam[];
 }
 
 export interface GameGroupData {

@@ -5,7 +5,7 @@
 
 export type TabType = 'inbox' | 'outbox' | 'compose';
 
-export interface User {
+export interface MessagingUser {
   uid: string;
   email: string;
   displayName?: string;

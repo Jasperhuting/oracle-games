@@ -183,6 +183,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
         return top;
     };
 
+
     return (
         <header 
             className="sticky w-full bg-white drop-shadow-header z-40 h-[86px] px-8"

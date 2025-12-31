@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import type { ActivityLogsResponse, ApiErrorResponse, ActivityLog } from '@/lib/types';
+import type { ActivityLogsResponse, ApiErrorResponse, ApiActivityLog } from '@/lib/types';
 
 export async function GET(request: NextRequest): Promise<NextResponse<ActivityLogsResponse | ApiErrorResponse>> {
   try {
@@ -33,10 +33,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<ActivityLo
       .limit(limit)
       .get();
 
-    const logs: ActivityLog[] = logsSnapshot.docs.map((doc) => ({
+    const logs: ApiActivityLog[] = logsSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data()
-    } as ActivityLog));
+    } as ApiActivityLog));
 
     return NextResponse.json({ logs });
   } catch (error) {

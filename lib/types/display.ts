@@ -43,7 +43,7 @@ export interface ExtendedBid extends Bid {
 }
 
 // Team & Rider Data
-export interface PlayerTeam {
+export interface DisplayPlayerTeam {
   riderId: string;
   riderName: string;
   team?: string;
@@ -87,15 +87,15 @@ export interface UserData {
   rank?: number;
 }
 
-export interface DivisionData {
+export interface DisplayDivisionData {
   id: string;
   name: string;
   users: UserData[];
 }
 
-export interface GameGroupData {
+export interface DisplayGameGroupData {
   groupName: string;
-  divisions: DivisionData[];
+  divisions: DisplayDivisionData[];
 }
 
 // Team Grouping

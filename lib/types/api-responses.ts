@@ -3,47 +3,30 @@
  * This ensures type safety across the application
  */
 
-import { 
-  ClientGame, 
-  ClientGameParticipant, 
-  ClientPlayerTeam, 
-  ClientBid, 
+import {
+  ClientGame,
+  ClientGameParticipant,
+  ClientPlayerTeam,
+  ClientBid,
   ClientMessage,
   ClientGameRule,
   GameStatus,
   GameType,
   GameConfig
 } from './games';
+import { User } from './user';
 import { Team } from '../scraper/types';
 
 // ============================================================================
 // USER TYPES
 // ============================================================================
-
-export interface User {
-  uid: string;
-  email: string;
-  playername: string;
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth?: string;
-  createdAt: string;
-  updatedAt: string;
-  userType: 'admin' | 'user';
-  blocked?: boolean;
-  blockedAt?: string;
-  blockedBy?: string;
-  blockedReason?: string;
-  preferredLanguage?: 'en' | 'nl';
-  emailNotifications?: boolean; // Receive email notifications for new messages
-  deletedAt?: string;
-}
+// Note: User interface is defined in user.ts and re-exported from index.ts
 
 // ============================================================================
 // ACTIVITY LOG TYPES
 // ============================================================================
 
-export interface ActivityLog {
+export interface ApiActivityLog {
   id: string;
   action: string;
   userId: string;
@@ -159,7 +142,7 @@ export interface UsersListResponse {
 
 // GET /api/getActivityLogs
 export interface ActivityLogsResponse {
-  logs: ActivityLog[];
+  logs: ApiActivityLog[];
 }
 
 // GET /api/getRankings
