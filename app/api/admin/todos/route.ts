@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export interface AdminTodo {
   id: string;
@@ -8,8 +9,8 @@ export interface AdminTodo {
   status: 'todo' | 'in_progress' | 'done';
   category: string;
   order: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 // GET /api/admin/todos - Get all admin todos
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
       maxOrder = doc.data().order;
     });
 
-    const now = new Date().toISOString();
+    const now = Timestamp.now();
     const todoData = {
       title: title.trim(),
       status: 'todo' as const,
@@ -174,9 +175,9 @@ export async function PATCH(request: NextRequest) {
       status?: 'todo' | 'in_progress' | 'done';
       category?: string;
       order?: number;
-      updatedAt: string;
+      updatedAt: Timestamp;
     } = {
-      updatedAt: new Date().toISOString(),
+      updatedAt: Timestamp.now(),
     };
 
     if (title !== undefined) {

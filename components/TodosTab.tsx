@@ -19,9 +19,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AdminTodo } from '@/app/api/admin/todos/route';
-
-type TodoStatus = 'todo' | 'in_progress' | 'done';
+import { AdminTodo, TodoStatus } from '@/lib/types/admin';
 
 interface SortableTodoItemProps {
   todo: AdminTodo;
@@ -96,13 +94,13 @@ function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryNa
             <div>
               <span className="font-medium text-gray-700">Created:</span>
               <span className="ml-2 text-gray-600">
-                {new Date(todo.createdAt).toLocaleDateString()}
+                {todo.createdAt?.toDate?.() ? new Date(todo.createdAt.toDate()).toLocaleDateString() : 'N/A'}
               </span>
             </div>
             <div>
               <span className="font-medium text-gray-700">Updated:</span>
               <span className="ml-2 text-gray-600">
-                {new Date(todo.updatedAt).toLocaleDateString()}
+                {todo.updatedAt?.toDate?.() ? new Date(todo.updatedAt.toDate()).toLocaleDateString() : 'N/A'}
               </span>
             </div>
           </div>
@@ -333,20 +331,7 @@ export function TodosTab() {
     })
   );
 
-  useEffect(() => {
-    if (user) {
-      fetchTodos();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    // Extract unique categories from todos
-    const uniqueCategories = Array.from(new Set(todos.map(t => t.category)));
-    const allCategories = Array.from(new Set([...categories, ...uniqueCategories]));
-    setCategories(allCategories);
-  }, [todos]);
-
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -362,7 +347,20 @@ export function TodosTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchTodos();
+    }
+  }, [user, fetchTodos]);
+
+  useEffect(() => {
+    // Extract unique categories from todos
+    const uniqueCategories = Array.from(new Set(todos.map(t => t.category)));
+    const allCategories = Array.from(new Set([...categories, ...uniqueCategories]));
+    setCategories(allCategories);
+  }, [todos]);
 
   const handleAddTodo = async () => {
     if (!user || !newTodoTitle.trim()) return;
@@ -419,11 +417,8 @@ export function TodosTab() {
         throw new Error('Failed to update todo');
       }
 
-      setTodos(todos.map(todo =>
-        todo.id === id
-          ? { ...todo, status, updatedAt: new Date().toISOString() }
-          : todo
-      ));
+      // Refetch todos to get updated timestamp
+      await fetchTodos();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update todo');
     }
@@ -447,11 +442,8 @@ export function TodosTab() {
         throw new Error('Failed to update todo');
       }
 
-      setTodos(todos.map(todo =>
-        todo.id === id
-          ? { ...todo, category, updatedAt: new Date().toISOString() }
-          : todo
-      ));
+      // Refetch todos to get updated timestamp
+      await fetchTodos();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update todo');
     }
@@ -475,11 +467,8 @@ export function TodosTab() {
         throw new Error('Failed to update todo');
       }
 
-      setTodos(todos.map(todo =>
-        todo.id === id
-          ? { ...todo, title, updatedAt: new Date().toISOString() }
-          : todo
-      ));
+      // Refetch todos to get updated timestamp
+      await fetchTodos();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update todo');
     }
@@ -522,16 +511,13 @@ export function TodosTab() {
           throw new Error('Failed to update todo');
         }
 
-        setTodos(prevTodos => prevTodos.map(todo =>
-          todo.id === id
-            ? { ...todo, description, updatedAt: new Date().toISOString() }
-            : todo
-        ));
+        // Refetch todos to get updated timestamp
+        await fetchTodos();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update todo');
       }
     }, 500); // Wait 500ms after user stops typing
-  }, [user]);
+  }, [user, fetchTodos]);
 
   const handleDelete = async (id: string) => {
     if (!user || !confirm('Are you sure you want to delete this todo?')) return;

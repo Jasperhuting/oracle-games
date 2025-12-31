@@ -67,6 +67,25 @@ export interface TranslationsTabProps {
 // Todos
 export type TodoStatus = 'todo' | 'in_progress' | 'done';
 
+export interface AdminTodo {
+  id: string;
+  title: string;
+  description?: string;
+  status: TodoStatus;
+  category: string;
+  order: number;
+  createdAt: {
+    toDate: () => Date;
+    seconds: number;
+    nanoseconds: number;
+  };
+  updatedAt: {
+    toDate: () => Date;
+    seconds: number;
+    nanoseconds: number;
+  };
+}
+
 export interface SortableTodoItemProps {
   id: string;
   title: string;
