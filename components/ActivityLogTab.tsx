@@ -265,9 +265,13 @@ export const ActivityLogTab = () => {
     return selectedFilters.length === 0 || selectedFilters.includes(log.action);
   });
 
-  const formatDate = (timestamp: { toDate: () => Date }) => {
+  const formatDate = (timestamp: string) => {
     try {
-      const date = timestamp.toDate();
+      const date = new Date(timestamp);
+
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
 
       return date.toLocaleString('nl-NL', {
         day: '2-digit',

@@ -34,11 +34,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<ActivityLo
       .get();
 
     // Filter out VERCEL_DEPLOYMENT_* actions since they have their own tab
-    const logs: ApiActivityLog[] = logsSnapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      } as ApiActivityLog))
+    const logs = logsSnapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+
+        // Convert Firestore Timestamp to ISO string
+        let timestamp: string;
+        if (data.timestamp?.toDate) {
+          timestamp = data.timestamp.toDate().toISOString();
+        } else if (data.timestamp?._seconds) {
+          // Handle serialized Firestore Timestamp
+          const milliseconds = data.timestamp._seconds * 1000 + Math.floor((data.timestamp._nanoseconds || 0) / 1000000);
+          timestamp = new Date(milliseconds).toISOString();
+        } else {
+          timestamp = data.timestamp;
+        }
+
+        return {
+          id: doc.id,
+          ...data,
+          timestamp
+        } as ApiActivityLog;
+      })
       .filter((log) => !log.action.startsWith('VERCEL_DEPLOYMENT'));
 
     return NextResponse.json({ logs });

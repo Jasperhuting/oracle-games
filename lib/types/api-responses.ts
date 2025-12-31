@@ -47,7 +47,7 @@ export interface ApiActivityLog {
     deploymentStatus?: string;
     deploymentUrl?: string;
   };
-  timestamp: { toDate: () => Date };
+  timestamp: string; // ISO 8601 string from API
   ipAddress: string;
   userAgent: string;
 }

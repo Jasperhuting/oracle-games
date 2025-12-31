@@ -1,5 +1,6 @@
 'use client'
 
+import { formatTimestamp, SerializedFirestoreTimestamp } from '@/lib/utils/timestamp';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,7 +9,7 @@ interface RiderScriptStatus {
   usedToday: number;
   remaining: number;
   recentActivity: {
-    timestamp: string;
+    timestamp: SerializedFirestoreTimestamp | string;
     riderName: string;
     year: number;
   }[];
@@ -188,12 +189,7 @@ export function RiderScriptsSection({ userId }: RiderScriptsSectionProps) {
                   <span className="text-gray-500 ml-2">({activity.year})</span>
                 </div>
                 <span className="text-xs text-gray-500">
-                  {new Date(activity.timestamp).toLocaleDateString('nl-NL', {
-                    day: '2-digit',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {formatTimestamp(activity.timestamp)}
                 </span>
               </div>
             ))}
