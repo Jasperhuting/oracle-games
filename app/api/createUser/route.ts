@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,13 +44,13 @@ export async function POST(request: NextRequest) {
     await db.collection('users').doc(uid).set({
       email,
       playername,
-      createdAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
       uid,
-      updatedAt: new Date().toISOString(),
+      updatedAt: Timestamp.now(),
       userType: userType,
       authMethod: authMethod || 'email', // 'email', 'google', or 'passkey'
       lastLoginMethod: authMethod || 'email',
-      lastLoginAt: new Date().toISOString(),
+      lastLoginAt: Timestamp.now(),
     });
 
     // Log the registration activity

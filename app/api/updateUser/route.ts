@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Update user document
     const updateData: Record<string, unknown> = {
       playername,
-      updatedAt: new Date().toISOString(),
+      updatedAt: Timestamp.now(),
     };
 
     // Add optional fields if provided

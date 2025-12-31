@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Update existing user document
     await userRef.update({
       lastLoginMethod: loginMethod,
-      lastLoginAt: new Date().toISOString(),
+      lastLoginAt: Timestamp.now(),
     });
 
     return NextResponse.json({ success: true });

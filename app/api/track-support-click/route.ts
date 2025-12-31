@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,11 +18,11 @@ export async function POST(request: NextRequest) {
     const clickData: {
       userId?: string;
       ipAddress?: string;
-      clickedAt: string;
-      timestamp: Date;
+      clickedAt: Timestamp;
+      timestamp: Timestamp;
     } = {
-      clickedAt: new Date().toISOString(),
-      timestamp: new Date()
+      clickedAt: Timestamp.now(),
+      timestamp: Timestamp.now()
     };
 
     // Add userId if available, otherwise add IP address
