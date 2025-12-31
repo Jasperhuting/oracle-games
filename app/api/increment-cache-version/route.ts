@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST() {
   try {
@@ -12,8 +13,11 @@ export async function POST() {
     const currentVersion = systemDoc.exists ? (systemDoc.data()?.version || 1) : 1;
     const newVersion = currentVersion + 1;
 
-    // Update version in Firestore
-    await systemRef.set({ version: newVersion }, { merge: true });
+    // Update version in Firestore with timestamp
+    await systemRef.set({
+      version: newVersion,
+      updatedAt: Timestamp.now()
+    }, { merge: true });
 
     return NextResponse.json({
       success: true,
