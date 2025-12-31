@@ -5,6 +5,18 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { Resend } from 'resend';
 import { sendFeedbackNotification } from '@/lib/telegram';
 
+// Server-side feedback document type with Firebase Admin Timestamp
+interface FeedbackDocument {
+  userId: string;
+  userEmail: string;
+  currentPage: string;
+  message: string;
+  createdAt: Timestamp;
+  status?: 'new' | 'reviewed' | 'resolved';
+  adminResponse?: string;
+  adminResponseDate?: Timestamp;
+}
+
 // GET /api/feedback - Get all feedback (admin only)
 export async function GET(request: NextRequest) {
   try {
@@ -36,16 +48,19 @@ export async function GET(request: NextRequest) {
     const feedback: Feedback[] = [];
     feedbackSnapshot.forEach((doc) => {
       const data = doc.data();
+      const createdAt = data.createdAt?.toDate?.() || new Date();
+      const adminResponseDate = data.adminResponseDate?.toDate?.();
+
       feedback.push({
         id: doc.id,
         userId: data.userId,
         userEmail: data.userEmail,
         currentPage: data.currentPage,
         message: data.message,
-        createdAt: data.createdAt || new Date(),
+        createdAt: createdAt.toISOString(),
         status: data.status || 'new',
         adminResponse: data.adminResponse,
-        adminResponseDate: data.adminResponseDate,
+        adminResponseDate: adminResponseDate?.toISOString(),
       });
     });
 
@@ -94,12 +109,12 @@ export async function POST(request: NextRequest) {
     const userEmail = userData?.email || 'unknown';
     const displayName = userData?.displayName || userData?.playername || userEmail;
 
-    const feedbackData: Omit<Feedback, 'id'> = {
+    const feedbackData: Omit<FeedbackDocument, 'id'> = {
       userId,
       userEmail,
       currentPage,
       message: message.trim(),
-      createdAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
       status: 'new',
     };
 
@@ -200,11 +215,11 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updateData: { 
-      status?: 'new' | 'reviewed' | 'resolved'; 
+    const updateData: {
+      status?: 'new' | 'reviewed' | 'resolved';
       currentPage?: string;
       adminResponse?: string;
-      adminResponseDate?: string;
+      adminResponseDate?: Timestamp;
     } = {};
 
     if (status) {
@@ -217,7 +232,7 @@ export async function PATCH(request: NextRequest) {
 
     if (typeof adminResponse !== 'undefined') {
       updateData.adminResponse = adminResponse;
-      updateData.adminResponseDate = new Date().toISOString();
+      updateData.adminResponseDate = Timestamp.now();
 
       // Get the feedback document to find the user who submitted it
       const feedbackDoc = await db.collection('feedback').doc(feedbackId).get();

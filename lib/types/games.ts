@@ -568,9 +568,7 @@ export interface Feedback {
   adminResponseDate?: string;
 }
 
-export type ClientFeedback = Omit<Feedback, 'createdAt'> & {
-  createdAt: string;
-};
+export type ClientFeedback = Feedback;
 
 // ============================================================================
 // UTILITY TYPES
