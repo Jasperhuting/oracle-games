@@ -47,9 +47,9 @@ export type AcquisitionType = typeof ACQUISITION_TYPES[number];
 
 export interface AuctionPeriod {
   name: string;                     // e.g., "Stage 1-5", "Pre-race"
-  startDate: string;
-  endDate: string;
-  finalizeDate?: string;         // Optional: when to automatically finalize this auction period
+  startDate: Timestamp;
+  endDate: Timestamp;
+  finalizeDate?: Timestamp;         // Optional: when to automatically finalize this auction period
   status: AuctionStatus;
   top200Only?: boolean;             // Only allow bidding on top 200 riders for this period
   neoProfsRequired?: number;        // Number of neo-professionals required (born after 01-01-2004)
@@ -175,13 +175,13 @@ export interface Game {
 
   // Admin & timestamps
   createdBy: string;                // Admin UID
-  createdAt: Timestamp | Date;
-  updatedAt: Timestamp | Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 
   // Status
   status: GameStatus;
-  registrationOpenDate?: Timestamp | Date;
-  registrationCloseDate?: Timestamp | Date;
+  registrationOpenDate?: Timestamp;
+  registrationCloseDate?: Timestamp;
 
   // Division (for games with divisions)
   division?: string;                // e.g., "Division 1", "Hoofdklasse"
@@ -202,12 +202,25 @@ export interface Game {
 
   // Game-specific configuration
   config: GameConfig;
-     
+
+  // Auction finalization timestamp
+  finalizedAt?: Timestamp;
+
 }
 
 // ============================================================================
 // GAME PARTICIPANT
 // ============================================================================
+
+// Rider in GameParticipant's team array (denormalized for quick access)
+export interface ParticipantTeamRider {
+  riderNameId: string;
+  riderName: string;
+  riderTeam: string;
+  jerseyImage?: string;
+  pricePaid: number;
+  acquiredAt: Timestamp;            // When the rider was acquired
+}
 
 export interface GameParticipant {
   id?: string;                      // Document ID
@@ -216,9 +229,9 @@ export interface GameParticipant {
   playername: string;
   userEmail?: string;               // User's email address
 
-  joinedAt: Timestamp | Date;
+  joinedAt: Timestamp;
   status: ParticipantStatus;
-  eliminatedAt?: Timestamp | Date;  // For Last Man Standing
+  eliminatedAt?: Timestamp;         // For Last Man Standing
 
   // Budget tracking (for games with budget)
   budget?: number;
@@ -226,6 +239,7 @@ export interface GameParticipant {
 
   // Team info
   teamName?: string;                // Optional custom team name
+  team?: ParticipantTeamRider[];    // Denormalized team array (for quick access without joining playerTeams)
   rosterSize: number;
   rosterComplete: boolean;          // Is team complete?
 
@@ -258,7 +272,7 @@ export interface PlayerTeam {
   riderNameId: string;
 
   // Acquisition
-  acquiredAt: Timestamp | Date;
+  acquiredAt: Timestamp;
   acquisitionType: AcquisitionType;
   pricePaid?: number;               // For auction/budget games
   draftRound?: number;              // For draft games
@@ -346,7 +360,7 @@ export interface StagePick {
   // For Fan Flandrien (top 15 prediction)
   predictions?: Prediction[];
 
-  pickedAt: Timestamp | Date;
+  pickedAt: Timestamp;
   locked: boolean;                  // Cannot be changed anymore
 }
 
@@ -366,7 +380,7 @@ export interface League {
   gameId: string;                   // Which game this league belongs to
 
   createdBy: string;                // User UID
-  createdAt: Timestamp | Date;
+  createdAt: Timestamp;
 
   // Access
   visibility: LeagueVisibility;
@@ -398,7 +412,7 @@ export interface RaceLineup {
   id?: string;                      // Document ID (race slug)
   raceRef: string;                  // Path to race document or DocumentReference
   year: number;
-  updatedAt: Timestamp | Date;
+  updatedAt: Timestamp;
   updatedBy: string;                // Admin UID
 
   teams: RaceTeam[];
@@ -460,7 +474,7 @@ export interface DraftPick {
   riderTeam: string;
   jerseyImage?: string;
 
-  pickedAt: Timestamp | Date;
+  pickedAt: Timestamp;
 
   // For Rising Stars
   riderPreviousPoints?: number;     // Points from previous year
@@ -544,7 +558,7 @@ export interface GameRule {
   id?: string;                      // Document ID (same as gameType)
   gameType: GameType;
   rules: string;                    // HTML content from WYSIWYG editor
-  updatedAt: Timestamp | Date;
+  updatedAt: Timestamp;
   updatedBy: string;                // Admin UID
 }
 
@@ -595,18 +609,32 @@ export function isWorldTourManager(game: Game): game is Game & { config: WorldTo
   return game.gameType === 'worldtour-manager';
 }
 
+// Client-side version of AuctionPeriod with string timestamps
+export type ClientAuctionPeriod = Omit<AuctionPeriod, 'startDate' | 'endDate' | 'finalizeDate'> & {
+  startDate: string;
+  endDate: string;
+  finalizeDate?: string;
+};
+
 // Helper type for client-side game data (with string dates instead of Timestamps)
-export type ClientGame = Omit<Game, 'createdAt' | 'updatedAt' | 'registrationOpenDate' | 'registrationCloseDate' | 'config'> & {
+export type ClientGame = Omit<Game, 'createdAt' | 'updatedAt' | 'registrationOpenDate' | 'registrationCloseDate' | 'finalizedAt' | 'config'> & {
   createdAt: string;
   updatedAt: string;
   registrationOpenDate?: string;
   registrationCloseDate?: string;
+  finalizedAt?: string;
   config: GameConfig; // Config with Timestamp converted to string dates
 };
 
-export type ClientGameParticipant = Omit<GameParticipant, 'joinedAt' | 'eliminatedAt'> & {
+// Client-side version of ParticipantTeamRider with string timestamps
+export type ClientParticipantTeamRider = Omit<ParticipantTeamRider, 'acquiredAt'> & {
+  acquiredAt: string;
+};
+
+export type ClientGameParticipant = Omit<GameParticipant, 'joinedAt' | 'eliminatedAt' | 'team'> & {
   joinedAt: string;
   eliminatedAt?: string;
+  team?: ClientParticipantTeamRider[];
 };
 
 export type ClientPlayerTeam = Omit<PlayerTeam, 'acquiredAt'> & {
@@ -662,18 +690,18 @@ export interface Message {
   message: string;
 
   // Timestamps
-  sentAt: Timestamp | Date;
+  sentAt: Timestamp;
 
   // Read status (for individual messages)
   read?: boolean;
-  readAt?: Timestamp | Date;
+  readAt?: Timestamp;
 
   // Email notification status
   emailNotificationSent?: boolean;
-  emailNotificationSentAt?: Timestamp | Date;
+  emailNotificationSentAt?: Timestamp;
 
   // Soft delete (separate for sender and recipient)
-  deletedAt?: Timestamp | Date; // Legacy field
+  deletedAt?: Timestamp;          // Legacy field
   deletedBySender?: boolean;
   deletedByRecipient?: boolean;
 }

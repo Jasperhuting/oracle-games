@@ -75,11 +75,12 @@ export async function finalizeAuction(
         };
       }
 
-      // Get the period start date to filter bids
+      // Get the period dates to filter bids
       const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
-      const periodStartDate = period?.startDate || new Date();
+      const periodStartDate = period?.startDate?.toDate?.() || period?.startDate;
+      const periodEndDate = period?.endDate?.toDate?.() || period?.endDate;
 
-      console.log(`[FINALIZE] Filtering bids for period "${auctionPeriodName}" starting from ${periodStartDate}`);
+      console.log(`[FINALIZE] Filtering bids for period "${auctionPeriodName}" from ${periodStartDate} to ${periodEndDate}`);
     }
 
     // Get all bids for this game (without status filter to avoid index requirement)
@@ -114,8 +115,9 @@ export async function finalizeAuction(
       // Filter by auction period if specified
       if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
         const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
-        const periodStartDate = period?.startDate; // ISO string
-        const periodEndDate = period?.endDate; // ISO string
+        // Convert Firestore Timestamps to ISO strings for comparison
+        const periodStartDate = toISOString(period?.startDate);
+        const periodEndDate = toISOString(period?.endDate);
         const bidAt = toISOString(bidData.bidAt); // Convert Firestore timestamp to ISO string
 
         if (!periodStartDate || !periodEndDate || !bidAt) {
@@ -155,7 +157,7 @@ export async function finalizeAuction(
       // This is a valid scenario - the period ended without any bids
       const updateData: any = {
         status: 'active',
-        finalizedAt: new Date().toISOString(),
+        finalizedAt: Timestamp.now(),
       };
 
       // If this is a specific auction period, update that period's status to 'finalized'
@@ -460,7 +462,7 @@ export async function finalizeAuction(
     // Update game status and period status
     const updateData: any = {
       status: 'active',
-      finalizedAt: new Date().toISOString(),
+      finalizedAt: Timestamp.now(),
     };
 
     // If this is a specific auction period, update that period's status to 'finalized'

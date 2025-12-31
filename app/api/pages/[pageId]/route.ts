@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +30,7 @@ export async function GET(
       id: pageId,
       title: pageData?.title || pageId,
       content: pageData?.content || '',
-      updatedAt: pageData?.updatedAt || null,
+      updatedAt: pageData?.updatedAt?.toDate?.()?.toISOString() || pageData?.updatedAt || null,
       updatedBy: pageData?.updatedBy || null,
     });
   } catch (error) {
@@ -70,7 +71,7 @@ export async function POST(
     const pageData = {
       title: title || pageId,
       content,
-      updatedAt: new Date().toISOString(),
+      updatedAt: Timestamp.now(),
       // When you add authentication, add: updatedBy: userId
     };
 
@@ -79,7 +80,9 @@ export async function POST(
     return NextResponse.json({
       success: true,
       id: pageId,
-      ...pageData,
+      title: pageData.title,
+      content: pageData.content,
+      updatedAt: pageData.updatedAt.toDate().toISOString(),
     });
   } catch (error) {
     console.error('Error saving page:', error);

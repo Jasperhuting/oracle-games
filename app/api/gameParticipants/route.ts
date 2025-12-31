@@ -32,10 +32,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamePartic
 
     const participants = snapshot.docs.map(doc => {
       const data = doc.data();
+
+      // Convert team array timestamps to ISO strings
+      const team = data.team?.map((rider: any) => ({
+        ...rider,
+        acquiredAt: rider.acquiredAt?.toDate?.()?.toISOString() || rider.acquiredAt,
+      }));
+
       return {
         id: doc.id,
         ...data,
         joinedAt: data.joinedAt?.toDate?.()?.toISOString() || data.joinedAt,
+        eliminatedAt: data.eliminatedAt?.toDate?.()?.toISOString() || data.eliminatedAt,
+        team,
       } as ClientGameParticipant;
     });
 
