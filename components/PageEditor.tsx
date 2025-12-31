@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { RichTextEditor } from './RichTextEditor';
-
-interface Page {
-  id: string;
-  title: string;
-  content: string;
-}
+import { Page } from '@/lib/types/admin';
 
 const AVAILABLE_PAGES = [
   { id: 'home', title: 'Home Page' },

@@ -2,18 +2,7 @@
 
 import { useState } from 'react';
 import { KNOWN_RACE_SLUGS } from '@/lib/scraper/types';
-
-interface ScraperFormProps {
-  onSubmit?: (data: ScraperFormData) => void;
-  loading?: boolean;
-}
-
-export interface ScraperFormData {
-  race: string;
-  year: number;
-  type: 'startlist' | 'stage' | 'all-stages';
-  stage?: number;
-}
+import { ScraperFormData, ScraperFormProps } from '@/lib/types/admin';
 
 export default function ScraperForm({ onSubmit, loading = false }: ScraperFormProps) {
   const [formData, setFormData] = useState<ScraperFormData>({

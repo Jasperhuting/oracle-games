@@ -5,11 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import { useEffect } from 'react';
-
-interface RichTextEditorProps {
-  content: string;
-  onChange: (content: string) => void;
-}
+import { RichTextEditorProps } from '@/lib/types/component-props';
 
 export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   const editor = useEditor({

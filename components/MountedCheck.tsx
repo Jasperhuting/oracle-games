@@ -1,11 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-
-interface MountedCheckProps {
-    children: React.ReactNode;
-    fallback?: React.ReactNode;
-}
+import { MountedCheckProps } from '@/lib/types/component-props';
 
 export function MountedCheck({ children, fallback }: MountedCheckProps) {
     const [mounted, setMounted] = useState(false);

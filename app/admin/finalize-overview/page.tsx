@@ -5,38 +5,7 @@ import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
-
-interface PlayerTeam {
-  id: string;
-  gameId: string;
-  userId: string;
-  playername: string;
-  riderNameId: string;
-  riderName: string;
-  riderTeam?: string;
-  pricePaid: number;
-  acquiredAt: any;
-  acquisitionType: string;
-}
-
-interface Game {
-  id: string;
-  name: string;
-  division?: string;
-  divisionLevel?: number;
-  gameType: string;
-  status: string;
-}
-
-interface DivisionData {
-  game: Game;
-  purchases: PlayerTeam[];
-}
-
-interface GameGroupData {
-  baseName: string;
-  divisions: DivisionData[];
-}
+import { PlayerTeam, FinalizeGame as Game, DivisionData, GameGroupData } from '@/lib/types/pages';
 
 export default function FinalizeOverviewPage() {
   const { user } = useAuth();

@@ -5,40 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Flag } from '@/components/Flag';
-
-interface Rider {
-  riderId: string;
-  riderNameId: string;
-  riderName: string;
-  riderTeam: string;
-  riderCountry: string;
-  baseValue: number;
-  pricePaid: number;
-  percentageDiff: number;
-  pointsScored: number;
-  acquiredAt: any;
-  acquisitionType: string;
-}
-
-interface Team {
-  participantId: string;
-  userId: string;
-  playername: string;
-  budget: number;
-  spentBudget: number;
-  remainingBudget: number;
-  rosterSize: number;
-  rosterComplete: boolean;
-  totalPoints: number;
-  ranking: number;
-  riders: Rider[];
-  totalRiders: number;
-  totalBaseValue: number;
-  totalSpent: number;
-  totalDifference: number;
-  totalPercentageDiff: number;
-  averagePrice: number;
-}
+import { AuctionTeamsRider as Rider, AuctionTeam as Team } from '@/lib/types/pages';
 
 export default function TeamsOverviewPage() {
   const params = useParams();

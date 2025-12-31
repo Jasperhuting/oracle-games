@@ -1,19 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-interface ScraperJob {
-  id: string;
-  type: 'startlist' | 'stage-result';
-  race: string;
-  stage?: number;
-  year?: number;
-  status: 'running' | 'completed' | 'failed';
-  startTime: string;
-  endTime?: string;
-  output?: string;
-  error?: string;
-}
+import { ScraperJob } from '@/lib/types/admin';
 
 const RACES = [
   'tour-de-france',

@@ -1,13 +1,4 @@
-interface RowProps<T> {
-    item: T;
-    onSelect: (item: T) => void;
-    isSelected?: boolean;
-    fullWidth?: boolean;
-    index?: number | boolean;
-    children: React.ReactNode;
-    rightContent?: React.ReactNode;
-    className?: string;
-}
+import { RowProps } from "@/lib/types/component-props";
 
 export function Row<T>({ 
     item, 

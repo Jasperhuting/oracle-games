@@ -3,26 +3,11 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { BidBackupTool } from '@/components/admin/BidBackupTool';
-
-interface Game {
-  id: string;
-  name: string;
-  gameType: string;
-  year?: number;
-  status?: string;
-  division?: string;
-  config: {
-    auctionPeriods?: Array<{
-      name: string;
-      startDate: any;
-      endDate: any;
-    }>;
-  };
-}
+import { BidBackupGame } from '@/lib/types/bid';
 
 export function BidBackupTab() {
   const { user } = useAuth();
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<BidBackupGame[]>([]);
   const [selectedGameId, setSelectedGameId] = useState<string>('');
   const [loadingGames, setLoadingGames] = useState(false);
 
@@ -35,7 +20,7 @@ export function BidBackupTab() {
         if (response.ok) {
           const data = await response.json();
           const gamesWithAuctions = data.games.filter(
-            (game: Game) =>
+            (game: BidBackupGame) =>
               game.config?.auctionPeriods &&
               game.config.auctionPeriods.length > 0
           );

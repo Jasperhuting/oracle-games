@@ -8,10 +8,7 @@ import { useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { FirebaseError } from "firebase/app";
-
-interface ResetPasswordFormProps {
-    email: string;
-}
+import { ResetPasswordFormProps } from "@/lib/types/component-props";
 
 export const ResetPasswordForm = () => {
     const { register, handleSubmit, formState: { errors } } = useForm<ResetPasswordFormProps>();

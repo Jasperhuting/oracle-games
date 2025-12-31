@@ -4,13 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/Button';
 import { useRouter } from 'next/navigation';
-
-interface Race {
-  id: string;
-  name: string;
-  slug: string;
-  year: number;
-}
+import { SimulateRace as Race } from '@/lib/types/pages';
 
 export default function SimulateResultsPage() {
   const { user, loading: authLoading } = useAuth();

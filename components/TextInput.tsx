@@ -1,8 +1,5 @@
 import React from "react";
-
-interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label: string;
-}
+import { TextInputProps } from "@/lib/types/component-props";
 
 export const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
     ({ label, className, ...props }, ref) => {

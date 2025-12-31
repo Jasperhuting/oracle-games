@@ -1,25 +1,12 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Rider } from '@/lib/types/rider';
+import { RankingsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
 import { getCacheVersion } from '@/lib/utils/cacheVersion';
 
-interface RankingsContextType {
-  riders: Rider[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-  getRiderById: (id: string) => Rider | undefined;
-  getRidersByIds: (ids: string[]) => Rider[];
-}
-
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
-
-interface RankingsProviderProps {
-  children: ReactNode;
-  autoLoad?: boolean; // Whether to automatically load rankings on mount (default: true)
-}
 
 export function RankingsProvider({
   children,

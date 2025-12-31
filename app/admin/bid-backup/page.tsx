@@ -6,19 +6,7 @@ import { useEffect, useState } from 'react';
 import { BidBackupTool } from '@/components/admin/BidBackupTool';
 import Link from 'next/link';
 import { ArrowRight } from 'tabler-icons-react';
-
-interface Game {
-  id: string;
-  name: string;
-  gameType: string;
-  config: {
-    auctionPeriods?: Array<{
-      name: string;
-      startDate: any;
-      endDate: any;
-    }>;
-  };
-}
+import { Game } from '@/lib/types';
 
 export default function BidBackupPage() {
   const { user, loading } = useAuth();
@@ -69,11 +57,14 @@ export default function BidBackupPage() {
         const response = await fetch('/api/games/list?limit=100');
         if (response.ok) {
           const data = await response.json();
-          const gamesWithAuctions = data.games.filter(
-            (game: Game) =>
-              game.config?.auctionPeriods &&
-              game.config.auctionPeriods.length > 0
-          );
+
+          const gamesWithAuctions = data.games.filter((game: Game) => {
+            // Only include games that have auctionPeriods in their config
+            if ('auctionPeriods' in game.config) {
+              return game.config.auctionPeriods && game.config.auctionPeriods.length > 0;
+            }
+            return false;
+          });
           setGames(gamesWithAuctions);
         }
       } catch (error) {
@@ -139,15 +130,18 @@ export default function BidBackupPage() {
             <option value="">-- Selecteer een game --</option>
             {games.map((game) => (
               <option key={game.id} value={game.id}>
-                {game.name} ({game.config.auctionPeriods?.length || 0} biedronde(s))
+                {game.name}{
+                  'auctionPeriods' in game.config &&
+                  ` (${game.config.auctionPeriods?.length || 0} biedronde(s))`
+                }
               </option>
             ))}
           </select>
         </div>
 
-        {selectedGame && user && (
+        {selectedGame && user && 'auctionPeriods' in selectedGame.config && (
           <BidBackupTool
-            gameId={selectedGame.id}
+            gameId={selectedGame.id || ''}
             adminUserId={user.uid}
             auctionPeriods={selectedGame.config.auctionPeriods || []}
           />

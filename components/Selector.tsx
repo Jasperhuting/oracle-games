@@ -1,23 +1,7 @@
 'use client'
 import { useDebounce } from "@uidotdev/usehooks";
 import { useEffect, useState } from "react";
-
-interface SelectorProps<T> {
-    items: T[];
-    selectedItems: T[];
-    setSelectedItems: (items: T[]) => void;
-    multiSelect?: boolean;
-    multiSelectShowSelected?: boolean;
-    placeholder?: string;
-    searchFilter: (item: T, searchTerm: string) => boolean;
-    isEqual: (item1: T, item2: T) => boolean;
-    renderItem: (item: T, index: number, isSelected: boolean) => React.ReactNode;
-    renderSelectedItem: (item: T, index: number, onRemove: () => void) => React.ReactNode;
-    localStorageKey?: string;
-    initialResultsLimit?: number;
-    showSelected?: boolean;
-    getItemLabel?: (item: T) => string;
-}
+import { SelectorProps } from "@/lib/types/component-props";
 
 export function Selector<T>({
     items: initialItems,

@@ -2,42 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-
-interface StagePoint {
-  date: Date;
-  stage: number;
-  raceSlug: string;
-  raceName: string;
-  points: number;
-  breakdown: {
-    stageResult?: number;
-    gcPoints?: number;
-    pointsClass?: number;
-    mountainsClass?: number;
-    youthClass?: number;
-    mountainPoints?: number;
-    sprintPoints?: number;
-    combativityBonus?: number;
-    teamPoints?: number;
-  };
-}
-
-interface DayData {
-  date: Date;
-  dateString: string;
-  stages: StagePoint[];
-}
-
-interface RiderPointsData {
-  riderId: string;
-  riderName: string;
-  riderTeam: string;
-  riderCountry: string;
-  jerseyImage?: string;
-  totalPoints: number;
-  pointsByDate: StagePoint[];
-  pointsByDay: DayData[];
-}
+import { StagePoint, DayData, RiderPointsData } from '@/lib/types/pages';
 
 // Test data generator
 function generateTestData(): RiderPointsData[] {

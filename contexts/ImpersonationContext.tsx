@@ -2,14 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from 'firebase/auth';
-
-interface ImpersonationContextType {
-  impersonatedUser: User | null;
-  realAdmin: User | null;
-  isImpersonating: boolean;
-  startImpersonation: (userId: string) => Promise<void>;
-  stopImpersonation: () => void;
-}
+import { ImpersonationContextType } from '@/lib/types/context';
 
 const ImpersonationContext = createContext<ImpersonationContextType | undefined>(undefined);
 

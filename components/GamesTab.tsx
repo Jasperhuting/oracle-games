@@ -9,16 +9,7 @@ import { Flag } from "@/components/Flag";
 import ClassificationTabs from "./ClassificationTabs";
 import { ChevronLeft, ChevronRight } from "tabler-icons-react";
 import { ConfirmDialog } from "./ConfirmDialog";
-
-interface Race {
-  id: string;
-  name: string;
-  year: number;
-  slug: string;
-  description?: string;
-  createdAt: string;
-  active: boolean;
-}
+import { Race } from "@/lib/types/game-ui";
 
 // Module-level cache that persists across component mounts
 const raceDataCache = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any

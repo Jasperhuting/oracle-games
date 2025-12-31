@@ -1,10 +1,4 @@
-interface PaginationProps {
-    currentPage: number;
-    totalItems: number;
-    itemsPerPage: number;
-    onPageChange: (page: number) => void;
-    onItemsPerPageChange: (itemsPerPage: number) => void;
-}
+import { PaginationProps } from "@/lib/types/component-props";
 
 export const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange, onItemsPerPageChange }: PaginationProps) => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);

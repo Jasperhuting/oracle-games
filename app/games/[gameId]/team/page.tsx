@@ -10,16 +10,7 @@ import { Rider } from "@/lib/types/rider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { useRankings } from "@/contexts/RankingsContext";
-import { GameData } from "../auction/page";
-
-
-interface ParticipantData {
-  id: string;
-  budget?: number;
-  spentBudget?: number;
-  rosterSize: number;
-  rosterComplete: boolean;
-}
+import { GameParticipant, Game } from '@/lib/types/games';
 
 export default function TeamSelectionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -29,8 +20,8 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [game, setGame] = useState<GameData | null>(null);
-  const [participant, setParticipant] = useState<ParticipantData | null>(null);
+  const [game, setGame] = useState<Game | null>(null);
+  const [participant, setParticipant] = useState<GameParticipant | null>(null);
   const [availableRiders, setAvailableRiders] = useState<Rider[]>([]);
   const [selectedRiders, setSelectedRiders] = useState<Rider[]>([]);
   const [budget, setBudget] = useState<number>(0);
@@ -169,16 +160,27 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
   };
 
   const getRemainingBudget = () => {
-    if (!game?.config?.budget) return null;
+  if (!game?.config) return null;
+  
+  // Type assertion if you're sure about the type
+  const config = game.config as { budget?: number };
+  if (config.budget !== undefined) {
     return budget - spentBudget;
-  };
+  }
+  
+  return null;
+};
 
   const getMaxRiders = () => {
-    return game?.config?.maxRiders || null;
+    if (!game?.config) return null;
+    const config = game.config as { maxRiders?: number };
+    return config.maxRiders || null;
   };
 
   const getMinRiders = () => {
-    return game?.config?.minRiders || null;
+    if (!game?.config) return null;
+    const config = game.config as { minRiders?: number };
+    return config.minRiders || null;
   };
 
   const canSave = () => {

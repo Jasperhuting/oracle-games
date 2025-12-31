@@ -47,9 +47,9 @@ export type AcquisitionType = typeof ACQUISITION_TYPES[number];
 
 export interface AuctionPeriod {
   name: string;                     // e.g., "Stage 1-5", "Pre-race"
-  startDate: Timestamp;
-  endDate: Timestamp;
-  finalizeDate?: Timestamp;         // Optional: when to automatically finalize this auction period
+  startDate: string;
+  endDate: string;
+  finalizeDate?: string;         // Optional: when to automatically finalize this auction period
   status: AuctionStatus;
   top200Only?: boolean;             // Only allow bidding on top 200 riders for this period
   neoProfsRequired?: number;        // Number of neo-professionals required (born after 01-01-2004)

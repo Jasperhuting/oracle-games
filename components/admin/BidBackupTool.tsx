@@ -2,16 +2,7 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-
-interface BidBackupToolProps {
-  gameId: string;
-  adminUserId: string;
-  auctionPeriods: Array<{
-    name: string;
-    startDate: any;
-    endDate: any;
-  }>;
-}
+import { BidBackupToolProps } from '@/lib/types/bid';
 
 export function BidBackupTool({ gameId, adminUserId, auctionPeriods }: BidBackupToolProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(0);

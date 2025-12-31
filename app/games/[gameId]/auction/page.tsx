@@ -13,7 +13,7 @@ import './range-slider-custom.css';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { MyAuctionTeam } from "@/components/MyAuctionTeam";
-import { Bid, AuctionPeriod } from "@/lib/types";
+import { Bid } from "@/lib/types";
 import { MyAuctionBids } from "@/components/MyAuctionBids";
 import { MyAuctionBidsBig } from "@/components/MyAuctionBidsBig";
 import { Bidding } from "@/components/Bidding";
@@ -53,51 +53,7 @@ function useCookieValue(cookieName: string) {
   return value;
 }
 
-export interface GameData {
-  id: string;
-  name: string;
-  gameType: string;
-  year: number;
-  status: string;
-  division?: string;
-  config: {
-    budget?: number;
-    maxRiders?: number;
-    minRiders?: number;
-    auctionStatus?: 'pending' | 'active' | 'closed' | 'finalized';
-    maxMinimumBid?: number;
-    // WorldTour Manager specific
-    minNeoPros?: number;
-    maxNeoProPoints?: number;
-    maxNeoProAge?: number;
-    auctionPeriods?: Array<AuctionPeriod>;
-  };
-  eligibleRiders: string[];
-  bidding: boolean;
-}
-
-export interface ParticipantData {
-  id: string;
-  userId: string;
-  budget?: number;
-  spentBudget?: number;
-  rosterSize: number;
-  rosterComplete: boolean;
-  playername?: string;
-  assignedDivision?: string;
-}
-
-export interface RiderWithBid extends Rider {
-  highestBid?: number;
-  highestBidder?: string;
-  myBid?: number;
-  myBidStatus?: string;
-  myBidId?: string;
-  effectiveMinBid?: number; // The actual minimum bid after applying maxMinimumBid cap
-  soldTo?: string; // Player name who owns this rider (from previous auction rounds)
-  isSold?: boolean; // Whether this rider is already sold
-  pricePaid?: number; // Price paid for this rider in the auction
-}
+import { AuctionGameData as GameData, AuctionParticipantData as ParticipantData, RiderWithBid } from '@/lib/types/pages';
 
 export default function AuctionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();

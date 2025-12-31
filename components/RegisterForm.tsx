@@ -9,13 +9,7 @@ import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup,
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
-
-interface RegisterFormProps {
-    email: string;
-    password: string;
-    password_confirmation: string;
-    playername: string;
-}
+import { RegisterFormProps } from "@/lib/types/component-props";
 
 export const RegisterForm = () => {
 

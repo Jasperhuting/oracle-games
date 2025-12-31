@@ -6,13 +6,7 @@ import { GAME_STATUSES, GameStatus } from '@/lib/types/games';
 import { Button } from '@ariakit/react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { useTranslation } from 'react-i18next';
-
-interface GameStatusManagerProps {
-  gameId: string;
-  currentStatus: GameStatus;
-  onStatusChange?: () => void;
-  compact?: boolean;
-}
+import { GameStatusManagerProps } from '@/lib/types/game-ui';
 
 const STATUS_LABELS: Record<GameStatus, string> = {
   draft: 'draft',

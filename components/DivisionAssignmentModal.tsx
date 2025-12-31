@@ -4,36 +4,14 @@ import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { Participant, DivisionAssignmentModalProps } from "@/lib/types/game-ui";
+import { Game } from "@/lib/types/games";
 
-interface Participant {
-  id: string;
-  playername: string;
-  userId: string;
-  userEmail?: string;
-  assignedDivision?: string;
-  divisionAssigned?: boolean;
-  status: string;
-  joinedAt: string;
-}
-
-interface Game {
-  id: string;
-  name: string;
-  divisionCount?: number;
-  year: number;
-  gameType: string;
-}
-
+// Local interface for division game data with division field
 interface DivisionGame {
   id: string;
   name: string;
   division: string;
-}
-
-interface DivisionAssignmentModalProps {
-  gameId: string;
-  onClose: () => void;
-  onSuccess: () => void;
 }
 
 export const DivisionAssignmentModal = ({

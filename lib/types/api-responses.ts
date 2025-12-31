@@ -64,7 +64,7 @@ export interface ActivityLog {
     deploymentStatus?: string;
     deploymentUrl?: string;
   };
-  timestamp: string;
+  timestamp: string | { toDate: () => Date };
   ipAddress: string;
   userAgent: string;
 }

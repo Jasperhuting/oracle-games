@@ -2,49 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ScraperForm, { type ScraperFormData } from '@/components/ScraperForm';
-
-interface ScrapingResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  dataCount?: number;
-  timestamp?: string;
-  // For all-stages results
-  type?: string;
-  totalStages?: number;
-  successfulStages?: number;
-  failedStages?: number;
-  totalDataCount?: number;
-  results?: Array<{
-    stage: number;
-    success: boolean;
-    dataCount?: number;
-    error?: string;
-  }>;
-}
-
-interface BulkJob {
-  id: string;
-  race: string;
-  year: number;
-  totalStages: number;
-  status: 'running' | 'completed' | 'failed';
-  progress: {
-    current: number;
-    total: number;
-    percentage: number;
-  };
-  results: Array<{
-    stage: number;
-    success: boolean;
-    dataCount?: number;
-    error?: string;
-  }>;
-  errors: Array<{
-    stage: number;
-    error: string;
-  }>;
-}
+import { ScrapingResult, BulkJob } from '@/lib/types/pages';
 
 export default function ScraperPage() {
   const [loading, setLoading] = useState(false);

@@ -1,4 +1,5 @@
 import { getServerFirebase } from '@/lib/firebase/server';
+import { AuctioneerConfig, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
 
 export interface FinalizeAuctionOptions {
   gameId: string;
@@ -43,7 +44,7 @@ export async function finalizeAuction(
       };
     }
 
-    const gameData = gameDoc.data();
+    const gameData = gameDoc.data() as Game;
 
     // Check if game type supports bidding/selection
     if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager' && gameData?.gameType !== 'marginal-gains') {
@@ -57,7 +58,12 @@ export async function finalizeAuction(
     const isSelectionBased = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains';
 
     // If game has auction periods and a specific period is specified, validate it
-    const auctionPeriods = gameData?.config?.auctionPeriods;
+    const auctionPeriods =
+      gameData?.gameType === 'auctioneer' ? (gameData.config as AuctioneerConfig)?.auctionPeriods :
+        gameData?.gameType === 'worldtour-manager' ? (gameData.config as WorldTourManagerConfig)?.auctionPeriods :
+          gameData?.gameType === 'marginal-gains' ? (gameData.config as MarginalGainsConfig)?.auctionPeriods :
+            undefined;
+
     if (auctionPeriods && auctionPeriods.length > 0 && auctionPeriodName) {
       // Validate that the period exists
       const periodExists = auctionPeriods.some((p: any) => p.name === auctionPeriodName);
@@ -70,9 +76,9 @@ export async function finalizeAuction(
 
       // Get the period start date to filter bids
       const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
-      const periodStartDate = new Date(period?.startDate);
+      const periodStartDate = period?.startDate || new Date();
 
-      console.log(`[FINALIZE] Filtering bids for period "${auctionPeriodName}" starting from ${periodStartDate.toISOString()}`);
+      console.log(`[FINALIZE] Filtering bids for period "${auctionPeriodName}" starting from ${periodStartDate}`);
     }
 
     // Get all bids for this game (without status filter to avoid index requirement)
@@ -263,7 +269,7 @@ export async function finalizeAuction(
     };
 
     // First pass: collect all winning bids per participant
-    const winsByParticipant = new Map<string, Array<{riderNameId: string, bid: BidWithId}>>();
+    const winsByParticipant = new Map<string, Array<{ riderNameId: string, bid: BidWithId }>>();
 
     for (const [riderNameId, bids] of bidsByRider.entries()) {
       if (isSelectionBased) {
@@ -367,7 +373,17 @@ export async function finalizeAuction(
           console.log(`[FINALIZE] User ${userId}: correct spentBudget=${correctSpentBudget} (calculated from ${allWonBidsSnapshot.size} won bids), teamSize=${newTeam.length}`);
 
           // Check if roster is complete
-          const maxRiders = gameData?.config?.maxRiders || 0;
+          let maxRiders = 0;
+          // Handle different game types
+          if (gameData.gameType === 'auctioneer') {
+            maxRiders = (gameData.config as AuctioneerConfig).maxRiders || 0;
+          } else if (gameData.gameType === 'worldtour-manager') {
+            maxRiders = (gameData.config as WorldTourManagerConfig).maxRiders || 0;
+          } else if (gameData.gameType === 'marginal-gains') {
+            maxRiders = (gameData.config as MarginalGainsConfig).teamSize || 0;
+          } else if (gameData.gameType === 'last-man-standing') {
+            maxRiders = (gameData.config as LastManStandingConfig).teamSize || 0;
+          }
           const rosterComplete = newTeam.length >= maxRiders;
 
           // Update participant with all wins at once

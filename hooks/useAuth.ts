@@ -1,21 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { onAuthStateChanged, User, signInWithCustomToken, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
-
-interface ImpersonationStatus {
-  isImpersonating: boolean;
-  realAdmin?: {
-    uid: string;
-    email: string | null;
-    displayName: string | null;
-  };
-  impersonatedUser?: {
-    uid: string;
-    email: string | null;
-    displayName: string | null;
-  };
-  startedAt?: string;
-}
+import { ImpersonationStatus } from '@/lib/types/hooks';
 
 // Global state to share impersonation status across all useAuth instances
 let globalImpersonationStatus: ImpersonationStatus = { isImpersonating: false };

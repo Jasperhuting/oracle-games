@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { GameRule, GameType } from '@/lib/types/games';
 import { X } from 'tabler-icons-react';
 
+// Local interface extending the centralized type with gameName
 interface GameRulesModalProps {
   isOpen: boolean;
   onClose: () => void;

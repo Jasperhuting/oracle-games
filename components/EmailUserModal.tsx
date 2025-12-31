@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from './Button';
-
-interface EmailUserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userEmail: string;
-  userName: string;
-}
+import { EmailUserModalProps } from '@/lib/types/messaging';
 
 export const EmailUserModal = ({ isOpen, onClose, userEmail, userName }: EmailUserModalProps) => {
   const [subject, setSubject] = useState('');

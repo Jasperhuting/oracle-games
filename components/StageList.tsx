@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-type StageMeta = {
-  stage: number;
-  url: string;
-  lastModified: string | null;
-};
+import { StageMeta } from '@/lib/types/display';
 
 export function StageList({ race, year, maxStages = 21 }: { race: string; year: number; maxStages?: number }) {
   const [stages, setStages] = useState<StageMeta[] | null>(null);

@@ -9,16 +9,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { User } from "firebase/auth";
+import { LoginFormProps } from "@/lib/types/component-props";
 
 const PasskeyLogin = dynamic(
   () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
   { ssr: false }
 );
-
-interface LoginFormProps {
-    email: string;
-    password: string;
-}
 
 export const LoginForm = () => {
     const { register, handleSubmit } = useForm<LoginFormProps>();

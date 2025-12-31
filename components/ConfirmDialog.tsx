@@ -2,18 +2,7 @@
 
 import * as Ariakit from "@ariakit/react";
 import { Button } from "./Button";
-import { ReactNode } from "react";
-
-interface ConfirmDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  description: string | ReactNode;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: 'danger' | 'primary';
-}
+import { ConfirmDialogProps } from "@/lib/types/component-props";
 
 export const ConfirmDialog = ({
   open,

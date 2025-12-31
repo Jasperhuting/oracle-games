@@ -5,26 +5,7 @@ import { getFirestore, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
 import { useTranslation, Trans } from 'react-i18next';
 import toast from 'react-hot-toast';
-
-interface Translation {
-  [key: string]: string | Translation;
-}
-
-interface Language {
-  locale: string;
-  translations: Translation;
-}
-
-interface TranslationRow {
-  key: string;
-  path: string;
-  enValue: string;
-  depth: number;
-}
-
-interface TranslationsTabProps {
-  isProgrammer?: boolean;
-}
+import { Translation, Language, TranslationRow, TranslationsTabProps } from '@/lib/types/admin';
 
 export function TranslationsTab({ isProgrammer = false }: TranslationsTabProps) {
   const [languages, setLanguages] = useState<Language[]>([]);

@@ -1,25 +1,10 @@
 import { cn } from "@/lib/utils";
-import { ButtonHTMLAttributes } from "react";
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    text?: string | React.ReactNode;
-    fullWidth?: boolean;
-    endIcon?: React.ReactNode;
-    startIcon?: React.ReactNode;
-    selected?: boolean;
-    onClick?: () => void;
-    className?: string;
-    disabled?: boolean;
-    children?: React.ReactNode;
-    variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'text' | 'white';
-    outline?: boolean;
-    ghost?: boolean;
-    size?: 'sm' | 'md' | 'lg' | 'text';
-}
+import { ButtonProps } from "@/lib/types/component-props";
 
 // Color styles for each variant
 const solidStyles = {
     primary: 'bg-primary text-white hover:bg-primary/90 border-primary',
+    white: 'bg-primary text-white hover:bg-primary/90 border-primary',
     secondary: 'bg-gray-600 text-white hover:bg-gray-700 border-gray-600',
     success: 'bg-green-600 text-white hover:bg-green-700 border-green-600',
     danger: 'bg-red-600 text-white hover:bg-red-700 border-red-600',
@@ -29,6 +14,7 @@ const solidStyles = {
 
 const outlineStyles = {
     primary: 'bg-transparent text-primary border-primary hover:bg-primary hover:text-white',
+    white: 'bg-transparent text-primary border-primary hover:bg-primary hover:text-white',
     secondary: 'bg-transparent text-gray-600 border-gray-600 hover:bg-gray-600 hover:text-white',
     success: 'bg-transparent text-green-600 border-green-600 hover:bg-green-600 hover:text-white',
     danger: 'bg-transparent text-red-600 border-red-600 hover:bg-red-600 hover:text-white',

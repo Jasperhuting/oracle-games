@@ -1,30 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-
-interface JobProgress {
-  id: string;
-  type: 'scraper' | 'team-update' | 'bulk-scrape';
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: {
-    current: number;
-    total: number;
-    percentage: number;
-    stage?: string;
-  };
-  data?: Record<string, unknown>;
-  result?: unknown;
-  error?: string;
-  createdAt: string;
-  startedAt?: string;
-  completedAt?: string;
-}
-
-interface UseJobProgressOptions {
-  pollInterval?: number; // default: 2000ms
-  onProgress?: (progress: JobProgress) => void;
-  onComplete?: (result: JobProgress) => void;
-  onError?: (error: JobProgress) => void;
-  enabled?: boolean;
-}
+import { JobProgress, UseJobProgressOptions } from '@/lib/types/hooks';
 
 /**
  * Hook to poll for job progress from Firestore

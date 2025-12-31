@@ -5,7 +5,9 @@ import { Button } from "./Button";
 import { useAuth } from "@/hooks/useAuth";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useTranslation } from "react-i18next";
+import { ManageDivisionsModalProps } from "@/lib/types/game-ui";
 
+// Local interface for Game with required fields for this component
 interface Game {
   id: string;
   name: string;
@@ -13,12 +15,6 @@ interface Game {
   maxPlayers?: number;
   status: string;
   divisionLevel?: number;
-}
-
-interface ManageDivisionsModalProps {
-  games: Game[];
-  onClose: () => void;
-  onSuccess: () => void;
 }
 
 export const ManageDivisionsModal = ({ games, onClose, onSuccess }: ManageDivisionsModalProps) => {

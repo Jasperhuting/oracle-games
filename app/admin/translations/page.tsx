@@ -3,15 +3,7 @@
 import { JSX, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-
-interface Translation {
-  [key: string]: string | Translation;
-}
-
-interface Language {
-  locale: string;
-  translations: Translation;
-}
+import { Translation, Language } from '@/lib/types/admin';
 
 export default function TranslationsAdminPage() {
   const { user } = useAuth();

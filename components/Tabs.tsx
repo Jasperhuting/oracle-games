@@ -2,17 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-interface Tab {
-  id: string;
-  label: string;
-  content: React.ReactNode;
-}
-
-interface TabsProps {
-  tabs: Tab[];
-  defaultTab?: string;
-}
+import { TabsProps } from "@/lib/types/component-props";
 
 export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
   const router = useRouter();

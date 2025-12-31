@@ -2,31 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-
-interface ActivityLog {
-  id: string;
-  action: string;
-  userId: string;
-  userEmail?: string;
-  userName?: string;
-  targetUserId?: string;
-  targetUserEmail?: string;
-  targetUserName?: string;
-  gameId?: string;
-  gameName?: string;
-  details?: Record<string, any> & {
-    environment?: string;
-    branch?: string;
-    commit?: string;
-    commitMessage?: string;
-    deploymentId?: string;
-    deploymentStatus?: string;
-    deploymentUrl?: string;
-  };
-  timestamp: string;
-  ipAddress?: string;
-  userAgent?: string;
-}
+import { ActivityLog } from "@/lib/types/activity";
 
 // Separate component for error details to avoid hook violation
 const ErrorDetails = ({ details }: { details: Record<string, any> }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -123,9 +99,14 @@ export const ActivityLogTab = () => {
     return log.action === filter;
   });
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (timestamp: string | { toDate: () => Date }) => {
     try {
-      return new Date(dateString).toLocaleString('nl-NL', {
+      // Handle Firestore Timestamp objects
+      const date = typeof timestamp === 'string'
+        ? new Date(timestamp)
+        : timestamp.toDate();
+
+      return date.toLocaleString('nl-NL', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -135,7 +116,7 @@ export const ActivityLogTab = () => {
         hour12: false,
       });
     } catch {
-      return dateString;
+      return typeof timestamp === 'string' ? timestamp : 'Invalid date';
     }
   };
 

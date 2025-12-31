@@ -8,26 +8,7 @@ import { Button } from "./Button";
 import Link from "next/link";
 import { EmailUserModal } from "./EmailUserModal";
 import { ConfirmDialog } from "./ConfirmDialog";
-
-interface User {
-  uid: string;
-  email: string;
-  playername: string;
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth?: string;
-  userType: string;
-  authMethod?: string;
-  lastLoginMethod?: string;
-  lastLoginAt?: string;
-  createdAt: string;
-  updatedAt?: string;
-  blocked?: boolean;
-  blockedAt?: string;
-  blockedBy?: string;
-  deletedAt?: string;
-  deletedBy?: string;
-}
+import { User } from "@/lib/types/user";
 
 export const UserList = () => {
   const { user } = useAuth();

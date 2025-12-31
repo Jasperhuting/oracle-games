@@ -1,12 +1,6 @@
-import { useState, ReactNode } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'tabler-icons-react';
-
-interface CollapsibleProps {
-  title: string;
-  children: ReactNode;
-  defaultOpen?: boolean;
-  className?: string;
-}
+import { CollapsibleProps } from '@/lib/types/component-props';
 
 export const Collapsible = ({ title, children, defaultOpen = true, className = '' }: CollapsibleProps) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
