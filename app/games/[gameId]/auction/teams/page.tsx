@@ -146,7 +146,7 @@ export default function TeamsOverviewPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Teams Overzicht
+                Teams
               </h1>
               <p className="text-gray-600">
                 Alle gekozen teams in één overzicht

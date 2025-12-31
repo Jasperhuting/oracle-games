@@ -612,9 +612,15 @@ export const JoinableGamesTab = () => {
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />
                     )}
+
                     {isJoined && !isWaitingForDivision && joinedGame && isSelectionBasedGame(game.gameType) && (
+                      joinedGame.status === 'active' ? <Button
+                        text={t('games.team')}
+                        onClick={() => router.push(`/games/${joinedGame.id}/auction/teams`)}
+                        className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
+                      /> : 
                       <Button
-                        text={game.bidding ? t('games.auction') : t('games.selectTeam')}
+                        text={t('games.auction')}
                         onClick={() => router.push(`/games/${joinedGame.id}/auction`)}
                         className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
                       />

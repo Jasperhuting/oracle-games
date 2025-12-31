@@ -1076,7 +1076,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               {game.bidding && (
                 <Button
                   type="button"
-                  text="Teams Overzicht"
+                  text="Teams"
                   onClick={() => router.push(`/games/${gameId}/auction/teams`)}
                   ghost
                   title="Bekijk alle teams in één overzicht"

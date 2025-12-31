@@ -54,10 +54,21 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     const { unreadCount } = useUnreadMessages(user?.uid);
     const [isAdmin, setIsAdmin] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [gameId, setGameId] = useState<string | null>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Extract gameId from pathname if we're on a game page
+    useEffect(() => {
+        const gameIdMatch = pathname.match(/^\/games\/([^\/]+)(?:\/|$)/);
+        if (gameIdMatch && gameIdMatch[1]) {
+            setGameId(gameIdMatch[1]);
+        } else {
+            setGameId(null);
+        }
+    }, [pathname]);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -87,50 +98,6 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
         }
     };
 
-    const stopImpersonation = async () => {
-        console.log('Header: stopImpersonation called');
-        try {
-            const response = await fetch('/api/impersonate/stop', {
-                method: 'POST',
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to stop impersonation');
-            }
-            
-            const data = await response.json();
-            
-            // Get the admin restore token from localStorage
-            const adminToken = localStorage.getItem('admin_restore_token') || data.adminToken;
-            console.log('Stop impersonation - admin token:', adminToken ? 'FOUND' : 'NOT FOUND');
-            
-            // Clear impersonation tokens and state
-            localStorage.removeItem('impersonation_token');
-            localStorage.removeItem('admin_restore_token');
-            localStorage.removeItem('impersonation');
-            
-            if (adminToken) {
-                // Store admin token temporarily to restore session
-                localStorage.setItem('restore_admin_session', adminToken);
-                console.log('Stored restore_admin_session token');
-                
-                // Verify it was stored
-                const verify = localStorage.getItem('restore_admin_session');
-                console.log('Verification - token stored:', verify ? 'YES' : 'NO');
-            } else {
-                console.error('No admin token available for restore!');
-            }
-            
-            // Small delay to ensure localStorage is written before redirect
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // Force reload to admin page - this will trigger the restore flow in useAuth
-            console.log('Redirecting to /admin...');
-            window.location.href = '/admin';
-        } catch (error) {
-            console.error('Error stopping impersonation:', error);
-        }
-    };
 
         const profileItems = [
         {
@@ -175,6 +142,11 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             name: t('header.menu.games'),
             href: "/games",
             display: true
+        },
+        {
+            name: 'Game Rules',
+            href: gameId ? `/games/${gameId}/gamerules` : "/games",
+            display: !!gameId
         },
         {
             name: t('header.menu.riderPoints'),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   DndContext,
@@ -38,17 +38,42 @@ interface TodoDetailsModalProps {
   formatCategoryName: (category: string) => string;
 }
 
-function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryName }: TodoDetailsModalProps) {
+const TodoDetailsModal = memo(function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryName }: TodoDetailsModalProps) {
   const [localDescription, setLocalDescription] = useState(todo.description || '');
+  const [isSaved, setIsSaved] = useState(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const todoIdRef = useRef(todo.id);
+  const initialTodoRef = useRef(todo);
 
-  // Update local state when todo changes
+  // Only initialize once when modal mounts
   useEffect(() => {
-    setLocalDescription(todo.description || '');
-  }, [todo.description]);
+    setLocalDescription(initialTodoRef.current.description || '');
+    setIsSaved(true);
+    todoIdRef.current = initialTodoRef.current.id;
+  }, []);
 
   const handleDescriptionChange = (value: string) => {
     setLocalDescription(value);
-    onUpdateDescription(todo.id, value);
+    setIsSaved(false);
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout to save after user stops typing
+    saveTimeoutRef.current = setTimeout(() => {
+      onUpdateDescription(todoIdRef.current, value);
+      setIsSaved(true);
+    }, 1000);
+  };
+
+  const handleSave = () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    onUpdateDescription(todoIdRef.current, localDescription);
+    setIsSaved(true);
   };
 
   return (
@@ -68,9 +93,14 @@ function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryNa
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              {!isSaved && (
+                <span className="text-xs text-gray-500 italic">Autosaving...</span>
+              )}
+            </div>
             <textarea
               value={localDescription}
               onChange={(e) => handleDescriptionChange(e.target.value)}
@@ -105,7 +135,14 @@ function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryNa
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between">
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              disabled={isSaved}
+            >
+              {isSaved ? 'Saved' : 'Save'}
+            </button>
             <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
@@ -117,7 +154,11 @@ function TodoDetailsModal({ todo, onClose, onUpdateDescription, formatCategoryNa
       </div>
     </div>
   );
-}
+}, () => {
+  // Never re-render - modal maintains its own state
+  // This prevents re-renders when parent todos state changes
+  return true;
+});
 
 function SortableTodoItem({
   todo,
@@ -479,45 +520,39 @@ export function TodosTab() {
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedTodo(null);
-  };
-
-  const descriptionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // Refresh todos when modal closes to get the updated description
+    fetchTodos();
+  }, [fetchTodos]);
 
   const handleUpdateDescription = useCallback(async (id: string, description: string) => {
     if (!user) return;
 
-    // Clear any existing timeout
-    if (descriptionUpdateTimeoutRef.current) {
-      clearTimeout(descriptionUpdateTimeoutRef.current);
-    }
+    // Just save to API - don't update any state
+    // State will be updated when modal closes
 
-    // Debounce the API call
-    descriptionUpdateTimeoutRef.current = setTimeout(async () => {
-      try {
-        const response = await fetch('/api/admin/todos', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.uid,
-            todoId: id,
-            description,
-          }),
-        });
+    try {
+      const response = await fetch('/api/admin/todos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          todoId: id,
+          description,
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to update todo');
-        }
-
-        // Refetch todos to get updated timestamp
-        await fetchTodos();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update todo');
+      if (!response.ok) {
+        throw new Error('Failed to update todo');
       }
-    }, 500); // Wait 500ms after user stops typing
-  }, [user, fetchTodos]);
+
+      // Don't update state here - it will be refreshed when modal closes
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update todo');
+    }
+  }, [user]);
 
   const handleDelete = async (id: string) => {
     if (!user || !confirm('Are you sure you want to delete this todo?')) return;
@@ -665,7 +700,7 @@ export function TodosTab() {
     };
   };
 
-  const formatCategoryName = (category: string) => {
+  const formatCategoryName = useCallback((category: string) => {
     const categoryNames: { [key: string]: string } = {
       'global': 'Global',
       'auctioneer': 'Auctioneer',
@@ -681,7 +716,7 @@ export function TodosTab() {
       'giorgio-armada': 'Giorgio Armada',
     };
     return categoryNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
-  };
+  }, []);
 
   if (loading) {
     return (
