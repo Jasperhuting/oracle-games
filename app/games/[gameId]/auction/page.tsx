@@ -644,7 +644,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     }
 
     // Check maxRiders limit before placing a new bid (not when updating existing)
-    const maxRiders = game?.config?.maxRiders;
+    const maxRiders = game?.config?.maxRiders || game?.config?.teamSize;
     // Count UNIQUE riders, not total bids (in case there are duplicate bids)
     const uniqueActiveRiders = new Set(
       myBids
