@@ -1,11 +1,11 @@
-import { Bid } from "@/lib/types";
+import { Bid, Game, GameData, RiderWithBid } from "@/lib/types";
 import { useTranslation } from "react-i18next";
 import RangeSlider from 'react-range-slider-input';
 import { Button } from "./Button";
-import { GameData, RiderWithBid } from "@/app/games/[gameId]/auction/page";
 import { Star, Users } from "tabler-icons-react";
 import { Toggle } from "./Toggle";
 import { Collapsible } from "./Collapsible";
+import { useState, useEffect } from "react";
 
 export const AuctionFilters = ({
     searchTerm,
@@ -40,7 +40,7 @@ export const AuctionFilters = ({
     maxRiderAge?: number,
     myBids: Bid[],
     handleResetBidsClick: () => void,
-    game: GameData,
+    game: Game,
     showOnlyFillers: boolean,
     setshowOnlyFillers: (showOnlyFillers: boolean) => void,
     hideSoldPlayers: boolean,
@@ -50,6 +50,84 @@ export const AuctionFilters = ({
 
     const isMarginalGains = game?.gameType === 'marginal-gains';
     const { t } = useTranslation();
+
+    // Lokale state voor price inputs
+    const [priceMinInput, setPriceMinInput] = useState(priceRange[0].toString());
+    const [priceMaxInput, setPriceMaxInput] = useState(priceRange[1].toString());
+
+    // Lokale state voor age inputs
+    const [ageMinInput, setAgeMinInput] = useState(ageRange?.[0].toString() ?? '');
+    const [ageMaxInput, setAgeMaxInput] = useState(ageRange?.[1].toString() ?? '');
+
+    // Update lokale state wanneer de externe priceRange verandert (bijv. via slider)
+    useEffect(() => {
+        setPriceMinInput(priceRange[0].toString());
+        setPriceMaxInput(priceRange[1].toString());
+    }, [priceRange]);
+
+    // Update lokale state wanneer de externe ageRange verandert (bijv. via slider)
+    useEffect(() => {
+        if (ageRange) {
+            setAgeMinInput(ageRange[0].toString());
+            setAgeMaxInput(ageRange[1].toString());
+        }
+    }, [ageRange]);
+
+    // Debounce voor price min
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (priceMinInput === '') return; // Niet valideren bij lege string
+            const value = Number(priceMinInput);
+            if (!isNaN(value)) {
+                const clampedValue = Math.max(minRiderPrice, Math.min(value, priceRange[1]));
+                setPriceRange([clampedValue, priceRange[1]]);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [priceMinInput]);
+
+    // Debounce voor price max
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (priceMaxInput === '') return; // Niet valideren bij lege string
+            const value = Number(priceMaxInput);
+            if (!isNaN(value)) {
+                const clampedValue = Math.min(maxRiderPrice, Math.max(value, priceRange[0]));
+                setPriceRange([priceRange[0], clampedValue]);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [priceMaxInput]);
+
+    // Debounce voor age min
+    useEffect(() => {
+        if (ageRange && setAgeRange && minRiderAge !== undefined) {
+            const timer = setTimeout(() => {
+                if (ageMinInput === '') return; // Niet valideren bij lege string
+                const value = Number(ageMinInput);
+                if (!isNaN(value)) {
+                    const clampedValue = Math.max(minRiderAge, Math.min(value, ageRange[1]));
+                    setAgeRange([clampedValue, ageRange[1]]);
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [ageMinInput]);
+
+    // Debounce voor age max
+    useEffect(() => {
+        if (ageRange && setAgeRange && maxRiderAge !== undefined) {
+            const timer = setTimeout(() => {
+                if (ageMaxInput === '') return; // Niet valideren bij lege string
+                const value = Number(ageMaxInput);
+                if (!isNaN(value)) {
+                    const clampedValue = Math.min(maxRiderAge, Math.max(value, ageRange[0]));
+                    setAgeRange([ageRange[0], clampedValue]);
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [ageMaxInput]);
 
     return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 sticky top-0 rounded-md p-2">
         <div className="flex flex-col gap-4">
@@ -81,22 +159,16 @@ export const AuctionFilters = ({
                     type="number"
                     min={minRiderPrice}
                     max={priceRange[1]}
-                    value={priceRange[0]}
-                    onChange={(e) => {
-                        const value = Math.max(minRiderPrice, Math.min(Number(e.target.value), priceRange[1]));
-                        setPriceRange([value, priceRange[1]]);
-                    }}
+                    value={priceMinInput}
+                    onChange={(e) => setPriceMinInput(e.target.value)}
                     className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
                 <input
                     type="number"
                     min={priceRange[0]}
                     max={maxRiderPrice}
-                    value={priceRange[1]}
-                    onChange={(e) => {
-                        const value = Math.min(maxRiderPrice, Math.max(Number(e.target.value), priceRange[0]));
-                        setPriceRange([priceRange[0], value]);
-                    }}
+                    value={priceMaxInput}
+                    onChange={(e) => setPriceMaxInput(e.target.value)}
                     className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
             </div>
@@ -119,22 +191,16 @@ export const AuctionFilters = ({
                         type="number"
                         min={minRiderAge}
                         max={ageRange[1]}
-                        value={ageRange[0]}
-                        onChange={(e) => {
-                            const value = Math.max(minRiderAge, Math.min(Number(e.target.value), ageRange[1]));
-                            setAgeRange([value, ageRange[1]]);
-                        }}
+                        value={ageMinInput}
+                        onChange={(e) => setAgeMinInput(e.target.value)}
                         className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     />
                     <input
                         type="number"
                         min={ageRange[0]}
                         max={maxRiderAge}
-                        value={ageRange[1]}
-                        onChange={(e) => {
-                            const value = Math.min(maxRiderAge, Math.max(Number(e.target.value), ageRange[0]));
-                            setAgeRange([ageRange[0], value]);
-                        }}
+                        value={ageMaxInput}
+                        onChange={(e) => setAgeMaxInput(e.target.value)}
                         className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     />
                 </div>
