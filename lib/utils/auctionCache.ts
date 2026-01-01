@@ -6,7 +6,7 @@
 import { getCacheVersionAsync, incrementCacheVersion } from './cacheVersion';
 
 const DB_NAME = 'OracleGamesCache';
-const DB_VERSION = 2; // Bumped to 2 to add auction store
+const DB_VERSION = 3; // Bumped to 2 to add auction store
 const STORE_NAME = 'auction';
 
 interface CachedAuctionData {
