@@ -68,9 +68,20 @@ export async function getRiderProfilePuppeteer(url: string): Promise<RiderProfil
       }
     });
 
-    // Extract team name from the rdr-teams2 section (get the current/most recent team)
-    const teamHref = $('.rdr-teams2 li').first().find('a').attr('href');
-    const team = teamHref?.replace('team/', '').split('/')[0] || '';
+    // Extract team name from the rdr-teams2 section
+    // Look for the team in season 2026
+    let team = '';
+    $('.rdr-teams2 li').each((_, el) => {
+      const season = $(el).find('.season').text().trim();
+      if (season === '2026') {
+        const href = $(el).find('a').attr('href');
+        if (href) {
+          // Handle both /team/ and /teams/ prefixes, and extract just the slug
+          team = href.replace(/^\/?(teams?\/)?/, '').split('/')[0];
+          return false; // Break the loop once we found 2026
+        }
+      }
+    });
 
     // Extract date of birth and convert to YYYY-MM-DD format
     let age: string | undefined;
