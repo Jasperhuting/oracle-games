@@ -1,15 +1,15 @@
-import { getRidersRankedPuppeteer } from '@/lib/scraper/getRidersRankedPuppeteer';
 import { NextRequest } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { toSlug } from '@/lib/firebase/utils';
+import { getRidersRankedPuppeteerNewYear } from '@/lib/scraper/getRidersRankedPuppeteer_newyear';
 
 
 export async function POST(request: NextRequest) {
     try {
-        const { year, offset, withoutPoints } = await request.json();
-        console.log(`Creating rankings for year ${year}, offset ${offset}`);
+        const { offset } = await request.json();
+        console.log(`Creating rankings for year 2026, offset ${offset}`);
 
-        const result = await getRidersRankedPuppeteer({ offset: Number(offset), year: Number(year) });
+        const result = await getRidersRankedPuppeteerNewYear({ offset: Number(offset) });
         const db = getServerFirebase();
 
         if (!result || !result.riders || result.riders.length === 0) {
@@ -50,8 +50,6 @@ export async function POST(request: NextRequest) {
                 country: rider.country,
                 name: rider.name,
                 nameID: rider.nameID,
-                ...(withoutPoints ? {} : { points: rider.points }),
-                rank: rider.rank,
                 firstName: rider.firstName,
                 lastName: rider.lastName,
                 ...(teamRef && { team: teamRef }),

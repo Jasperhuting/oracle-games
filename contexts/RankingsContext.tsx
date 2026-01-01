@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { Rider } from '@/lib/types/rider';
 import { RankingsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
-import { getCacheVersion } from '@/lib/utils/cacheVersion';
+import { getCacheVersionAsync } from '@/lib/utils/cacheVersion';
 
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
 
@@ -24,7 +24,7 @@ export function RankingsProvider({
 
     try {
       // Get current cache version dynamically
-      const cacheVersion = getCacheVersion();
+      const cacheVersion = await getCacheVersionAsync();
 
       // Try to get from cache first
       const cacheKey = `rankings_2026`;

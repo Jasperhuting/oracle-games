@@ -1,4 +1,5 @@
-import { Bid, Game, GameData, RiderWithBid } from "@/lib/types";
+import { Bid, RiderWithBid } from "@/lib/types";
+import { GameType } from "@/lib/types/games";
 import { useTranslation } from "react-i18next";
 import RangeSlider from 'react-range-slider-input';
 import { Button } from "./Button";
@@ -40,7 +41,7 @@ export const AuctionFilters = ({
     maxRiderAge?: number,
     myBids: Bid[],
     handleResetBidsClick: () => void,
-    game: Game,
+    game: { gameType: GameType; bidding: boolean },
     showOnlyFillers: boolean,
     setshowOnlyFillers: (showOnlyFillers: boolean) => void,
     hideSoldPlayers: boolean,

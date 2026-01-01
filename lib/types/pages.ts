@@ -4,6 +4,7 @@
  */
 
 import { Rider } from './rider';
+import { GameType, RaceType, GameStatus } from './games';
 
 // Rider Points Page
 export interface StagePoint {
@@ -134,10 +135,16 @@ export interface SimulateRace {
 export interface AuctionGameData {
   id: string;
   name: string;
-  gameType: string;
+  gameType: GameType;
   year: number;
-  status: string;
+  status: GameStatus;
   division?: string;
+  raceType: RaceType;
+  createdBy: string;
+  createdAt: any;
+  updatedAt: any;
+  playerCount: number;
+  eligibleTeams: string[];
   config: Record<string, any> & {
     budget?: number;
     maxRiders?: number;

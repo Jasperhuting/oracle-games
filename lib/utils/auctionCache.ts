@@ -1,9 +1,13 @@
 /**
- * Auction data caching utility using sessionStorage
+ * Auction data caching utility using IndexedDB
  * Caches game, bids, and participants data (NOT riders - that's handled by RankingsContext)
  */
 
-import { getCacheVersion, incrementCacheVersion } from './cacheVersion';
+import { getCacheVersionAsync, incrementCacheVersion } from './cacheVersion';
+
+const DB_NAME = 'OracleGamesCache';
+const DB_VERSION = 2; // Bumped to 2 to add auction store
+const STORE_NAME = 'auction';
 
 interface CachedAuctionData {
   gameData: any;
@@ -13,34 +17,95 @@ interface CachedAuctionData {
   timestamp: number;
 }
 
-function getCacheKeyPrefix(): string {
-  return `auction_cache_${getCacheVersion()}_`;
+interface CacheEntry {
+  key: string;
+  data: CachedAuctionData;
+  timestamp: number;
+  version: number;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Initialize IndexedDB database
+ */
+function openDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      reject(new Error('IndexedDB not available in server environment'));
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+
+      // Create rankings store if it doesn't exist (from indexedDBCache)
+      if (!db.objectStoreNames.contains('rankings')) {
+        const rankingsStore = db.createObjectStore('rankings', { keyPath: 'key' });
+        rankingsStore.createIndex('timestamp', 'timestamp', { unique: false });
+        rankingsStore.createIndex('version', 'version', { unique: false });
+      }
+
+      // Create auction store if it doesn't exist
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+        objectStore.createIndex('version', 'version', { unique: false });
+      }
+    };
+  });
+}
+
+/**
  * Get cached auction data for a specific game
  */
-export function getCachedAuctionData(gameId: string): CachedAuctionData | null {
+export async function getCachedAuctionData(gameId: string): Promise<CachedAuctionData | null> {
   if (typeof window === 'undefined') return null;
 
   try {
-    const cacheKey = `${getCacheKeyPrefix()}${gameId}`;
-    const cached = sessionStorage.getItem(cacheKey);
+    const db = await openDatabase();
+    const currentVersion = await getCacheVersionAsync();
+    const cacheKey = `auction_${gameId}`;
 
-    if (!cached) return null;
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.get(cacheKey);
 
-    const data: CachedAuctionData = JSON.parse(cached);
-    const now = Date.now();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const entry = request.result as CacheEntry | undefined;
 
-    // Check if cache is still valid
-    if (now - data.timestamp > CACHE_DURATION) {
-      sessionStorage.removeItem(cacheKey);
-      return null;
-    }
+        if (!entry) {
+          resolve(null);
+          return;
+        }
 
-    return data;
+        // Check if cache version matches
+        if (entry.version !== currentVersion) {
+          console.log(`Cache version mismatch for ${cacheKey}. Expected ${currentVersion}, got ${entry.version}`);
+          resolve(null);
+          return;
+        }
+
+        const now = Date.now();
+        // Check if cache is still valid
+        if (now - entry.timestamp > CACHE_DURATION) {
+          console.log(`Cache expired for ${cacheKey}`);
+          resolve(null);
+          return;
+        }
+
+        resolve(entry.data);
+      };
+
+      transaction.oncomplete = () => db.close();
+    });
   } catch (error) {
     console.error('Error reading auction cache:', error);
     return null;
@@ -50,53 +115,80 @@ export function getCachedAuctionData(gameId: string): CachedAuctionData | null {
 /**
  * Save auction data to cache (excludes riders - use RankingsContext for that)
  */
-export function setCachedAuctionData(
+export async function setCachedAuctionData(
   gameId: string,
   gameData: any,
   participantData: any,
   allBidsData: any[],
   playerTeamsData: any
-): void {
+): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
-    const cacheKey = `${getCacheKeyPrefix()}${gameId}`;
-    const data: CachedAuctionData = {
-      gameData,
-      participantData,
-      allBidsData,
-      playerTeamsData,
-      timestamp: Date.now(),
-    };
+    const db = await openDatabase();
+    const currentVersion = await getCacheVersionAsync();
+    const cacheKey = `auction_${gameId}`;
 
-    sessionStorage.setItem(cacheKey, JSON.stringify(data));
-  } catch (error) {
-    console.error('Error writing auction cache:', error);
-    // If sessionStorage is full, clear old caches
-    try {
-      clearOldCaches();
-      sessionStorage.setItem(`${getCacheKeyPrefix()}${gameId}`, JSON.stringify({
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+
+      const data: CachedAuctionData = {
         gameData,
         participantData,
         allBidsData,
         playerTeamsData,
         timestamp: Date.now(),
-      }));
-    } catch (e) {
-      console.error('Error writing auction cache after cleanup:', e);
-    }
+      };
+
+      const entry: CacheEntry = {
+        key: cacheKey,
+        data,
+        timestamp: Date.now(),
+        version: currentVersion,
+      };
+
+      const request = objectStore.put(entry);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const sizeEstimate = JSON.stringify(data).length;
+        const sizeInKB = (sizeEstimate * 2) / 1024;
+        console.log(`Successfully cached ${cacheKey} to IndexedDB (${sizeInKB.toFixed(2)}KB)`);
+        resolve();
+      };
+
+      transaction.oncomplete = () => db.close();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  } catch (error) {
+    console.error('Error writing auction cache:', error);
   }
 }
 
 /**
  * Invalidate cache for a specific game (call this when bids change)
  */
-export function invalidateAuctionCache(gameId: string): void {
+export async function invalidateAuctionCache(gameId: string): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
-    const cacheKey = `${getCacheKeyPrefix()}${gameId}`;
-    sessionStorage.removeItem(cacheKey);
+    const db = await openDatabase();
+    const cacheKey = `auction_${gameId}`;
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.delete(cacheKey);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        console.log(`Invalidated auction cache for ${gameId}`);
+        resolve();
+      };
+
+      transaction.oncomplete = () => db.close();
+    });
   } catch (error) {
     console.error('Error invalidating auction cache:', error);
   }
@@ -105,15 +197,24 @@ export function invalidateAuctionCache(gameId: string): void {
 /**
  * Clear all auction caches
  */
-export function clearAllAuctionCaches(): void {
+export async function clearAllAuctionCaches(): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
-    const keys = Object.keys(sessionStorage);
-    keys.forEach(key => {
-      if (key.startsWith(getCacheKeyPrefix())) {
-        sessionStorage.removeItem(key);
-      }
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.clear();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        console.log('All auction caches cleared');
+        resolve();
+      };
+
+      transaction.oncomplete = () => db.close();
     });
   } catch (error) {
     console.error('Error clearing auction caches:', error);
@@ -121,30 +222,51 @@ export function clearAllAuctionCaches(): void {
 }
 
 /**
- * Clear caches older than CACHE_DURATION
+ * Clear old cache entries by version
  */
-function clearOldCaches(): void {
+export async function clearOldVersions(currentVersion: number): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
-    const now = Date.now();
-    const keys = Object.keys(sessionStorage);
+    const db = await openDatabase();
 
-    keys.forEach(key => {
-      if (key.startsWith(getCacheKeyPrefix())) {
-        try {
-          const data = JSON.parse(sessionStorage.getItem(key) || '');
-          if (now - data.timestamp > CACHE_DURATION) {
-            sessionStorage.removeItem(key);
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const index = objectStore.index('version');
+      const request = index.openCursor();
+
+      const keysToDelete: string[] = [];
+
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result as IDBCursorWithValue | null;
+
+        if (cursor) {
+          const entry = cursor.value as CacheEntry;
+          if (entry.version !== currentVersion) {
+            keysToDelete.push(entry.key);
           }
-        } catch (e) {
-          // Invalid cache entry, remove it
-          sessionStorage.removeItem(key);
+          cursor.continue();
+        } else {
+          // Cursor exhausted, now delete old entries
+          keysToDelete.forEach(key => objectStore.delete(key));
+          if (keysToDelete.length > 0) {
+            console.log(`Cleared ${keysToDelete.length} old auction cache entries`);
+          }
         }
-      }
+      };
+
+      request.onerror = () => reject(request.error);
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+
+      transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
-    console.error('Error clearing old caches:', error);
+    console.error('Error clearing old auction cache versions:', error);
   }
 }
 
@@ -152,11 +274,11 @@ function clearOldCaches(): void {
  * Increment cache version - called when riders data changes
  * This invalidates all existing caches by changing the cache key prefix
  */
-export function incrementCacheVersionClient(): void {
+export async function incrementCacheVersionClient(): Promise<void> {
   if (typeof window === 'undefined') return;
 
   // Clear all old caches since they're now invalid
-  clearAllAuctionCaches();
+  await clearAllAuctionCaches();
 
   // Use shared increment function which will also reload the page
   incrementCacheVersion();

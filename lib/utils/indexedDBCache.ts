@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'OracleGamesCache';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Bumped to 2 to add auction store (created in auctionCache.ts)
 const STORE_NAME = 'rankings';
 
 interface CacheEntry<T> {
@@ -32,11 +32,18 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
-      // Create object store if it doesn't exist
+      // Create rankings store if it doesn't exist
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'key' });
         objectStore.createIndex('timestamp', 'timestamp', { unique: false });
         objectStore.createIndex('version', 'version', { unique: false });
+      }
+
+      // Create auction store if it doesn't exist (for auctionCache.ts)
+      if (!db.objectStoreNames.contains('auction')) {
+        const auctionStore = db.createObjectStore('auction', { keyPath: 'key' });
+        auctionStore.createIndex('timestamp', 'timestamp', { unique: false });
+        auctionStore.createIndex('version', 'version', { unique: false });
       }
     };
   });

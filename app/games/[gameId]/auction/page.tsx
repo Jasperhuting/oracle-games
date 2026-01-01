@@ -202,7 +202,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       // Try to load from cache first (unless forced to refresh)
       // NOTE: Cache is invalidated on page load, so this will only be used during the session
-      const cachedData = !forceRefresh ? getCachedAuctionData(gameId) : null;
+      const cachedData = !forceRefresh ? await getCachedAuctionData(gameId) : null;
       if (cachedData && rankingsRiders.length > 0) {
 
         // Set state from cache
@@ -459,7 +459,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       setAvailableRiders(ridersWithBids);
 
       // Cache the loaded data (riders are already cached by RankingsContext)
-      setCachedAuctionData(
+      await setCachedAuctionData(
         gameId,
         gameData,
         participantData,

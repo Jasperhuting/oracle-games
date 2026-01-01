@@ -1,20 +1,84 @@
 /**
  * Shared cache version management
- * Used by both auctionCache (sessionStorage) and indexedDBCache (rankings)
+ * Used by both auctionCache (IndexedDB) and indexedDBCache (rankings)
+ * Cache version is stored in Firebase (system/cache document)
  */
 
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
+
 let cachedVersion: number | null = null;
+let cachePromise: Promise<number> | null = null;
 
 /**
- * Get current cache version from localStorage
+ * Get current cache version from Firebase
+ */
+export async function getCacheVersionAsync(): Promise<number> {
+  if (typeof window === 'undefined') return 1;
+
+  // Return cached version if available
+  if (cachedVersion !== null) return cachedVersion;
+
+  // Return existing promise if one is in flight
+  if (cachePromise !== null) return cachePromise;
+
+  cachePromise = (async () => {
+    try {
+      // Import auth dynamically to avoid circular dependencies
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+
+      // Check if user is authenticated before trying to access Firestore
+      if (!auth.currentUser) {
+        console.log('[CacheVersion] User not authenticated, using default version 1');
+        cachedVersion = 1;
+        return 1;
+      }
+
+      const cacheDocRef = doc(db, 'system', 'cache');
+      const cacheDoc = await getDoc(cacheDocRef);
+
+      if (cacheDoc.exists()) {
+        const version = cacheDoc.data()?.version || 1;
+        cachedVersion = version;
+        return version;
+      }
+
+      // If document doesn't exist, initialize it with version 1
+      await setDoc(cacheDocRef, { version: 1 }, { merge: true });
+      cachedVersion = 1;
+      return 1;
+    } catch (error: any) {
+      // Silently handle permission errors for unauthenticated users
+      if (error?.code === 'permission-denied') {
+        console.log('[CacheVersion] Permission denied (user not authenticated), using default version 1');
+      } else {
+        console.error('[CacheVersion] Error fetching cache version from Firebase:', error);
+      }
+      // Fall back to version 1 if there's an error
+      cachedVersion = 1;
+      return 1;
+    } finally {
+      cachePromise = null;
+    }
+  })();
+
+  return cachePromise;
+}
+
+/**
+ * Synchronous version - returns cached value or 1 as default
+ * Use getCacheVersionAsync() for the most up-to-date version
  */
 export function getCacheVersion(): number {
   if (typeof window === 'undefined') return 1;
 
-  if (cachedVersion !== null) return cachedVersion;
+  // If we don't have a cached version yet, trigger async fetch and return 1
+  if (cachedVersion === null) {
+    getCacheVersionAsync().catch(console.error);
+    return 1;
+  }
 
-  const stored = localStorage.getItem('oracle_cache_version');
-  cachedVersion = stored ? parseInt(stored) : 1;
   return cachedVersion;
 }
 
@@ -22,19 +86,36 @@ export function getCacheVersion(): number {
  * Increment cache version - called when data changes (e.g., rider added)
  * This invalidates all caches across the app
  */
-export function incrementCacheVersion(): void {
+export async function incrementCacheVersion(): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  const currentVersion = getCacheVersion();
-  const newVersion = currentVersion + 1;
+  try {
+    // Call API endpoint to increment version in Firebase
+    const response = await fetch('/api/increment-cache-version', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  localStorage.setItem('oracle_cache_version', String(newVersion));
-  cachedVersion = newVersion;
+    if (!response.ok) {
+      throw new Error('Failed to increment cache version');
+    }
 
-  console.log(`[CacheVersion] Incremented from ${currentVersion} to ${newVersion}`);
+    const data = await response.json();
+    const newVersion = data.newVersion;
 
-  // Reload page to apply new cache version
-  window.location.reload();
+    console.log(`[CacheVersion] Incremented to ${newVersion}`);
+
+    // Update local cache
+    cachedVersion = newVersion;
+
+    // Reload page to apply new cache version
+    window.location.reload();
+  } catch (error) {
+    console.error('[CacheVersion] Error incrementing cache version:', error);
+    throw error;
+  }
 }
 
 /**
@@ -42,4 +123,5 @@ export function incrementCacheVersion(): void {
  */
 export function resetCachedVersion(): void {
   cachedVersion = null;
+  cachePromise = null;
 }

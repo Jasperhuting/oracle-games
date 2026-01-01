@@ -5,15 +5,17 @@ import { launchBrowser } from './browserHelper';
 
 export interface GetRidersOptions {
   offset: number;
-  year: number;
 }
 
-export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOptions): Promise<RankedRidersResult> {
-  const offsetNum = Number(offset) || 0;
-  const month = new Date().getMonth() + 1;
-  const day = new Date().getDate();
+interface rankedRiderWithoutPoints extends Omit<RankedRider, 'points' | 'rank'> {}
 
-  // const url = `https://www.procyclingstats.com/rankings.php?p=me&s=season-individual&date=${year}-${month}-${day}&nation=&age=&page=smallerorequal&team=&teamlevel=&offset=${offsetNum}&filter=Filter`;
+interface RankedRidersResultWithoutPoints extends Omit<RankedRidersResult, 'riders' | 'rank'> {
+  riders: rankedRiderWithoutPoints[];
+}
+
+export async function getRidersRankedPuppeteerNewYear({ offset }: GetRidersOptions): Promise<RankedRidersResultWithoutPoints> {
+  const offsetNum = Number(offset) || 0;
+  
   const url = `https://www.procyclingstats.com/rankings.php?s=&nation=&age=&page=smallerorequal&team=&offset=${offsetNum}&teamlevel=&filter=Filter`;
 
   // Use browserHelper for automatic Vercel/local environment detection
@@ -39,7 +41,7 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
     const $ = cheerio.load(html);
 
     const getName = (el: DomElement) => {
-      const name = $(el).find('td:nth-child(4) > a').text();
+      const name = $(el).find('td:nth-child(5) > a').text();
       // Match the all-caps last name at the start (handles special chars like Ž, Š, ß, etc.)
       // Include ß which is technically lowercase but appears in uppercase contexts
       const lastNameMatch = name.match(/^[\p{Lu}ß\s'-]+(?=\s+\p{Lu}\p{L})/u);
@@ -94,26 +96,20 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
       };
     };
 
-    const riders: RankedRider[] = [];
+    const riders: rankedRiderWithoutPoints[] = [];
 
     $('.basic > tbody > tr').each((_, el) => {
-      const nameID = $(el).find('td:nth-child(4) > a').attr('href')?.split('/')[1] || '';
+      const nameID = $(el).find('td:nth-child(5) > a').attr('href')?.split('/')[1] || '';
 
-      let teamName = $(el).find('td.cu600:not(.fs10) > a').attr('href')?.split('/')[1] || '';
+      let teamName = $(el).find('td:nth-child(6) > a').attr('href')?.split('/')[1] || '';
 
-      if (teamName === 'q365-pro-cycing-team-2025') {
-        teamName = 'q365-pro-cycling-team-2025';
-      }
-
-      const rider: RankedRider = {
-        rank: Number($(el).find('td').eq(0).text().trim()) || 0,
+      const rider: rankedRiderWithoutPoints = {
         team: teamName,
         name: getName(el).fullName,
         nameID: nameID,
         lastName: getName(el).lastName,
         firstName: getName(el).firstName,
-        country: $(el).find('td:nth-child(4) > span').attr('class')?.split(' ')[1] || '',
-        points: Number($(el).find('td:nth-child(6) a').text().trim()) || 0,
+        country: $(el).find('td:nth-child(5) > span').attr('class')?.split(' ')[1] || ''
       };
       riders.push(rider);
     });
@@ -124,7 +120,7 @@ export async function getRidersRankedPuppeteer({ offset, year }: GetRidersOption
       count: riders.length,
       source: url,
       riders,
-      year,
+      year: 2026,
       scrapedAt: new Date().toISOString(),
     };
   } finally {

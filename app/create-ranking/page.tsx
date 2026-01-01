@@ -536,6 +536,54 @@ export default function CreateRankingPage() {
     }
   };
 
+  const createRankingNew = async () => {
+    const offsetOptions = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500]; 
+
+    setProgress({ current: 0, total: offsetOptions.length, isRunning: true });
+
+    for (let i = 0; i < offsetOptions.length; i++) {
+      const currentOffset = offsetOptions[i];
+
+      setProgress({ current: i + 1, total: offsetOptions.length, isRunning: true });
+
+      try {
+        const response = await fetch('/api/createRankingNew', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ offset: currentOffset }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Error response for offset ${currentOffset} (${response.status}):`, errorText);
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`Successfully processed offset ${currentOffset}:`, data.result?.riders?.length || 0, 'riders');
+
+        // Add delay between requests to avoid rate limiting (2 seconds)
+        if (i < offsetOptions.length - 1) {
+          console.log(`Waiting 2 seconds before next request to avoid rate limiting...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`Error creating rankings for offset ${currentOffset}:`, error);
+        // Wait longer after an error (5 seconds) before retrying next offset
+        if (i < offsetOptions.length - 1) {
+          console.log(`Error occurred, waiting 5 seconds before next request...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
+    }
+
+    // Refresh data after all rankings are created
+    await fetchData({ year: 2026 });
+    setProgress({ current: 0, total: 0, isRunning: false });
+    router.refresh();
+  };
   const createRanking = async () => {
     const offsetOptions = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500]; 
 
@@ -625,6 +673,32 @@ export default function CreateRankingPage() {
     }
   };
 
+  const testNewTeams = async () => {
+    setIsLoading(true);
+    toast.loading('Testing getNewTeams...', { id: 'test-teams-toast' });
+
+    try {
+      const response = await fetch('/api/testNewTeams');
+      const data = await response.json();
+
+      toast.dismiss('test-teams-toast');
+
+      if (!response.ok) {
+        toast.error('Failed to fetch new teams');
+        console.error('Error:', data);
+      } else {
+        toast.success('Successfully fetched new teams!');
+        console.log('Result:', data);
+      }
+    } catch (error) {
+      toast.dismiss('test-teams-toast');
+      toast.error('An error occurred');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="bg-gray-300 min-h-[100vh] h-full">
@@ -640,11 +714,13 @@ export default function CreateRankingPage() {
             disabled={isLoading || jobProgress?.status === 'running'}
           />
 
-          <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={createRanking} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={() => createRanking()} disabled={isLoading || progress.isRunning} />
+          <Button text={progress.isRunning ? 'Running...' : 'Create Ranking New'} onClick={() => createRankingNew()} disabled={isLoading || progress.isRunning} />
 
           <Button onClick={() => getEnrichedTeams()} text="Get Enriched Teams" />
           <Button onClick={() => getEnrichedRiders()} text="Get Enriched Riders" />
           <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} />
+          <Button text="Test New Teams" onClick={testNewTeams} disabled={isLoading || progress.isRunning} />
           <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
           <Button text={progress.isRunning ? 'Running...' : 'Get Starting List'} onClick={() => getStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />
           <Button
