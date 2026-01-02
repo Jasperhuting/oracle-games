@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
+import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
 
 // TEMPORARY: Toggle to disable bid modifications
 const BIDDING_DISABLED = false;
@@ -121,7 +122,7 @@ export async function POST(
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
-    return NextResponse.json({
+    return jsonWithCacheVersion({
       success: true,
       message: 'Bid cancelled successfully',
     });

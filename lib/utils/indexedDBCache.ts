@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'OracleGamesCache';
-const DB_VERSION = 2; // Bumped to 2 to add auction store (created in auctionCache.ts)
+const DB_VERSION = 3; // Bumped to 3 to add auction store (created in auctionCache.ts)
 const STORE_NAME = 'rankings';
 
 interface CacheEntry<T> {

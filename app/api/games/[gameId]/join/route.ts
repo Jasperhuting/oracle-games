@@ -4,6 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { GameParticipant, ClientGameParticipant } from '@/lib/types';
 import type { JoinGameRequest, JoinGameResponse, LeaveGameResponse, ApiErrorResponse } from '@/lib/types';
 import { joinGameSchema, validateRequest } from '@/lib/validation';
+import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
 
 export async function POST(
   request: NextRequest,
@@ -222,7 +223,7 @@ export async function POST(
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
-    return NextResponse.json({
+    return jsonWithCacheVersion({
       success: true,
       participantId: participantRef.id,
       participant: {

@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { GAME_STATUSES } from '@/lib/types/games';
+import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
+
+// GET game status (lightweight endpoint for cache version checking)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ gameId: string }> }
+) {
+  try {
+    const { gameId } = await params;
+    const db = getServerFirebase();
+
+    const gameRef = db.collection('games').doc(gameId);
+    const gameDoc = await gameRef.get();
+
+    if (!gameDoc.exists) {
+      return NextResponse.json(
+        { error: 'Game not found' },
+        { status: 404 }
+      );
+    }
+
+    const gameData = gameDoc.data();
+
+    return jsonWithCacheVersion({
+      success: true,
+      status: gameData?.status,
+      auctionStatus: gameData?.config?.auctionStatus,
+    });
+  } catch (error) {
+    console.error('Error fetching game status:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch game status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
 
 export async function PATCH(
   request: NextRequest,

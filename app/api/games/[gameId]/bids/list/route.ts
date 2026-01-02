@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import type { BidsListResponse, ApiErrorResponse, ClientBid } from '@/lib/types';
+import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
 
 // GET all bids for a game
 export async function GET(
@@ -38,7 +39,7 @@ export async function GET(
       } as ClientBid;
     });
 
-    return NextResponse.json({ success: true, bids, count: bids.length });
+    return jsonWithCacheVersion({ success: true, bids, count: bids.length });
   } catch (error) {
     console.error('Error fetching bids:', error);
     return NextResponse.json(

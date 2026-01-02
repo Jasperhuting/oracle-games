@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import type { PlayerTeamListResponse, ApiErrorResponse, ClientPlayerTeam } from '@/lib/types';
+import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
 
 // GET all riders in a user's team for a game
 export async function GET(
@@ -43,7 +44,7 @@ export async function GET(
       } as ClientPlayerTeam;
     });
 
-    return NextResponse.json({
+    return jsonWithCacheVersion({
       success: true,
       riders,
       count: riders.length,

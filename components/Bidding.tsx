@@ -136,6 +136,7 @@ export const Bidding = ({
           <h1 className="text-2xl font-bold mt-1">
             {game?.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
           </h1>
+          <p className="text-gray-500 text-xs">deadline: </p>
           <span className="flex flex-row gap-2">
             <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
             <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
