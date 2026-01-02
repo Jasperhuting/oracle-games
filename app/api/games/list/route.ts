@@ -20,14 +20,27 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
 
     let games = snapshot.docs.map(doc => {
       const data = doc.data();
+      // Remove timestamp fields before spreading to avoid conflicts
+      const { createdAt, updatedAt, registrationOpenDate, registrationCloseDate, teamSelectionDeadline, raceRef, ...restData } = data;
+
+      // Helper to convert Firestore Timestamp to ISO string
+      const convertTimestamp = (ts: any) => {
+        if (!ts) return undefined;
+        if (typeof ts === 'string') return ts;
+        if (ts._seconds) return new Date(ts._seconds * 1000).toISOString();
+        if (ts.toDate) return ts.toDate().toISOString();
+        return ts;
+      };
+
       return {
         id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
-        registrationOpenDate: data.registrationOpenDate?.toDate?.()?.toISOString(),
-        registrationCloseDate: data.registrationCloseDate?.toDate?.()?.toISOString(),
-        raceRef: data.raceRef?.path || data.raceRef,
+        ...restData,
+        createdAt: convertTimestamp(createdAt) || createdAt,
+        updatedAt: convertTimestamp(updatedAt) || updatedAt,
+        registrationOpenDate: convertTimestamp(registrationOpenDate),
+        registrationCloseDate: convertTimestamp(registrationCloseDate),
+        teamSelectionDeadline: convertTimestamp(teamSelectionDeadline),
+        raceRef: raceRef?.path || raceRef,
       } as ClientGame;
     });
 

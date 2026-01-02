@@ -28,6 +28,7 @@ interface Game {
   createdAt: string;
   raceRef?: string;
   bidding?: boolean;
+  teamSelectionDeadline?: string;
 }
 
 interface GameGroup {
@@ -291,13 +292,36 @@ export const JoinableGamesTab = () => {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
+    console.log('[JoinableGamesTab] formatDate input:', dateString, typeof dateString);
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      const date = new Date(dateString);
+      console.log('[JoinableGamesTab] parsed date:', date, date.toString());
+      return date.toLocaleDateString('nl-NL', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
       });
-    } catch {
+    } catch (error) {
+      console.error('[JoinableGamesTab] formatDate error:', error);
+      return dateString;
+    }
+  };
+
+   const formatDateTime = (dateString?: string) => {
+    if (!dateString) return '-';
+    console.log('[JoinableGamesTab] formatDate input:', dateString, typeof dateString);
+    try {
+      const date = new Date(dateString);
+      console.log('[JoinableGamesTab] parsed date:', date, date.toString());
+      return date.toLocaleString('nl-NL', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+      });
+    } catch (error) {
+      console.error('[JoinableGamesTab] formatDate error:', error);
       return dateString;
     }
   };
@@ -464,6 +488,8 @@ export const JoinableGamesTab = () => {
             const leaveable = joinedGame ? canLeave(joinedGame) : false;
             const isFull = group.maxPlayers && group.totalPlayers >= group.maxPlayers;
 
+            console.log('game?.teamSelectionDeadline', game?.teamSelectionDeadline)
+
             return (
               <div
                 key={group.isMultiDivision ? group.baseName : game.id}
@@ -509,6 +535,9 @@ export const JoinableGamesTab = () => {
                       <div>
                         <span className="font-medium">{t('global.year')}:</span> {game.year}
                       </div>
+                      {game?.teamSelectionDeadline && <div>
+                        <span className="font-medium">Deadline:</span> {formatDateTime(game?.teamSelectionDeadline)}
+                      </div>}
                       <div>
                         <span className="font-medium">{t('global.players')}:</span> {group.totalPlayers}
                         {isFull && <span className="text-red-600 ml-1">(Full)</span>}

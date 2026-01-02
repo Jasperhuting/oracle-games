@@ -54,20 +54,30 @@ export async function GET(
       };
     }
 
+    // Remove timestamp fields before spreading to avoid conflicts
+    const { createdAt, updatedAt, registrationOpenDate, registrationCloseDate, teamSelectionDeadline, raceRef, config: _config, ...restData } = data || {};
+
+    // Helper to convert Firestore Timestamp to ISO string
+    const convertTimestamp = (ts: any) => {
+      if (!ts) return undefined;
+      if (typeof ts === 'string') return ts;
+      if (ts._seconds) return new Date(ts._seconds * 1000).toISOString();
+      if (ts.toDate) return ts.toDate().toISOString();
+      return ts;
+    };
+
     return NextResponse.json({
       success: true,
       game: {
         id: gameDoc.id,
-        ...data,
+        ...restData,
         config,
-        createdAt: data?.createdAt?.toDate?.()?.toISOString() || data?.createdAt,
-        updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
-        registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
-        registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
-        teamSelectionDeadline: data?.teamSelectionDeadline?._seconds
-          ? new Date(data.teamSelectionDeadline._seconds * 1000).toISOString()
-          : data?.teamSelectionDeadline,
-        raceRef: data?.raceRef?.path || data?.raceRef,
+        createdAt: convertTimestamp(createdAt) || createdAt,
+        updatedAt: convertTimestamp(updatedAt) || updatedAt,
+        registrationOpenDate: convertTimestamp(registrationOpenDate),
+        registrationCloseDate: convertTimestamp(registrationCloseDate),
+        teamSelectionDeadline: convertTimestamp(teamSelectionDeadline),
+        raceRef: raceRef?.path || raceRef,
       } as ClientGame,
     });
   } catch (error) {
@@ -184,20 +194,30 @@ export async function PATCH(
       };
     }
 
+    // Remove timestamp fields before spreading to avoid conflicts
+    const { createdAt: patchCreatedAt, updatedAt: patchUpdatedAt, registrationOpenDate: patchRegOpenDate, registrationCloseDate: patchRegCloseDate, teamSelectionDeadline: patchTeamDeadline, raceRef: patchRaceRef, config: _patchConfig, ...patchRestData } = data || {};
+
+    // Helper to convert Firestore Timestamp to ISO string
+    const convertTimestampPatch = (ts: any) => {
+      if (!ts) return undefined;
+      if (typeof ts === 'string') return ts;
+      if (ts._seconds) return new Date(ts._seconds * 1000).toISOString();
+      if (ts.toDate) return ts.toDate().toISOString();
+      return ts;
+    };
+
     return NextResponse.json({
       success: true,
       game: {
         id: gameId,
-        ...data,
+        ...patchRestData,
         config,
-        createdAt: data?.createdAt?.toDate?.()?.toISOString() || data?.createdAt,
-        updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
-        registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
-        registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
-        teamSelectionDeadline: data?.teamSelectionDeadline?._seconds
-          ? new Date(data.teamSelectionDeadline._seconds * 1000).toISOString()
-          : data?.teamSelectionDeadline,
-        raceRef: data?.raceRef?.path || data?.raceRef,
+        createdAt: convertTimestampPatch(patchCreatedAt) || patchCreatedAt,
+        updatedAt: convertTimestampPatch(patchUpdatedAt) || patchUpdatedAt,
+        registrationOpenDate: convertTimestampPatch(patchRegOpenDate),
+        registrationCloseDate: convertTimestampPatch(patchRegCloseDate),
+        teamSelectionDeadline: convertTimestampPatch(patchTeamDeadline),
+        raceRef: patchRaceRef?.path || patchRaceRef,
       } as ClientGame,
     });
   } catch (error) {
