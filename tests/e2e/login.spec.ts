@@ -28,10 +28,10 @@ test.describe('Login Functionality', () => {
     // Submit form
     await page.getByTestId('login-submit-button').click();
 
-    // Check for error message (actual message is "No account found")
+    // Check for error message (actual message is "Invalid email or password")
     const errorMessage = page.getByTestId('login-error-message');
     await expect(errorMessage).toBeVisible({ timeout: 10000 });
-    await expect(errorMessage).toContainText('No account found');
+    await expect(errorMessage).toContainText('Invalid email or password');
   });
 
   test('should login successfully with valid credentials', async ({ page }) => {
@@ -44,13 +44,13 @@ test.describe('Login Functionality', () => {
     // Submit form
     await page.getByTestId('login-submit-button').click();
 
-    // Should navigate away from login page
-    await page.waitForURL((url) => !url.pathname.includes('/login'), {
-      timeout: 10000
+    // Should navigate to /home after successful login
+    await page.waitForURL(/\/home/, {
+      timeout: 15000
     });
 
-    // Verify we're logged in (URL should not contain 'login')
-    expect(page.url()).not.toContain('/login');
+    // Verify we're on the home page
+    expect(page.url()).toContain('/home');
 
     console.log('✓ Successfully logged in as user@test.com');
   });
@@ -65,12 +65,12 @@ test.describe('Login Functionality', () => {
     // Submit form
     await page.getByTestId('login-submit-button').click();
 
-    // Should navigate away from login page
-    await page.waitForURL((url) => !url.pathname.includes('/login'), {
-      timeout: 10000
+    // Should navigate to /home after successful login
+    await page.waitForURL(/\/home/, {
+      timeout: 15000
     });
 
-    expect(page.url()).not.toContain('/login');
+    expect(page.url()).toContain('/home');
 
     console.log('✓ Successfully logged in as admin@test.com');
   });

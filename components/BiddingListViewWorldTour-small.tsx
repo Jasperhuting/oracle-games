@@ -105,7 +105,7 @@ export const BiddingListViewWorldTourSmall = ({
           </select>
           <button
             onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-            className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+            className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
             title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
           >
             {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}

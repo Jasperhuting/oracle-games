@@ -68,7 +68,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
       })
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       riders,
       pagination: {
         offset,
@@ -77,6 +77,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
         totalCount
       }
     });
+
+    // Add HTTP caching headers
+    // Cache for 1 hour in the browser, revalidate in background (stale-while-revalidate)
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+
+    return response;
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return NextResponse.json({ error: 'Failed to fetch rankings' }, { status: 500 });

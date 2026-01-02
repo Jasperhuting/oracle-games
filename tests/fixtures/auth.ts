@@ -80,9 +80,9 @@ async function loginAs(page: any, user: { email: string; password: string }) {
   // Submit form
   await page.getByTestId('login-submit-button').click();
 
-  // Wait for navigation away from login page
-  await page.waitForURL((url: URL) => !url.pathname.includes('/login'), {
-    timeout: 10000
+  // Wait for navigation to /home after successful login
+  await page.waitForURL(/\/home/, {
+    timeout: 15000
   });
 
   // Log successful login

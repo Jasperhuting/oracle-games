@@ -21,8 +21,8 @@ test.describe('Basic Application Tests', () => {
   test('should navigate to login page', async ({ page }) => {
     await page.goto('/login');
 
-    // Wait for "Welcome back!" text
-    await expect(page.getByText('Welcome back!', { exact: false }))
+    // Wait for login form to be visible
+    await expect(page.getByTestId('login-form'))
       .toBeVisible({ timeout: 10000 });
 
     // Verify form elements are visible
