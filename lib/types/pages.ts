@@ -144,6 +144,7 @@ export interface AuctionGameData {
   createdAt: any;
   updatedAt: any;
   playerCount: number;
+  teamSelectionDeadline?: string; 
   eligibleTeams: string[];
   config: Record<string, any> & {
     budget?: number;
@@ -171,6 +172,8 @@ export interface AuctionParticipantData {
   rosterComplete: boolean;
   playername?: string;
   assignedDivision?: string;
+  name?: string;
+  email?: string;
 }
 
 export interface RiderWithBid extends Rider {

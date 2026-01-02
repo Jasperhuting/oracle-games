@@ -5,16 +5,17 @@ import { formatDate, qualifiesAsNeoProf } from "@/lib/utils";
 import { useState } from "react";
 import { GridDots, List } from "tabler-icons-react";
 import { AuctionPeriod, Bid } from "@/lib/types";
-import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { PlayerRowBids } from "./PlayerRowBids";
 import React from "react";
-import { GameData, ParticipantData, RiderWithBid } from "@/app/games/[gameId]/auction/page";
+import { AuctionGameData as GameData, AuctionParticipantData as ParticipantData, RiderWithBid } from "@/lib/types/pages";
 import { useTranslation } from "react-i18next";
 import { ScrollToTop } from "./ScrollToTop";
 import { BiddingCardView } from "./BiddingCardView";
 import { BiddingListView } from "./BiddingListView";
 import { BiddingListViewWorldTour } from "./BiddingListViewWorldTour";
 import Countdown from 'react-countdown';
+import { BiddingListViewWorldTourSmall } from "./BiddingListViewWorldTour-small";
 
 
 export const Bidding = ({
@@ -166,7 +167,7 @@ export const Bidding = ({
             setAdjustingBid={setAdjustingBid}
           />
         ) : (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' ?
-          <BiddingListViewWorldTour
+          <BiddingListViewWorldTourSmall
             myBids={myBids}
             game={game}
             cancellingBid={cancellingBid}
@@ -234,7 +235,6 @@ export const Bidding = ({
                       onClick={() => { }}
                       selected={false}
                       bidders={isAdmin ? riderBidders : undefined}
-                      participant={participant}
                       isNeoProf={qualifiesAsNeoProf(rider, game?.config)}
                       showNeoProfBadge={game?.gameType === 'worldtour-manager'}
                       showPointsInsteadOfPrice={game?.gameType === 'marginal-gains'}

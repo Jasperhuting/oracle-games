@@ -4,10 +4,14 @@ import CurrencyInput from "react-currency-input-field";
 import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
-import { Star } from "tabler-icons-react";
-import { qualifiesAsNeoProf } from "@/lib/utils";
+import { Star, SortAscending, SortDescending } from "tabler-icons-react";
+import { calculateAge, qualifiesAsNeoProf } from "@/lib/utils";
+import { useState, useMemo } from "react";
 
-export const BiddingListViewWorldTour = ({
+type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof';
+type SortDirection = 'asc' | 'desc';
+
+export const BiddingListViewWorldTourSmall = ({
   myBids,
   game,
   availableRiders,
@@ -33,6 +37,49 @@ export const BiddingListViewWorldTour = ({
   }) => {
 
   const { t } = useTranslation();
+  const [sortBy, setSortBy] = useState<SortOption>('price');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const sortedBids = useMemo(() => {
+    const filtered = myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost');
+
+    return filtered.sort((a, b) => {
+      const riderA = availableRiders.find((rider: any) => rider.id === a.riderNameId || rider.nameID === a.riderNameId);
+      const riderB = availableRiders.find((rider: any) => rider.id === b.riderNameId || rider.nameID === b.riderNameId);
+
+      if (!riderA || !riderB) return 0;
+
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'price':
+          comparison = (riderB.myBid || 0) - (riderA.myBid || 0);
+          break;
+        case 'name':
+          comparison = (riderA.name || '').localeCompare(riderB.name || '');
+          break;
+        case 'age': {
+          const ageA = typeof riderA.age === 'number' ? riderA.age : parseInt(String(riderA.age || '0'), 10);
+          const ageB = typeof riderB.age === 'number' ? riderB.age : parseInt(String(riderB.age || '0'), 10);
+          comparison = ageA - ageB;
+          break;
+        }
+        case 'team':
+          comparison = (riderA.team?.name || '').localeCompare(riderB.team?.name || '');
+          break;
+        case 'neoprof': {
+          const isNeoProfA = qualifiesAsNeoProf(riderA, game.config) ? 1 : 0;
+          const isNeoProfB = qualifiesAsNeoProf(riderB, game.config) ? 1 : 0;
+          comparison = isNeoProfB - isNeoProfA;
+          break;
+        }
+        default:
+          return 0;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [myBids, availableRiders, sortBy, sortDirection]);
 
   return <>
 
@@ -42,6 +89,29 @@ export const BiddingListViewWorldTour = ({
       {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
         {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
       </div>}
+      {myBids.length > 0 && (
+        <div className="mb-3 flex items-center gap-3">
+          <label className="text-sm font-medium">Sorteren op:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+          >
+            <option value="price">{game.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
+            <option value="name">Naam</option>
+            <option value="age">Leeftijd</option>
+            <option value="team">Ploeg</option>
+            <option value="neoprof">Neo-Prof</option>
+          </select>
+          <button
+            onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+            className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+            title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+          >
+            {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
+          </button>
+        </div>
+      )}
       {myBids.length > 0 && game.gameType !== 'worldtour-manager' && (
         <div className="flex flex-row w-full p-2">
           <span className="font-bold basis-[90px]">{t('global.price')}</span>
@@ -51,25 +121,33 @@ export const BiddingListViewWorldTour = ({
           <span className="font-bold basis-[200px]"></span>
         </div>
       )}
-      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="flex flex-col">
 
 
 
-        {myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost').map((myBidRider) => {
+        {sortedBids.map((myBidRider) => {
           const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
           const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
           const riderNameId = rider?.nameID || rider?.id || '';
 
           return rider ?
-            <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 p-2 flex flex-col gap-2">
-              <div className="flex items-center min-w-0">
+            <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 flex flex-row gap-2 items-center justify-between">
+              <div className="flex items-center">
+              <div className="flex items-center">
                 {qualifiesAsNeoProf(rider, game.config) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
                 <span className={`truncate font-medium ${qualifiesAsNeoProf(rider, game.config) ? 'ml-1' : ''}`}>
                   {rider.name}
                 </span>
               </div>
 
-              <span className="text-gray-600 text-xs truncate">{rider.team?.name || '-'}</span>
+              <span className="text-gray-600 text-xs truncate ml-2">{rider.team?.name || '-'}</span>
+
+              {rider.age && (
+                <span className="text-gray-500 text-xs whitespace-nowrap ml-2">
+                  {calculateAge(rider.age)} jr
+                </span>
+              )}
+              </div>
 
               <div className="flex gap-2 items-center justify-between mt-1">
                 <span className="font-medium whitespace-nowrap text-sm">
@@ -118,7 +196,7 @@ export const BiddingListViewWorldTour = ({
                         text={cancellingBid === rider.myBidId ? t('global.loading') : t('global.reset')}
                         onClick={() => handleCancelBidClick(rider.myBidId!, rider.name)}
                         disabled={cancellingBid === rider.myBidId}
-                        className="px-2 py-1 text-sm whitespace-nowrap"
+                        className="px-2 mb-[2px] py-1 text-sm whitespace-nowrap"
                         ghost
                         size="sm"
                         title={t('global.cancelBid')}
