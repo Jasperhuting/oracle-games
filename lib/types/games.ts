@@ -182,6 +182,7 @@ export interface Game {
   status: GameStatus;
   registrationOpenDate?: Timestamp;
   registrationCloseDate?: Timestamp;
+  teamSelectionDeadline?: Timestamp;  // Deadline for team selection/bidding
 
   // Division (for games with divisions)
   division?: string;                // e.g., "Division 1", "Hoofdklasse"
@@ -617,12 +618,13 @@ export type ClientAuctionPeriod = Omit<AuctionPeriod, 'startDate' | 'endDate' | 
 };
 
 // Helper type for client-side game data (with string dates instead of Timestamps)
-export type ClientGame = Omit<Game, 'createdAt' | 'updatedAt' | 'registrationOpenDate' | 'registrationCloseDate' | 'finalizedAt' | 'config'> & {
+export type ClientGame = Omit<Game, 'createdAt' | 'updatedAt' | 'registrationOpenDate' | 'registrationCloseDate' | 'finalizedAt' | 'teamSelectionDeadline' | 'config'> & {
   createdAt: string;
   updatedAt: string;
   registrationOpenDate?: string;
   registrationCloseDate?: string;
   finalizedAt?: string;
+  teamSelectionDeadline?: string;
   config: GameConfig; // Config with Timestamp converted to string dates
 };
 

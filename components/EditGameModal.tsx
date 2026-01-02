@@ -43,6 +43,7 @@ interface GameFormData {
   division?: string;
   divisionLevel?: number;
   maxPlayers?: number;
+  teamSelectionDeadline?: string;
 
   // Auctioneer config
   budget?: number;
@@ -88,6 +89,18 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         setGameType(game.gameType);
         setGameYear(game.year || 2025);
 
+        // Format teamSelectionDeadline for input if it exists
+        const formatDateForInput = (dateString?: string) => {
+          if (!dateString) return '';
+          const date = new Date(dateString);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+
         // Populate form
         reset({
           name: game.name,
@@ -95,6 +108,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           division: game.division,
           divisionLevel: game.divisionLevel,
           maxPlayers: game.maxPlayers,
+          teamSelectionDeadline: formatDateForInput(game.teamSelectionDeadline),
           budget: game.config?.budget,
           maxRiders: game.config?.maxRiders,
         });
@@ -240,6 +254,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         division: data.division,
         divisionLevel: data.divisionLevel,
         maxPlayers: data.maxPlayers,
+        teamSelectionDeadline: data.teamSelectionDeadline || null,
       };
 
       // Handle auctioneer config
@@ -420,6 +435,21 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                     }
                   })}
                 />
+              </div>
+
+              {/* Team Selection Deadline */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Team Selection Deadline (optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  {...register('teamSelectionDeadline')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Deze deadline wordt getoond op de bidding pagina
+                </p>
               </div>
 
               {/* Auctioneer Specific Fields */}

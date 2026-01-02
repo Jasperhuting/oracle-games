@@ -64,6 +64,7 @@ export async function GET(
         updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
+        teamSelectionDeadline: data?.teamSelectionDeadline?.toDate?.()?.toISOString(),
         raceRef: data?.raceRef?.path || data?.raceRef,
       } as ClientGame,
     });
@@ -119,6 +120,11 @@ export async function PATCH(
 
     // Add updatedAt timestamp
     gameUpdates.updatedAt = new Date();
+
+    // Convert teamSelectionDeadline to Firestore Timestamp if provided
+    if (gameUpdates.teamSelectionDeadline) {
+      gameUpdates.teamSelectionDeadline = Timestamp.fromDate(new Date(gameUpdates.teamSelectionDeadline));
+    }
 
     // Remove undefined fields before updating Firestore
     const cleanedUpdates = removeUndefinedFields(gameUpdates);
@@ -186,6 +192,7 @@ export async function PATCH(
         updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
+        teamSelectionDeadline: data?.teamSelectionDeadline?.toDate?.()?.toISOString(),
         raceRef: data?.raceRef?.path || data?.raceRef,
       } as ClientGame,
     });

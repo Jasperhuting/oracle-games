@@ -133,11 +133,17 @@ export const Bidding = ({
     {!auctionClosed && (
       <div>
         <div className="bg-white p-4 rounded-md rounded-b-none border border-gray-200 flex flex-row gap-4">
+          <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold mt-1">
             {game?.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' ? t('games.auctions.mySelectedRiders') : t('games.auctions.myBids')}
           </h1>
-          <p className="text-gray-500 text-xs">deadline: </p>
-          <span className="flex flex-row gap-2">
+          {game.teamSelectionDeadline && (
+            <p className="text-gray-500 text-xs">
+              deadline: {formatDate(game.teamSelectionDeadline)}
+            </p>
+          )}
+          </div>
+          <span className="flex flex-row gap-2 justify-center items-center">
             <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
             <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
           </span>
