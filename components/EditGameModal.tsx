@@ -7,6 +7,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType } from "@/lib/types/games";
 import { useTranslation } from "react-i18next";
+import { incrementCacheVersion } from "@/lib/utils/cacheVersion";
 
 interface AuctionPeriodInput {
   name: string;
@@ -254,7 +255,9 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         division: data.division,
         divisionLevel: data.divisionLevel,
         maxPlayers: data.maxPlayers,
-        teamSelectionDeadline: data.teamSelectionDeadline || null,
+        teamSelectionDeadline: data.teamSelectionDeadline
+          ? new Date(data.teamSelectionDeadline).toISOString()
+          : null,
       };
 
       // Handle auctioneer config
@@ -311,6 +314,9 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         const errorData = await response.json();
         throw new Error(errorData.error || 'Could not update game');
       }
+
+      // Increment cache version so all users see the updated game data
+      await incrementCacheVersion();
 
       onSuccess();
     } catch (error: unknown) {

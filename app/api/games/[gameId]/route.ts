@@ -64,7 +64,9 @@ export async function GET(
         updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
-        teamSelectionDeadline: data?.teamSelectionDeadline?.toDate?.()?.toISOString(),
+        teamSelectionDeadline: data?.teamSelectionDeadline?._seconds
+          ? new Date(data.teamSelectionDeadline._seconds * 1000).toISOString()
+          : data?.teamSelectionDeadline,
         raceRef: data?.raceRef?.path || data?.raceRef,
       } as ClientGame,
     });
@@ -192,7 +194,9 @@ export async function PATCH(
         updatedAt: data?.updatedAt?.toDate?.()?.toISOString() || data?.updatedAt,
         registrationOpenDate: data?.registrationOpenDate?.toDate?.()?.toISOString(),
         registrationCloseDate: data?.registrationCloseDate?.toDate?.()?.toISOString(),
-        teamSelectionDeadline: data?.teamSelectionDeadline?.toDate?.()?.toISOString(),
+        teamSelectionDeadline: data?.teamSelectionDeadline?._seconds
+          ? new Date(data.teamSelectionDeadline._seconds * 1000).toISOString()
+          : data?.teamSelectionDeadline,
         raceRef: data?.raceRef?.path || data?.raceRef,
       } as ClientGame,
     });

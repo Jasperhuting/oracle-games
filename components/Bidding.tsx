@@ -76,6 +76,8 @@ export const Bidding = ({
     }
   };
 
+  console.log(game);
+
 
   const [myTeamView, setMyTeamView] = useState('card');
   const [myTeamBidsView, setMyTeamBidsView] = useState('list');
