@@ -28,10 +28,10 @@ test.describe('Login Functionality', () => {
     // Submit form
     await page.getByTestId('login-submit-button').click();
 
-    // Check for error message (actual message is "Invalid email or password")
+    // Check for error message (actual message is "No account found with this email address")
     const errorMessage = page.getByTestId('login-error-message');
     await expect(errorMessage).toBeVisible({ timeout: 10000 });
-    await expect(errorMessage).toContainText('Invalid email or password');
+    await expect(errorMessage).toContainText('No account found with this email address');
   });
 
   test('should login successfully with valid credentials', async ({ page }) => {
