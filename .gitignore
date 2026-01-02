@@ -45,8 +45,9 @@ next-env.d.ts
 serviceAccountKey.json
 service-account-key.json
 
-# Firebase Emulator data
-emulator-data/
+# Firebase Emulator data (keep auth_export for tests)
+emulator-data/firestore_export/*
+!emulator-data/firestore_export/.gitkeep
 ui-debug.log
 firebase-debug.log
 firestore-debug.log
