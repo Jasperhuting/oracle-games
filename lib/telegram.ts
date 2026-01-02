@@ -110,8 +110,8 @@ ${errorMessage}
   }
 
   if (details?.errorDetails) {
-    // Limit stack trace to first 500 characters to avoid message too long
-    const stackTrace = details.errorDetails.substring(0, 500);
+    // Limit stack trace to 3500 characters to stay within Telegram's 4096 limit
+    const stackTrace = details.errorDetails.substring(0, 3500);
     telegramMessage += `\n\n📋 <b>Stack trace:</b>\n<code>${stackTrace}</code>`;
   }
 
@@ -130,9 +130,9 @@ export async function sendMessageNotification(
   subject: string,
   messagePreview: string
 ): Promise<boolean> {
-  // Limit message preview to 200 characters
-  const preview = messagePreview.length > 200
-    ? messagePreview.substring(0, 200) + '...'
+  // Limit message preview to 3500 characters to stay within Telegram's 4096 limit
+  const preview = messagePreview.length > 3500
+    ? messagePreview.substring(0, 3500) + '...'
     : messagePreview;
 
   const telegramMessage = `
