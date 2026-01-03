@@ -180,7 +180,6 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     // Calculate header top position based on banners
     const getHeaderTop = () => {
         let top = 0;
-        if (hideBetaBanner) top += 36; // Beta banner
         if (impersonationStatus.isImpersonating) top += 48; // Impersonation banner
         return top;
     };
