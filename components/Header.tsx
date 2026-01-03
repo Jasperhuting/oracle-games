@@ -295,6 +295,14 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                     animate={{ x: 0 }}
                                     exit={{ x: '100%' }}
                                     transition={{ type: 'tween', duration: 0.3 }}
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    dragElastic={{ left: 0, right: 0.5 }}
+                                    onDragEnd={(event, info) => {
+                                        if (info.offset.x > 100 || info.velocity.x > 500) {
+                                            setIsMenuOpen(false);
+                                        }
+                                    }}
                                     className="fixed top-[86px] right-0 h-[calc(100vh-86px)] w-80 bg-white shadow-lg z-50 p-6 overflow-y-auto"
                                     style={{ top: `${getHeaderTop() + 86}px` }}
                                 >
