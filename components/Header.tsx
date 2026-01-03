@@ -11,6 +11,7 @@ import { Logout, UserCircle, ChevronDown, Mail } from "tabler-icons-react";
 import { MenuItem, MenuProvider, Menu } from "./ProfileMenu";
 import { Menubar, MenuButton, useMenuContext, useStoreState } from "@ariakit/react";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 const ProfileMenuButton = ({ user, loading, pathname, unreadCount }: { user: User, loading: boolean, pathname: string, unreadCount: number }) => {
@@ -55,6 +56,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [gameId, setGameId] = useState<string | null>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -189,7 +191,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             className="sticky w-full bg-white drop-shadow-header z-40 h-[86px] px-8"
             style={{ top: `${getHeaderTop()}px` }}
         >
-                <div className="container mx-auto">
+            <div className="container mx-auto hidden md:block">
                 <div className="flex flex-1 justify-between py-2">
                     <div className="flex-1 flex items-center">
                         <Link href="/home">
@@ -237,6 +239,135 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div className="md:hidden h-[86px] items-center justify-center content-center flex ">
+                <div className="flex-1 flex items-center justify-center">
+                        <Link href="/home">
+                            <Image 
+                                src="/logo.png" 
+                                alt="Oracle Games Logo" 
+                                width={56} 
+                                height={56}
+                                priority
+                                className="cursor-pointer hover:opacity-80 transition-opacity" 
+                            />
+                        </Link>
+                        <div className="flex-1 whitespace-nowrap text-3xl ml-4">
+                            Oracle Games
+                        </div>
+                    </div>
+                    <button
+                        className="cursor-pointer w-10 h-10 flex flex-col items-center justify-center gap-1.5 relative"
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+                    >
+                        <motion.span
+                            animate={isMenuOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-6 h-0.5 bg-gray-900 block"
+                        />
+                        <motion.span
+                            animate={isMenuOpen ? { opacity: 0 } : { opacity: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-6 h-0.5 bg-gray-900 block"
+                        />
+                        <motion.span
+                            animate={isMenuOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-6 h-0.5 bg-gray-900 block"
+                        />
+                    </button>
+
+                    <AnimatePresence>
+                        {isMenuOpen && (
+                            <>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                                    style={{ top: `${getHeaderTop() + 86}px` }}
+                                    onClick={() => setIsMenuOpen(false)}
+                                />
+                                <motion.div
+                                    initial={{ x: '100%' }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: '100%' }}
+                                    transition={{ type: 'tween', duration: 0.3 }}
+                                    className="fixed top-[86px] right-0 h-[calc(100vh-86px)] w-80 bg-white shadow-lg z-50 p-6 overflow-y-auto"
+                                    style={{ top: `${getHeaderTop() + 86}px` }}
+                                >
+                                    <nav className="flex flex-col gap-4">
+                                        {/* Menu Items */}
+                                        <div className="flex flex-col gap-2">
+                                            {mounted && MenuItems.filter((item) => !isAdmin ? item.name !== 'Admin' : true).filter(item => item.display).map((item) => (
+                                                <Link
+                                                    key={item.name}
+                                                    href={item.href}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                    className={`text-lg py-3 px-4 rounded-lg transition-colors ${
+                                                        item.href === pathname
+                                                            ? 'text-white font-bold bg-primary bg-opacity-10'
+                                                            : 'text-gray-900 hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {item.name}
+                                                </Link>
+                                            ))}
+                                        </div>
+
+                                        {/* Divider */}
+                                        {user && <div className="border-t border-gray-200" />}
+
+                                        {/* Profile Items */}
+                                        {user && (
+                                            <div className="flex flex-col gap-2">
+                                                {profileItems.map((item) => (
+                                                    <button
+                                                        key={item.name}
+                                                        onClick={() => {
+                                                            if (item.onClick) {
+                                                                item.onClick();
+                                                            } else if (item.href) {
+                                                                router.push(item.href);
+                                                            }
+                                                            setIsMenuOpen(false);
+                                                        }}
+                                                        className={`flex items-center cursor-pointer gap-3 text-lg py-3 px-4 rounded-lg transition-colors text-left ${
+                                                            item.href === pathname
+                                                                ? 'text-white font-bold bg-primary bg-opacity-10'
+                                                                : 'text-gray-900 hover:bg-gray-100'
+                                                        }`}
+                                                    >
+                                                        {item.icon}
+                                                        {item.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Login link for non-authenticated users */}
+                                        {!user && (
+                                            <Link
+                                                href="/login"
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className={`text-lg py-3 px-4 rounded-lg transition-colors ${
+                                                    '/login' === pathname
+                                                        ? 'text-primary font-bold bg-primary bg-opacity-10'
+                                                        : 'text-gray-900 hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                Login
+                                            </Link>
+                                        )}
+                                    </nav>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+
             </div>
         </header>
     );

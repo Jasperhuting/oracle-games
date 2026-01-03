@@ -33,7 +33,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Oracle games" />
       </head>
       <body
-        className={`${inter.variable} antialiased bg-gray-50`}
+        className={`${inter.variable} antialiased bg-gray-50 overflow-x-hidden`}
         style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}
       >
         <SpeedInsights />
