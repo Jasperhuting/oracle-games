@@ -41,7 +41,7 @@ export const PlayerRowBids = ({
             className={isSold ? 'opacity-60 bg-gray-50' : ''}
             rightContent={<>            {showPoints && (
                 <span className="text-xs mt-1 text-gray-500 justify-center font-bold w-[80px] break-keep whitespace-nowrap">
-                    {game?.gameType === 'marginal-gains' ? player?.points === 0 ? 1 : player?.points : player?.points === 0 ? formatCurrency(player?.points) : formatCurrencyWhole(1)}
+                    {game?.gameType === 'marginal-gains' ? player?.points === 0 ? 1 : player?.points : player?.points === 0 ? formatCurrencyWhole(1) : formatCurrency(player?.points)}
                 </span>
             )}{rightContent}</>}
         >
