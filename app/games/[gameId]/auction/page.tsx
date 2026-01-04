@@ -243,7 +243,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
           const soldData = soldRidersMap.get(riderNameId);
           // Only mark riders as sold for bidding game types, not for selection games
-          const isBiddingGame = gameData.game.gameType === 'auction' || gameData.game.gameType === 'auctioneer';
+          const isBiddingGame = cachedData.gameData.game.gameType === 'auction' || cachedData.gameData.game.gameType === 'auctioneer';
           const isSold = isBiddingGame && !!soldData;
           const soldTo = soldData?.ownerName;
           const pricePaid = soldData?.pricePaid;
@@ -1145,7 +1145,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
             </div>
             
-            <div className={`bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start`} style={{ top: hideBanner ? '107px' : '142px' }}>
+            <div className={`bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start min-w-[330px]`} style={{ top: hideBanner ? '107px' : '142px' }}>
             
 
               {!auctionActive && (

@@ -2,8 +2,8 @@ import CurrencyInput from "react-currency-input-field";
 import { Button } from "./Button";
 import { PlayerCard } from "./PlayerCard";
 import { formatDate, qualifiesAsNeoProf } from "@/lib/utils";
-import { useState } from "react";
-import { GridDots, List } from "tabler-icons-react";
+import { useState, useMemo } from "react";
+import { GridDots, List, SortAscending, SortDescending } from "tabler-icons-react";
 import { AuctionPeriod, Bid } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { PlayerRowBids } from "./PlayerRowBids";
@@ -82,6 +82,56 @@ export const Bidding = ({
 
   const [myTeamView, setMyTeamView] = useState('card');
   const [myTeamBidsView, setMyTeamBidsView] = useState('list');
+
+  // Sorting state for riders list
+  type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';
+  type SortDirection = 'asc' | 'desc';
+  const [ridersSortBy, setRidersSortBy] = useState<SortOption>('price');
+  const [ridersSortDirection, setRidersSortDirection] = useState<SortDirection>('asc');
+
+  // Sort riders based on selected criteria
+  const sortedRiders = useMemo(() => {
+    return [...sortedAndFilteredRiders].sort((a, b) => {
+      let comparison = 0;
+
+      switch (ridersSortBy) {
+        case 'price':
+          comparison = (a.effectiveMinBid || a.points || 0) - (b.effectiveMinBid || b.points || 0);
+          break;
+        case 'name':
+          comparison = (a.name || '').localeCompare(b.name || '');
+          break;
+        case 'age': {
+          const ageA = typeof a.age === 'number' ? a.age : parseInt(String(a.age || '0'), 10);
+          const ageB = typeof b.age === 'number' ? b.age : parseInt(String(b.age || '0'), 10);
+          comparison = ageA - ageB;
+          break;
+        }
+        case 'team': {
+          const teamA = a.team?.name || '';
+          const teamB = b.team?.name || '';
+          // Zet lege teams onderaan
+          if (!teamA && teamB) return 1;
+          if (teamA && !teamB) return -1;
+          comparison = teamA.localeCompare(teamB);
+          break;
+        }
+        case 'neoprof': {
+          const isNeoProfA = qualifiesAsNeoProf(a, game?.config) ? 1 : 0;
+          const isNeoProfB = qualifiesAsNeoProf(b, game?.config) ? 1 : 0;
+          comparison = isNeoProfB - isNeoProfA;
+          break;
+        }
+        case 'rank':
+          comparison = (a.rank || 0) - (b.rank || 0);
+          break;
+        default:
+          return 0;
+      }
+
+      return ridersSortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [sortedAndFilteredRiders, ridersSortBy, ridersSortDirection, game?.config]);
 
   const currentPeriod = game?.config?.auctionPeriods?.find((period: AuctionPeriod) => {
     const now = Date.now();
@@ -197,10 +247,38 @@ export const Bidding = ({
     <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
       <div className="flex flex-col gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
         <div className="col-span-1">{t('global.riders')}</div>
-        <span className="flex flex-row gap-2">
+        <span className="flex flex-row gap-2 justify-between items-center flex-wrap">
           <span className="flex flex-row gap-2">
             <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
             <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+          </span>
+          <span className="flex flex-row gap-2 items-center">
+            <label className="text-sm font-medium">Sorteren op:</label>
+            <select
+              value={ridersSortBy}
+              onChange={(e) => setRidersSortBy(e.target.value as SortOption)}
+              className="pl-3 pr-5 min-w-[120px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: 'right 0.25rem center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '1.5em 1.5em'
+              }}
+            >
+              <option value="price">{game?.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
+              <option value="rank">Rank</option>
+              <option value="name">Naam</option>
+              <option value="age">Leeftijd</option>
+              <option value="team">Ploeg</option>
+              {game?.gameType === 'worldtour-manager' && <option value="neoprof">Neo-Prof</option>}
+            </select>
+            <button
+              onClick={() => setRidersSortDirection(ridersSortDirection === 'asc' ? 'desc' : 'asc')}
+              className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
+              title={ridersSortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+            >
+              {ridersSortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
+            </button>
           </span>
         </span>
 
@@ -211,7 +289,7 @@ export const Bidding = ({
         <div className={`w-full ${myTeamView === 'card' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 items-start justify-start flex-wrap gap-4 p-4' : 'flex flex-col items-start bg-white rounded-md divide-y divide-[#CAC4D0] justify-start flex-wrap mb-4 pb-4'}`}>
 
           {/* it should sort when there is a myBid */}
-          {sortedAndFilteredRiders.map((rider, index) => {
+          {sortedRiders.map((rider, index) => {
             const riderNameId = rider.nameID || rider.id || '';
 
             // Get all bidders for this rider (admin only)
@@ -306,7 +384,7 @@ export const Bidding = ({
 
                       </>} />
                     :
-                    <PlayerRowBids player={rider} showPoints showRank fullWidth selectPlayer={() => handlePlaceBid(rider)} index={index} rightContent={<>
+                    <PlayerRowBids game={game} player={rider} showPoints showRank showAge fullWidth selectPlayer={() => handlePlaceBid(rider)} index={index} rightContent={<>
                       <div className={`flex flex-row ${(game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains') ? 'gap-2' : ''}`}>
 
 
@@ -352,7 +430,7 @@ export const Bidding = ({
                           )}
                         </div>
                         {auctionActive && !rider.isSold && (
-                          <>
+                          <div className="min-w-[80px] flex justify-end">
                             {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') ? (
                               <Button
                                 type="button"
@@ -372,7 +450,7 @@ export const Bidding = ({
                               variant="primary"
                             />)}
 
-                          </>
+                          </div>
                         )}
                       </div>
 

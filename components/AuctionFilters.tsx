@@ -7,6 +7,7 @@ import { Star, Users } from "tabler-icons-react";
 import { Toggle } from "./Toggle";
 import { Collapsible } from "./Collapsible";
 import { useState, useEffect } from "react";
+import { Divider } from "./Divider";
 
 export const AuctionFilters = ({
     searchTerm,
@@ -133,86 +134,81 @@ export const AuctionFilters = ({
     return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 sticky top-0 rounded-md p-2">
         <div className="flex flex-col gap-4">
 
-        <span className="flex flex-col flex-1">
-            <label htmlFor="search" className="text-sm font-bold text-gray-700">{t('global.search')}</label>
-            <input
-                type="text"
-                placeholder={t('games.auctions.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-        </span>
-        <span className="flex flex-col flex-1 justify-center">
-            <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                {game?.gameType === 'marginal-gains' ? 'Puntenklasse' : t('games.auctions.priceRangeLabel')}
-            </label>
-            <div className="py-2 mt-2">
-                <RangeSlider
-                    min={minRiderPrice}
-                    max={maxRiderPrice}
-                    value={priceRange}
-                    onInput={(value: number[]) => setPriceRange([value[0], value[1]])}
-                />
-            </div>
-            <div className="flex items-center justify-between mt-1">
+            <span className="flex flex-col flex-1">
+                <label htmlFor="search" className="text-sm font-bold text-gray-700">{t('global.search')}</label>
                 <input
-                    type="number"
-                    min={minRiderPrice}
-                    max={priceRange[1]}
-                    value={priceMinInput}
-                    onChange={(e) => setPriceMinInput(e.target.value)}
-                    className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    type="text"
+                    placeholder={t('games.auctions.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <input
-                    type="number"
-                    min={priceRange[0]}
-                    max={maxRiderPrice}
-                    value={priceMaxInput}
-                    onChange={(e) => setPriceMaxInput(e.target.value)}
-                    className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                />
-            </div>
-        </span>
-        {isMarginalGains && ageRange && setAgeRange && minRiderAge !== undefined && maxRiderAge !== undefined && (
+            </span>
             <span className="flex flex-col flex-1 justify-center">
-                <label htmlFor="age-range" className="text-sm font-bold text-gray-700">
-                    Leeftijd
+                <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
+                    {game?.gameType === 'marginal-gains' ? 'Puntenklasse' : t('games.auctions.priceRangeLabel')}
                 </label>
                 <div className="py-2 mt-2">
                     <RangeSlider
-                        min={minRiderAge}
-                        max={maxRiderAge}
-                        value={ageRange}
-                        onInput={(value: number[]) => setAgeRange([value[0], value[1]])}
+                        min={minRiderPrice}
+                        max={maxRiderPrice}
+                        value={priceRange}
+                        onInput={(value: number[]) => setPriceRange([value[0], value[1]])}
                     />
                 </div>
                 <div className="flex items-center justify-between mt-1">
                     <input
                         type="number"
-                        min={minRiderAge}
-                        max={ageRange[1]}
-                        value={ageMinInput}
-                        onChange={(e) => setAgeMinInput(e.target.value)}
+                        min={minRiderPrice}
+                        max={priceRange[1]}
+                        value={priceMinInput}
+                        onChange={(e) => setPriceMinInput(e.target.value)}
                         className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     />
                     <input
                         type="number"
-                        min={ageRange[0]}
-                        max={maxRiderAge}
-                        value={ageMaxInput}
-                        onChange={(e) => setAgeMaxInput(e.target.value)}
+                        min={priceRange[0]}
+                        max={maxRiderPrice}
+                        value={priceMaxInput}
+                        onChange={(e) => setPriceMaxInput(e.target.value)}
                         className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     />
                 </div>
             </span>
-        )}
-        <div className="flex flex-row flex-1 gap-2 justify-start">
-        <span className="flex flex-col flex-1 justify-center">
-            <Button className="whitespace-nowrap" text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
-        </span>
-
-        {!game.bidding ? (
+            {isMarginalGains && ageRange && setAgeRange && minRiderAge !== undefined && maxRiderAge !== undefined && (
+                <span className="flex flex-col flex-1 justify-center">
+                    <label htmlFor="age-range" className="text-sm font-bold text-gray-700">
+                        Leeftijd
+                    </label>
+                    <div className="py-2 mt-2">
+                        <RangeSlider
+                            min={minRiderAge}
+                            max={maxRiderAge}
+                            value={ageRange}
+                            onInput={(value: number[]) => setAgeRange([value[0], value[1]])}
+                        />
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                        <input
+                            type="number"
+                            min={minRiderAge}
+                            max={ageRange[1]}
+                            value={ageMinInput}
+                            onChange={(e) => setAgeMinInput(e.target.value)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                        />
+                        <input
+                            type="number"
+                            min={ageRange[0]}
+                            max={maxRiderAge}
+                            value={ageMaxInput}
+                            onChange={(e) => setAgeMaxInput(e.target.value)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                        />
+                    </div>
+                </span>
+            )}
+             {!game.bidding ? (
             <span>
                   <Button  onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
                     <span className={`flex flex-row gap-2 items-center whitespace-nowrap`}>
@@ -231,7 +227,13 @@ export const AuctionFilters = ({
                 />
                 </div>
                 </>}
-                </div>
+            <Divider />
+            <div className="flex flex-row flex-1 gap-2 justify-start">
+                <span className="flex flex-col flex-1 justify-center">
+                    <Button className="whitespace-nowrap" text={game.bidding ? t('games.auctions.resetAllBids') : t('games.auctions.resetAllSelects')} disabled={!myBids.some(bid => bid.status === 'active' || bid.status === 'outbid')} onClick={handleResetBidsClick} />
+                </span>
+
+            </div>
         </div>
     </Collapsible>
 }

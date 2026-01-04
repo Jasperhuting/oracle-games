@@ -8,7 +8,7 @@ import { Star, SortAscending, SortDescending } from "tabler-icons-react";
 import { calculateAge, qualifiesAsNeoProf } from "@/lib/utils";
 import { useState, useMemo } from "react";
 
-type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof';
+type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';
 type SortDirection = 'asc' | 'desc';
 
 export const BiddingListViewWorldTourSmall = ({
@@ -64,15 +64,24 @@ export const BiddingListViewWorldTourSmall = ({
           comparison = ageA - ageB;
           break;
         }
-        case 'team':
-          comparison = (riderA.team?.name || '').localeCompare(riderB.team?.name || '');
+        case 'team': {
+          const teamA = riderA.team?.name || '';
+          const teamB = riderB.team?.name || '';
+          // Zet lege teams onderaan
+          if (!teamA && teamB) return 1;
+          if (teamA && !teamB) return -1;
+          comparison = teamA.localeCompare(teamB);
           break;
+        }
         case 'neoprof': {
           const isNeoProfA = qualifiesAsNeoProf(riderA, game.config) ? 1 : 0;
           const isNeoProfB = qualifiesAsNeoProf(riderB, game.config) ? 1 : 0;
           comparison = isNeoProfB - isNeoProfA;
           break;
         }
+        case 'rank':
+          comparison = (riderA.rank || 0) - (riderB.rank || 0);
+          break;
         default:
           return 0;
       }
@@ -95,9 +104,16 @@ export const BiddingListViewWorldTourSmall = ({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+            className="pl-3 pr-5 min-w-[120px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: 'right 0.25rem center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '1.5em 1.5em'
+            }}
           >
             <option value="price">{game.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
+            <option value="rank">Rank</option>
             <option value="name">Naam</option>
             <option value="age">Leeftijd</option>
             <option value="team">Ploeg</option>
@@ -151,7 +167,7 @@ export const BiddingListViewWorldTourSmall = ({
 
               <div className="flex gap-2 items-center justify-between mt-1">
                 <span className="font-medium whitespace-nowrap text-sm">
-                  {game.gameType === 'marginal-gains' ? `${rider.myBid} points` : rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}
+                  {game.gameType === 'marginal-gains' ? `${rider.myBid} ${rider.myBid === 1 ? 'point' : 'points'}` : rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}
                 </span>
                 {canCancel && (
                   <>
