@@ -40,6 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
       preferredLanguage: userData?.preferredLanguage || 'nl',
       emailNotifications: userData?.emailNotifications !== false, // Default to true
       activityLogFilters: userData?.activityLogFilters,
+      displayPreferences: userData?.displayPreferences,
     });
   } catch (error) {
     console.error('Error fetching user:', error);

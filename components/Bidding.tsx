@@ -35,6 +35,7 @@ export const Bidding = ({
   handlePlaceBid,
   handleCancelBidClick,
   bidAmountsRef,
+  userId,
 }: {
   auctionClosed: boolean,
   game: GameData,
@@ -56,7 +57,7 @@ export const Bidding = ({
   handlePlaceBid: (rider: any) => void,
   adjustingBid: string | null,
   placingBid: string | null,
-
+  userId?: string,
 }) => {
 
   const { t } = useTranslation();
@@ -227,7 +228,8 @@ export const Bidding = ({
             placingBid={placingBid}
             bidAmountsRef={bidAmountsRef}
             handlePlaceBid={handlePlaceBid}
-            setAdjustingBid={setAdjustingBid} /> :
+            setAdjustingBid={setAdjustingBid}
+            userId={userId} /> :
           <BiddingListView myBids={myBids}
             game={game}
             cancellingBid={cancellingBid}

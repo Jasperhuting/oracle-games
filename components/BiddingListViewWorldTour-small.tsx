@@ -6,7 +6,7 @@ import { Button } from "./Button";
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { Star, SortAscending, SortDescending, ChevronLeft, ChevronRight } from "tabler-icons-react";
 import { calculateAge, qualifiesAsNeoProf } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 
 type DisplayMode = 'all' | 'scroll' | 'pagination';
 const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
@@ -15,6 +15,14 @@ const ITEM_HEIGHT = 38;
 
 type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';
 type SortDirection = 'asc' | 'desc';
+
+interface DisplayPreferences {
+  displayMode: DisplayMode;
+  itemsPerPage: number;
+  scrollItemCount: number;
+  sortBy: SortOption;
+  sortDirection: SortDirection;
+}
 
 export const BiddingListViewWorldTourSmall = ({
   myBids,
@@ -27,6 +35,7 @@ export const BiddingListViewWorldTourSmall = ({
   setAdjustingBid,
   cancellingBid,
   handleCancelBidClick,
+  userId,
 }:
   {
     myBids: Bid[],
@@ -39,6 +48,7 @@ export const BiddingListViewWorldTourSmall = ({
     setAdjustingBid: React.Dispatch<React.SetStateAction<string | null>>,
     cancellingBid: string | null,
     handleCancelBidClick: (bidId: string, riderName: string) => void,
+    userId?: string,
   }) => {
 
   const { t } = useTranslation();
@@ -48,6 +58,65 @@ export const BiddingListViewWorldTourSmall = ({
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [scrollItemCount, setScrollItemCount] = useState(10);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+
+  // Load preferences from database on mount
+  useEffect(() => {
+    if (!userId) return;
+    
+    const loadPreferences = async () => {
+      try {
+        const response = await fetch(`/api/getUser?userId=${userId}`);
+        if (response.ok) {
+          const userData = await response.json();
+          const prefs = userData.displayPreferences?.biddingList;
+          if (prefs) {
+            if (prefs.displayMode) setDisplayMode(prefs.displayMode);
+            if (prefs.itemsPerPage) setItemsPerPage(prefs.itemsPerPage);
+            if (prefs.scrollItemCount) setScrollItemCount(prefs.scrollItemCount);
+            if (prefs.sortBy) setSortBy(prefs.sortBy);
+            if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load display preferences:', error);
+      } finally {
+        setPreferencesLoaded(true);
+      }
+    };
+    
+    loadPreferences();
+  }, [userId]);
+
+  // Save preferences to database when they change
+  const savePreferences = useCallback(async (prefs: Partial<DisplayPreferences>) => {
+    if (!userId || !preferencesLoaded) return;
+    
+    // Use dot notation for Firestore to update nested fields without overwriting siblings
+    const updates: Record<string, unknown> = {};
+    if (prefs.displayMode !== undefined) updates['displayPreferences.biddingList.displayMode'] = prefs.displayMode;
+    if (prefs.itemsPerPage !== undefined) updates['displayPreferences.biddingList.itemsPerPage'] = prefs.itemsPerPage;
+    if (prefs.scrollItemCount !== undefined) updates['displayPreferences.biddingList.scrollItemCount'] = prefs.scrollItemCount;
+    if (prefs.sortBy !== undefined) updates['displayPreferences.biddingList.sortBy'] = prefs.sortBy;
+    if (prefs.sortDirection !== undefined) updates['displayPreferences.biddingList.sortDirection'] = prefs.sortDirection;
+    
+    try {
+      const response = await fetch('/api/updateUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          updates
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to save preferences:', await response.text());
+      }
+    } catch (error) {
+      console.error('Failed to save display preferences:', error);
+    }
+  }, [userId, preferencesLoaded]);
 
   const sortedBids = useMemo(() => {
     const filtered = myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost');
@@ -109,11 +178,29 @@ export const BiddingListViewWorldTourSmall = ({
   const handleItemsPerPageChange = (newValue: number) => {
     setItemsPerPage(newValue);
     setCurrentPage(1);
+    savePreferences({ itemsPerPage: newValue });
   };
 
   const handleDisplayModeChange = (newMode: DisplayMode) => {
     setDisplayMode(newMode);
     setCurrentPage(1);
+    savePreferences({ displayMode: newMode });
+  };
+
+  const handleScrollItemCountChange = (newValue: number) => {
+    setScrollItemCount(newValue);
+    savePreferences({ scrollItemCount: newValue });
+  };
+
+  const handleSortByChange = (newValue: SortOption) => {
+    setSortBy(newValue);
+    savePreferences({ sortBy: newValue });
+  };
+
+  const handleSortDirectionToggle = () => {
+    const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortDirection(newDirection);
+    savePreferences({ sortDirection: newDirection });
   };
 
   return <>
@@ -129,7 +216,7 @@ export const BiddingListViewWorldTourSmall = ({
           <label className="text-sm font-medium">Sorteren op:</label>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            onChange={(e) => handleSortByChange(e.target.value as SortOption)}
             className="pl-3 pr-5 min-w-[120px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -146,7 +233,7 @@ export const BiddingListViewWorldTourSmall = ({
             <option value="neoprof">Neo-Prof</option>
           </select>
           <button
-            onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+            onClick={handleSortDirectionToggle}
             className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
             title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
           >
@@ -177,7 +264,7 @@ export const BiddingListViewWorldTourSmall = ({
               <label className="text-sm font-medium ml-2">Aantal items:</label>
               <select
                 value={scrollItemCount}
-                onChange={(e) => setScrollItemCount(Number(e.target.value))}
+                onChange={(e) => handleScrollItemCountChange(Number(e.target.value))}
                 className="pl-3 pr-5 min-w-[70px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,

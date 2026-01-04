@@ -1123,7 +1123,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                       availableRiders={availableRiders}
                       adjustingBid={adjustingBid}
                       placingBid={placingBid}
-
+                      userId={user?.uid}
                     />
                   },
                   ...(!isSelectionBasedGame ? [{
