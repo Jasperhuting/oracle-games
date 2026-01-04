@@ -4,9 +4,14 @@ import CurrencyInput from "react-currency-input-field";
 import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
-import { Star, SortAscending, SortDescending } from "tabler-icons-react";
+import { Star, SortAscending, SortDescending, ChevronLeft, ChevronRight } from "tabler-icons-react";
 import { calculateAge, qualifiesAsNeoProf } from "@/lib/utils";
 import { useState, useMemo } from "react";
+
+type DisplayMode = 'all' | 'scroll' | 'pagination';
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
+const SCROLL_ITEM_COUNT_OPTIONS = [5, 10, 15, 20, 25, 30];
+const ITEM_HEIGHT = 38;
 
 type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';
 type SortDirection = 'asc' | 'desc';
@@ -39,6 +44,10 @@ export const BiddingListViewWorldTourSmall = ({
   const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('all');
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [scrollItemCount, setScrollItemCount] = useState(10);
 
   const sortedBids = useMemo(() => {
     const filtered = myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost');
@@ -90,6 +99,23 @@ export const BiddingListViewWorldTourSmall = ({
     });
   }, [myBids, availableRiders, sortBy, sortDirection]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(sortedBids.length / itemsPerPage);
+  const paginatedBids = displayMode === 'pagination'
+    ? sortedBids.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : sortedBids;
+
+  // Reset to page 1 when changing items per page or display mode
+  const handleItemsPerPageChange = (newValue: number) => {
+    setItemsPerPage(newValue);
+    setCurrentPage(1);
+  };
+
+  const handleDisplayModeChange = (newMode: DisplayMode) => {
+    setDisplayMode(newMode);
+    setCurrentPage(1);
+  };
+
   return <>
 
 
@@ -126,6 +152,67 @@ export const BiddingListViewWorldTourSmall = ({
           >
             {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
           </button>
+
+          <div className="border-l border-gray-300 h-6 mx-2" />
+
+          <label className="text-sm font-medium">Weergave:</label>
+          <select
+            value={displayMode}
+            onChange={(e) => handleDisplayModeChange(e.target.value as DisplayMode)}
+            className="pl-3 pr-5 min-w-[120px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: 'right 0.25rem center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '1.5em 1.5em'
+            }}
+          >
+            <option value="all">Alles tonen</option>
+            <option value="scroll">Scroll</option>
+            <option value="pagination">Pagination</option>
+          </select>
+
+          {displayMode === 'scroll' && (
+            <>
+              <label className="text-sm font-medium ml-2">Aantal items:</label>
+              <select
+                value={scrollItemCount}
+                onChange={(e) => setScrollItemCount(Number(e.target.value))}
+                className="pl-3 pr-5 min-w-[70px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.25rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em'
+                }}
+              >
+                {SCROLL_ITEM_COUNT_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {displayMode === 'pagination' && (
+            <>
+              <label className="text-sm font-medium ml-2">Per pagina:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                className="pl-3 pr-5 min-w-[70px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.25rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em'
+                }}
+              >
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
       )}
       {myBids.length > 0 && game.gameType !== 'worldtour-manager' && (
@@ -137,11 +224,11 @@ export const BiddingListViewWorldTourSmall = ({
           <span className="font-bold basis-[200px]"></span>
         </div>
       )}
-      <div className="flex flex-col">
+      <div className={`flex flex-col ${displayMode === 'scroll' ? 'overflow-y-auto' : ''}`} style={displayMode === 'scroll' ? { maxHeight: `${scrollItemCount * ITEM_HEIGHT}px` } : undefined}>
 
 
 
-        {sortedBids.map((myBidRider) => {
+        {paginatedBids.map((myBidRider) => {
           const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId); // eslint-disable-line @typescript-eslint/no-explicit-any
           const canCancel = myBidRider.status === 'active' || myBidRider.status === 'outbid';
           const riderNameId = rider?.nameID || rider?.id || '';
@@ -231,6 +318,34 @@ export const BiddingListViewWorldTourSmall = ({
 
         })}
       </div>
+
+      {/* Pagination controls */}
+      {displayMode === 'pagination' && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+          <span className="text-sm text-gray-600">
+            {sortedBids.length} renners totaal • Pagina {currentPage} van {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-sm font-medium px-2">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
 
 

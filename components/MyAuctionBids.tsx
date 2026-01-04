@@ -9,12 +9,12 @@ interface ExtendedBid extends Bid {
     price?: number;
 }
 
-export const MyAuctionBids = ({ isWorldtour, myBids, className, availableRiders, game }: { isWorldtour:boolean, myBids: ExtendedBid[], className?: string, availableRiders: any, game: GameData }) => {
+export const MyAuctionBids = ({ isMarginalGains, myBids, className, availableRiders, game }: { isMarginalGains:boolean, myBids: ExtendedBid[], className?: string, availableRiders: any, game: GameData }) => {
 
-    const isMarginalGains = game?.gameType === 'marginal-gains';
+    
 
     return <div className={className}>
-        <Collapsible title={`${isWorldtour || isMarginalGains ? "My selection" : "My Bids"} (${myBids.length})`} className="border border-gray-200 rounded-md p-2" defaultOpen={true}>
+        <Collapsible title={`${isMarginalGains ? "My selection" : "My Bids"} (${myBids.length})`} className="border border-gray-200 rounded-md p-2" defaultOpen={true}>
         <div>
             {myBids.map((bid, idx) => {
                 const rider: Rider = availableRiders.find((rider: any) => rider.id === bid.riderNameId || rider.nameID === bid.riderNameId);
@@ -25,7 +25,7 @@ export const MyAuctionBids = ({ isWorldtour, myBids, className, availableRiders,
                         {bid.riderName}
                     </span>
                     <span className="w-auto flex justify-end gap-2">
-                        {!isWorldtour && !isMarginalGains ? <span className="text-gray-400 line-through text-xs flex items-center">{formatCurrencyWhole(bid?.price || 0)}</span> : null}
+                        {!isMarginalGains ? <span className="text-gray-400 line-through text-xs flex items-center">{formatCurrencyWhole(bid?.price || 0)}</span> : null}
                         <div className="w-[40px] flex justify-end">
                             <span className="text-green-600 font-bold text-xs flex items-center">{isMarginalGains ? bid.amount : formatCurrencyWhole(bid.amount)}</span>
                         </div>
