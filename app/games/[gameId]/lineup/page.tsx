@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/Button";
@@ -67,7 +67,7 @@ useEffect(() => {
     params.then(p => setGameId(p.gameId));
   }, [params]);
 
-  const loadLineup = (async () => {
+  const loadLineup = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -79,7 +79,13 @@ useEffect(() => {
       setRaceType(gameData.game.raceType || '');
 
       // Load lineup
-      const response = await fetch(`/api/games/${gameId}/lineup`);
+      const response = await fetch(`/api/games/${gameId}/lineup`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to load race lineup');
       }
@@ -118,7 +124,7 @@ useEffect(() => {
             rank: 0,
             nameID: r.teamId || '',
             slug: r.teamId || '',
-            teamImage: teamData?.image || '',
+            teamImage: r.teamImage || teamData?.jerseyImage || '',
             class: teamData?.class || r.teamClass || '',
             country: r.country || '',
             points: 0,
@@ -146,7 +152,7 @@ useEffect(() => {
     } finally {
       setLoading(false);
     }
-  });
+  }, [gameId]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -157,7 +163,7 @@ useEffect(() => {
     if (!gameId) return;
 
     loadLineup();
-  }, [gameId, user, authLoading, router]);
+  }, [gameId, user, authLoading, router, loadLineup]);
 
   const handleSave = async () => {
     if (!user) return;

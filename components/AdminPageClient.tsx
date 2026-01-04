@@ -11,6 +11,8 @@ import { CreateGameTab } from "@/components/CreateGameTab";
 import { GamesManagementTab } from "@/components/GamesManagementTab";
 import { RidersManagementTab } from "@/components/RidersManagementTab";
 import { AddRiderTab } from "@/components/AddRiderTab";
+import { EnrichTeamTab } from "@/components/EnrichTeamTab";
+import { EnrichRidersTab } from "@/components/EnrichRidersTab";
 import { RacesScraperTab } from "@/components/RacesScraperTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
 import { FeedbackTab } from "@/components/FeedbackTab";
@@ -192,6 +194,16 @@ export default function AdminPageClient() {
                                     id: 'add-rider',
                                     label: 'Voeg Renner Toe',
                                     content: <AddRiderTab />
+                                },
+                                {
+                                    id: 'enrich-team',
+                                    label: 'Verrijk Team',
+                                    content: <EnrichTeamTab />
+                                },
+                                {
+                                    id: 'enrich-riders',
+                                    label: 'Verrijk Renners',
+                                    content: <EnrichRidersTab />
                                 },
                                 {
                                     id: 'game-rules',

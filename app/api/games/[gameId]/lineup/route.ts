@@ -130,6 +130,7 @@ export async function GET(
             points: data.points,
             team: teamData?.name || '',
             teamId: teamData?.slug || teamData?.id || '',
+            teamImage: teamData?.teamImage || '',
           };
         })
     );

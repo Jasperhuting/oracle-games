@@ -41,20 +41,31 @@ export async function enrichRidersPuppeteer({ year, team }: { year: number, team
 
         const riders: EnrichedRider[] = [];
 
-        const riderElements = $('.borderbox.w68.left.mb_w100 .photos ul.photos li');
+        // Try new structure first: ul.teamlist li in the name tab
+        let riderElements = $('.stab.name.riderlistcont ul.teamlist li');
+        
+        // Fallback to old structure if new one doesn't work
+        if (riderElements.length === 0) {
+            riderElements = $('.borderbox.w68.left.mb_w100 .photos ul.photos li');
+        }
 
         riderElements.each((_, el) => {
-            const riderName = $(el).find('div a').attr('href')?.split('/')[1] || '';
-            const riderHref = $(el).find('div a').attr('href') || '';
-
-            const riderAge = $('.riderlistcont .teamlist li').find(`a[href="${riderHref}"]`).closest('li').find('div.w10').last().text().trim();
+            // New structure: rider link is in .w73 div
+            let riderName = $(el).find('.w73 a').attr('href')?.split('/')[1] || '';
+            
+            // Fallback to old structure
+            if (!riderName) {
+                riderName = $(el).find('div a').attr('href')?.split('/')[1] || '';
+            }
 
             const rider: EnrichedRider = {
                 name: riderName,
-                jerseyImage: $(el).find('img').attr('src') || '',
-                age: Number(riderAge),
+                jerseyImage: '', // Jersey images no longer available in new structure
+                age: '', // Will be filled in later from the age table
             };
-            riders.push(rider);
+            if (riderName) {
+                riders.push(rider);
+            }
         });
 
         $('.stab.age.hide.riderlistcont table tbody tr').each((_, el) => {

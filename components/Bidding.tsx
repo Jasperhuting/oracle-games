@@ -86,7 +86,7 @@ export const Bidding = ({
   // Sorting state for riders list
   type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';
   type SortDirection = 'asc' | 'desc';
-  const [ridersSortBy, setRidersSortBy] = useState<SortOption>('price');
+  const [ridersSortBy, setRidersSortBy] = useState<SortOption>('rank');
   const [ridersSortDirection, setRidersSortDirection] = useState<SortDirection>('asc');
 
   // Sort riders based on selected criteria
@@ -306,7 +306,7 @@ export const Bidding = ({
 
                   {myTeamView === 'card' ?
 
-                    <PlayerCard
+                    rider && <PlayerCard
                       showBid={true}
                       bid={rider.highestBid}
                       player={rider}

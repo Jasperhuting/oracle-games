@@ -64,20 +64,27 @@ export const PlayerCard = (
         }
     }
 
-    const jerseyImage = player?.team?.teamImage;
+    const jerseyImage = player?.team?.jerseyImageTeam;
     const teamName = player?.team?.name;
     const isSold = player?.isSold;
     const soldTo = player?.soldTo;
     const isSoldFor = player?.pricePaid;
+
+    // Build the full URL - handle different formats
+    const jerseyUrl = jerseyImage 
+        ? (jerseyImage.startsWith('http') 
+            ? jerseyImage 
+            : `https://www.procyclingstats.com/${jerseyImage.startsWith('/') ? jerseyImage.slice(1) : jerseyImage}`)
+        : null;
     
     return (
         <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && !myTeam && "opacity-60 bg-gray-50", className)}>        
             <div className="flex items-center justify-start gap-3 divide-[#CAC4D0] divide-x-2 pb-2">
                 <span className="pr-0 min-w-[55px]">
-                    {jerseyImage ? (
-                        <Image
-                            src={`https://www.procyclingstats.com/${jerseyImage}`}
-                            alt={player?.name}
+                    {jerseyUrl ? (
+                        <img
+                            src={jerseyUrl}
+                            alt={player?.name || 'Jersey'}
                             width={50}
                             height={50}
                             className={isSold ? 'opacity-50' : ''}
