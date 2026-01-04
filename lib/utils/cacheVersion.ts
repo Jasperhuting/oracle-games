@@ -9,15 +9,21 @@ import { db } from '@/lib/firebase/client';
 
 let cachedVersion: number | null = null;
 let cachePromise: Promise<number> | null = null;
+let lastFetchTime: number = 0;
+const CACHE_TTL = 30 * 1000; // 30 seconds - refetch from Firebase after this time
 
 /**
  * Get current cache version from Firebase
+ * Now refetches from Firebase every 30 seconds to pick up changes
  */
 export async function getCacheVersionAsync(): Promise<number> {
   if (typeof window === 'undefined') return 1;
 
-  // Return cached version if available
-  if (cachedVersion !== null) return cachedVersion;
+  const now = Date.now();
+  const cacheExpired = now - lastFetchTime > CACHE_TTL;
+
+  // Return cached version if available and not expired
+  if (cachedVersion !== null && !cacheExpired) return cachedVersion;
 
   // Return existing promise if one is in flight
   if (cachePromise !== null) return cachePromise;
@@ -32,6 +38,7 @@ export async function getCacheVersionAsync(): Promise<number> {
       if (!auth.currentUser) {
         console.log('[CacheVersion] User not authenticated, using default version 1');
         cachedVersion = 1;
+        lastFetchTime = Date.now();
         return 1;
       }
 
@@ -40,13 +47,22 @@ export async function getCacheVersionAsync(): Promise<number> {
 
       if (cacheDoc.exists()) {
         const version = cacheDoc.data()?.version || 1;
+        const oldVersion = cachedVersion;
         cachedVersion = version;
+        lastFetchTime = Date.now();
+        
+        // If version changed, clear local IndexedDB cache
+        if (oldVersion !== null && oldVersion !== version) {
+          console.log(`[CacheVersion] Version changed from ${oldVersion} to ${version}, clearing local cache`);
+        }
+        
         return version;
       }
 
       // If document doesn't exist, initialize it with version 1
       await setDoc(cacheDocRef, { version: 1 }, { merge: true });
       cachedVersion = 1;
+      lastFetchTime = Date.now();
       return 1;
     } catch (error: any) {
       // Silently handle permission errors for unauthenticated users
@@ -57,6 +73,7 @@ export async function getCacheVersionAsync(): Promise<number> {
       }
       // Fall back to version 1 if there's an error
       cachedVersion = 1;
+      lastFetchTime = Date.now();
       return 1;
     } finally {
       cachePromise = null;
@@ -119,9 +136,10 @@ export async function incrementCacheVersion(): Promise<void> {
 }
 
 /**
- * Reset the cached version variable (useful for testing)
+ * Reset the cached version variable (useful for testing or forcing a refresh)
  */
 export function resetCachedVersion(): void {
   cachedVersion = null;
   cachePromise = null;
+  lastFetchTime = 0;
 }
