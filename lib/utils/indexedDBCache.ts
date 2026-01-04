@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'OracleGamesCache';
-const DB_VERSION = 3; // Bumped to 3 to add auction store (created in auctionCache.ts)
+const DB_VERSION = 4; // Bumped to 4 to force cache clear after rider enrichment (Jan 2026)
 const STORE_NAME = 'rankings';
 
 interface CacheEntry<T> {
@@ -31,6 +31,21 @@ function openDatabase(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      const oldVersion = event.oldVersion;
+      
+      console.log(`[IndexedDB] Upgrading database from version ${oldVersion} to ${DB_VERSION}`);
+
+      // Clear all data when upgrading to version 4 (force fresh data after rider enrichment)
+      // We do this by deleting and recreating the stores
+      if (oldVersion > 0 && oldVersion < 4) {
+        console.log('[IndexedDB] Clearing all cached data due to major update');
+        if (db.objectStoreNames.contains(STORE_NAME)) {
+          db.deleteObjectStore(STORE_NAME);
+        }
+        if (db.objectStoreNames.contains('auction')) {
+          db.deleteObjectStore('auction');
+        }
+      }
 
       // Create rankings store if it doesn't exist
       if (!db.objectStoreNames.contains(STORE_NAME)) {

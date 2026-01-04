@@ -26,13 +26,19 @@ export function RankingsProvider({
     setError(null);
 
     try {
-      // Reset cached version to force fresh fetch from Firebase
-      if (forceRefresh) {
-        resetCachedVersion();
-      }
+      // Always reset cached version to get fresh version from Firebase
+      // This ensures we always check the latest version
+      resetCachedVersion();
       
-      // Get current cache version dynamically
+      // Get current cache version dynamically from Firebase
       const cacheVersion = await getCacheVersionAsync();
+      
+      // Check if version changed - if so, clear old cache entries
+      if (lastKnownVersionRef.current !== null && lastKnownVersionRef.current !== cacheVersion) {
+        console.log(`[RankingsContext] Cache version changed from ${lastKnownVersionRef.current} to ${cacheVersion}, clearing old cache...`);
+        await clearOldVersions(cacheVersion);
+        forceRefresh = true; // Force fresh fetch since version changed
+      }
       
       // Store the version we're using
       lastKnownVersionRef.current = cacheVersion;
@@ -105,7 +111,12 @@ export function RankingsProvider({
         const currentVersion = await getCacheVersionAsync();
         
         if (lastKnownVersionRef.current !== null && currentVersion !== lastKnownVersionRef.current) {
-          console.log(`[RankingsContext] Cache version changed from ${lastKnownVersionRef.current} to ${currentVersion}, refetching data...`);
+          console.log(`[RankingsContext] Cache version changed from ${lastKnownVersionRef.current} to ${currentVersion}, clearing IndexedDB and refetching...`);
+          
+          // Clear the old cached data from IndexedDB
+          await clearOldVersions(currentVersion);
+          
+          // Refetch with force refresh
           fetchRankings(true);
         }
       } catch (error) {
