@@ -4,33 +4,41 @@ import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { User } from "firebase/auth"
 import { PlayerCard } from "./PlayerCard";
 import { qualifiesAsNeoProf } from "@/lib/utils";
+import { useState, useMemo } from "react";
+import { SortAscending, SortDescending } from "tabler-icons-react";
 
 export const MyAuctionBidsBig = ({
-    divisionParticipants, 
+    divisionParticipants,
     availableRiders,
     alleBiedingen,
-    selectedPlayerId, 
-    setSelectedPlayerId, 
+    selectedPlayerId,
+    setSelectedPlayerId,
     selectedPlayerBids,
-    user, 
+    user,
     game,
     participant,
     myBids,
     activeAuctionPeriodTab,
     setActiveAuctionPeriodTab
 }: {
-    divisionParticipants: ParticipantData[], 
+    divisionParticipants: ParticipantData[],
     alleBiedingen: Bid[],
     availableRiders: RiderWithBid[],
     participant: ParticipantData | null,
-    selectedPlayerId: string | null, 
+    selectedPlayerId: string | null,
     selectedPlayerBids: Bid[],
-    setSelectedPlayerId: (id: string | null) => void, 
-    user: User | null, 
-    game: GameData, 
+    setSelectedPlayerId: (id: string | null) => void,
+    user: User | null,
+    game: GameData,
     myBids: Bid[],
-    activeAuctionPeriodTab: number, 
+    activeAuctionPeriodTab: number,
     setActiveAuctionPeriodTab: (index: number) => void}) => {
+
+  // Sorting state
+  type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank' | 'status';
+  type SortDirection = 'asc' | 'desc';
+  const [sortBy, setSortBy] = useState<SortOption>('price');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
 
   // Calculate remaining budget for a player based on their won bids up to a specific auction period
@@ -208,15 +216,95 @@ export const MyAuctionBidsBig = ({
                                 ? calculateRemainingBudget(selectedPlayerBids, periodIndex)
                                 : calculateRemainingBudget(myBids, periodIndex);
 
+                              // Sort the bids based on the selected criteria
+                              const sortedBidsInPeriod = [...bidsInPeriod].sort((a, b) => {
+                                const riderA = availableRiders.find((r: any) => r.id === a.riderNameId || r.nameID === a.riderNameId);
+                                const riderB = availableRiders.find((r: any) => r.id === b.riderNameId || r.nameID === b.riderNameId);
+
+                                if (!riderA || !riderB) return 0;
+
+                                let comparison = 0;
+
+                                switch (sortBy) {
+                                  case 'price':
+                                    comparison = (a.amount || 0) - (b.amount || 0);
+                                    break;
+                                  case 'name':
+                                    comparison = (riderA.name || '').localeCompare(riderB.name || '');
+                                    break;
+                                  case 'age': {
+                                    const ageA = typeof riderA.age === 'number' ? riderA.age : parseInt(String(riderA.age || '0'), 10);
+                                    const ageB = typeof riderB.age === 'number' ? riderB.age : parseInt(String(riderB.age || '0'), 10);
+                                    comparison = ageA - ageB;
+                                    break;
+                                  }
+                                  case 'team': {
+                                    const teamA = riderA.team?.name || '';
+                                    const teamB = riderB.team?.name || '';
+                                    if (!teamA && teamB) return 1;
+                                    if (teamA && !teamB) return -1;
+                                    comparison = teamA.localeCompare(teamB);
+                                    break;
+                                  }
+                                  case 'neoprof': {
+                                    const isNeoProfA = qualifiesAsNeoProf(riderA, game?.config) ? 1 : 0;
+                                    const isNeoProfB = qualifiesAsNeoProf(riderB, game?.config) ? 1 : 0;
+                                    comparison = isNeoProfB - isNeoProfA;
+                                    break;
+                                  }
+                                  case 'rank':
+                                    comparison = (riderA.rank || 0) - (riderB.rank || 0);
+                                    break;
+                                  case 'status': {
+                                    const statusOrder = { won: 0, active: 1, outbid: 2, lost: 3, cancelled: 4 };
+                                    comparison = (statusOrder[a.status as keyof typeof statusOrder] || 99) - (statusOrder[b.status as keyof typeof statusOrder] || 99);
+                                    break;
+                                  }
+                                  default:
+                                    return 0;
+                                }
+
+                                return sortDirection === 'asc' ? comparison : -comparison;
+                              });
+
                               // Card View - Show all bids (won and lost) for this auction period
                               return <div key={periodIndex} className="mb-8">
-                                <div className="flex justify-end items-center mb-4">
+                                <div className="flex justify-between items-center mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <label className="text-sm font-medium">Sorteren op:</label>
+                                    <select
+                                      value={sortBy}
+                                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                                      className="pl-3 pr-5 min-w-[120px] py-1.5 text-sm font-normal border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white appearance-none"
+                                      style={{
+                                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                        backgroundPosition: 'right 0.25rem center',
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundSize: '1.5em 1.5em'
+                                      }}
+                                    >
+                                      <option value="price">Prijs</option>
+                                      <option value="rank">Rank</option>
+                                      <option value="name">Naam</option>
+                                      <option value="age">Leeftijd</option>
+                                      <option value="team">Ploeg</option>
+                                      <option value="status">Status</option>
+                                      {game?.gameType === 'worldtour-manager' && <option value="neoprof">Neo-Prof</option>}
+                                    </select>
+                                    <button
+                                      onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+                                      className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
+                                      title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+                                    >
+                                      {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
+                                    </button>
+                                  </div>
                                   <div className="text-sm">
                                     <span className="font-medium">Remaining Budget: </span>
                                     <span className="text-lg font-bold text-green-600">{formatCurrencyWhole(remainingBudget)}</span>
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {bidsInPeriod
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {sortedBidsInPeriod
                                   .map((myBidRider) => {
                                     const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
 
@@ -241,6 +329,7 @@ export const MyAuctionBidsBig = ({
                                         showBid={true}
                                         className={`border-2 rounded-md ${myBidRider.status === 'won' ? 'border-green-500 bg-green-50' : ''}`}
                                         hideInfo={true}
+                                        showRank={true}
                                         bidders={riderBidders}
                                         bid={myBidRider.amount || 0}
                                         player={rider}

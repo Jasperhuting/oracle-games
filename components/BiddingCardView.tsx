@@ -136,6 +136,7 @@ export const BiddingCardView = ({
               showBid={true}
               className="border-2 rounded-md border-gray-200"
               hideInfo={true}
+              showRank={true}
               bid={rider?.myBid || myBidRider.amount || 0}
               player={rider}
               onClick={() => { }}

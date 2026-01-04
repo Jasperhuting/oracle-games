@@ -149,6 +149,11 @@ export const BiddingListViewWorldTourSmall = ({
           return rider ?
             <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 flex flex-row gap-2 items-center justify-between">
               <div className="flex items-center">
+                 {rider.rank && (
+                <span className="text-gray-500 text-xs whitespace-nowrap min-w-[34px] mr-2">
+                  #{rider.rank}
+                </span>
+              )}
               <div className="flex items-center">
                 {qualifiesAsNeoProf(rider, game.config) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
                 <span className={`truncate font-medium ${qualifiesAsNeoProf(rider, game.config) ? 'ml-1' : ''}`}>

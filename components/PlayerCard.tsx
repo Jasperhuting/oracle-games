@@ -25,6 +25,7 @@ export const PlayerCard = (
         myTeam,
         participant,
         showPointsInsteadOfPrice,
+        showRank,
     }: {
         player: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
         onClick: (player: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,7 @@ export const PlayerCard = (
         myTeam?: boolean,
         participant?: ParticipantData | null,
         showPointsInsteadOfPrice?: boolean,
+        showRank?: boolean,
     }) => {
 
     // Calculate age from birth date if available
@@ -106,7 +108,7 @@ export const PlayerCard = (
                 </div>
             </div>
             <div className="flex flex-col gap-2 text-[#969696] font-medium">
-                {!hideInfo && <div className="flex flex-row gap-2 justify-between mt-2">
+                {(!hideInfo || showRank) && <div className="flex flex-row gap-2 justify-between mt-2">
                     <span className="font-medium text-gray-700">
                         Rank:
                     </span>
