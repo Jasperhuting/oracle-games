@@ -41,6 +41,11 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const dateOfBirth = userData.dateOfBirth;
+  const today = new Date();
+
+  const isBirthdayToday = dateOfBirth && new Date(dateOfBirth).getMonth() === today.getMonth() && new Date(dateOfBirth).getDate() === today.getDate();
+
   const { t } = useTranslation();
 
   const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<AccountFormData>({
@@ -155,11 +160,13 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
 
   return (
     <div className="w-full">
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 relative">
+        {isBirthdayToday && <img src="/happy-birthday.png" alt="Happy Birthday" className="absolute right-0 top-0 w-full max-w-[100px] md:max-w-[200px] h-auto mb-4 object-contain" />}
         <h2 className="text-xl font-semibold mb-4">{t('account.accountInformation')}</h2>
         
         <div className="space-y-4">
-          <div>
+          
+          <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               
               {t('account.emailAddress')}
@@ -169,6 +176,8 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
             </div>
             <p className="text-xs text-gray-500 mt-1">{t('account.emailAddressCannotBeChanged')}</p>
           </div>
+          
+          
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

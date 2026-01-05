@@ -133,22 +133,22 @@ export async function POST(request: NextRequest) {
     // Log the profile update activity
     const changes: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
     if (oldUserData?.playername !== playername) {
-      changes.playername = { old: oldUserData?.playername, new: playername };
+      changes.playername = { old: oldUserData?.playername ?? null, new: playername };
     }
     if (firstName !== undefined && oldUserData?.firstName !== firstName) {
-      changes.firstName = { old: oldUserData?.firstName, new: firstName };
+      changes.firstName = { old: oldUserData?.firstName ?? null, new: firstName };
     }
     if (lastName !== undefined && oldUserData?.lastName !== lastName) {
-      changes.lastName = { old: oldUserData?.lastName, new: lastName };
+      changes.lastName = { old: oldUserData?.lastName ?? null, new: lastName };
     }
     if (dateOfBirth !== undefined && oldUserData?.dateOfBirth !== dateOfBirth) {
-      changes.dateOfBirth = { old: oldUserData?.dateOfBirth, new: dateOfBirth };
+      changes.dateOfBirth = { old: oldUserData?.dateOfBirth ?? null, new: dateOfBirth };
     }
     if (preferredLanguage !== undefined && oldUserData?.preferredLanguage !== preferredLanguage) {
-      changes.preferredLanguage = { old: oldUserData?.preferredLanguage, new: preferredLanguage };
+      changes.preferredLanguage = { old: oldUserData?.preferredLanguage ?? null, new: preferredLanguage };
     }
     if (emailNotifications !== undefined && oldUserData?.emailNotifications !== emailNotifications) {
-      changes.emailNotifications = { old: oldUserData?.emailNotifications, new: emailNotifications };
+      changes.emailNotifications = { old: oldUserData?.emailNotifications ?? null, new: emailNotifications };
     }
 
     // Only log if there were actual changes
