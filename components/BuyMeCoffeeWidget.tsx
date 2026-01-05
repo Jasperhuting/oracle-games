@@ -31,7 +31,7 @@ export function BuyMeCoffeeWidget() {
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
-      className="fixed bottom-[250px] rotate-90 -left-[62px] z-50 rounded-t-lg bg-[#FFDD00] text-[#000000] px-4 py-2 cursor-pointer hover:bg-[#FFED4E] transition-colors flex items-center gap-2"
+      className="fixed bottom-[250px] rotate-90 -left-[64px] z-50 rounded-t-lg bg-[#FFDD00] text-[#000000] px-4 py-2 cursor-pointer hover:bg-[#FFED4E] transition-colors flex items-center gap-2"
       title="Support Oracle Games"
     >
       <Image
