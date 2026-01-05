@@ -129,8 +129,7 @@ export interface MountedCheckProps {
 }
 
 export interface RichTextEditorProps {
-  value: string;
+  content: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  content: string;
 }

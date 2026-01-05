@@ -55,22 +55,12 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     const { unreadCount } = useUnreadMessages(user?.uid);
     const [isAdmin, setIsAdmin] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [gameId, setGameId] = useState<string | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Extract gameId from pathname if we're on a game page
-    useEffect(() => {
-        const gameIdMatch = pathname.match(/^\/games\/([^\/]+)(?:\/|$)/);
-        if (gameIdMatch && gameIdMatch[1]) {
-            setGameId(gameIdMatch[1]);
-        } else {
-            setGameId(null);
-        }
-    }, [pathname]);
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -146,9 +136,9 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             display: true
         },
         {
-            name: 'Game Rules',
-            href: gameId ? `/games/${gameId}/gamerules` : "/games",
-            display: !!gameId
+            name: t('header.menu.rules'),
+            href: "/rules",
+            display: true
         },
         {
             name: t('header.menu.riderPoints'),

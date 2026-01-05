@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import { GameRule, GAME_TYPES, GameType, ClientGameRule } from '@/lib/types/games';
+import { ClientGameRule } from '@/lib/types/games';
 import type { GameRulesResponse, ApiErrorResponse } from '@/lib/types';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // GET /api/gameRules - Get all game rules
 export async function GET(): Promise<NextResponse<GameRulesResponse | ApiErrorResponse>> {
@@ -14,6 +15,8 @@ export async function GET(): Promise<NextResponse<GameRulesResponse | ApiErrorRe
       return {
         id: doc.id,
         gameType: data.gameType,
+        categoryId: data.categoryId || null,
+        displayName: data.displayName || null,
         rules: data.rules || '',
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         updatedBy: data.updatedBy || '',
@@ -30,15 +33,36 @@ export async function GET(): Promise<NextResponse<GameRulesResponse | ApiErrorRe
   }
 }
 
+// Helper to convert display name to slug
+const toSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+};
+
 // POST /api/gameRules - Save or update game rules
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { gameType, rules, userId } = body;
+    const { gameType, categoryId, rules, userId, displayName, isNew } = body;
 
-    if (!gameType || !GAME_TYPES.includes(gameType)) {
+    // For new games, generate slug from displayName
+    const slug = isNew && displayName ? toSlug(displayName) : gameType;
+
+    if (!slug) {
       return NextResponse.json(
-        { error: 'Valid game type is required' },
+        { error: 'Game type or display name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate slug format
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json(
+        { error: 'Invalid game type format. Use only lowercase letters, numbers, and hyphens.' },
         { status: 400 }
       );
     }
@@ -61,20 +85,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const gameRuleData: Omit<GameRule, 'id'> = {
-      gameType: gameType as GameType,
+    // For new games, check if slug already exists
+    if (isNew) {
+      const existingDoc = await db.collection('gameRules').doc(slug).get();
+      if (existingDoc.exists) {
+        return NextResponse.json(
+          { error: 'A game with this name already exists' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const gameRuleData: Record<string, unknown> = {
+      gameType: slug,
+      categoryId: categoryId || null,
       rules: rules || '',
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
       updatedBy: userId,
     };
 
+    // Add displayName for new games or if provided
+    if (displayName) {
+      gameRuleData.displayName = displayName;
+    }
+
     // Use gameType as document ID for easy retrieval
-    await db.collection('gameRules').doc(gameType).set(gameRuleData);
+    await db.collection('gameRules').doc(slug).set(gameRuleData, { merge: true });
 
     return NextResponse.json({
       success: true,
-      gameType,
-      message: 'Game rules saved successfully'
+      gameType: slug,
+      displayName: displayName || null,
+      message: isNew ? 'New game type created successfully' : 'Game rules saved successfully'
     });
   } catch (error) {
     console.error('Error saving game rules:', error);

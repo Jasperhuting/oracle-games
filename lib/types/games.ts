@@ -16,6 +16,7 @@ export const GAME_TYPES = [
   'fan-flandrien',
   'giorgio-armada',
   'marginal-gains',
+  'carry-me-home',
 ] as const;
 
 export type GameType = typeof GAME_TYPES[number];
@@ -552,12 +553,32 @@ export interface PoolSelection {
 }
 
 // ============================================================================
+// GAME CATEGORIES
+// ============================================================================
+
+export interface GameCategory {
+  id?: string;                      // Document ID
+  name: string;                     // e.g., "Cycling", "Formula 1", "Football"
+  slug: string;                     // e.g., "cycling", "formula-1", "football"
+  order: number;                    // Display order
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type ClientGameCategory = Omit<GameCategory, 'createdAt' | 'updatedAt'> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ============================================================================
 // GAME RULES
 // ============================================================================
 
 export interface GameRule {
   id?: string;                      // Document ID (same as gameType)
   gameType: GameType;
+  categoryId?: string;              // Reference to GameCategory
+  displayName?: string;             // Display name for the game type
   rules: string;                    // HTML content from WYSIWYG editor
   updatedAt: Timestamp;
   updatedBy: string;                // Admin UID

@@ -15,6 +15,7 @@ import { EnrichTeamTab } from "@/components/EnrichTeamTab";
 import { EnrichRidersTab } from "@/components/EnrichRidersTab";
 import { RacesScraperTab } from "@/components/RacesScraperTab";
 import { GameRulesTab } from "@/components/GameRulesTab";
+import { GameCategoriesTab } from "@/components/GameCategoriesTab";
 import { FeedbackTab } from "@/components/FeedbackTab";
 import { PageEditor } from "@/components/PageEditor";
 import MessagingTab from "@/components/MessagingTab";
@@ -204,6 +205,11 @@ export default function AdminPageClient() {
                                     id: 'enrich-riders',
                                     label: 'Verrijk Renners',
                                     content: <EnrichRidersTab />
+                                },
+                                {
+                                    id: 'game-categories',
+                                    label: 'Game Categories',
+                                    content: <GameCategoriesTab />
                                 },
                                 {
                                     id: 'game-rules',
