@@ -2,6 +2,7 @@
 export * from './games';
 export * from './game-ui';
 export * from './bid';
+export * from './joinable-games';
 
 // Export component types
 export * from './component-props';
