@@ -7,14 +7,14 @@ export async function POST() {
     const db = getServerFirebase();
 
     // Get current version from Firestore
-    const systemRef = db.collection('system').doc('cache');
-    const systemDoc = await systemRef.get();
+    const configRef = db.collection('config').doc('cache');
+    const configDoc = await configRef.get();
 
-    const currentVersion = systemDoc.exists ? (systemDoc.data()?.version || 1) : 1;
+    const currentVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
     const newVersion = currentVersion + 1;
 
     // Update version in Firestore with timestamp
-    await systemRef.set({
+    await configRef.set({
       version: newVersion,
       updatedAt: Timestamp.now()
     }, { merge: true });

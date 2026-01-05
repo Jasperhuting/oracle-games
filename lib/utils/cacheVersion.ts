@@ -1,7 +1,7 @@
 /**
  * Shared cache version management
  * Used by both auctionCache (IndexedDB) and indexedDBCache (rankings)
- * Cache version is stored in Firebase (system/cache document)
+ * Cache version is stored in Firebase (config/cache document)
  */
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -42,7 +42,7 @@ export async function getCacheVersionAsync(): Promise<number> {
         return 1;
       }
 
-      const cacheDocRef = doc(db, 'system', 'cache');
+      const cacheDocRef = doc(db, 'config', 'cache');
       const cacheDoc = await getDoc(cacheDocRef);
 
       if (cacheDoc.exists()) {
