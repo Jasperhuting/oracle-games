@@ -208,7 +208,8 @@ export const AuctionFilters = ({
                     </div>
                 </span>
             )}
-             {!game.bidding ? (
+             {game.gameType !== 'marginal-gains' ? 
+             !game.bidding ? (
             <span>
                   <Button  onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
                     <span className={`flex flex-row gap-2 items-center whitespace-nowrap`}>
@@ -226,7 +227,7 @@ export const AuctionFilters = ({
                   offText={t('global.hide')}
                 />
                 </div>
-                </>}
+                </> : <></>}
             <Divider />
             <div className="flex flex-row flex-1 gap-2 justify-start">
                 <span className="flex flex-col flex-1 justify-center">
