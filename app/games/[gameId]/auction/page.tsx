@@ -206,8 +206,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       if (cachedData && rankingsRiders.length > 0) {
 
         // Set state from cache
-        setGame(cachedData.gameData.game);
-        setParticipant(cachedData.participantData.participants?.[0] || null);
+        setGame(cachedData.gameData);
+        const firstParticipant = cachedData.participantData.participants?.[0];
+        setParticipant(firstParticipant?.id ? firstParticipant as ParticipantData : null);
 
         const userBids = cachedData.allBidsData.filter((b: Bid) => b.userId === user.uid);
         const filteredUserBids = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
@@ -216,8 +217,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
         // Use riders from RankingsContext instead of cache
         let riders = rankingsRiders;
-        if (cachedData.gameData.game.eligibleRiders && cachedData.gameData.game.eligibleRiders.length > 0) {
-          const eligibleSet = new Set(cachedData.gameData.game.eligibleRiders);
+        if (cachedData.gameData.eligibleRiders && cachedData.gameData.eligibleRiders.length > 0) {
+          const eligibleSet = new Set(cachedData.gameData.eligibleRiders);
           riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
         }
 
@@ -234,7 +235,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         }
 
         // Enhance riders with bid information
-        const maxMinBid = cachedData.gameData.game?.config?.maxMinimumBid;
+        const maxMinBid = cachedData.gameData?.config?.maxMinimumBid;
         const ridersWithBids = riders.map((rider: Rider) => {
           const riderNameId = rider.nameID || rider.id || '';
           const myBid = userBids.find((b: Bid) =>
@@ -243,7 +244,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
           const soldData = soldRidersMap.get(riderNameId);
           // Only mark riders as sold for bidding game types, not for selection games
-          const isBiddingGame = cachedData.gameData.game.gameType === 'auction' || cachedData.gameData.game.gameType === 'auctioneer';
+          const isBiddingGame = cachedData.gameData.gameType === 'auctioneer';
           const isSold = isBiddingGame && !!soldData;
           const soldTo = soldData?.ownerName;
           const pricePaid = soldData?.pricePaid;
@@ -406,7 +407,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         // Check if rider is already sold
         const soldData = soldRidersMap.get(riderNameId);
         // Only mark riders as sold for bidding game types, not for selection games
-        const isBiddingGame = gameData?.game?.gameType === 'auction' || gameData?.game?.gameType === 'auctioneer';
+        const isBiddingGame = gameData?.game?.gameType === 'auctioneer';
         const isSold = isBiddingGame && !!soldData;
         const soldTo = soldData?.ownerName;
         const pricePaid = soldData?.pricePaid;
@@ -461,7 +462,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       // Cache the loaded data (riders are already cached by RankingsContext)
       await setCachedAuctionData(
         gameId,
-        gameData,
+        gameData.game,
         participantData,
         allBidsData,
         playerTeamsData

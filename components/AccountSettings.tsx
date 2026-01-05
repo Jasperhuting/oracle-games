@@ -7,6 +7,7 @@ import { PasskeySetup } from "./PasskeySetup";
 import { RiderScriptsSection } from "./RiderScriptsSection";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import DatePicker from "react-datepicker";
+import { useRankings } from "@/contexts/RankingsContext";
 import "react-datepicker/dist/react-datepicker.css";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
@@ -41,7 +42,7 @@ export const AccountSettings = ({ userId, email, displayName }: AccountSettingsP
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const dateOfBirth = userData.dateOfBirth;
+  const dateOfBirth = userData?.dateOfBirth;
   const today = new Date();
 
   const isBirthdayToday = dateOfBirth && new Date(dateOfBirth).getMonth() === today.getMonth() && new Date(dateOfBirth).getDate() === today.getDate();
