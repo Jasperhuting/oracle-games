@@ -40,12 +40,21 @@ export async function enrichTeams({ year, team }: { year: number, team: string }
             const riderName = $(el).find('div a').attr('href')?.split('/')[1] || '';
             const riderHref = $(el).find('div a').attr('href') || '';
 
-            const riderAge = $('.riderlistcont .teamlist li').find(`a[href="${riderHref}"]`).closest('li').find('div.w10').last().text().trim();
+            const riderAgeText = $('.riderlistcont .teamlist li').find(`a[href="${riderHref}"]`).closest('li').find('div.w10').last().text().trim();
+
+            // Calculate date of birth from age (e.g., "35" -> birth date)
+            let birthDate = '';
+            const ageNum = parseInt(riderAgeText, 10);
+            if (!isNaN(ageNum) && ageNum > 0 && ageNum < 100) {
+                const dob = new Date();
+                dob.setFullYear(dob.getFullYear() - ageNum);
+                birthDate = dob.toISOString().split('T')[0];
+            }
 
             const rider: EnrichedRider = {
                 name: riderName,
                 jerseyImage: $(el).find('img').attr('src') || '',
-                age: Number(riderAge),
+                age: birthDate,
             };
             riders.push(rider);
         });

@@ -59,17 +59,26 @@ export async function enrichTeamsPuppeteer({ year, team }: { year: number, team:
                 }
                 
                 // Get age from the .w10 div in the same li (new structure)
-                let riderAge = $(el).find('div.w10').last().text().trim();
+                let riderAgeText = $(el).find('div.w10').last().text().trim();
                 
                 // Fallback: try to find age from the age table
-                if (!riderAge) {
-                    riderAge = $('.riderlistcont .teamlist li').find(`a[href="${riderHref}"]`).closest('li').find('div.w10').last().text().trim();
+                if (!riderAgeText) {
+                    riderAgeText = $('.riderlistcont .teamlist li').find(`a[href="${riderHref}"]`).closest('li').find('div.w10').last().text().trim();
+                }
+
+                // Calculate date of birth from age (e.g., "35" -> birth date)
+                let birthDate = '';
+                const ageNum = parseInt(riderAgeText, 10);
+                if (!isNaN(ageNum) && ageNum > 0 && ageNum < 100) {
+                    const dob = new Date();
+                    dob.setFullYear(dob.getFullYear() - ageNum);
+                    birthDate = dob.toISOString().split('T')[0];
                 }
 
                 const rider: EnrichedRider = {
                     name: riderName,
                     jerseyImage: '', // Jersey images no longer available in new structure
-                    age: riderAge, // Keep as string - should be date of birth
+                    age: birthDate, // Store as birth date in YYYY-MM-DD format
                 };
                 if (riderName) {
                     riders.push(rider);

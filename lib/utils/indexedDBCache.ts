@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'OracleGamesCache';
-const DB_VERSION = 4; // Bumped to 4 to force cache clear after rider enrichment (Jan 2026)
+const DB_VERSION = 5; // Bumped to 5 to force cache clear after config/cache migration (Jan 2026)
 const STORE_NAME = 'rankings';
 
 interface CacheEntry<T> {
@@ -37,7 +37,7 @@ function openDatabase(): Promise<IDBDatabase> {
 
       // Clear all data when upgrading to version 4 (force fresh data after rider enrichment)
       // We do this by deleting and recreating the stores
-      if (oldVersion > 0 && oldVersion < 4) {
+      if (oldVersion > 0 && oldVersion < 5) {
         console.log('[IndexedDB] Clearing all cached data due to major update');
         if (db.objectStoreNames.contains(STORE_NAME)) {
           db.deleteObjectStore(STORE_NAME);

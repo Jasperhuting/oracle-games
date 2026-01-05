@@ -80,7 +80,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
 
     // Add HTTP caching headers
     // Cache for 1 hour in the browser, revalidate in background (stale-while-revalidate)
-    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    // Note: For development, you may want to disable caching
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
 
     return response;
   } catch (error) {
