@@ -7,10 +7,10 @@ export interface GetRidersOptions {
   offset: number;
 }
 
-interface rankedRiderWithoutPoints extends Omit<RankedRider, 'points' | 'rank'> {}
+type RankedRiderWithoutPoints = Omit<RankedRider, 'points' | 'rank'>;
 
 interface RankedRidersResultWithoutPoints extends Omit<RankedRidersResult, 'riders' | 'rank'> {
-  riders: rankedRiderWithoutPoints[];
+  riders: RankedRiderWithoutPoints[];
 }
 
 export async function getRidersRankedPuppeteerNewYear({ offset }: GetRidersOptions): Promise<RankedRidersResultWithoutPoints> {
@@ -96,14 +96,14 @@ export async function getRidersRankedPuppeteerNewYear({ offset }: GetRidersOptio
       };
     };
 
-    const riders: rankedRiderWithoutPoints[] = [];
+    const riders: RankedRiderWithoutPoints[] = [];
 
     $('.basic > tbody > tr').each((_, el) => {
       const nameID = $(el).find('td:nth-child(5) > a').attr('href')?.split('/')[1] || '';
 
-      let teamName = $(el).find('td:nth-child(6) > a').attr('href')?.split('/')[1] || '';
+      const teamName = $(el).find('td:nth-child(6) > a').attr('href')?.split('/')[1] || '';
 
-      const rider: rankedRiderWithoutPoints = {
+      const rider: RankedRiderWithoutPoints = {
         team: teamName,
         name: getName(el).fullName,
         nameID: nameID,

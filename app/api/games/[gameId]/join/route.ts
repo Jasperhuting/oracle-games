@@ -163,11 +163,13 @@ export async function POST(
     console.log(`[JOIN_GAME] Game ${gameId} has space: ${currentPlayerCount}/${maxPlayers || 'unlimited'} players`);
 
     // Create participant
-    const now = new Date();
+    const now = Timestamp.now();
 
-    // For multi-division games, create a temporary participant entry
-    // The admin will later assign them to a specific division
-    const participant: GameParticipant = {
+    // Build participant object - compute multi-division fields upfront
+    const gameName = gameData?.name || '';
+    const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+    
+    const participant = {
       gameId: isMultiDivision ? `${gameId}-pending` : gameId, // Use temporary gameId for multi-division
       userId,
       playername: userData?.playername || userData?.email,
@@ -182,20 +184,16 @@ export async function POST(
       ranking: 0,
       leagueIds: [],
       divisionAssigned: !isMultiDivision, // false for multi-division, true for single
+      // Multi-division fields (only set if isMultiDivision)
+      ...(isMultiDivision ? {
+        pendingGameBaseName: baseName,
+        pendingGameType: gameData?.gameType,
+        pendingGameYear: gameData?.year,
+        pendingGameId: gameId,
+      } : {
+        assignedDivision: gameData?.division || 'Main',
+      }),
     };
-
-    // Store metadata for multi-division games
-    if (isMultiDivision) {
-      // Store the base game information for admin assignment
-      const gameName = gameData?.name || '';
-      const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
-      participant.pendingGameBaseName = baseName;
-      participant.pendingGameType = gameData?.gameType;
-      participant.pendingGameYear = gameData?.year;
-      participant.pendingGameId = gameId; // Store which division they tried to join (for reference)
-    } else {
-      participant.assignedDivision = gameData?.division || 'Main';
-    }
 
     const participantRef = await db.collection('gameParticipants').add(participant);
 
@@ -229,7 +227,7 @@ export async function POST(
       participant: {
         id: participantRef.id,
         ...participant,
-        joinedAt: (participant.joinedAt as Date).toISOString(),
+        joinedAt: participant.joinedAt.toDate().toISOString(),
       } as ClientGameParticipant,
     });
   } catch (error) {

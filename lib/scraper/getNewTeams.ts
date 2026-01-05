@@ -36,7 +36,7 @@ export async function getNewTeams() {
         const teamsList = $('.mt20 ul.list');
         console.log(`Found ${teamsList.length} team list containers`);
 
-        let teams: Team[] = [];
+        const teams: Team[] = [];
 
         // Iterate over each ul.list container
         teamsList.each((_, ul) => {

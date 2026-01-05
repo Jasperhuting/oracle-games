@@ -1,7 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-export const initI18n = async (locale: string, resources: any = {}) => {
+export const initI18n = async (locale: string, resources: Record<string, string> = {}) => {
   await i18n.use(initReactI18next).init({
     lng: locale,
     fallbackLng: 'en',
@@ -31,7 +31,7 @@ export const initI18n = async (locale: string, resources: any = {}) => {
 };
 
 // Helper function for pluralization
-export const pluralize = (key: string, count: number, variables: Record<string, any> = {}) => {
+export const pluralize = (key: string, count: number, variables: Record<string, unknown> = {}) => {
   return i18n.t(key, {
     ...variables,
     count,

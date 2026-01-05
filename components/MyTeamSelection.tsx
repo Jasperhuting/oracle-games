@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MyTeamSelectionRow } from "./MyTeamSelectionRow";
 import { ChevronDown, ChevronUp } from "tabler-icons-react";
-import { GameData } from "@/app/games/[gameId]/auction/page";
+import { AuctionGameData as GameData } from "@/lib/types/pages";
 
 // TODO: replace any with real type
 export const MyTeamSelection = (

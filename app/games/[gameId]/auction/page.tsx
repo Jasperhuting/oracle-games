@@ -1173,7 +1173,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
                 <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} ageRange={ageRange} setAgeRange={setAgeRange} minRiderAge={minRiderAge} maxRiderAge={maxRiderAge} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} />
                 <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
-                {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' || <MyAuctionBids game={game} isMarginalGains={game.gameType === 'marginal-gains'} availableRiders={availableRiders} myBids={myAuctionBids} />}
+                {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' && (
+                  <MyAuctionBids game={game} availableRiders={availableRiders} myBids={myAuctionBids} />
+                )}
                 {game.gameType !== 'worldtour-manager' && game.gameType !== 'marginal-gains' && <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
                   ...period,
                   startDate: typeof period.startDate === 'string' ? period.startDate : period.startDate.toDate().toISOString(),

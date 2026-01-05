@@ -141,15 +141,15 @@ export async function getJobs(filters?: {
   let query = db.collection(JOBS_COLLECTION).orderBy('createdAt', 'desc');
 
   if (filters?.type) {
-    query = query.where('type', '==', filters.type) as any;
+    query = query.where('type', '==', filters.type);
   }
 
   if (filters?.status) {
-    query = query.where('status', '==', filters.status) as any;
+    query = query.where('status', '==', filters.status);
   }
 
   if (filters?.limit) {
-    query = query.limit(filters.limit) as any;
+    query = query.limit(filters.limit);
   }
 
   const snapshot = await query.get();

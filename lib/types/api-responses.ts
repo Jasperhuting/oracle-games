@@ -296,7 +296,7 @@ export interface UpdateGameRequest {
   eligibleTeams?: string[];
   eligibleRiders?: string[];
   config?: Partial<GameConfig>;
-  [key: string]: any; // Allow other fields
+  [key: string]: unknown; // Allow other fields
 }
 
 export interface UpdateGameResponse {

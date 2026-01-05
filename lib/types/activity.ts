@@ -14,7 +14,7 @@ export interface ActivityLog {
   targetUserName?: string;
   gameId?: string;
   gameName?: string;
-  details?: Record<string, any> & {
+  details?: Record<string, unknown> & {
     environment?: string;
     branch?: string;
     commit?: string;

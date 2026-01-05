@@ -4,7 +4,7 @@
  */
 
 import { Rider } from './rider';
-import { GameType, RaceType, GameStatus } from './games';
+import { GameType, RaceType, GameStatus, AuctionPeriod } from './games';
 
 // Rider Points Page
 export interface StagePoint {
@@ -100,7 +100,7 @@ export interface FinalizePlayerTeam {
   riderName: string;
   riderTeam?: string;
   pricePaid: number;
-  acquiredAt: any;
+  acquiredAt: Date;
   acquisitionType: string;
 }
 
@@ -141,12 +141,12 @@ export interface AuctionGameData {
   division?: string;
   raceType: RaceType;
   createdBy: string;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Date;
+  updatedAt: Date;
   playerCount: number;
   teamSelectionDeadline?: string; 
   eligibleTeams: string[];
-  config: Record<string, any> & {
+  config: Record<string, unknown> & {
     budget?: number;
     maxRiders?: number;
     minRiders?: number;
@@ -157,7 +157,7 @@ export interface AuctionGameData {
     minNeoPros?: number;
     maxNeoProPoints?: number;
     maxNeoProAge?: number;
-    auctionPeriods?: Array<any>;
+    auctionPeriods?: AuctionPeriod[];
   };
   eligibleRiders: string[];
   bidding: boolean;
@@ -199,7 +199,7 @@ export interface AuctionTeamsRider {
   pricePaid: number;
   percentageDiff: number;
   pointsScored: number;
-  acquiredAt: any;
+  acquiredAt: Date;
   acquisitionType: string;
 }
 

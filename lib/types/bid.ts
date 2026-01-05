@@ -3,14 +3,12 @@
  * Types for bidding, auctions, and bid backup functionality
  */
 
+import { AuctionPeriod } from "./games";
+
 export interface BidBackupToolProps {
   gameId: string;
   adminUserId: string;
-  auctionPeriods: Array<{
-    name: string;
-    startDate: any;
-    endDate: any;
-  }>;
+  auctionPeriods: AuctionPeriod[];
 }
 
 export interface BidBackupGame {
@@ -21,10 +19,6 @@ export interface BidBackupGame {
   status?: string;
   division?: string;
   config: {
-    auctionPeriods?: Array<{
-      name: string;
-      startDate: any;
-      endDate: any;
-    }>;
+    auctionPeriods?: AuctionPeriod[];
   };
 }

@@ -152,7 +152,7 @@ export const BiddingListView = ({
             
               <div key={myBidRider.id} className="bg-white px-2">
                 <div className="flex flex-row w-full py-1">
-                  <span className="basis-[90px] flex items-center">{rider.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.effectiveMinBid || rider.points)}</span>
+                  <span className="basis-[90px] flex items-center">{rider.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.effectiveMinBid || rider.points || 1)}</span>
                   <span className="basis-[90px] flex items-center">{rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}</span>
                   <span className="flex-1 flex items-center">{rider.name}</span>
                   <span className="basis-[300px] flex items-center">{rider.team?.name || t('global.unknown')}</span>

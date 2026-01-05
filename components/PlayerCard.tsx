@@ -5,7 +5,7 @@ import { formatCurrency, formatCurrencyWhole } from "@/lib/utils/formatCurrency"
 import { ReactNode } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { ParticipantData } from "@/lib/types";
+import { ParticipantData, AuctionParticipantData } from "@/lib/types";
 
 // TODO: replace any with real type
 
@@ -39,7 +39,7 @@ export const PlayerCard = (
         isNeoProf?: boolean,
         showNeoProfBadge?: boolean,
         myTeam?: boolean,
-        participant?: ParticipantData | null,
+        participant?: ParticipantData | AuctionParticipantData | null,
         showPointsInsteadOfPrice?: boolean,
         showRank?: boolean,
     }) => {

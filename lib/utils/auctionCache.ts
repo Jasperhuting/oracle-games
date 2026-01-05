@@ -3,6 +3,7 @@
  * Caches game, bids, and participants data (NOT riders - that's handled by RankingsContext)
  */
 
+import { Bid, Game, GameParticipant, PlayerTeam } from '../types';
 import { getCacheVersionAsync, incrementCacheVersion } from './cacheVersion';
 
 const DB_NAME = 'OracleGamesCache';
@@ -10,10 +11,10 @@ const DB_VERSION = 5; // Bumped to 5 to force cache clear after config/cache mig
 const STORE_NAME = 'auction';
 
 interface CachedAuctionData {
-  gameData: any;
-  participantData: any;
-  allBidsData: any[];
-  playerTeamsData: any;
+  gameData: Game;
+  participantData: GameParticipant[];
+  allBidsData: Bid[];
+  playerTeamsData: PlayerTeam[];
   timestamp: number;
 }
 
@@ -132,10 +133,10 @@ export async function getCachedAuctionData(gameId: string): Promise<CachedAuctio
  */
 export async function setCachedAuctionData(
   gameId: string,
-  gameData: any,
-  participantData: any,
-  allBidsData: any[],
-  playerTeamsData: any
+  gameData: Game,
+  participantData: GameParticipant[],
+  allBidsData: Bid[],
+  playerTeamsData: PlayerTeam[]
 ): Promise<void> {
   if (typeof window === 'undefined') return;
 

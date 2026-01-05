@@ -1,4 +1,4 @@
-import { GameData, ParticipantData, RiderWithBid } from "@/app/games/[gameId]/auction/page"
+import { AuctionGameData as GameData, AuctionParticipantData as ParticipantData, RiderWithBid } from "@/lib/types/pages"
 import { Bid } from "@/lib/types";
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { User } from "firebase/auth"
@@ -333,7 +333,6 @@ export const MyAuctionBidsBig = ({
                                         bidders={riderBidders}
                                         bid={myBidRider.amount || 0}
                                         player={rider}
-                                        participant={participant}
                                         myTeam={true}
                                         onClick={() => { }}
                                         selected={false}

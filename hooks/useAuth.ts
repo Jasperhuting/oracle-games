@@ -5,7 +5,7 @@ import { ImpersonationStatus } from '@/lib/types/hooks';
 
 // Global state to share impersonation status across all useAuth instances
 let globalImpersonationStatus: ImpersonationStatus = { isImpersonating: false };
-let globalImpersonationListeners: Set<(status: ImpersonationStatus) => void> = new Set();
+const globalImpersonationListeners: Set<(status: ImpersonationStatus) => void> = new Set();
 let isCheckingImpersonation = false;
 
 export function useAuth() {

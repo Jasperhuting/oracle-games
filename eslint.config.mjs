@@ -21,6 +21,8 @@ const eslintConfig = [
       "functions/lib/**",
       "firebase-export-*/**",
       "next-env.d.ts",
+      "tests/**",
+      "scripts/**"
     ],
   },
 ];

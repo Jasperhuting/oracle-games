@@ -1,5 +1,5 @@
 import { getServerFirebase } from '@/lib/firebase/server';
-import { AuctioneerConfig, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
+import { AuctioneerConfig, AuctionPeriod, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export interface FinalizeAuctionOptions {
@@ -67,7 +67,7 @@ export async function finalizeAuction(
 
     if (auctionPeriods && auctionPeriods.length > 0 && auctionPeriodName) {
       // Validate that the period exists
-      const periodExists = auctionPeriods.some((p: any) => p.name === auctionPeriodName);
+      const periodExists = auctionPeriods.some((p: AuctionPeriod) => p.name === auctionPeriodName);
       if (!periodExists) {
         return {
           success: false,
@@ -76,7 +76,7 @@ export async function finalizeAuction(
       }
 
       // Get the period dates to filter bids
-      const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
+      const period = auctionPeriods.find((p: AuctionPeriod) => p.name === auctionPeriodName);
       const periodStartDate = period?.startDate?.toDate?.() || period?.startDate;
       const periodEndDate = period?.endDate?.toDate?.() || period?.endDate;
 
@@ -92,12 +92,12 @@ export async function finalizeAuction(
     console.log(`[FINALIZE] Found ${allBidsForGameSnapshot.size} total bids for game`);
 
     // Helper to convert Firestore timestamp to ISO string
-    const toISOString = (value: any): string | null => {
+    const toISOString = (value: Timestamp | Date | string | { _seconds: number } | null | undefined): string | null => {
       if (!value) return null;
       if (typeof value === 'string') return value;
       if (value instanceof Date) return value.toISOString();
-      if (typeof value.toDate === 'function') return value.toDate().toISOString();
-      if (value._seconds) return new Date(value._seconds * 1000).toISOString();
+      if (value instanceof Timestamp) return value.toDate().toISOString();
+      if ('_seconds' in value) return new Date(value._seconds * 1000).toISOString();
       return null;
     };
 
@@ -114,7 +114,7 @@ export async function finalizeAuction(
 
       // Filter by auction period if specified
       if (auctionPeriodName && auctionPeriods && auctionPeriods.length > 0) {
-        const period = auctionPeriods.find((p: any) => p.name === auctionPeriodName);
+        const period = auctionPeriods.find((p: AuctionPeriod) => p.name === auctionPeriodName);
         // Convert Firestore Timestamps to ISO strings for comparison
         const periodStartDate = toISOString(period?.startDate);
         const periodEndDate = toISOString(period?.endDate);
@@ -155,7 +155,7 @@ export async function finalizeAuction(
 
       // Still update the period status and game, but with 0 winners
       // This is a valid scenario - the period ended without any bids
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status: 'active',
         finalizedAt: Timestamp.now(),
       };
@@ -169,7 +169,7 @@ export async function finalizeAuction(
 
         console.log(`[FINALIZE] Current periods count: ${latestAuctionPeriods.length}`);
 
-        const updatedPeriods = latestAuctionPeriods.map((p: any) => {
+        const updatedPeriods = latestAuctionPeriods.map((p: AuctionPeriod) => {
           if (p.name === auctionPeriodName) {
             console.log(`[FINALIZE] Marking period "${auctionPeriodName}" as finalized (0 bids)`);
             return { ...p, status: 'finalized' };
@@ -187,8 +187,8 @@ export async function finalizeAuction(
         }
 
         // CRITICAL SAFETY CHECK: Ensure period names match
-        const originalNames = new Set(latestAuctionPeriods.map((p: any) => p.name));
-        const updatedNames = new Set(updatedPeriods.map((p: any) => p.name));
+        const originalNames = new Set(latestAuctionPeriods.map((p: AuctionPeriod) => p.name));
+        const updatedNames = new Set(updatedPeriods.map((p: AuctionPeriod) => p.name));
         const missingPeriods = [...originalNames].filter(name => !updatedNames.has(name));
 
         if (missingPeriods.length > 0) {
@@ -200,7 +200,7 @@ export async function finalizeAuction(
         updateData['config.auctionPeriods'] = updatedPeriods;
 
         // Check if all periods are finalized
-        const allPeriodsFinalized = updatedPeriods.every((p: any) => p.status === 'finalized');
+        const allPeriodsFinalized = updatedPeriods.every((p: AuctionPeriod) => p.status === 'finalized');
         if (allPeriodsFinalized) {
           updateData['config.auctionStatus'] = 'finalized';
           console.log(`[FINALIZE] All auction periods finalized, marking game auction as finalized`);
@@ -248,8 +248,8 @@ export async function finalizeAuction(
       riderNameId: string;
       userId: string;
       amount: number;
-      bidAt: any;
-      [key: string]: any;
+      bidAt: Timestamp;
+      [key: string]: unknown;
     }
     const bidsByRider = new Map<string, BidWithId[]>();
 
@@ -298,8 +298,8 @@ export async function finalizeAuction(
             return b.amount - a.amount; // Higher bid wins
           }
           // If amounts are equal, earlier bid wins
-          const timeA = new Date(a.bidAt);
-          const timeB = new Date(b.bidAt);
+          const timeA = a.bidAt.toDate();
+          const timeB = b.bidAt.toDate();
           return timeA.getTime() - timeB.getTime();
         });
 
@@ -460,7 +460,7 @@ export async function finalizeAuction(
     console.log('[FINALIZE] All participants updated successfully');
 
     // Update game status and period status
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: 'active',
       finalizedAt: Timestamp.now(),
     };
@@ -474,7 +474,7 @@ export async function finalizeAuction(
 
       console.log(`[FINALIZE] Current periods count: ${latestAuctionPeriods.length}`);
 
-      const updatedPeriods = latestAuctionPeriods.map((p: any) => {
+      const updatedPeriods = latestAuctionPeriods.map((p: AuctionPeriod) => {
         if (p.name === auctionPeriodName) {
           console.log(`[FINALIZE] Marking period "${auctionPeriodName}" as finalized`);
           return { ...p, status: 'finalized' };
@@ -492,8 +492,8 @@ export async function finalizeAuction(
       }
 
       // CRITICAL SAFETY CHECK: Ensure period names match
-      const originalNames = new Set(latestAuctionPeriods.map((p: any) => p.name));
-      const updatedNames = new Set(updatedPeriods.map((p: any) => p.name));
+      const originalNames = new Set(latestAuctionPeriods.map((p: AuctionPeriod) => p.name));
+      const updatedNames = new Set(updatedPeriods.map((p: AuctionPeriod) => p.name));
       const missingPeriods = [...originalNames].filter(name => !updatedNames.has(name));
 
       if (missingPeriods.length > 0) {
@@ -505,7 +505,7 @@ export async function finalizeAuction(
       updateData['config.auctionPeriods'] = updatedPeriods;
 
       // Check if all periods are finalized
-      const allPeriodsFinalized = updatedPeriods.every((p: any) => p.status === 'finalized');
+      const allPeriodsFinalized = updatedPeriods.every((p: AuctionPeriod) => p.status === 'finalized');
       if (allPeriodsFinalized) {
         updateData['config.auctionStatus'] = 'finalized';
         console.log(`[FINALIZE] All auction periods finalized, marking game auction as finalized`);

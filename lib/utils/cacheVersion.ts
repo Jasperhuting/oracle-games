@@ -64,9 +64,10 @@ export async function getCacheVersionAsync(): Promise<number> {
       cachedVersion = 1;
       lastFetchTime = Date.now();
       return 1;
-    } catch (error: any) {
+    } catch (error) {
       // Silently handle permission errors for unauthenticated users
-      if (error?.code === 'permission-denied') {
+      const errorCode = (error as { code?: string })?.code;
+      if (errorCode === 'permission-denied') {
         console.log('[CacheVersion] Permission denied (user not authenticated), using default version 1');
       } else {
         console.error('[CacheVersion] Error fetching cache version from Firebase:', error);

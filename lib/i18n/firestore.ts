@@ -1,7 +1,7 @@
 import { doc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from "../firebase/client";
 
-export const listenTranslations = (locale: string, callback: (data: any) => void) => {
+export const listenTranslations = (locale: string, callback: (data: Record<string, string>) => void) => {
   console.log(`Setting up Firestore listener for locale: ${locale}`);
   const ref = doc(db, "translations", locale);
 

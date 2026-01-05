@@ -32,7 +32,7 @@ export interface ScraperJob {
 export interface ScrapeResult {
   success: boolean;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface CommandButtonProps {
