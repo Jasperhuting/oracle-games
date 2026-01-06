@@ -306,6 +306,10 @@ export const JoinableGamesTab = () => {
   const canLeave = (game: JoinableGame) => {
     if (!myGames.has(game.id)) return false;
     // Can only leave if game hasn't started
+    // For worldtour-manager and marginal-gains, also allow leaving during 'bidding' status
+    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {
+      return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding';
+    }
     return game.status === 'registration' || game.status === 'draft';
   };
 

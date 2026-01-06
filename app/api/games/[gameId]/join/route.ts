@@ -304,7 +304,13 @@ export async function DELETE(
     const gameData = gameDoc.data();
 
     // Check if game allows leaving (e.g., not started yet)
-    if (gameData?.status === 'active' || gameData?.status === 'completed') {
+    // For worldtour-manager and marginal-gains, also allow leaving during 'bidding' status
+    const canLeaveDuringBidding = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains';
+    const blockedStatuses = canLeaveDuringBidding
+      ? ['active', 'completed', 'finished']
+      : ['active', 'completed', 'finished', 'bidding'];
+
+    if (blockedStatuses.includes(gameData?.status)) {
       return NextResponse.json(
         { error: 'Cannot leave a game that has already started or completed' },
         { status: 400 }
