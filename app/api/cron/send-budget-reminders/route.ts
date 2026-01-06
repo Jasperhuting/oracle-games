@@ -3,6 +3,7 @@ import { adminDb as db } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Resend } from 'resend';
 import admin from 'firebase-admin';
+import { getProcessedEmailTemplate } from '@/lib/email/templates';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
@@ -272,22 +273,52 @@ export async function GET(request: NextRequest) {
                         ? `https://${process.env.VERCEL_URL}`
                         : 'https://oracle-games.online';
 
-                      let emailBody = `Hallo ${displayName},\n\nDe veiling "${period.name}" in game "${game.name}" sluit over ongeveer ${hoursUntilClose} uur!\n\n`;
-                      emailBody += `Je hebt momenteel ${riderCount} ${riderCount === 1 ? 'renner' : 'renners'} in je team en nog €${availableBudget.toLocaleString('nl-NL')} (${Math.round(budgetPercentageRemaining)}%) van je budget beschikbaar.\n\n`;
-
+                      // Build bids info string
+                      let bidsInfo: string;
                       if (activeBidsSnapshot.size > 0) {
-                        emailBody += `Je hebt ${activeBidsSnapshot.size} actieve ${activeBidsSnapshot.size === 1 ? 'bieding' : 'biedingen'} staan voor €${committedBudget.toLocaleString('nl-NL')}.\n\n`;
+                        bidsInfo = `Je hebt ${activeBidsSnapshot.size} actieve ${activeBidsSnapshot.size === 1 ? 'bieding' : 'biedingen'} staan voor €${committedBudget.toLocaleString('nl-NL')}.`;
                       } else {
-                        emailBody += `Je hebt momenteel geen actieve biedingen staan.\n\n`;
+                        bidsInfo = `Je hebt momenteel geen actieve biedingen staan.`;
                       }
 
-                      emailBody += `Vergeet niet om je resterende budget te gebruiken voordat de veiling sluit!\n\n`;
-                      emailBody += `Log nu in om te bieden:\n${baseUrl}/games/${gameId}\n\nMet vriendelijke groet,\nHet Oracle Games team`;
+                      // Get user's preferred language (default to 'nl')
+                      const userLocale = userData?.preferredLanguage || 'nl';
+
+                      // Try to get template from database
+                      const emailTemplate = await getProcessedEmailTemplate('budget_reminder', {
+                        displayName,
+                        periodName: period.name,
+                        gameName: game.name,
+                        hoursUntilClose: String(hoursUntilClose),
+                        riderCount: String(riderCount),
+                        riderLabel: riderCount === 1 ? 'renner' : 'renners',
+                        availableBudget: availableBudget.toLocaleString('nl-NL'),
+                        budgetPercentageRemaining: String(Math.round(budgetPercentageRemaining)),
+                        bidsInfo,
+                        baseUrl,
+                        gameId,
+                      }, userLocale);
+
+                      // Fallback to hardcoded template
+                      let emailBody: string;
+                      let emailSubject: string;
+
+                      if (emailTemplate) {
+                        emailSubject = emailTemplate.subject;
+                        emailBody = emailTemplate.body;
+                      } else {
+                        emailSubject = `💰 Je hebt nog veel budget over in "${game.name}"`;
+                        emailBody = `Hallo ${displayName},\n\nDe veiling "${period.name}" in game "${game.name}" sluit over ongeveer ${hoursUntilClose} uur!\n\n`;
+                        emailBody += `Je hebt momenteel ${riderCount} ${riderCount === 1 ? 'renner' : 'renners'} in je team en nog €${availableBudget.toLocaleString('nl-NL')} (${Math.round(budgetPercentageRemaining)}%) van je budget beschikbaar.\n\n`;
+                        emailBody += `${bidsInfo}\n\n`;
+                        emailBody += `Vergeet niet om je resterende budget te gebruiken voordat de veiling sluit!\n\n`;
+                        emailBody += `Log nu in om te bieden:\n${baseUrl}/games/${gameId}\n\nMet vriendelijke groet,\nHet Oracle Games team`;
+                      }
 
                       const result = await resend.emails.send({
                         from: 'Oracle Games <no-reply@send.oracle-games.online>',
                         to: [email],
-                        subject: `💰 Je hebt nog veel budget over in "${game.name}"`,
+                        subject: emailSubject,
                         html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                           <p>${emailBody.replace(/\n/g, '<br>')}</p>
                         </div>`,

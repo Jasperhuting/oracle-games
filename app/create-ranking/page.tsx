@@ -805,10 +805,10 @@ export default function CreateRankingPage() {
             ) : (
               <div>
                 <div className="grid p-2 border-b-2 border-gray-400 font-bold bg-gray-100" style={{ gridTemplateColumns: '60px 1fr 1fr 80px 60px' }}>
-                  <div>Rank</div>
+                  <div>t('global.rank')</div>
                   <div>Name</div>
                   <div>Team</div>
-                  <div>Points</div>
+                  <div>t('global.points')</div>
                   <div>Country</div>
                 </div>
                 <div className="relative overflow-visible">
@@ -921,10 +921,10 @@ export default function CreateRankingPage() {
             ) : (
               <div>
                 <div className="grid p-2 border-b-2 border-gray-400 font-bold bg-gray-100" style={{ gridTemplateColumns: `${viewRank ? '60px' : ''} ${viewClass ? '100px' : ''} 1fr ${viewPoints ? '100px' : ''} ${viewCountry ? '80px' : ''} ${viewImage ? '70px' : ''}` }}>
-                  {viewRank && <div>Rank</div>}
+                  {viewRank && <div>t('global.rank')</div>}
                   {viewClass && <div>Class</div>}
                   <div>Name</div>
-                  {viewPoints && <div>Points</div>}
+                  {viewPoints && <div>t('global.points')</div>}
                   {viewCountry && <div>Country</div>}
                   {viewImage && <div>Image</div>}
                 </div>

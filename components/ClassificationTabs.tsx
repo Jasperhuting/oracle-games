@@ -179,7 +179,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">t('global.points')</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -221,7 +221,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">t('global.points')</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

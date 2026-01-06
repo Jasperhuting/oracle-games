@@ -271,7 +271,7 @@ export const MyAuctionBidsBig = ({
                               return <div key={periodIndex} className="mb-8">
                                 <div className="flex justify-between items-center mb-4">
                                   <div className="flex items-center gap-2">
-                                    <label className="text-sm font-medium">Sorteren op:</label>
+                                    <label className="text-sm font-medium">t('global.sortingBy')</label>
                                     <select
                                       value={sortBy}
                                       onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -283,18 +283,18 @@ export const MyAuctionBidsBig = ({
                                         backgroundSize: '1.5em 1.5em'
                                       }}
                                     >
-                                      <option value="price">Prijs</option>
-                                      <option value="rank">Rank</option>
-                                      <option value="name">Naam</option>
-                                      <option value="age">Leeftijd</option>
-                                      <option value="team">Ploeg</option>
+                                      <option value="price">t('global.price')</option>
+                                      <option value="rank">t('global.rank')</option>
+                                      <option value="name">t('global.name')</option>
+                                      <option value="age">t('global.age')</option>
+                                      <option value="team">t('global.team')</option>
                                       <option value="status">Status</option>
-                                      {game?.gameType === 'worldtour-manager' && <option value="neoprof">Neo-Prof</option>}
+                                      {game?.gameType === 'worldtour-manager' && <option value="neoprof">t('global.neoProf')</option>}
                                     </select>
                                     <button
                                       onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
                                       className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
-                                      title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+                                      title={sortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
                                     >
                                       {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
                                     </button>

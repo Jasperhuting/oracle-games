@@ -97,11 +97,11 @@ export const BiddingListView = ({
 
     <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
       {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-        {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
+        {game?.gameType === 'worldtour-manager' ? t('messages.noRidersSelectedYet') : t('messages.noBidsPlacedYet')}
       </div>}
       {myBids.length > 0 && (
         <div className="mb-3 flex items-center gap-3">
-          <label className="text-sm font-medium">Sorteren op:</label>
+          <label className="text-sm font-medium">t('global.sortingBy')</label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -114,16 +114,16 @@ export const BiddingListView = ({
             }}
           >
             <option value="price">{game?.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
-            <option value="rank">Rank</option>
-            <option value="name">Naam</option>
-            <option value="age">Leeftijd</option>
-            <option value="team">Ploeg</option>
-            {game?.gameType === 'worldtour-manager' && <option value="neoprof">Neo-Prof</option>}
+            <option value="rank">t('global.rank')</option>
+            <option value="name">t('global.name')</option>
+            <option value="age">t('global.age')</option>
+            <option value="team">t('global.team')</option>
+            {game?.gameType === 'worldtour-manager' && <option value="neoprof">t('global.neoProf')</option>}
           </select>
           <button
             onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
             className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
-            title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+            title={sortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
           >
             {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
           </button>

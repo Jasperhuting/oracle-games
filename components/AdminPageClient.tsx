@@ -21,6 +21,7 @@ import { PageEditor } from "@/components/PageEditor";
 import MessagingTab from "@/components/MessagingTab";
 import { DataMigrationsTab } from "@/components/DataMigrationsTab";
 import { TranslationsTab } from "@/components/TranslationsTab";
+import { EmailTemplatesTab } from "@/components/EmailTemplatesTab";
 import { BidBackupTab } from "@/components/BidBackupTab";
 import { FinalizeOverviewTab } from "@/components/FinalizeOverviewTab";
 import { SimulateResultsTab } from "@/components/SimulateResultsTab";
@@ -225,6 +226,11 @@ export default function AdminPageClient() {
                                     id: 'translations',
                                     label: t('admin.tabs.translations'),
                                     content: <TranslationsTab isProgrammer={isProgrammer} />
+                                },
+                                {
+                                    id: 'email-templates',
+                                    label: 'Email Templates',
+                                    content: <EmailTemplatesTab />
                                 }
                             ]
                         },

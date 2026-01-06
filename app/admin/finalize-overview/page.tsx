@@ -179,7 +179,7 @@ export default function FinalizeOverviewPage() {
                               <th className="text-left py-2 px-3">Renner</th>
                               <th className="text-left py-2 px-3">Team</th>
                               <th className="text-left py-2 px-3">Gekocht door</th>
-                              <th className="text-right py-2 px-3">Prijs</th>
+                              <th className="text-right py-2 px-3">t('global.price')</th>
                               <th className="text-left py-2 px-3">Type</th>
                               <th className="text-left py-2 px-3">Datum</th>
                             </tr>

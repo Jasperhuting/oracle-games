@@ -107,3 +107,32 @@ export interface Page {
   slug: string;
   published: boolean;
 }
+
+// Email Templates
+export type EmailTemplateType = 'birthday' | 'message_single' | 'message_multiple' | 'budget_reminder';
+
+export interface EmailTemplateTranslation {
+  subject: string;
+  body: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  type: EmailTemplateType;
+  name: string;
+  description: string;
+  translations: {
+    [locale: string]: EmailTemplateTranslation;
+  };
+  variables: string[];
+  updatedAt?: {
+    toDate?: () => Date;
+    seconds?: number;
+    nanoseconds?: number;
+  };
+  createdAt?: {
+    toDate?: () => Date;
+    seconds?: number;
+    nanoseconds?: number;
+  };
+}

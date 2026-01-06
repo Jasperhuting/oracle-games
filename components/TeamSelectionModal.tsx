@@ -286,10 +286,10 @@ export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelection
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 {/* Header */}
                 <div className="grid grid-cols-12 gap-4 p-3 bg-gray-100 font-semibold text-sm border-b border-gray-200">
-                  <div className="col-span-1">Rank</div>
+                  <div className="col-span-1">t('global.rank')</div>
                   <div className="col-span-4">Name</div>
                   <div className="col-span-3">Team</div>
-                  <div className="col-span-2">Points</div>
+                  <div className="col-span-2">t('global.points')</div>
                   <div className="col-span-1">Country</div>
                   <div className="col-span-1"></div>
                 </div>

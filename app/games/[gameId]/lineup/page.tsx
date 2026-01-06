@@ -390,10 +390,10 @@ Riders removed: ${result.ridersRemoved}`,
                 <div className="border border-gray-200 rounded-md overflow-hidden">
                   {/* Header */}
                   <div className="grid grid-cols-12 gap-4 p-3 bg-gray-100 font-semibold text-sm border-b border-gray-200">
-                    <div className="col-span-1">Rank</div>
+                    <div className="col-span-1">t('global.rank')</div>
                     <div className="col-span-4">Name</div>
                     <div className="col-span-3">Team</div>
-                    <div className="col-span-2">Points</div>
+                    <div className="col-span-2">t('global.points')</div>
                     <div className="col-span-1">Country</div>
                     <div className="col-span-1"></div>
                   </div>
@@ -464,10 +464,10 @@ Riders removed: ${result.ridersRemoved}`,
                 <div className="border border-gray-200 rounded-md overflow-hidden">
                   {/* Header */}
                   <div className="grid grid-cols-13 gap-4 p-3 bg-gray-100 font-semibold text-sm border-b border-gray-200">
-                    <div className="col-span-1">Rank</div>
+                    <div className="col-span-1">t('global.rank')</div>
                     <div className="col-span-5">Name</div>
                     <div className="col-span-2">Class</div>
-                    <div className="col-span-2">Points</div>
+                    <div className="col-span-2">t('global.points')</div>
                     <div className="col-span-1">Jersey</div>
                     <div className="col-span-1"></div>
                   </div>
@@ -526,7 +526,7 @@ Riders removed: ${result.ridersRemoved}`,
             disabled={saving}
             className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium"
           >
-            <span className="flex items-center gap-1"><ArrowUp size={16} /> Scroll to top</span>
+            <span className="flex items-center gap-1"><ArrowUp size={16} /> t('global.scrollToTop')</span>
           </Button>
         </div>
       </div>

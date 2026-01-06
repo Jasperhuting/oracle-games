@@ -3,6 +3,7 @@ import { adminDb as db } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Resend } from 'resend';
 import admin from 'firebase-admin';
+import { getProcessedEmailTemplate } from '@/lib/email/templates';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
@@ -137,33 +138,49 @@ export async function GET(request: NextRequest) {
 
         console.log(`[CRON] Preparing to send email to ${email} (${messageCount} message(s))`);
         console.log(`[CRON] Email notifications enabled: ${emailNotificationsEnabled}`);
-        const subject =
-          messageCount === 1
-            ? `Nieuw bericht: ${firstMessage?.subject || 'Geen onderwerp'}`
-            : `Je hebt ${messageCount} nieuwe berichten`;
 
         const displayName = userData?.displayName || userData?.playername || 'daar';
-        let messageBody = `Hallo ${displayName},\n\n`;
-
-        if (messageCount === 1 && firstMessage) {
-          messageBody += `Je hebt een nieuw bericht ontvangen van ${firstMessage.senderName || 'onbekend'}.\n\n`;
-          messageBody += `Onderwerp: ${firstMessage.subject || 'Geen onderwerp'}\n\n`;
-          messageBody += `Bericht:\n${firstMessage.message || ''}\n\n`;
-        } else {
-          messageBody += `Je hebt ${messageCount} nieuwe berichten ontvangen:\n\n`;
-          messages.forEach((msg: any, index: number) => {
-            messageBody += `${index + 1}. Van ${msg.senderName || 'onbekend'}: ${msg.subject || 'Geen onderwerp'}\n`;
-          });
-          messageBody += `\n`;
-        }
-
         const baseUrl = process.env.VERCEL_URL
           ? `https://${process.env.VERCEL_URL}`
           : 'https://oracle-games.online';
 
-        messageBody += `Log in op Oracle Games om je berichten te lezen:\n`;
-        messageBody += `${baseUrl}/inbox\n\n`;
-        messageBody += `Met vriendelijke groet,\nHet Oracle Games team`;
+        // Get user's preferred language (default to 'nl')
+        const userLocale = userData?.preferredLanguage || 'nl';
+
+        let subject: string;
+        let messageBody: string;
+
+        if (messageCount === 1 && firstMessage) {
+          // Try to get template from database
+          const emailTemplate = await getProcessedEmailTemplate('message_single', {
+            displayName,
+            senderName: firstMessage.senderName || 'onbekend',
+            messageSubject: firstMessage.subject || 'Geen onderwerp',
+            messageContent: firstMessage.message || '',
+            baseUrl,
+          }, userLocale);
+
+          // Fallback to hardcoded template
+          subject = emailTemplate?.subject || `Nieuw bericht: ${firstMessage.subject || 'Geen onderwerp'}`;
+          messageBody = emailTemplate?.body || `Hallo ${displayName},\n\nJe hebt een nieuw bericht ontvangen van ${firstMessage.senderName || 'onbekend'}.\n\nOnderwerp: ${firstMessage.subject || 'Geen onderwerp'}\n\nBericht:\n${firstMessage.message || ''}\n\nLog in op Oracle Games om je berichten te lezen:\n${baseUrl}/inbox\n\nMet vriendelijke groet,\nHet Oracle Games team`;
+        } else {
+          // Build message list for multiple messages
+          const messageList = messages
+            .map((msg: any, index: number) => `${index + 1}. Van ${msg.senderName || 'onbekend'}: ${msg.subject || 'Geen onderwerp'}`)
+            .join('\n');
+
+          // Try to get template from database
+          const emailTemplate = await getProcessedEmailTemplate('message_multiple', {
+            displayName,
+            messageCount: String(messageCount),
+            messageList,
+            baseUrl,
+          }, userLocale);
+
+          // Fallback to hardcoded template
+          subject = emailTemplate?.subject || `Je hebt ${messageCount} nieuwe berichten`;
+          messageBody = emailTemplate?.body || `Hallo ${displayName},\n\nJe hebt ${messageCount} nieuwe berichten ontvangen:\n\n${messageList}\n\nLog in op Oracle Games om je berichten te lezen:\n${baseUrl}/inbox\n\nMet vriendelijke groet,\nHet Oracle Games team`;
+        }
 
         // Send email via Resend
         try {

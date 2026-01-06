@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Flag } from '@/components/Flag';
 import { AuctionTeamsRider as Rider, AuctionTeam as Team } from '@/lib/types/pages';
+import { useTranslation } from 'react-i18next';
 
 export default function TeamsOverviewPage() {
   const params = useParams();
@@ -20,6 +21,8 @@ export default function TeamsOverviewPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'players' | 'cycling-teams'>('players');
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     async function checkAdminAndLoadTeams() {
@@ -236,21 +239,21 @@ export default function TeamsOverviewPage() {
                 <button
                   onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
                   className="ml-2 px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                  title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+                  title={sortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
                 >
                   {sortDirection === 'asc' ? (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                       </svg>
-                      Oplopend
+                      {t('global.ascending')}
                     </>
                   ) : (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                       </svg>
-                      Aflopend
+                      {t('global.descending')}
                     </>
                   )}
                 </button>

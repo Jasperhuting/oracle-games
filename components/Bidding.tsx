@@ -255,7 +255,7 @@ export const Bidding = ({
             <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
           </span>
           <span className="flex flex-row gap-2 items-center">
-            <label className="text-sm font-medium">Sorteren op:</label>
+            <label className="text-sm font-medium">t('global.sortingBy')</label>
             <select
               value={ridersSortBy}
               onChange={(e) => setRidersSortBy(e.target.value as SortOption)}
@@ -268,16 +268,16 @@ export const Bidding = ({
               }}
             >
               <option value="price">{game?.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
-              <option value="rank">Rank</option>
-              <option value="name">Naam</option>
-              <option value="age">Leeftijd</option>
-              <option value="team">Ploeg</option>
-              {game?.gameType === 'worldtour-manager' && <option value="neoprof">Neo-Prof</option>}
+              <option value="rank">t('global.rank')</option>
+              <option value="name">t('global.name')</option>
+              <option value="age">t('global.age')</option>
+              <option value="team">t('global.team')</option>
+              {game?.gameType === 'worldtour-manager' && <option value="neoprof">t('global.neoProf')</option>}
             </select>
             <button
               onClick={() => setRidersSortDirection(ridersSortDirection === 'asc' ? 'desc' : 'asc')}
               className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
-              title={ridersSortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+              title={ridersSortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
             >
               {ridersSortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
             </button>

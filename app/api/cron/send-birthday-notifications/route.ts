@@ -3,6 +3,7 @@ import { adminDb as db } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Resend } from 'resend';
 import admin from 'firebase-admin';
+import { getProcessedEmailTemplate } from '@/lib/email/templates';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes
@@ -269,13 +270,25 @@ export async function GET(request: NextRequest) {
 
           const displayName = userData.displayName || userData.playername || 'daar';
 
-          const emailBody = `Beste ${displayName},\n\nVan harte gefeliciteerd met je ${age}e verjaardag! 🎂🎈\n\nHet hele Oracle Games team wenst je een fantastische dag toe vol vreugde en geluk.${riderMessage}\n\nVeel plezier vandaag! 🚴‍♂️\n\nMet de beste wensen,\nHet Oracle Games team`;
+          // Get user's preferred language (default to 'nl')
+          const userLocale = userData.preferredLanguage || 'nl';
+
+          // Get email template from database
+          const emailTemplate = await getProcessedEmailTemplate('birthday', {
+            displayName,
+            age: String(age),
+            riderMessage,
+          }, userLocale);
+
+          // Fallback to hardcoded template if database template not available
+          const emailSubject = emailTemplate?.subject || `🎉 Van harte gefeliciteerd met je ${age}e verjaardag!`;
+          const emailBody = emailTemplate?.body || `Beste ${displayName},\n\nVan harte gefeliciteerd met je ${age}e verjaardag! 🎂🎈\n\nHet hele Oracle Games team wenst je een fantastische dag toe vol vreugde en geluk.${riderMessage}\n\nVeel plezier vandaag! 🚴‍♂️\n\nMet de beste wensen,\nHet Oracle Games team`;
 
           try {
             const result = await resend.emails.send({
               from: 'Oracle Games <no-reply@send.oracle-games.online>',
               to: [email],
-              subject: `🎉 Van harte gefeliciteerd met je ${age}e verjaardag!`,
+              subject: emailSubject,
               html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <p>${emailBody.replace(/\n/g, '<br>')}</p>
               </div>`,

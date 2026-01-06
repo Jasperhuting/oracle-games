@@ -626,7 +626,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     if (isTop200Restricted) {
       const riderRank = (rider as any).rank; // eslint-disable-line @typescript-eslint/no-explicit-any
       if (typeof riderRank !== 'number' || riderRank > 200) {
-        setError('Tijdens deze biedronde kun je alleen bieden op renners uit de top 200.');
+        setError(t('messages.top2000OnlyError'));
         return;
       }
     }
@@ -1048,7 +1048,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold">
-                {(game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') ? 'Team Selection' : 'Auction'} - {game.name}
+                {(game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') ? t('auction.teamSelection') : t('games.auction')} - {game.name}
               </h1>
               <p className="text-gray-600">{game.division}</p>
             </div>
@@ -1092,7 +1092,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 defaultTab="bidding"
                 tabs={[
                   {
-                    id: 'bidding', label: game.bidding ? 'Bidding' : 'Team Selection', content: <Bidding
+                    id: 'bidding', label: game.bidding ? t('auction.bidding') : t('auction.teamSelection'), content: <Bidding
                       auctionClosed={auctionClosed}
                       allBids={allBids}
                       auctionActive={auctionActive}

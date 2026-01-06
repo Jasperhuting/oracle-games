@@ -40,7 +40,7 @@ export const BiddingListViewWorldTour = ({
 
     <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
       {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-        {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
+        {game?.gameType === 'worldtour-manager' ? t('messages.noRidersSelectedYet') : t('messages.noBidsPlacedYet')}
       </div>}
       {myBids.length > 0 && game.gameType !== 'worldtour-manager' && (
         <div className="flex flex-row w-full p-2">

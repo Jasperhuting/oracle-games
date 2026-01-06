@@ -209,11 +209,11 @@ export const BiddingListViewWorldTourSmall = ({
 
     <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
       {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-        {game?.gameType === 'worldtour-manager' ? 'No riders selected yet.' : 'No bids placed yet.'}
+        {game?.gameType === 'worldtour-manager' ? t('messages.noRidersSelectedYet') : t('messages.noBidsPlacedYet')}
       </div>}
       {myBids.length > 0 && (
         <div className="mb-3 flex items-center gap-3">
-          <label className="text-sm font-medium">Sorteren op:</label>
+          <label className="text-sm font-medium">t('global.sortingBy')</label>
           <select
             value={sortBy}
             onChange={(e) => handleSortByChange(e.target.value as SortOption)}
@@ -226,23 +226,23 @@ export const BiddingListViewWorldTourSmall = ({
             }}
           >
             <option value="price">{game.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
-            <option value="rank">Rank</option>
-            <option value="name">Naam</option>
-            <option value="age">Leeftijd</option>
-            <option value="team">Ploeg</option>
-            <option value="neoprof">Neo-Prof</option>
+            <option value="rank">t('global.rank')</option>
+            <option value="name">t('global.name')</option>
+            <option value="age">t('global.age')</option>
+            <option value="team">t('global.team')</option>
+            <option value="neoprof">t('global.neoProf')</option>
           </select>
           <button
             onClick={handleSortDirectionToggle}
             className="p-1.5 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary bg-white cursor-pointer"
-            title={sortDirection === 'asc' ? 'Oplopend' : 'Aflopend'}
+            title={sortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
           >
             {sortDirection === 'asc' ? <SortAscending size={18} /> : <SortDescending size={18} />}
           </button>
 
           <div className="border-l border-gray-300 h-6 mx-2" />
 
-          <label className="text-sm font-medium">Weergave:</label>
+          <label className="text-sm font-medium">t('global.displayMode'):</label>
           <select
             value={displayMode}
             onChange={(e) => handleDisplayModeChange(e.target.value as DisplayMode)}
@@ -254,7 +254,7 @@ export const BiddingListViewWorldTourSmall = ({
               backgroundSize: '1.5em 1.5em'
             }}
           >
-            <option value="all">Alles tonen</option>
+            <option value="all">t('global.showAll')</option>
             <option value="scroll">Scroll</option>
             <option value="pagination">Pagination</option>
           </select>
@@ -410,7 +410,7 @@ export const BiddingListViewWorldTourSmall = ({
       {displayMode === 'pagination' && totalPages > 1 && (
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
           <span className="text-sm text-gray-600">
-            {sortedBids.length} renners totaal • Pagina {currentPage} van {totalPages}
+            {sortedBids.length} t('global.ridersTotal') • Pagina {currentPage} van {totalPages}
           </span>
           <div className="flex items-center gap-2">
             <button

@@ -223,11 +223,11 @@ export const RidersManagementTab = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rank</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">t('global.rank')</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Country</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Team</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Points</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">t('global.points')</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Retired</th>
               </tr>
             </thead>
