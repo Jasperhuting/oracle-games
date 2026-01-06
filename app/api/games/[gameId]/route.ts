@@ -9,8 +9,8 @@ function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Parti
   for (const key in obj) {
     const value = obj[key];
     if (value !== undefined) {
-      // Recursively clean nested objects
-      if (value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+      // Recursively clean nested objects, but preserve Timestamps and Dates
+      if (value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date) && !(value instanceof Timestamp)) {
         cleaned[key] = removeUndefinedFields(value as Record<string, unknown>) as T[Extract<keyof T, string>];
       } else {
         cleaned[key] = value;
@@ -134,7 +134,7 @@ export async function PATCH(
     gameUpdates.updatedAt = new Date();
 
     // Convert teamSelectionDeadline to Firestore Timestamp if provided
-    if (gameUpdates.teamSelectionDeadline) {
+    if (gameUpdates.teamSelectionDeadline && typeof gameUpdates.teamSelectionDeadline === 'string') {
       gameUpdates.teamSelectionDeadline = Timestamp.fromDate(new Date(gameUpdates.teamSelectionDeadline));
     }
 

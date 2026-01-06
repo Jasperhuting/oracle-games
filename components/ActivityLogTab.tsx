@@ -290,6 +290,58 @@ export const ActivityLogTab = () => {
     }
   };
 
+  // Helper to format values for display, handling Firestore timestamps
+  const formatValue = (value: any): string => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (value === null || value === undefined) return '(empty)';
+
+    // Handle Firestore Timestamp objects (both formats)
+    if (typeof value === 'object' && value !== null) {
+      // Format: { _seconds: number, _nanoseconds: number }
+      if ('_seconds' in value) {
+        const date = new Date(value._seconds * 1000);
+        return date.toLocaleString('nl-NL', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+      // Format: { __type__: 'Timestamp', value: string }
+      if (value.__type__ === 'Timestamp' && value.value) {
+        const date = new Date(value.value);
+        return date.toLocaleString('nl-NL', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+    }
+
+    // Handle ISO date strings
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('nl-NL', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+    }
+
+    // For other objects, stringify them
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  };
+
   const getActionColor = (action: string) => {
     const colors: Record<string, string> = {
       'USER_REGISTERED': 'bg-green-100 text-green-800',
@@ -437,9 +489,9 @@ export const ActivityLogTab = () => {
               <div key={field} className="text-xs text-gray-600 flex items-start gap-2">
                 <span className="font-medium min-w-[100px]">{field}:</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">{JSON.stringify(change.before) || '(empty)'}</span>
+                  <span className="text-gray-400">{formatValue(change.before)}</span>
                   <span className="text-gray-400">→</span>
-                  <span className="text-gray-900 font-medium">{JSON.stringify(change.after) || '(empty)'}</span>
+                  <span className="text-gray-900 font-medium">{formatValue(change.after)}</span>
                 </div>
               </div>
             ))}
