@@ -33,12 +33,39 @@ function getGravatarUrl(email: string): string {
   return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=48`;
 }
 
+// Format Firebase timestamp (handles both Firestore Timestamp and serialized format)
+function formatDate(timestamp: { toDate?: () => Date; _seconds?: number; seconds?: number } | undefined): string {
+  if (!timestamp) return 'N/A';
+  
+  let date: Date;
+  
+  // If it has toDate method (client-side Firestore Timestamp)
+  if (typeof timestamp.toDate === 'function') {
+    date = timestamp.toDate();
+  } else {
+    // If it's serialized from API (has _seconds or seconds)
+    const seconds = timestamp._seconds ?? timestamp.seconds;
+    if (!seconds) return 'N/A';
+    date = new Date(seconds * 1000);
+  }
+  
+  return date.toLocaleDateString('nl-NL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 interface KanbanCardProps {
   todo: AdminTodo;
   onCategoryChange: (id: string, category: string) => void;
   onDelete: (id: string) => void;
   onOpenDetails: (todo: AdminTodo) => void;
+  onAssigneeChange: (id: string, assigneeId: string, assigneeName: string, assigneeEmail: string) => void;
   categories: string[];
+  adminUsers: AdminUser[];
   isDragging?: boolean;
 }
 
@@ -50,7 +77,9 @@ interface KanbanColumnProps {
   onCategoryChange: (id: string, category: string) => void;
   onDelete: (id: string) => void;
   onOpenDetails: (todo: AdminTodo) => void;
+  onAssigneeChange: (id: string, assigneeId: string, assigneeName: string, assigneeEmail: string) => void;
   categories: string[];
+  adminUsers: AdminUser[];
 }
 
 interface AdminUser {
@@ -143,7 +172,7 @@ const TodoDetailsModal = memo(function TodoDetailsModal({ todo, onClose, onUpdat
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-start mb-4">
           <button
@@ -223,13 +252,13 @@ const TodoDetailsModal = memo(function TodoDetailsModal({ todo, onClose, onUpdat
             <div>
               <span className="font-medium text-gray-700">Created:</span>
               <span className="ml-2 text-gray-600">
-                {todo.createdAt?.toDate?.() ? new Date(todo.createdAt.toDate()).toLocaleDateString() : 'N/A'}
+                {formatDate(todo.createdAt)}
               </span>
             </div>
             <div>
               <span className="font-medium text-gray-700">Updated:</span>
               <span className="ml-2 text-gray-600">
-                {todo.updatedAt?.toDate?.() ? new Date(todo.updatedAt.toDate()).toLocaleDateString() : 'N/A'}
+                {formatDate(todo.updatedAt)}
               </span>
             </div>
           </div>
@@ -264,9 +293,13 @@ function KanbanCard({
   onCategoryChange,
   onDelete,
   onOpenDetails,
+  onAssigneeChange,
   categories,
+  adminUsers,
   isDragging = false,
 }: KanbanCardProps) {
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -280,6 +313,15 @@ function KanbanCard({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isSortableDragging ? 0.5 : 1,
+  };
+
+  const handleAssigneeSelect = (user: AdminUser | null) => {
+    if (user) {
+      onAssigneeChange(todo.id, user.id, user.name, user.email);
+    } else {
+      onAssigneeChange(todo.id, '', '', '');
+    }
+    setShowAssigneeDropdown(false);
   };
 
   const getCategoryColor = (category: string) => {
@@ -386,13 +428,50 @@ function KanbanCard({
             </svg>
           </button>
           
-          {/* Assignee Avatar */}
-          <img
-            src={getGravatarUrl(todo.assigneeEmail || 'jasper.huting@gmail.com')}
-            alt={todo.assigneeName || 'Jasper'}
-            title={todo.assigneeName || 'Jasper Huting'}
-            className="w-6 h-6 rounded-full ml-1"
-          />
+          {/* Assignee Avatar with Dropdown */}
+          <div className="relative ml-1">
+            <button
+              onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+              className="focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-full"
+              title={`Assigned to: ${todo.assigneeName || 'Jasper Huting'}`}
+            >
+              <img
+                src={getGravatarUrl(todo.assigneeEmail || 'jasper.huting@gmail.com')}
+                alt={todo.assigneeName || 'Jasper'}
+                className="w-6 h-6 rounded-full hover:ring-2 hover:ring-blue-400 cursor-pointer"
+              />
+            </button>
+            
+            {showAssigneeDropdown && (
+              <div className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg z-50 py-1 min-w-[160px]">
+                <button
+                  onClick={() => handleAssigneeSelect(null)}
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2 ${!todo.assigneeId ? 'bg-blue-50' : ''}`}
+                >
+                  <img
+                    src={getGravatarUrl('jasper.huting@gmail.com')}
+                    alt="Jasper"
+                    className="w-5 h-5 rounded-full"
+                  />
+                  <span>Jasper Huting</span>
+                </button>
+                {adminUsers.map((user) => (
+                  <button
+                    key={user.id}
+                    onClick={() => handleAssigneeSelect(user)}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2 ${todo.assigneeId === user.id ? 'bg-blue-50' : ''}`}
+                  >
+                    <img
+                      src={getGravatarUrl(user.email)}
+                      alt={user.name}
+                      className="w-5 h-5 rounded-full"
+                    />
+                    <span>{user.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -407,7 +486,9 @@ function KanbanColumn({
   onCategoryChange,
   onDelete,
   onOpenDetails,
+  onAssigneeChange,
   categories,
+  adminUsers,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
@@ -451,7 +532,9 @@ function KanbanColumn({
               onCategoryChange={onCategoryChange}
               onDelete={onDelete}
               onOpenDetails={onOpenDetails}
+              onAssigneeChange={onAssigneeChange}
               categories={categories}
+              adminUsers={adminUsers}
             />
           ))}
         </SortableContext>
@@ -634,6 +717,38 @@ export function TodosTab() {
     }
   };
 
+  const handleAssigneeChange = async (id: string, assigneeId: string, assigneeName: string, assigneeEmail: string) => {
+    if (!user) return;
+
+    // Optimistically update local state
+    setTodos(prev => prev.map(todo => {
+      if (todo.id !== id) return todo;
+      return {
+        ...todo,
+        assigneeId: assigneeId || undefined,
+        assigneeName: assigneeName || undefined,
+        assigneeEmail: assigneeEmail || undefined,
+      };
+    }));
+
+    try {
+      await fetch('/api/admin/todos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          todoId: id,
+          assigneeId: assigneeId || null,
+          assigneeName: assigneeName || null,
+          assigneeEmail: assigneeEmail || null,
+        }),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update assignee');
+      fetchTodos();
+    }
+  };
+
   const handleTitleChange = async (id: string, title: string) => {
     if (!user) return;
 
@@ -667,15 +782,23 @@ export function TodosTab() {
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedTodo(null);
-    // Refresh todos when modal closes to get the updated description
-    fetchTodos();
-  }, [fetchTodos]);
+  }, []);
 
   const handleUpdateTodo = useCallback(async (id: string, updates: { title?: string; description?: string; assigneeId?: string | null; assigneeName?: string | null; assigneeEmail?: string | null }) => {
     if (!user) return;
 
-    // Just save to API - don't update any state
-    // State will be updated when modal closes
+    // Optimistically update local state
+    setTodos(prev => prev.map(todo => {
+      if (todo.id !== id) return todo;
+      return {
+        ...todo,
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.assigneeId !== undefined && { assigneeId: updates.assigneeId || undefined }),
+        ...(updates.assigneeName !== undefined && { assigneeName: updates.assigneeName || undefined }),
+        ...(updates.assigneeEmail !== undefined && { assigneeEmail: updates.assigneeEmail || undefined }),
+      };
+    }));
 
     try {
       const response = await fetch('/api/admin/todos', {
@@ -1071,7 +1194,9 @@ export function TodosTab() {
               onCategoryChange={handleCategoryChange}
               onDelete={handleDelete}
               onOpenDetails={handleOpenDetails}
+              onAssigneeChange={handleAssigneeChange}
               categories={categories}
+              adminUsers={adminUsers}
             />
             <KanbanColumn
               status="in_progress"
@@ -1081,7 +1206,9 @@ export function TodosTab() {
               onCategoryChange={handleCategoryChange}
               onDelete={handleDelete}
               onOpenDetails={handleOpenDetails}
+              onAssigneeChange={handleAssigneeChange}
               categories={categories}
+              adminUsers={adminUsers}
             />
             {!hideDone && (
               <KanbanColumn
@@ -1092,7 +1219,9 @@ export function TodosTab() {
                 onCategoryChange={handleCategoryChange}
                 onDelete={handleDelete}
                 onOpenDetails={handleOpenDetails}
+                onAssigneeChange={handleAssigneeChange}
                 categories={categories}
+                adminUsers={adminUsers}
               />
             )}
           </div>
