@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   DndContext,
   closestCorners,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -14,6 +15,9 @@ import {
   DragStartEvent,
   DragOverlay,
   useDroppable,
+  CollisionDetection,
+  pointerWithin,
+  getFirstCollision,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -25,6 +29,31 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { AdminTodo, TodoStatus } from '@/lib/types/admin';
 import md5 from 'blueimp-md5';
+
+// Custom collision detection that prioritizes columns for empty drops
+const customCollisionDetection: CollisionDetection = (args) => {
+  // First, check for pointer collisions with droppable columns
+  const pointerCollisions = pointerWithin(args);
+  
+  // If we have a collision with a column, prioritize it
+  const columnIds = ['todo', 'in_progress', 'done'];
+  const columnCollision = pointerCollisions.find(c => columnIds.includes(c.id as string));
+  
+  if (columnCollision) {
+    return [columnCollision];
+  }
+  
+  // Otherwise, use closestCorners for card-to-card sorting
+  const closestCollisions = closestCorners(args);
+  
+  // If closest collision is a column, return it
+  const closestColumn = closestCollisions.find(c => columnIds.includes(c.id as string));
+  if (closestColumn) {
+    return [closestColumn];
+  }
+  
+  return closestCollisions;
+};
 
 // Get Gravatar URL using MD5 hash of email
 function getGravatarUrl(email: string): string {
@@ -1180,7 +1209,7 @@ export function TodosTab() {
         {/* Kanban Board */}
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={customCollisionDetection}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
