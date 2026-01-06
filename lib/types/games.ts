@@ -16,7 +16,6 @@ export const GAME_TYPES = [
   'fan-flandrien',
   'giorgio-armada',
   'marginal-gains',
-  'carry-me-home',
 ] as const;
 
 export type GameType = typeof GAME_TYPES[number];
