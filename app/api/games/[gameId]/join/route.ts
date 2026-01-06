@@ -54,9 +54,9 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game is accepting registrations
-    // For worldtour-manager, also allow joining during 'bidding' status
+    // For worldtour-manager and marginal-gains, also allow joining during 'bidding' status
     const allowedStatuses = ['registration', 'draft', 'active'];
-    if (gameData?.gameType === 'worldtour-manager') {
+    if (gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains') {
       allowedStatuses.push('bidding');
     }
 
