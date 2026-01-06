@@ -35,6 +35,7 @@ function toSlug(str: string): string {
 interface RiderInput {
   nameID?: string;
   shortName?: string;
+  points?: unknown;
   [key: string]: unknown;
 }
 
@@ -66,15 +67,15 @@ async function enrichRiders(riders: RiderInput[], year: number, db: FirebaseFire
         // Only add ranking points if there's no existing points field
         const enrichedRider: EnrichedRider = {
           ...rider,
-          nameID: riderData.nameID || rider.shortName,
-          rank: riderData.rank,
-          jerseyImage: riderData.jerseyImage || '',
+          nameID: riderData?.nameID || rider.shortName,
+          rank: riderData?.rank,
+          jerseyImage: riderData?.jerseyImage || '',
         };
         
         // Only add ranking points if rider doesn't already have a points field
         // (to preserve stage points in classifications)
         if (rider.points === undefined) {
-          enrichedRider.rankingPoints = riderData.points;
+          enrichedRider.rankingPoints = riderData?.points;
         }
         
         enrichedRiders.push(enrichedRider);
@@ -152,11 +153,11 @@ export async function POST(request: NextRequest) {
 
     // Enrich riders with data from rankings
     console.log(`[saveStageResult] Enriching riders from rankings_${year}`);
-    const enrichedStageResults = await enrichRiders(stageData.stageResults || [], parseInt(year), db);
-    const enrichedGeneralClassification = await enrichRiders(stageData.generalClassification || [], parseInt(year), db);
-    const enrichedPointsClassification = await enrichRiders(stageData.pointsClassification || [], parseInt(year), db);
-    const enrichedMountainsClassification = await enrichRiders(stageData.mountainsClassification || [], parseInt(year), db);
-    const enrichedYouthClassification = await enrichRiders(stageData.youthClassification || [], parseInt(year), db);
+    const enrichedStageResults = await enrichRiders(stageData.stageResults as unknown as RiderInput[] || [], parseInt(year), db);
+    const enrichedGeneralClassification = await enrichRiders(stageData.generalClassification as unknown as RiderInput[] || [], parseInt(year), db);
+    const enrichedPointsClassification = await enrichRiders(stageData.pointsClassification as unknown as RiderInput[] || [], parseInt(year), db);
+    const enrichedMountainsClassification = await enrichRiders(stageData.mountainsClassification as unknown as RiderInput[] || [], parseInt(year), db);
+    const enrichedYouthClassification = await enrichRiders(stageData.youthClassification as unknown as RiderInput[] || [], parseInt(year), db);
     
     console.log(`[saveStageResult] Enriched ${enrichedStageResults.length} stage results`);
 
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     // Save to Firestore in a subcollection under the race
     const stageDocRef = db.collection(raceSlug).doc('stages').collection('results').doc(`stage-${stage}`);
-    await stageDocRef.set(cleanedData);
+    await stageDocRef.set(cleanedData as FirebaseFirestore.DocumentData);
 
     // Log the activity
     const userData = userDoc.data();

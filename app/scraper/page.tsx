@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ScraperForm, { type ScraperFormData } from '@/components/ScraperForm';
+import ScraperForm from '@/components/ScraperForm';
+import { type ScraperFormData } from '@/lib/types/admin';
 import { ScrapingResult, BulkJob } from '@/lib/types/pages';
 
 export default function ScraperPage() {

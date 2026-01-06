@@ -74,7 +74,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.positionShort')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Foto</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Renner</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.team')}</th>

@@ -14,7 +14,7 @@ export interface ActivityLog {
   targetUserName?: string;
   gameId?: string;
   gameName?: string;
-  details?: Record<string, unknown> & {
+  details?: {
     environment?: string;
     branch?: string;
     commit?: string;
@@ -22,6 +22,18 @@ export interface ActivityLog {
     deploymentId?: string;
     deploymentStatus?: string;
     deploymentUrl?: string;
+    gameName?: string;
+    riderName?: string;
+    riderTeam?: string;
+    amount?: number;
+    isUpdate?: boolean;
+    previousAmount?: number;
+    availableBudget?: number;
+    totalActiveBids?: number;
+    wasHighestBid?: boolean;
+    subject?: string;
+    recipientCount?: number;
+    [key: string]: string | number | boolean | undefined;
   };
   timestamp: string; // ISO 8601 string from API
   ipAddress?: string;
