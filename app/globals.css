@@ -56,3 +56,236 @@
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
 }
+
+/* Page content styles for rich text/HTML content */
+.page-content h1 {
+  font-size: 2em;
+  font-weight: 700;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  line-height: 1.2;
+}
+
+.page-content h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+  line-height: 1.3;
+}
+
+.page-content h3 {
+  font-size: 1.17em;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  line-height: 1.4;
+}
+
+.page-content ul {
+  list-style-type: disc;
+  margin-left: 1.5em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding-left: 0.5em;
+}
+
+.page-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding-left: 0.5em;
+}
+
+.page-content li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.page-content ul ul,
+.page-content ol ul {
+  list-style-type: circle;
+}
+
+.page-content ol ol,
+.page-content ul ol {
+  list-style-type: lower-latin;
+}
+
+.page-content p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.page-content blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.page-content pre {
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  padding: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow-x: auto;
+}
+
+.page-content code {
+  background-color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.page-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.page-content hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 2em 0;
+}
+
+.page-content strong {
+  font-weight: 700;
+}
+
+.page-content em {
+  font-style: italic;
+}
+
+.page-content u {
+  text-decoration: underline;
+}
+
+.page-content s {
+  text-decoration: line-through;
+}
+
+.page-content a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* ProseMirror (TipTap) editor styles */
+.ProseMirror h1 {
+  font-size: 2em;
+  font-weight: 700;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  line-height: 1.2;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+  line-height: 1.3;
+}
+
+.ProseMirror h3 {
+  font-size: 1.17em;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  line-height: 1.4;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  margin-left: 1.5em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding-left: 0.5em;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  margin-left: 1.5em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding-left: 0.5em;
+}
+
+.ProseMirror li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.ProseMirror ul ul,
+.ProseMirror ol ul {
+  list-style-type: circle;
+}
+
+.ProseMirror ol ol,
+.ProseMirror ul ol {
+  list-style-type: lower-latin;
+}
+
+.ProseMirror p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.ProseMirror blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.ProseMirror pre {
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
+  padding: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow-x: auto;
+}
+
+.ProseMirror code {
+  background-color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.ProseMirror pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 2em 0;
+}
+
+.ProseMirror strong {
+  font-weight: 700;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror u {
+  text-decoration: underline;
+}
+
+.ProseMirror s {
+  text-decoration: line-through;
+}
