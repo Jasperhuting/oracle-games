@@ -6,6 +6,7 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { FinalizePlayerTeam, FinalizeGame as Game, DivisionData, GameGroupData } from '@/lib/types/pages';
+import { useTranslation } from 'react-i18next';
 
 export default function FinalizeOverviewPage() {
   const { user } = useAuth();
@@ -13,6 +14,8 @@ export default function FinalizeOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [gameGroups, setGameGroups] = useState<GameGroupData[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (user === null) {
@@ -179,7 +182,7 @@ export default function FinalizeOverviewPage() {
                               <th className="text-left py-2 px-3">Renner</th>
                               <th className="text-left py-2 px-3">Team</th>
                               <th className="text-left py-2 px-3">Gekocht door</th>
-                              <th className="text-right py-2 px-3">t('global.price')</th>
+                              <th className="text-right py-2 px-3">{t('global.price')}</th>
                               <th className="text-left py-2 px-3">Type</th>
                               <th className="text-left py-2 px-3">Datum</th>
                             </tr>

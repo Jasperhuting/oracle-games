@@ -19,6 +19,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRankings } from "@/contexts/RankingsContext";
+import { useTranslation } from "react-i18next";
 
 export default function CreateRankingPage() {
   const router = useRouter();
@@ -28,6 +29,8 @@ export default function CreateRankingPage() {
   const [teamsList, setTeamsList] = useState<Team[]>([]);
   const [teamsArray, setTeamsArray] = useState<Team[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
+
+  const { t } = useTranslation();
 
   const [selectedPlayers, setSelectedPlayers] = useState<Rider[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
@@ -805,10 +808,10 @@ export default function CreateRankingPage() {
             ) : (
               <div>
                 <div className="grid p-2 border-b-2 border-gray-400 font-bold bg-gray-100" style={{ gridTemplateColumns: '60px 1fr 1fr 80px 60px' }}>
-                  <div>t('global.rank')</div>
+                  <div>{t('global.rank')}</div>
                   <div>Name</div>
                   <div>Team</div>
-                  <div>t('global.points')</div>
+                  <div>{t('global.points')}</div>
                   <div>Country</div>
                 </div>
                 <div className="relative overflow-visible">
@@ -921,10 +924,10 @@ export default function CreateRankingPage() {
             ) : (
               <div>
                 <div className="grid p-2 border-b-2 border-gray-400 font-bold bg-gray-100" style={{ gridTemplateColumns: `${viewRank ? '60px' : ''} ${viewClass ? '100px' : ''} 1fr ${viewPoints ? '100px' : ''} ${viewCountry ? '80px' : ''} ${viewImage ? '70px' : ''}` }}>
-                  {viewRank && <div>t('global.rank')</div>}
+                  {viewRank && <div>{t('global.rank')}</div>}
                   {viewClass && <div>Class</div>}
                   <div>Name</div>
-                  {viewPoints && <div>t('global.points')</div>}
+                  {viewPoints && <div>{t('global.points')}</div>}
                   {viewCountry && <div>Country</div>}
                   {viewImage && <div>Image</div>}
                 </div>

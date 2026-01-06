@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 
 
@@ -6,6 +7,8 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
   const [activeTab, setActiveTab] = useState<'stage' | 'gc' | 'points' | 'mountains' | 'team'>('stage');
   const [showAllStageResults, setShowAllStageResults] = useState(false);
   const [showAllGC, setShowAllGC] = useState(false);
+
+  const { t } = useTranslation();
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -179,7 +182,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">t('global.points')</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.points')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -221,7 +224,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">t('global.points')</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.points')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

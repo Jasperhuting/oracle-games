@@ -109,11 +109,11 @@ export const BiddingCardView = ({
           }}
         >
           <option value="price">{game?.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
-          <option value="rank">t('global.rank')</option>
-          <option value="name">t('global.name')</option>
-          <option value="age">t('global.age')</option>
-          <option value="team">t('global.team')</option>
-          {game?.gameType === 'worldtour-manager' && <option value="neoprof">t('global.neoProf')</option>}
+          <option value="rank">{t('global.rank')}</option>
+          <option value="name">{t('global.name')}</option>
+          <option value="age">{t('global.age')}</option>
+          <option value="team">{t('global.team')}</option>
+          {game?.gameType === 'worldtour-manager' && <option value="neoprof">{t('global.neoProf')}</option>}
         </select>
         <button
           onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}

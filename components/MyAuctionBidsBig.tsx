@@ -6,6 +6,7 @@ import { PlayerCard } from "./PlayerCard";
 import { qualifiesAsNeoProf } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { SortAscending, SortDescending } from "tabler-icons-react";
+import { useTranslation } from "react-i18next";
 
 export const MyAuctionBidsBig = ({
     divisionParticipants,
@@ -39,6 +40,8 @@ export const MyAuctionBidsBig = ({
   type SortDirection = 'asc' | 'desc';
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const { t } = useTranslation();
 
 
   // Calculate remaining budget for a player based on their won bids up to a specific auction period
@@ -283,13 +286,13 @@ export const MyAuctionBidsBig = ({
                                         backgroundSize: '1.5em 1.5em'
                                       }}
                                     >
-                                      <option value="price">t('global.price')</option>
-                                      <option value="rank">t('global.rank')</option>
-                                      <option value="name">t('global.name')</option>
-                                      <option value="age">t('global.age')</option>
-                                      <option value="team">t('global.team')</option>
+                                      <option value="price">{t('global.price')}</option>
+                                      <option value="rank">{t('global.rank')}</option>
+                                      <option value="name">{t('global.name')}</option>
+                                      <option value="age">{t('global.age')}</option>
+                                      <option value="team">{t('global.team')}</option>
                                       <option value="status">Status</option>
-                                      {game?.gameType === 'worldtour-manager' && <option value="neoprof">t('global.neoProf')</option>}
+                                      {game?.gameType === 'worldtour-manager' && <option value="neoprof">{t('global.neoProf')}</option>}
                                     </select>
                                     <button
                                       onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}

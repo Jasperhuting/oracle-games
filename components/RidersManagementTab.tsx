@@ -10,10 +10,11 @@ import { normalizeString } from "@/lib/utils/stringUtils";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Rider } from "@/lib/types/rider";
 import { useRankings } from "@/contexts/RankingsContext";
+import { useTranslation } from "react-i18next";
 
 export const RidersManagementTab = () => {
   const { user } = useAuth();
-  const { riders: rankingsRiders, refetch: refetchRankings, year } = useRankings();
+  const { riders: rankingsRiders, refetch: refetchRankings } = useRankings();
   const [riders, setRiders] = useState<Rider[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -22,6 +23,8 @@ export const RidersManagementTab = () => {
   const [showOnlyWithoutTeam, setShowOnlyWithoutTeam] = useState(false);
   const BATCH_SIZE = 1000;
   const hasFetchedRef = useRef(false);
+
+  const { t } = useTranslation(); 
 
   // Inline editing state
   const [editingRiderTeam, setEditingRiderTeam] = useState<string | null>(null);
@@ -89,7 +92,7 @@ export const RidersManagementTab = () => {
           adminUserId: user.uid,
           riderId,
           teamId, // Only send team reference ID, not the name
-          year: year,
+          year: 2026,
         }),
       });
 
@@ -139,7 +142,7 @@ export const RidersManagementTab = () => {
           adminUserId: user.uid,
           riderId,
           retired: !currentRetired,
-          year: year,
+          year: 2026,
         }),
       });
 
@@ -223,11 +226,11 @@ export const RidersManagementTab = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">t('global.rank')</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.rank')}</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Country</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Team</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">t('global.points')</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.points')}</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Retired</th>
               </tr>
             </thead>

@@ -226,11 +226,11 @@ export const BiddingListViewWorldTourSmall = ({
             }}
           >
             <option value="price">{game.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
-            <option value="rank">t('global.rank')</option>
-            <option value="name">t('global.name')</option>
-            <option value="age">t('global.age')</option>
-            <option value="team">t('global.team')</option>
-            <option value="neoprof">t('global.neoProf')</option>
+            <option value="rank">{t('global.rank')}</option>
+            <option value="name">{t('global.name')}</option>
+            <option value="age">{t('global.age')}</option>
+            <option value="team">{t('global.team')}</option>
+            <option value="neoprof">{t('global.neoProf')}</option>
           </select>
           <button
             onClick={handleSortDirectionToggle}
@@ -242,7 +242,7 @@ export const BiddingListViewWorldTourSmall = ({
 
           <div className="border-l border-gray-300 h-6 mx-2" />
 
-          <label className="text-sm font-medium">t('global.displayMode'):</label>
+          <label className="text-sm font-medium">{t('global.displayMode')}:</label>
           <select
             value={displayMode}
             onChange={(e) => handleDisplayModeChange(e.target.value as DisplayMode)}
@@ -254,7 +254,7 @@ export const BiddingListViewWorldTourSmall = ({
               backgroundSize: '1.5em 1.5em'
             }}
           >
-            <option value="all">t('global.showAll')</option>
+            <option value="all">{t('global.showAll')}</option>
             <option value="scroll">Scroll</option>
             <option value="pagination">Pagination</option>
           </select>
