@@ -299,7 +299,7 @@ export const GamesManagementTab = () => {
     <div className="space-y-4">
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-3">Filters</h2>
+        <h2 className="text-lg font-semibold mb-3">{t('global.filters')}</h2>
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

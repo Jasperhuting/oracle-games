@@ -179,7 +179,7 @@ export const Bidding = ({
   return <>
     {game.bidding && <>
     <Countdown key={countdownDate} date={countdownDate} renderer={renderer} />
-    <span className="text-gray-500 text-xs">Einddatum: {activePeriod?.endDate ? formatDate(activePeriod.endDate instanceof Date ? activePeriod.endDate.toISOString() : typeof activePeriod.endDate === 'string' ? activePeriod.endDate : activePeriod.endDate.toDate().toISOString()) : 'onbekende datum'}</span>
+    <span className="text-gray-500 text-xs">{t('global.endDate')}: {activePeriod?.endDate ? formatDate(activePeriod.endDate instanceof Date ? activePeriod.endDate.toISOString() : typeof activePeriod.endDate === 'string' ? activePeriod.endDate : activePeriod.endDate.toDate().toISOString()) : t('global.unknownDate')}</span>
     </>}
 
 
@@ -198,8 +198,8 @@ export const Bidding = ({
           )}
           </div>
           <span className="flex flex-row gap-2 justify-center items-center">
-            <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
-            <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
+            <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />{t('global.listView')}</span></Button>
+            <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />{t('global.cardView')}</span></Button>
           </span>
         </div>
 
@@ -251,11 +251,11 @@ export const Bidding = ({
         <div className="col-span-1">{t('global.riders')}</div>
         <span className="flex flex-row gap-2 justify-between items-center flex-wrap">
           <span className="flex flex-row gap-2">
-            <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />Cardview</span></Button>
-            <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />Listview</span></Button>
+            <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />{t('global.cardView')}</span></Button>
+            <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />{t('global.listView')}</span></Button>
           </span>
           <span className="flex flex-row gap-2 items-center">
-            <label className="text-sm font-medium">t('global.sortingBy')</label>
+            <label className="text-sm font-medium">{t('global.sortingBy')}</label>
             <select
               value={ridersSortBy}
               onChange={(e) => setRidersSortBy(e.target.value as SortOption)}

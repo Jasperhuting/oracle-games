@@ -271,7 +271,7 @@ export const MyAuctionBidsBig = ({
                               return <div key={periodIndex} className="mb-8">
                                 <div className="flex justify-between items-center mb-4">
                                   <div className="flex items-center gap-2">
-                                    <label className="text-sm font-medium">t('global.sortingBy')</label>
+                                    <label className="text-sm font-medium">{t('global.sortingBy')}</label>
                                     <select
                                       value={sortBy}
                                       onChange={(e) => setSortBy(e.target.value as SortOption)}

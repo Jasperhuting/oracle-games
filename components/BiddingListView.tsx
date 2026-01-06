@@ -101,7 +101,7 @@ export const BiddingListView = ({
       </div>}
       {myBids.length > 0 && (
         <div className="mb-3 flex items-center gap-3">
-          <label className="text-sm font-medium">t('global.sortingBy')</label>
+          <label className="text-sm font-medium">{t('global.sortingBy')}</label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
