@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { ActivityLog } from "@/lib/types/activity";
-
+import { useTranslation } from "react-i18next";
+  
 // Separate component for error details to avoid hook violation
 const ErrorDetails = ({ details }: { details: Record<string, any> }) => { // eslint-disable-line @typescript-eslint/no-explicit-any
   const [showTrace, setShowTrace] = useState(false);
@@ -98,6 +99,7 @@ export const ActivityLogTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
+    const { t } = useTranslation();
 
   // Load user preferences
   useEffect(() => {
