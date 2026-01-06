@@ -21,6 +21,12 @@ export function cn(...inputs: ClassValue[]) {
     return age;
   };
 
+// Helper to extract birth year from birthDate
+export const getBirthYear = (birthDate: string | number): number => {
+  const birth = new Date(birthDate);
+  return birth.getFullYear();
+};
+
     // Helper to check if a rider is a neo-professional
     export const isNeoProf = (rider: RiderWithBid, maxNeoProAge: number): boolean => {
   

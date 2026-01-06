@@ -8,6 +8,7 @@ import { Toggle } from "./Toggle";
 import { Collapsible } from "./Collapsible";
 import { useState, useEffect } from "react";
 import { Divider } from "./Divider";
+import { calculateAge } from "@/lib/utils";
 
 export const AuctionFilters = ({
     searchTerm,
@@ -16,10 +17,10 @@ export const AuctionFilters = ({
     setPriceRange,
     minRiderPrice,
     maxRiderPrice,
-    ageRange,
-    setAgeRange,
-    minRiderAge,
-    maxRiderAge,
+    birthYearRange,
+    setBirthYearRange,
+    minBirthYear,
+    maxBirthYear,
     myBids,
     handleResetBidsClick,
     game,
@@ -36,10 +37,10 @@ export const AuctionFilters = ({
     setPriceRange: (priceRange: [number, number]) => void,
     minRiderPrice: number,
     maxRiderPrice: number,
-    ageRange?: [number, number],
-    setAgeRange?: (ageRange: [number, number]) => void,
-    minRiderAge?: number,
-    maxRiderAge?: number,
+    birthYearRange?: [number, number],
+    setBirthYearRange?: (birthYearRange: [number, number]) => void,
+    minBirthYear?: number,
+    maxBirthYear?: number,
     myBids: Bid[],
     handleResetBidsClick: () => void,
     game: { gameType: GameType; bidding: boolean },
@@ -57,9 +58,13 @@ export const AuctionFilters = ({
     const [priceMinInput, setPriceMinInput] = useState(priceRange[0].toString());
     const [priceMaxInput, setPriceMaxInput] = useState(priceRange[1].toString());
 
-    // Lokale state voor age inputs
-    const [ageMinInput, setAgeMinInput] = useState(ageRange?.[0].toString() ?? '');
-    const [ageMaxInput, setAgeMaxInput] = useState(ageRange?.[1].toString() ?? '');
+    // Lokale state voor birth year inputs
+    const [birthYearMinInput, setBirthYearMinInput] = useState(birthYearRange?.[0].toString() ?? '');
+    const [birthYearMaxInput, setBirthYearMaxInput] = useState(birthYearRange?.[1].toString() ?? '');
+
+    // Helper to calculate age from birth year for display
+    const currentYear = new Date().getFullYear();
+    const getAgeFromYear = (year: number) => currentYear - year;
 
     // Update lokale state wanneer de externe priceRange verandert (bijv. via slider)
     useEffect(() => {
@@ -67,13 +72,13 @@ export const AuctionFilters = ({
         setPriceMaxInput(priceRange[1].toString());
     }, [priceRange]);
 
-    // Update lokale state wanneer de externe ageRange verandert (bijv. via slider)
+    // Update lokale state wanneer de externe birthYearRange verandert (bijv. via slider)
     useEffect(() => {
-        if (ageRange) {
-            setAgeMinInput(ageRange[0].toString());
-            setAgeMaxInput(ageRange[1].toString());
+        if (birthYearRange) {
+            setBirthYearMinInput(birthYearRange[0].toString());
+            setBirthYearMaxInput(birthYearRange[1].toString());
         }
-    }, [ageRange]);
+    }, [birthYearRange]);
 
     // Debounce voor price min
     useEffect(() => {
@@ -101,35 +106,35 @@ export const AuctionFilters = ({
         return () => clearTimeout(timer);
     }, [priceMaxInput]);
 
-    // Debounce voor age min
+    // Debounce voor birth year min
     useEffect(() => {
-        if (ageRange && setAgeRange && minRiderAge !== undefined) {
+        if (birthYearRange && setBirthYearRange && minBirthYear !== undefined) {
             const timer = setTimeout(() => {
-                if (ageMinInput === '') return; // Niet valideren bij lege string
-                const value = Number(ageMinInput);
+                if (birthYearMinInput === '') return; // Niet valideren bij lege string
+                const value = Number(birthYearMinInput);
                 if (!isNaN(value)) {
-                    const clampedValue = Math.max(minRiderAge, Math.min(value, ageRange[1]));
-                    setAgeRange([clampedValue, ageRange[1]]);
+                    const clampedValue = Math.max(minBirthYear, Math.min(value, birthYearRange[1]));
+                    setBirthYearRange([clampedValue, birthYearRange[1]]);
                 }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [ageMinInput]);
+    }, [birthYearMinInput]);
 
-    // Debounce voor age max
+    // Debounce voor birth year max
     useEffect(() => {
-        if (ageRange && setAgeRange && maxRiderAge !== undefined) {
+        if (birthYearRange && setBirthYearRange && maxBirthYear !== undefined) {
             const timer = setTimeout(() => {
-                if (ageMaxInput === '') return; // Niet valideren bij lege string
-                const value = Number(ageMaxInput);
+                if (birthYearMaxInput === '') return; // Niet valideren bij lege string
+                const value = Number(birthYearMaxInput);
                 if (!isNaN(value)) {
-                    const clampedValue = Math.min(maxRiderAge, Math.max(value, ageRange[0]));
-                    setAgeRange([ageRange[0], clampedValue]);
+                    const clampedValue = Math.min(maxBirthYear, Math.max(value, birthYearRange[0]));
+                    setBirthYearRange([birthYearRange[0], clampedValue]);
                 }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [ageMaxInput]);
+    }, [birthYearMaxInput]);
 
     return <Collapsible title="Filters" defaultOpen={true} className="bg-white border border-gray-200 sticky top-0 rounded-md p-2">
         <div className="flex flex-col gap-4">
@@ -175,36 +180,42 @@ export const AuctionFilters = ({
                     />
                 </div>
             </span>
-            {isMarginalGains && ageRange && setAgeRange && minRiderAge !== undefined && maxRiderAge !== undefined && (
+            {isMarginalGains && birthYearRange && setBirthYearRange && minBirthYear !== undefined && maxBirthYear !== undefined && (
                 <span className="flex flex-col flex-1 justify-center">
-                    <label htmlFor="age-range" className="text-sm font-bold text-gray-700">
-                        Leeftijd
+                    <label htmlFor="birth-year-range" className="text-sm font-bold text-gray-700">
+                        Geboortejaar
                     </label>
                     <div className="py-2 mt-2">
                         <RangeSlider
-                            min={minRiderAge}
-                            max={maxRiderAge}
-                            value={ageRange}
-                            onInput={(value: number[]) => setAgeRange([value[0], value[1]])}
+                            min={minBirthYear}
+                            max={maxBirthYear}
+                            value={birthYearRange}
+                            onInput={(value: number[]) => setBirthYearRange([value[0], value[1]])}
                         />
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                        <input
-                            type="number"
-                            min={minRiderAge}
-                            max={ageRange[1]}
-                            value={ageMinInput}
-                            onChange={(e) => setAgeMinInput(e.target.value)}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                        />
-                        <input
-                            type="number"
-                            min={ageRange[0]}
-                            max={maxRiderAge}
-                            value={ageMaxInput}
-                            onChange={(e) => setAgeMaxInput(e.target.value)}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                        />
+                        <div className="flex flex-col items-start">
+                            <input
+                                type="number"
+                                min={minBirthYear}
+                                max={birthYearRange[1]}
+                                value={birthYearMinInput}
+                                onChange={(e) => setBirthYearMinInput(e.target.value)}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            />
+                            <span className="text-xs text-gray-500 mt-0.5">({getAgeFromYear(birthYearRange[0])} jr)</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <input
+                                type="number"
+                                min={birthYearRange[0]}
+                                max={maxBirthYear}
+                                value={birthYearMaxInput}
+                                onChange={(e) => setBirthYearMaxInput(e.target.value)}
+                                className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            />
+                            <span className="text-xs text-gray-500 mt-0.5">({getAgeFromYear(birthYearRange[1])} jr)</span>
+                        </div>
                     </div>
                 </span>
             )}

@@ -27,7 +27,7 @@ export function useUnreadMessages(userId: string | undefined) {
         // Filter unread and non-deleted messages on client side
         const unreadMessages = snapshot.docs.filter(doc => {
           const data = doc.data();
-          return data.read === false && !data.deletedAt;
+          return data.read === false && !data.deletedAt && !data.deletedByRecipient;
         });
         setUnreadCount(unreadMessages.length);
         setLoading(false);
