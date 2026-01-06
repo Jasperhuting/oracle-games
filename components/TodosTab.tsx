@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   DndContext,
   closestCorners,
-  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -17,7 +16,6 @@ import {
   useDroppable,
   CollisionDetection,
   pointerWithin,
-  getFirstCollision,
 } from '@dnd-kit/core';
 import {
   arrayMove,
