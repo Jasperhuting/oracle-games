@@ -74,6 +74,9 @@ export interface AdminTodo {
   status: TodoStatus;
   category: string;
   order: number;
+  assigneeId?: string;
+  assigneeName?: string;
+  assigneeEmail?: string;
   createdAt: {
     toDate: () => Date;
     seconds: number;

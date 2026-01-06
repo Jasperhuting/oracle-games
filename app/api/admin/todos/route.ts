@@ -9,6 +9,9 @@ export interface AdminTodo {
   status: 'todo' | 'in_progress' | 'done';
   category: string;
   order: number;
+  assigneeId?: string;
+  assigneeName?: string;
+  assigneeEmail?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -51,6 +54,9 @@ export async function GET(request: NextRequest) {
         status: data.status,
         category: data.category || 'global',
         order: data.order,
+        assigneeId: data.assigneeId,
+        assigneeName: data.assigneeName,
+        assigneeEmail: data.assigneeEmail,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       });
@@ -142,7 +148,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, todoId, title, description, status, category, order } = body;
+    const { userId, todoId, title, description, status, category, order, assigneeId, assigneeName, assigneeEmail } = body;
 
     if (!userId || !todoId) {
       return NextResponse.json(
@@ -175,6 +181,9 @@ export async function PATCH(request: NextRequest) {
       status?: 'todo' | 'in_progress' | 'done';
       category?: string;
       order?: number;
+      assigneeId?: string | null;
+      assigneeName?: string | null;
+      assigneeEmail?: string | null;
       updatedAt: Timestamp;
     } = {
       updatedAt: Timestamp.now(),
@@ -204,6 +213,12 @@ export async function PATCH(request: NextRequest) {
 
     if (order !== undefined) {
       updateData.order = order;
+    }
+
+    if (assigneeId !== undefined) {
+      updateData.assigneeId = assigneeId;
+      updateData.assigneeName = assigneeName || null;
+      updateData.assigneeEmail = assigneeEmail || null;
     }
 
     await db.collection('adminTodos').doc(todoId).update(updateData);
