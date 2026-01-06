@@ -4,21 +4,21 @@ import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   DndContext,
-  closestCorners,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
-  DragOverEvent,
   DragStartEvent,
+  DragOverEvent,
   DragOverlay,
   useDroppable,
   CollisionDetection,
-  pointerWithin,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -28,29 +28,36 @@ import { CSS } from '@dnd-kit/utilities';
 import { AdminTodo, TodoStatus } from '@/lib/types/admin';
 import md5 from 'blueimp-md5';
 
-// Custom collision detection that prioritizes columns for empty drops
+// Custom collision detection that checks columns first, then cards
 const customCollisionDetection: CollisionDetection = (args) => {
-  // First, check for pointer collisions with droppable columns
+  // First check if pointer is within any droppable
   const pointerCollisions = pointerWithin(args);
-  
-  // If we have a collision with a column, prioritize it
+
+  // Column IDs to prioritize
   const columnIds = ['todo', 'in_progress', 'done'];
+
+  // Check if we're over a column
   const columnCollision = pointerCollisions.find(c => columnIds.includes(c.id as string));
-  
   if (columnCollision) {
+    // Also check for card collisions within that column
+    const cardCollisions = pointerCollisions.filter(c => !columnIds.includes(c.id as string));
+    if (cardCollisions.length > 0) {
+      // Return closest card collision
+      return cardCollisions;
+    }
+    // No cards, return the column
     return [columnCollision];
   }
-  
-  // Otherwise, use closestCorners for card-to-card sorting
-  const closestCollisions = closestCorners(args);
-  
-  // If closest collision is a column, return it
-  const closestColumn = closestCollisions.find(c => columnIds.includes(c.id as string));
-  if (closestColumn) {
-    return [closestColumn];
+
+  // Fallback to rect intersection for edge cases
+  const rectCollisions = rectIntersection(args);
+  const rectColumnCollision = rectCollisions.find(c => columnIds.includes(c.id as string));
+  if (rectColumnCollision) {
+    return [rectColumnCollision];
   }
-  
-  return closestCollisions;
+
+  // Finally, use closestCenter for card-to-card
+  return closestCenter(args);
 };
 
 // Get Gravatar URL using MD5 hash of email
@@ -650,6 +657,7 @@ export function TodosTab() {
     }
   }, [user, fetchTodos, fetchAdminUsers]);
 
+
   useEffect(() => {
     // Extract unique categories from todos
     const uniqueCategories = Array.from(new Set(todos.map(t => t.category)));
@@ -877,24 +885,40 @@ export function TodosTab() {
     setActiveDragId(event.active.id as string);
   };
 
-  const handleDragOver = async (event: DragOverEvent) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Check if we're dragging over a column (status)
+    if (activeId === overId) return;
+
+    const activeTodo = todos.find(t => t.id === activeId);
+    if (!activeTodo) return;
+
+    // Check if dropping over a column or a card
     const isOverColumn = ['todo', 'in_progress', 'done'].includes(overId);
-    
+    const overTodo = todos.find(t => t.id === overId);
+
+    // Determine target status
+    let targetStatus: TodoStatus;
     if (isOverColumn) {
-      const activeTodo = todos.find(t => t.id === activeId);
-      if (activeTodo && activeTodo.status !== overId) {
-        // Update status when dragging over a different column
-        setTodos(prev => prev.map(t => 
-          t.id === activeId ? { ...t, status: overId as TodoStatus } : t
-        ));
-      }
+      targetStatus = overId as TodoStatus;
+    } else if (overTodo) {
+      targetStatus = overTodo.status;
+    } else {
+      return;
+    }
+
+    // Moving to a different column
+    if (activeTodo.status !== targetStatus) {
+      setTodos(prevTodos => {
+        const newTodos = prevTodos.map(t =>
+          t.id === activeId ? { ...t, status: targetStatus } : t
+        );
+        return newTodos;
+      });
     }
   };
 
@@ -909,106 +933,79 @@ export function TodosTab() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Check if dropped on a column
-    const isOverColumn = ['todo', 'in_progress', 'done'].includes(overId);
-    const activeTodo = todos.find(t => t.id === activeId);
+    if (activeId === overId) return;
 
+    const activeTodo = todos.find(t => t.id === activeId);
     if (!activeTodo) return;
 
-    // Determine the new status
-    let newStatus: TodoStatus = activeTodo.status;
-    
+    const isOverColumn = ['todo', 'in_progress', 'done'].includes(overId);
+    const overTodo = todos.find(t => t.id === overId);
+
+    // Determine target status
+    let targetStatus: TodoStatus = activeTodo.status;
     if (isOverColumn) {
-      newStatus = overId as TodoStatus;
+      targetStatus = overId as TodoStatus;
+    } else if (overTodo) {
+      targetStatus = overTodo.status;
+    }
+
+    // Get todos in the target column (excluding the active todo), sorted by order
+    const todosInTargetColumn = todos
+      .filter(t => t.status === targetStatus && t.id !== activeId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    // Find target index
+    let targetIndex: number;
+    if (isOverColumn) {
+      // Dropped on column - add to end
+      targetIndex = todosInTargetColumn.length;
     } else {
-      // Dropped on another card - get that card's status
-      const overTodo = todos.find(t => t.id === overId);
-      if (overTodo) {
-        newStatus = overTodo.status;
-      }
+      // Dropped on a card - insert at that position
+      const overCardIndex = todosInTargetColumn.findIndex(t => t.id === overId);
+      targetIndex = overCardIndex !== -1 ? overCardIndex : todosInTargetColumn.length;
     }
 
-    // If status changed, update in database
-    if (newStatus !== activeTodo.status || !isOverColumn) {
-      // Update local state
-      const updatedTodos = todos.map(t => 
-        t.id === activeId ? { ...t, status: newStatus } : t
+    // Build new column order
+    const newColumnOrder = [...todosInTargetColumn];
+    newColumnOrder.splice(targetIndex, 0, { ...activeTodo, status: targetStatus });
+
+    // Update local state immediately for visual feedback
+    setTodos(prevTodos => {
+      const otherTodos = prevTodos.filter(t => t.status !== targetStatus && t.id !== activeId);
+      const updatedColumnTodos = newColumnOrder.map((todo, index) => ({
+        ...todo,
+        status: targetStatus,
+        order: index,
+      }));
+      return [...otherTodos, ...updatedColumnTodos];
+    });
+
+    // Save to database
+    try {
+      await Promise.all(
+        newColumnOrder.map((todo, index) =>
+          fetch('/api/admin/todos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              todoId: todo.id,
+              order: index,
+              status: targetStatus,
+            }),
+          })
+        )
       );
-      setTodos(updatedTodos);
-
-      // Persist to database
-      try {
-        await fetch('/api/admin/todos', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.uid,
-            todoId: activeId,
-            status: newStatus,
-          }),
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update todo status');
-        fetchTodos();
-      }
-    }
-
-    // Handle reordering within the same column
-    if (!isOverColumn && overId !== activeId) {
-      const overTodo = todos.find(t => t.id === overId);
-      if (overTodo && overTodo.status === newStatus) {
-        // Get todos in the same column
-        const columnTodos = todos
-          .filter(t => t.status === newStatus)
-          .sort((a, b) => a.order - b.order);
-        
-        const oldIndex = columnTodos.findIndex(t => t.id === activeId);
-        const newIndex = columnTodos.findIndex(t => t.id === overId);
-
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const reordered = arrayMove(columnTodos, oldIndex, newIndex);
-          
-          // Update orders
-          const orderUpdates = reordered.map((t, idx) => ({
-            id: t.id,
-            newOrder: idx,
-          }));
-
-          // Update local state
-          const updatedTodos = todos.map(t => {
-            const update = orderUpdates.find(u => u.id === t.id);
-            return update ? { ...t, order: update.newOrder } : t;
-          });
-          setTodos(updatedTodos);
-
-          // Persist to database
-          try {
-            await Promise.all(
-              orderUpdates.map(({ id, newOrder }) =>
-                fetch('/api/admin/todos', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: user.uid,
-                    todoId: id,
-                    order: newOrder,
-                  }),
-                })
-              )
-            );
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update todo order');
-            fetchTodos();
-          }
-        }
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update todo order');
+      await fetchTodos();
     }
   };
 
   const activeTodo = activeDragId ? todos.find(t => t.id === activeDragId) : null;
 
-  // Sort todos by global order
-  let filteredTodos = [...todos].sort((a, b) => a.order - b.order);
+  // Filter todos by category
+  let filteredTodos = [...todos];
 
   if (selectedCategory !== 'all') {
     filteredTodos = filteredTodos.filter(todo => todo.category === selectedCategory);
@@ -1017,6 +1014,18 @@ export function TodosTab() {
   if (hideDone) {
     filteredTodos = filteredTodos.filter(todo => todo.status !== 'done');
   }
+
+  // Sort by order within each status
+  filteredTodos.sort((a, b) => {
+    const aOrder = a.order ?? 0;
+    const bOrder = b.order ?? 0;
+    return aOrder - bOrder;
+  });
+
+  // Helper function to get todos for a specific status column
+  const getTodosForStatus = (status: TodoStatus) => {
+    return filteredTodos.filter(t => t.status === status);
+  };
 
   const getCategoryStats = (category: string) => {
     const categoryTodos = category === 'all'
@@ -1216,8 +1225,8 @@ export function TodosTab() {
             <KanbanColumn
               status="todo"
               title="TO DO"
-              todos={filteredTodos.filter(t => t.status === 'todo')}
-              count={filteredTodos.filter(t => t.status === 'todo').length}
+              todos={getTodosForStatus('todo')}
+              count={getTodosForStatus('todo').length}
               onCategoryChange={handleCategoryChange}
               onDelete={handleDelete}
               onOpenDetails={handleOpenDetails}
@@ -1228,8 +1237,8 @@ export function TodosTab() {
             <KanbanColumn
               status="in_progress"
               title="IN PROGRESS"
-              todos={filteredTodos.filter(t => t.status === 'in_progress')}
-              count={filteredTodos.filter(t => t.status === 'in_progress').length}
+              todos={getTodosForStatus('in_progress')}
+              count={getTodosForStatus('in_progress').length}
               onCategoryChange={handleCategoryChange}
               onDelete={handleDelete}
               onOpenDetails={handleOpenDetails}
@@ -1241,8 +1250,8 @@ export function TodosTab() {
               <KanbanColumn
                 status="done"
                 title="DONE"
-                todos={filteredTodos.filter(t => t.status === 'done')}
-                count={filteredTodos.filter(t => t.status === 'done').length}
+                todos={getTodosForStatus('done')}
+                count={getTodosForStatus('done').length}
                 onCategoryChange={handleCategoryChange}
                 onDelete={handleDelete}
                 onOpenDetails={handleOpenDetails}

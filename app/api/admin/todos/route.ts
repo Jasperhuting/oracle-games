@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the current max order within the same category to add the new todo at the end
+    // Get the current max order for 'todo' status to add the new todo at the end
     const todosSnapshot = await db.collection('adminTodos')
-      .where('category', '==', category || 'global')
+      .where('status', '==', 'todo')
       .orderBy('order', 'desc')
       .limit(1)
       .get();
