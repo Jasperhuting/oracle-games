@@ -391,10 +391,10 @@ Riders removed: ${result.ridersRemoved}`,
                   {/* Header */}
                   <div className="grid grid-cols-12 gap-4 p-3 bg-gray-100 font-semibold text-sm border-b border-gray-200">
                     <div className="col-span-1">{t('global.rank')}</div>
-                    <div className="col-span-4">Name</div>
-                    <div className="col-span-3">Team</div>
+                    <div className="col-span-4">{t('global.name')}</div>
+                    <div className="col-span-3">{t('global.team')}</div>
                     <div className="col-span-2">{t('global.points')}</div>
-                    <div className="col-span-1">Country</div>
+                    <div className="col-span-1">{t('global.country')}</div>
                     <div className="col-span-1"></div>
                   </div>
 
@@ -465,7 +465,7 @@ Riders removed: ${result.ridersRemoved}`,
                   {/* Header */}
                   <div className="grid grid-cols-13 gap-4 p-3 bg-gray-100 font-semibold text-sm border-b border-gray-200">
                     <div className="col-span-1">{t('global.rank')}</div>
-                    <div className="col-span-5">Name</div>
+                    <div className="col-span-5">{t('global.name')}</div>
                     <div className="col-span-2">Class</div>
                     <div className="col-span-2">{t('global.points')}</div>
                     <div className="col-span-1">Jersey</div>

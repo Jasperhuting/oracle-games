@@ -11,24 +11,12 @@ import { GameStatusManager } from "./GameStatusManager";
 import { useAuth } from "@/hooks/useAuth";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useTranslation } from "react-i18next";
-
-interface Game {
-  id: string;
-  name: string;
-  gameType: string;
-  year: number;
-  status: string;
-  playerCount: number;
-  maxPlayers?: number;
-  division?: string;
-  divisionCount?: number;
-  createdAt: string;
-}
+import { ClientGame } from "@/lib/types/games";
 
 export const GamesManagementTab = () => {
   const router = useRouter();
   const { user } = useAuth();
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<ClientGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<string>('');
@@ -38,7 +26,7 @@ export const GamesManagementTab = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [divisionModalOpen, setDivisionModalOpen] = useState(false);
   const [manageDivisionsModalOpen, setManageDivisionsModalOpen] = useState(false);
-  const [selectedDivisionGames, setSelectedDivisionGames] = useState<Game[]>([]);
+  const [selectedDivisionGames, setSelectedDivisionGames] = useState<ClientGame[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteGameId, setDeleteGameId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -145,7 +133,7 @@ export const GamesManagementTab = () => {
     setDivisionModalOpen(true);
   };
 
-  const handleManageDivisionGames = (divisionGames: Game[]) => {
+  const handleManageDivisionGames = (divisionGames: ClientGame[]) => {
     setSelectedDivisionGames(divisionGames);
     setManageDivisionsModalOpen(true);
   };
@@ -258,7 +246,7 @@ export const GamesManagementTab = () => {
     }
     acc[baseName].push(game);
     return acc;
-  }, {} as Record<string, Game[]>);
+  }, {} as Record<string, ClientGame[]>);
 
   // Convert grouped games to array and sort
   const gameGroups = Object.entries(groupedGames).map(([baseName, divisionGames]) => {
@@ -338,7 +326,7 @@ export const GamesManagementTab = () => {
 
           <div className="flex items-end">
             <Button
-              text="Refresh"
+              text={t('global.refresh')}
               onClick={loadGames}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 cursor-pointer"
             />
@@ -447,7 +435,7 @@ export const GamesManagementTab = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <GameStatusManager
-                            gameId={game.id}
+                            gameId={game.id!}
                             currentStatus={game.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
                             onStatusChange={loadGames}
                             compact
@@ -475,7 +463,7 @@ export const GamesManagementTab = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm flex flex-row gap-2">
                           <Button
-                            onClick={() => handleView(game.id)}
+                            onClick={() => game.id && handleView(game.id)}
                             variant="primary"
                             ghost
                             className="cursor-pointer"
@@ -483,7 +471,7 @@ export const GamesManagementTab = () => {
                             View
                           </Button>
                           <Button
-                            onClick={() => handleEdit(game.id)}
+                            onClick={() => game.id && handleEdit(game.id)}
                             variant="secondary"
                             ghost
                             className="cursor-pointer"
@@ -491,7 +479,7 @@ export const GamesManagementTab = () => {
                             Edit
                           </Button>
                           <Button
-                            onClick={() => handleManageLineup(game.id)}
+                            onClick={() => game.id && handleManageLineup(game.id)}
                             variant="success"
                             ghost
                             className="cursor-pointer"
@@ -500,7 +488,7 @@ export const GamesManagementTab = () => {
                           </Button>
                           {game.gameType === 'auctioneer' && game.status === 'bidding' && (
                             <Button
-                              onClick={() => confirmFinalizeAuction(game.id, game.name)}
+                              onClick={() => game.id && confirmFinalizeAuction(game.id, game.name)}
                               disabled={finalizingGameId === game.id}
                               variant="warning"
                               ghost
@@ -510,7 +498,7 @@ export const GamesManagementTab = () => {
                             </Button>
                           )}
                           <Button
-                            onClick={() => handleManageDivisions(game.id)}
+                            onClick={() => game.id && handleManageDivisions(game.id)}
                             variant="primary"
                             ghost
                             className="cursor-pointer"
@@ -529,7 +517,7 @@ export const GamesManagementTab = () => {
                           )}
                           {!group.hasDivisions && (
                             <Button
-                              onClick={() => handleDeleteClick(game.id)}
+                              onClick={() => game.id && handleDeleteClick(game.id)}
                               variant="danger"
                               ghost
                               className="cursor-pointer"
@@ -556,7 +544,7 @@ export const GamesManagementTab = () => {
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap">
                             <GameStatusManager
-                              gameId={divisionGame.id}
+                              gameId={divisionGame.id!}
                               currentStatus={divisionGame.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
                               onStatusChange={loadGames}
                               compact
@@ -575,21 +563,21 @@ export const GamesManagementTab = () => {
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm flex flex-row gap-2">
                             <Button
-                              onClick={() => handleView(divisionGame.id)}
+                              onClick={() => divisionGame.id && handleView(divisionGame.id)}
                               variant="primary"
                               ghost
                             >
                               View
                             </Button>
                             <Button
-                              onClick={() => handleEdit(divisionGame.id)}
+                              onClick={() => divisionGame.id && handleEdit(divisionGame.id)}
                               variant="secondary"
                               ghost
                             >
                               Edit
                             </Button>
                             <Button
-                              onClick={() => handleManageLineup(divisionGame.id)}
+                              onClick={() => divisionGame.id && handleManageLineup(divisionGame.id)}
                               variant="success"
                               ghost
                             >
@@ -597,7 +585,7 @@ export const GamesManagementTab = () => {
                             </Button>
                             {divisionGame.gameType === 'auctioneer' && divisionGame.status === 'bidding' && (
                               <Button
-                                onClick={() => confirmFinalizeAuction(divisionGame.id, divisionGame.name)}
+                                onClick={() => divisionGame.id && confirmFinalizeAuction(divisionGame.id, divisionGame.name)}
                                 disabled={finalizingGameId === divisionGame.id}
                                 variant="warning"
                                 ghost
@@ -605,13 +593,15 @@ export const GamesManagementTab = () => {
                                 {finalizingGameId === divisionGame.id ? '...' : 'Finalize'}
                               </Button>
                             )}
-                            <Button
-                              onClick={() => handleDeleteClick(divisionGame.id)}
-                              variant="danger"
-                              ghost
-                            >
-                              Delete
-                            </Button>
+                            {divisionGame.id && (
+                              <Button
+                                onClick={() => handleDeleteClick(divisionGame.id!)}
+                                variant="danger"
+                                ghost
+                              >
+                                Delete
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}

@@ -151,7 +151,7 @@ export const AuctionFilters = ({
             </span>
             <span className="flex flex-col flex-1 justify-center">
                 <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                    {game?.gameType === 'marginal-gains' ? 'Puntenklasse' : t('games.auctions.priceRangeLabel')}
+                    {game?.gameType === 'marginal-gains' ? t('global.points') : t('games.auctions.priceRangeLabel')}
                 </label>
                 <div className="py-2 mt-2">
                     <RangeSlider

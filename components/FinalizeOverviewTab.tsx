@@ -5,6 +5,7 @@ import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firesto
 import { db } from '@/lib/firebase/client';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { GameConfig } from '@/lib/types';
+import { useTranslation } from 'react-i18next';
 
 interface PlayerTeam {
   id: string;
@@ -82,6 +83,7 @@ export function FinalizeOverviewTab() {
   const [teamsCache, setTeamsCache] = useState<Map<string, TeamData>>(new Map());
   const [activeGameTab, setActiveGameTab] = useState<string>('');
   const [activeDivisionTabs, setActiveDivisionTabs] = useState<Map<string, string>>(new Map());
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadData();
@@ -1046,13 +1048,13 @@ export function FinalizeOverviewTab() {
                                 <table className="w-full">
                                   <thead>
                                     <tr className="bg-gray-50 border-b border-gray-200">
-                                      <th className="text-left py-2 px-4 text-sm font-semibold">Renner</th>
-                                      <th className="text-left py-2 px-4 text-sm font-semibold">Team</th>
-                                      <th className="text-right py-2 px-4 text-sm font-semibold">Origineel</th>
-                                      <th className="text-right py-2 px-4 text-sm font-semibold">Betaald</th>
-                                      <th className="text-right py-2 px-4 text-sm font-semibold">Verschil</th>
-                                      <th className="text-center py-2 px-4 text-sm font-semibold">Biedingen</th>
-                                      <th className="text-left py-2 px-4 text-sm font-semibold">Datum</th>
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">{t('global.rider')}</th>
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">{t('global.team')}</th>
+                                      <th className="text-right py-2 px-4 text-sm font-semibold">{t('global.originalPrice')}</th>
+                                      <th className="text-right py-2 px-4 text-sm font-semibold">{t('global.pricePaid')}</th>
+                                      <th className="text-right py-2 px-4 text-sm font-semibold">{t('global.difference')}</th>
+                                      <th className="text-center py-2 px-4 text-sm font-semibold">{t('global.bids')}</th>
+                                      <th className="text-left py-2 px-4 text-sm font-semibold">{t('global.date')}</th>
                                     </tr>
                                   </thead>
                                   <tbody>

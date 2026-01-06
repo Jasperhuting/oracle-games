@@ -179,12 +179,12 @@ export default function FinalizeOverviewPage() {
                         <table className="w-full">
                           <thead>
                             <tr className="border-b border-gray-700">
-                              <th className="text-left py-2 px-3">Renner</th>
-                              <th className="text-left py-2 px-3">Team</th>
-                              <th className="text-left py-2 px-3">Gekocht door</th>
+                              <th className="text-left py-2 px-3">{t('global.rider')}</th>
+                              <th className="text-left py-2 px-3">{t('global.team')}</th>
+                              <th className="text-left py-2 px-3">{t('global.purchasedBy')}</th>
                               <th className="text-right py-2 px-3">{t('global.price')}</th>
-                              <th className="text-left py-2 px-3">Type</th>
-                              <th className="text-left py-2 px-3">Datum</th>
+                              <th className="text-left py-2 px-3">{t('global.type')}</th>
+                              <th className="text-left py-2 px-3">{t('global.date')}</th>
                             </tr>
                           </thead>
                           <tbody>

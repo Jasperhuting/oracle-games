@@ -77,7 +77,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Foto</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Renner</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.team')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tijd</th>
                 </tr>
               </thead>
@@ -125,7 +125,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.team')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                 </tr>
               </thead>
@@ -181,7 +181,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.team')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.points')}</th>
                 </tr>
               </thead>
@@ -223,7 +223,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rider</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.team')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.points')}</th>
                 </tr>
               </thead>
@@ -263,7 +263,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('global.team')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                 </tr>
               </thead>

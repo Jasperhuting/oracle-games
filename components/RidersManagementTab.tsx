@@ -227,9 +227,9 @@ export const RidersManagementTab = () => {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.rank')}</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Country</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Team</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.name')}</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.country')}</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.team')}</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.points')}</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Retired</th>
               </tr>

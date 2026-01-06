@@ -1055,7 +1055,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
             <div className="flex gap-2">
               <Button
                 type="button"
-                text="🔄 Refresh"
+                text={t('global.refresh')}
                 onClick={() => {
                   invalidateAuctionCache(gameId);
                   setForceRefresh(true);

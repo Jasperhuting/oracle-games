@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MyTeamSelectionRow } from "./MyTeamSelectionRow";
 import { ChevronDown, ChevronUp } from "tabler-icons-react";
-import { AuctionGameData as GameData } from "@/lib/types/pages";
+import { GameType } from "@/lib/types/games";
 
 // TODO: replace any with real type
 export const MyTeamSelection = (
@@ -24,7 +24,7 @@ export const MyTeamSelection = (
         hideButton?: boolean,
         adjustingBid?: string | null,
         isWorldTourManager?: boolean,
-        game?: GameData
+        game?: { gameType?: GameType }
     }) => {
 
     const [open, setOpen] = useState(false);

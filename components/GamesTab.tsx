@@ -10,6 +10,7 @@ import ClassificationTabs from "./ClassificationTabs";
 import { ChevronLeft, ChevronRight } from "tabler-icons-react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Race } from "@/lib/types/game-ui";
+import { useTranslation } from "react-i18next";
 
 // Module-level cache that persists across component mounts
 const raceDataCache = new Map<string, any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -41,6 +42,7 @@ export const GamesTab = () => {
   const [initializeConfirmOpen, setInitializeConfirmOpen] = useState(false);
   const [saveAllStagesConfirmOpen, setSaveAllStagesConfirmOpen] = useState(false);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+  const { t } = useTranslation();
 
   const fetchRaces = (async () => {
 
@@ -444,7 +446,7 @@ export const GamesTab = () => {
             />
             <Button
               className="px-4 py-2 bg-primary hover:bg-primary/90 ml-auto"
-              text={loadingRaceData ? "🔄 Loading..." : "🔄 Refresh"}
+              text={loadingRaceData ? "🔄 Loading..." : t('global.refresh')}
               onClick={() => fetchRaceData(selectedRace, false, true)}
               disabled={loadingRaceData}
             />

@@ -3,7 +3,7 @@
  * Types for game-related UI components, modals, and forms
  */
 
-import { Game, AuctionPeriod, CountingRace, GameStatus } from './games';
+import { Game, ClientGame, AuctionPeriod, CountingRace, GameStatus } from './games';
 
 // Form Input Types
 export interface AuctionPeriodInput {
@@ -83,7 +83,7 @@ export interface GameRulesModalProps {
 }
 
 export interface ManageDivisionsModalProps {
-  games: Game[];
+  games: ClientGame[];
   onClose: () => void;
   onSuccess: () => void;
 }
