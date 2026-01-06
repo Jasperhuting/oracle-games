@@ -269,7 +269,7 @@ export async function GET(request: NextRequest) {
 
           const displayName = userData.displayName || userData.playername || 'daar';
 
-          const emailBody = `Beste ${displayName},\n\nVan harte gefeliciteerd met je ${age}e verjaardag! 🎂🎈\n\nHet hele Oracle Games team wenst je een fantastische dag toe vol vreugde en geluk.\n\nMoge je nog vele jaren genieten van spannende wielerwedstrijden en gezellige games met ons!${riderMessage}\n\nVeel plezier vandaag! 🚴‍♂️\n\nMet de beste wensen,\nHet Oracle Games team`;
+          const emailBody = `Beste ${displayName},\n\nVan harte gefeliciteerd met je ${age}e verjaardag! 🎂🎈\n\nHet hele Oracle Games team wenst je een fantastische dag toe vol vreugde en geluk.${riderMessage}\n\nVeel plezier vandaag! 🚴‍♂️\n\nMet de beste wensen,\nHet Oracle Games team`;
 
           try {
             const result = await resend.emails.send({
