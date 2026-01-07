@@ -14,8 +14,7 @@ import { RegisterFormProps } from "@/lib/types/component-props";
 export const RegisterForm = () => {
 
 
-    const { register, handleSubmit, setValue, getValues } = useForm<RegisterFormProps>();
-    const [isGenerating, setIsGenerating] = useState(false);
+    const { register, handleSubmit } = useForm<RegisterFormProps>();
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -154,60 +153,11 @@ export const RegisterForm = () => {
         }
     };
 
-    const makeUpPlayerName = async () => {
-        const email = getValues('email');
-        if (!email) return;
-
-        setIsGenerating(true);
-        setError(null);
-        setValue('playername', 'Spelersnaam genereren...');
-
-        try {
-            const response = await fetch('/api/generatePlayerName', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Failed to generate player name:', errorData);
-                setError(errorData.error || 'Er is iets misgegaan');
-                setValue('playername', '');
-                setIsGenerating(false);
-                return;
-            }
-
-            // Handle streaming response
-            const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
-            let playerName = '';
-
-            if (reader) {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    playerName += decoder.decode(value, { stream: true });
-                    // Update the input field in real-time as the name streams in
-                    setValue('playername', playerName);
-                }
-            }
-        } catch (error) {
-            console.error('Error generating player name:', error);
-            setValue('playername', '');
-        } finally {
-            setIsGenerating(false);
-        }
-    }
-
-
     return (
         <div className="flex flex-col">
             <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col">
-                <TextInput label="Email" placeholder="Email" {...register('email')} onBlur={makeUpPlayerName} />
+                <TextInput label="Email" placeholder="Email" {...register('email')} />
             </div>
             <div className="flex flex-col">
                 <TextInput type="password" label="Password" placeholder="Password" {...register('password')} />
