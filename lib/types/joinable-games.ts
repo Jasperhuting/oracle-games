@@ -3,7 +3,7 @@
  * Types for the joinable games UI components
  */
 
-import { GameType } from "./games";
+import { GameType, GameConfig } from "./games";
 
 // Simplified Game type for joinable games list UI
 // Note: gameType is string here because API responses may contain game types
@@ -24,8 +24,10 @@ export interface JoinableGame {
   registrationCloseDate?: string;
   createdAt: string;
   raceRef?: string;
+  raceType?: string;
   bidding?: boolean;
   teamSelectionDeadline?: string;
+  config?: GameConfig;
 }
 
 // Group of games with the same base name (for multi-division games)
@@ -79,7 +81,7 @@ export interface GameCardBadgesProps {
 }
 
 export interface GameCardMetadataProps {
-  game: Pick<JoinableGame, 'gameType' | 'year' | 'teamSelectionDeadline' | 'registrationOpenDate' | 'registrationCloseDate' | 'division' | 'description'>;
+  game: Pick<JoinableGame, 'gameType' | 'year' | 'teamSelectionDeadline' | 'registrationOpenDate' | 'registrationCloseDate' | 'division' | 'description' | 'config' | 'raceType'>;
   group: Pick<JoinableGameGroup, 'baseName' | 'totalPlayers' | 'maxPlayers' | 'isMultiDivision' | 'games'>;
   participant?: Pick<JoinableGameParticipant, 'assignedDivision'>;
   availableRules: Set<GameType>;

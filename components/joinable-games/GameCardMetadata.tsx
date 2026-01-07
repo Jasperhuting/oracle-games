@@ -2,7 +2,35 @@
 
 import { useTranslation } from "react-i18next";
 import { Button } from "../Button";
-import { GameCardMetadataProps, GameType } from "@/lib/types";
+import { GameCardMetadataProps, GameType, AuctioneerConfig, MarginalGainsConfig, WorldTourManagerConfig } from "@/lib/types";
+
+// Helper to get the game start date from config
+const getGameStartDate = (config: AuctioneerConfig | MarginalGainsConfig | WorldTourManagerConfig | undefined): string | undefined => {
+  if (!config) return undefined;
+
+  // Check auction periods for start date
+  if ('auctionPeriods' in config && config.auctionPeriods && config.auctionPeriods.length > 0) {
+    const sortedPeriods = [...config.auctionPeriods].sort((a, b) => {
+      const dateA = typeof a.startDate === 'string' ? a.startDate : a.startDate?.toDate?.()?.toISOString();
+      const dateB = typeof b.startDate === 'string' ? b.startDate : b.startDate?.toDate?.()?.toISOString();
+      return (dateA || '').localeCompare(dateB || '');
+    });
+    const firstPeriod = sortedPeriods[0];
+    if (firstPeriod.startDate) {
+      return typeof firstPeriod.startDate === 'string'
+        ? firstPeriod.startDate
+        : firstPeriod.startDate?.toDate?.()?.toISOString();
+    }
+  }
+
+  return undefined;
+};
+
+// Helper to get counting races from config
+const getCountingRaces = (config: AuctioneerConfig | undefined): { raceId: string; raceName: string }[] => {
+  if (!config || !('countingRaces' in config) || !config.countingRaces) return [];
+  return config.countingRaces;
+};
 
 export const GameCardMetadata = ({
   game,
@@ -15,6 +43,19 @@ export const GameCardMetadata = ({
 }: GameCardMetadataProps) => {
   const { t } = useTranslation();
   const isFull = group.maxPlayers && group.totalPlayers >= group.maxPlayers;
+
+  // Get counting races for display
+  const countingRaces = game.gameType === 'auctioneer'
+    ? getCountingRaces(game.config as AuctioneerConfig)
+    : [];
+
+  // Determine races text - for seasonal games show "Heel seizoen", otherwise show counting races
+  const isSeasonalGame = game.raceType === 'season';
+
+  // Get game start date
+  const gameStartDate = ['auctioneer', 'worldtour-manager', 'marginal-gains'].includes(game.gameType)
+    ? getGameStartDate(game.config as AuctioneerConfig | MarginalGainsConfig | WorldTourManagerConfig)
+    : undefined;
 
   return (
     <>
@@ -37,6 +78,11 @@ export const GameCardMetadata = ({
         <div>
           <span className="font-medium">{t('global.year')}:</span> {game.year}
         </div>
+        {gameStartDate && (
+          <div>
+            <span className="font-medium">{t('games.starts', 'Start')}:</span> {formatDate(gameStartDate)}
+          </div>
+        )}
         {game.teamSelectionDeadline && (
           <div>
             <span className="font-medium">Deadline:</span> {formatDateTime(game.teamSelectionDeadline)}
@@ -62,6 +108,17 @@ export const GameCardMetadata = ({
           </div>
         )}
       </div>
+
+      {/* Races info - show "Heel seizoen" for seasonal games, or specific counting races */}
+      {(isSeasonalGame || countingRaces.length > 0) && (
+        <div className="mt-2 text-sm text-gray-600">
+          <span className="font-medium">{t('games.races', 'Wedstrijden')}:</span>{' '}
+          {isSeasonalGame
+            ? t('games.fullSeason', 'Heel seizoen')
+            : countingRaces.map(r => r.raceName).join(', ')
+          }
+        </div>
+      )}
 
       {(game.registrationOpenDate || game.registrationCloseDate) && (
         <div className="mt-2 text-xs text-gray-500">

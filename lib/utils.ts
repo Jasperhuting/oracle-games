@@ -29,9 +29,9 @@ export const getBirthYear = (birthDate: string | number): number => {
 
     // Helper to check if a rider is a neo-professional
     export const isNeoProf = (rider: RiderWithBid, maxNeoProAge: number): boolean => {
-  
+
       if (!maxNeoProAge) return false;
-      if (!rider.age) return false;
+      if (!rider?.age) return false;
   
       const age = calculateAge(rider.age);
       return age <= maxNeoProAge;
