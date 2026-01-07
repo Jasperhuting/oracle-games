@@ -89,6 +89,18 @@ export async function PATCH(request: NextRequest) {
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
+    // If retired status was changed, increment cache version to invalidate all client caches
+    if (retired !== undefined) {
+      const configRef = db.collection('config').doc('cache');
+      const configDoc = await configRef.get();
+      const currentCacheVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
+      await configRef.set({
+        version: currentCacheVersion + 1,
+        updatedAt: Timestamp.now()
+      }, { merge: true });
+      console.log(`[RIDER_UPDATE] Cache version incremented to ${currentCacheVersion + 1} due to retired status change`);
+    }
+
     return NextResponse.json({
       success: true,
       rider: {

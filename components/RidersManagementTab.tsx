@@ -96,6 +96,13 @@ export const RidersManagementTab = () => {
     }
   }, []);
 
+  // Sync local riders state when rankingsRiders changes (e.g., after refetch)
+  useEffect(() => {
+    if (rankingsRiders.length > 0) {
+      setRiders(rankingsRiders);
+    }
+  }, [rankingsRiders]);
+
   // Update rider team
   const handleUpdateRiderTeam = async (riderId: string, teamId: string | null, teamName: string | null) => {
     if (!user) return;
@@ -261,6 +268,9 @@ export const RidersManagementTab = () => {
       setRiders(riders.map(r =>
         r.id === retireRefundDialog.riderId ? { ...r, retired: true } : r
       ));
+
+      // Also refetch rankings to update the cache (force refresh to bypass IndexedDB cache)
+      await refetchRankings(true);
 
       setRetireRefundDialog(null);
       setInfoDialog({

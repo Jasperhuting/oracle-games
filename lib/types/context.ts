@@ -12,7 +12,7 @@ export interface RankingsContextType {
   riders: Rider[];
   loading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  refetch: (forceRefresh?: boolean) => Promise<void>;
   getRiderById: (id: string) => Rider | undefined;
   getRidersByIds: (ids: string[]) => Rider[];
 }

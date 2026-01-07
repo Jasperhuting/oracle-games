@@ -208,6 +208,16 @@ export async function POST(request: NextRequest) {
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       });
+
+      // Increment cache version to invalidate all client caches
+      const configRef = db.collection('config').doc('cache');
+      const configDoc = await configRef.get();
+      const currentCacheVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
+      await configRef.set({
+        version: currentCacheVersion + 1,
+        updatedAt: Timestamp.now()
+      }, { merge: true });
+      console.log(`[RETIRE_WITH_REFUND] Cache version incremented to ${currentCacheVersion + 1}`);
     }
 
     console.log(`[RETIRE_WITH_REFUND] Completed. Processed ${result.refundsProcessed} refunds, total: ${result.totalRefunded}`);
