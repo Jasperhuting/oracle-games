@@ -19,6 +19,7 @@ const PasskeyLogin = dynamic(
 export const LoginForm = () => {
     const { register, handleSubmit } = useForm<LoginFormProps>();
     const [error, setError] = useState<string | null>(null);
+    const [showVerifyLink, setShowVerifyLink] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [stayLoggedIn, setStayLoggedIn] = useState(true);
@@ -29,6 +30,7 @@ export const LoginForm = () => {
 
         setIsSubmitting(true);
         setError(null);
+        setShowVerifyLink(false);
 
         try {
             const { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } = await import ("firebase/auth");
@@ -46,10 +48,13 @@ export const LoginForm = () => {
             // Check if email is verified
             if (!user.emailVerified) {
                 console.log('Email not verified');
+                // Store email for verify page
+                localStorage.setItem('pendingVerificationEmail', data.email);
                 // Sign out the user
                 await auth.signOut();
-                // Show error message instead of redirect
+                // Show error message with link to verify page
                 setError('Je email is nog niet geverifieerd. Controleer je inbox (en spam folder) voor de verificatie link.');
+                setShowVerifyLink(true);
                 setIsSubmitting(false);
                 return;
             }
@@ -102,6 +107,7 @@ export const LoginForm = () => {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         setError(null);
+        setShowVerifyLink(false);
 
         try {
             const { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, browserSessionPersistence } = await import("firebase/auth");
@@ -201,7 +207,16 @@ export const LoginForm = () => {
                         {...register('password', { required: true })}
                     />
                 </div>
-                {error && <span className="text-red-500 text-xs my-2" data-testid="login-error-message">{error}</span>}
+                {error && (
+                    <div className="text-red-500 text-xs my-2" data-testid="login-error-message">
+                        <span>{error}</span>
+                        {showVerifyLink && (
+                            <Link href="/verify-email" className="block mt-1 underline text-primary hover:text-primary/80">
+                                Ga naar verificatie pagina
+                            </Link>
+                        )}
+                    </div>
+                )}
                 <div className="flex justify-between items-center my-2">
                     <label className="flex items-center text-xs cursor-pointer">
                         <input
