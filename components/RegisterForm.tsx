@@ -166,7 +166,7 @@ export const RegisterForm = () => {
                 <TextInput type="password" label="Confirm Password" placeholder="Confirm Password" {...register('password_confirmation')} />
             </div>
              <div className="flex flex-col">
-                <TextInput label="Player Name" placeholder="Player Name" {...register('playername')} disabled={isGenerating} />
+                <TextInput label="Player Name" placeholder="Player Name" {...register('playername')} />
                 {error && <span className="text-red-500 max-w-[200px] text-xs my-2">{error}</span>}
             </div>
             <Button className="w-full justify-center py-1 my-4" text={isSubmitting ? "Registering..." : "Register"} type="submit" disabled={isSubmitting} />

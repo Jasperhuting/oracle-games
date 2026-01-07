@@ -21,6 +21,9 @@ export const LoginForm = () => {
     const [error, setError] = useState<string | null>(null);
     const [showVerifyLink, setShowVerifyLink] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isResendingVerification, setIsResendingVerification] = useState(false);
+    const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+    const [pendingUserCredentials, setPendingUserCredentials] = useState<{ email: string; password: string } | null>(null);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [stayLoggedIn, setStayLoggedIn] = useState(true);
     const router = useRouter();
@@ -50,9 +53,11 @@ export const LoginForm = () => {
                 console.log('Email not verified');
                 // Store email for verify page
                 localStorage.setItem('pendingVerificationEmail', data.email);
+                // Store credentials for resend functionality
+                setPendingUserCredentials({ email: data.email, password: data.password });
                 // Sign out the user
                 await auth.signOut();
-                // Show error message with link to verify page
+                // Show error message with resend button
                 setError('Je email is nog niet geverifieerd. Controleer je inbox (en spam folder) voor de verificatie link.');
                 setShowVerifyLink(true);
                 setIsSubmitting(false);
@@ -163,6 +168,52 @@ export const LoginForm = () => {
         }
     };
 
+    const handleResendVerificationEmail = async () => {
+        if (!pendingUserCredentials) return;
+
+        setIsResendingVerification(true);
+        setVerificationEmailSent(false);
+
+        try {
+            const { signInWithEmailAndPassword, sendEmailVerification } = await import("firebase/auth");
+            const { auth } = await import("@/lib/firebase/client");
+
+            // Temporarily sign in to send verification email
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                pendingUserCredentials.email,
+                pendingUserCredentials.password
+            );
+
+            const actionCodeSettings = {
+                url: `${window.location.origin}/login`,
+                handleCodeInApp: false,
+            };
+
+            await sendEmailVerification(userCredential.user, actionCodeSettings);
+
+            // Sign out again
+            await auth.signOut();
+
+            setVerificationEmailSent(true);
+            setError(null);
+        } catch (error: unknown) {
+            console.error('Error resending verification email:', error);
+            if (error && typeof error === 'object' && 'code' in error) {
+                const firebaseError = error as { code: string };
+                if (firebaseError.code === 'auth/too-many-requests') {
+                    setError('Te veel verzoeken. Wacht even voordat je het opnieuw probeert.');
+                } else {
+                    setError('Er ging iets mis bij het versturen van de email. Probeer het later opnieuw.');
+                }
+            } else {
+                setError('Er ging iets mis bij het versturen van de email.');
+            }
+        } finally {
+            setIsResendingVerification(false);
+        }
+    };
+
     const ensureUserExists = async (user: User) => {
         try {
             const response = await fetch('/api/createUser', {
@@ -207,13 +258,25 @@ export const LoginForm = () => {
                         {...register('password', { required: true })}
                     />
                 </div>
+                {verificationEmailSent && (
+                    <div className="bg-green-50 border border-green-200 rounded-md p-3 my-2" data-testid="verification-success-message">
+                        <p className="text-green-800 text-xs">
+                            ✓ Verificatie email verstuurd! Controleer je inbox.
+                        </p>
+                    </div>
+                )}
                 {error && (
                     <div className="text-red-500 text-xs my-2" data-testid="login-error-message">
                         <span>{error}</span>
-                        {showVerifyLink && (
-                            <Link href="/verify-email" className="block mt-1 underline text-primary hover:text-primary/80">
-                                Ga naar verificatie pagina
-                            </Link>
+                        {showVerifyLink && pendingUserCredentials && (
+                            <button
+                                type="button"
+                                onClick={handleResendVerificationEmail}
+                                disabled={isResendingVerification}
+                                className="block mt-2 underline text-primary hover:text-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isResendingVerification ? 'Bezig met versturen...' : 'Verificatie email opnieuw versturen'}
+                            </button>
                         )}
                     </div>
                 )}
