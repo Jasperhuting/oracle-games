@@ -24,11 +24,27 @@ export const RidersManagementTab = () => {
   const BATCH_SIZE = 1000;
   const hasFetchedRef = useRef(false);
 
-  const { t } = useTranslation(); 
+  const { t } = useTranslation();
 
   // Inline editing state
   const [editingRiderTeam, setEditingRiderTeam] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+
+  // Retire with refund state
+  const [retireRefundDialog, setRetireRefundDialog] = useState<{
+    riderId: string;
+    riderName: string;
+    loading: boolean;
+    dryRunResult: {
+      affectedParticipants: Array<{
+        playername: string;
+        gameName: string;
+        pricePaid: number;
+      }>;
+      totalRefunded: number;
+    } | null;
+  } | null>(null);
+  const [processingRetire, setProcessingRetire] = useState(false);
 
   // Close editor when clicking outside
   useEffect(() => {
@@ -155,7 +171,7 @@ export const RidersManagementTab = () => {
       setRiders(riders.map(r =>
         r.id === riderId ? { ...r, retired: !currentRetired } : r
       ));
-    } catch (error: unknown) { 
+    } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error updating rider status:', error);
         setInfoDialog({
@@ -163,6 +179,103 @@ export const RidersManagementTab = () => {
           description: error.message || 'Failed to update rider status.',
         });
       }
+    }
+  };
+
+  // Open retire with refund dialog (performs dry run first)
+  const handleOpenRetireRefundDialog = async (riderId: string, riderName: string) => {
+    if (!user) return;
+
+    setRetireRefundDialog({
+      riderId,
+      riderName,
+      loading: true,
+      dryRunResult: null,
+    });
+
+    try {
+      const response = await fetch('/api/riders/retire-with-refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.uid,
+          riderId,
+          year: 2026,
+          dryRun: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to check affected participants');
+      }
+
+      const data = await response.json();
+
+      setRetireRefundDialog({
+        riderId,
+        riderName,
+        loading: false,
+        dryRunResult: {
+          affectedParticipants: data.result.affectedParticipants,
+          totalRefunded: data.result.totalRefunded,
+        },
+      });
+    } catch (error: unknown) {
+      setRetireRefundDialog(null);
+      if (error instanceof Error) {
+        setInfoDialog({
+          title: 'Error',
+          description: error.message || 'Failed to check affected participants.',
+        });
+      }
+    }
+  };
+
+  // Execute retire with refund
+  const handleConfirmRetireWithRefund = async () => {
+    if (!user || !retireRefundDialog) return;
+
+    setProcessingRetire(true);
+
+    try {
+      const response = await fetch('/api/riders/retire-with-refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.uid,
+          riderId: retireRefundDialog.riderId,
+          year: 2026,
+          dryRun: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to retire rider with refund');
+      }
+
+      const data = await response.json();
+
+      // Update local state
+      setRiders(riders.map(r =>
+        r.id === retireRefundDialog.riderId ? { ...r, retired: true } : r
+      ));
+
+      setRetireRefundDialog(null);
+      setInfoDialog({
+        title: 'Success',
+        description: data.message,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setInfoDialog({
+          title: 'Error',
+          description: error.message || 'Failed to retire rider with refund.',
+        });
+      }
+    } finally {
+      setProcessingRetire(false);
     }
   };
 
@@ -232,12 +345,13 @@ export const RidersManagementTab = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.team')}</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('global.points')}</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Retired</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredRiders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     No riders found
                   </td>
                 </tr>
@@ -321,6 +435,19 @@ export const RidersManagementTab = () => {
                           className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer"
                         />
                       </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3 text-sm">
+                        {!rider.retired && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleOpenRetireRefundDialog(rider.id, rider.name)}
+                          >
+                            Retire + Refund
+                          </Button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
@@ -348,6 +475,40 @@ export const RidersManagementTab = () => {
           confirmText="OK"
           cancelText="Close"
         />
+      )}
+
+      {/* Retire with Refund Dialog */}
+      {retireRefundDialog && !retireRefundDialog.loading && (
+        <ConfirmDialog
+          open={true}
+          onClose={() => !processingRetire && setRetireRefundDialog(null)}
+          onConfirm={handleConfirmRetireWithRefund}
+          title={`Retire ${retireRefundDialog.riderName} with Refund`}
+          description={
+            retireRefundDialog.dryRunResult?.affectedParticipants.length === 0
+              ? 'No participants have this rider in their team. The rider will simply be marked as retired.'
+              : `This will retire the rider and refund the following ${retireRefundDialog.dryRunResult?.affectedParticipants.length} participant(s):\n\n${
+                  retireRefundDialog.dryRunResult?.affectedParticipants
+                    .map(p => `• ${p.playername} (${p.gameName}): €${p.pricePaid}`)
+                    .join('\n')
+                }\n\nTotal refund: €${retireRefundDialog.dryRunResult?.totalRefunded}`
+          }
+          confirmText={processingRetire ? 'Processing...' : 'Confirm Retire + Refund'}
+          cancelText="Cancel"
+          variant="danger"
+        />
+      )}
+
+      {/* Loading indicator for retire with refund */}
+      {retireRefundDialog?.loading && (
+        <div className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-xs flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 shadow-xl">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-700">Loading affected participants...</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
