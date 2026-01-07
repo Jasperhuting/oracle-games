@@ -7,6 +7,7 @@ import { GameType } from "@/lib/types/games";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { GameCard } from "./joinable-games";
+import Link from "next/link";
 import { 
   JoinableGame, 
   JoinableGameGroup, 
@@ -33,6 +34,9 @@ export const JoinableGamesTab = () => {
   const [pendingLeaveGameId, setPendingLeaveGameId] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
   const [showTestGames, setShowTestGames] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const { t } = useTranslation();
 
@@ -372,6 +376,48 @@ export const JoinableGamesTab = () => {
   const regularGameGroups = gameGroups.filter(group => !isTestGame(group));
   const testGameGroups = gameGroups.filter(group => isTestGame(group));
 
+  // Calendar helper functions
+  const MONTHS_NL = [
+    'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+    'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
+  ];
+  const DAYS_NL = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+
+  const getGamesForDay = (day: number): JoinableGameGroup[] => {
+    const targetDate = new Date(currentYear, currentMonth, day);
+    return regularGameGroups.filter(group => {
+      const game = group.games[0];
+      // Check registration dates or team selection deadline
+      const regOpen = game.registrationOpenDate ? new Date(game.registrationOpenDate) : null;
+      const regClose = game.registrationCloseDate ? new Date(game.registrationCloseDate) : null;
+      const deadline = game.teamSelectionDeadline ? new Date(game.teamSelectionDeadline) : null;
+      
+      // Show on registration open date
+      if (regOpen && regOpen.toDateString() === targetDate.toDateString()) return true;
+      // Show on registration close date
+      if (regClose && regClose.toDateString() === targetDate.toDateString()) return true;
+      // Show on team selection deadline
+      if (deadline && deadline.toDateString() === targetDate.toDateString()) return true;
+      
+      return false;
+    });
+  };
+
+  const getCalendarDays = () => {
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    
+    let startDayOfWeek = firstDay.getDay() - 1;
+    if (startDayOfWeek < 0) startDayOfWeek = 6;
+    
+    const days: (number | null)[] = [];
+    for (let i = 0; i < startDayOfWeek; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    
+    return days;
+  };
+
   // Show loading state until auth is ready, games are loaded, and participations are loaded
   if (authLoading || loading || (user && !participationsLoaded)) {
     return (
@@ -385,7 +431,32 @@ export const JoinableGamesTab = () => {
     <div className="space-y-4">
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <h2 className="text-2xl font-bold mb-4">{t('games.joinGame')}</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">{t('games.joinGame')}</h2>
+          <div className="flex items-center gap-3">
+            {/* View toggle */}
+            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                {t('games.listView', 'Lijst')}
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                {t('games.calendarView', 'Kalender')}
+              </button>
+            </div>
+            <Link
+              href="/calendar"
+              className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1"
+            >
+              {t('games.viewCalendar', 'Bekijk race kalender')} →
+            </Link>
+          </div>
+        </div>
 
         {/* Filters */}
         <div className="flex gap-4">
@@ -430,10 +501,117 @@ export const JoinableGamesTab = () => {
         </div>
       )}
 
-      {/* Games List */}
+      {/* Games List or Calendar */}
       {games.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
           <p className="text-gray-600">No games found with the selected filters</p>
+        </div>
+      ) : viewMode === 'calendar' ? (
+        /* Calendar View */
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          {/* Month navigation */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <button
+              onClick={() => {
+                if (currentMonth === 0) {
+                  setCurrentMonth(11);
+                  setCurrentYear(y => y - 1);
+                } else {
+                  setCurrentMonth(m => m - 1);
+                }
+              }}
+              className="p-2 hover:bg-gray-100 rounded-full"
+            >
+              ←
+            </button>
+            <h2 className="text-lg font-semibold text-gray-700">
+              {MONTHS_NL[currentMonth]} {currentYear}
+            </h2>
+            <button
+              onClick={() => {
+                if (currentMonth === 11) {
+                  setCurrentMonth(0);
+                  setCurrentYear(y => y + 1);
+                } else {
+                  setCurrentMonth(m => m + 1);
+                }
+              }}
+              className="p-2 hover:bg-gray-100 rounded-full"
+            >
+              →
+            </button>
+          </div>
+
+          {/* Day headers */}
+          <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+            {DAYS_NL.map(day => (
+              <div key={day} className="px-2 py-2 text-center text-xs font-medium text-gray-500">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7">
+            {getCalendarDays().map((day, index) => {
+              const dayGames = day ? getGamesForDay(day) : [];
+              const isToday = day && 
+                new Date().getDate() === day &&
+                new Date().getMonth() === currentMonth &&
+                new Date().getFullYear() === currentYear;
+
+              return (
+                <div
+                  key={index}
+                  className={`min-h-[100px] p-1 border-b border-r border-gray-100 ${
+                    day ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                >
+                  {day && (
+                    <>
+                      <div className={`text-xs mb-1 ${isToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : 'text-gray-400'}`}>
+                        {day}
+                      </div>
+                      <div className="space-y-0.5">
+                        {dayGames.slice(0, 2).map(group => {
+                          const game = group.games[0];
+                          const isJoined = group.games.some(g => myGames.has(g.id));
+                          return (
+                            <div
+                              key={group.baseName}
+                              className={`w-full text-left px-1 py-0.5 text-xs rounded truncate ${
+                                isJoined ? 'bg-green-100 text-green-800' : 'bg-primary/10 text-primary'
+                              }`}
+                              title={group.baseName}
+                            >
+                              {group.baseName}
+                            </div>
+                          );
+                        })}
+                        {dayGames.length > 2 && (
+                          <div className="text-xs text-gray-400 px-1">
+                            +{dayGames.length - 2} meer
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="p-3 border-t border-gray-200 flex gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded bg-primary/10"></span>
+              <span>{t('games.available', 'Beschikbaar')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded bg-green-100"></span>
+              <span>{t('games.joined', 'Ingeschreven')}</span>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">

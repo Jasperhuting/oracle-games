@@ -151,9 +151,9 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             display: false
         },
         {
-            name: t('header.menu.gameCalendar'),
-            href: "/gameCalendar",
-            display: false
+            name: t('header.menu.calendar', 'Kalender'),
+            href: "/calendar",
+            display: true
         },
         {
             name: t('header.menu.myGames'),

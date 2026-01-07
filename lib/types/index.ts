@@ -12,6 +12,7 @@ export * from './display';
 export * from './activity';
 export * from './admin';
 export * from './auth';
+export * from './calendar';
 export * from './messaging';
 export * from './user';
 export * from './context';
