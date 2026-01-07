@@ -46,12 +46,11 @@ export const LoginForm = () => {
             // Check if email is verified
             if (!user.emailVerified) {
                 console.log('Email not verified');
-                // Store email for verify page
-                localStorage.setItem('pendingVerificationEmail', data.email);
                 // Sign out the user
                 await auth.signOut();
-                // Redirect to verify email page
-                router.push('/verify-email');
+                // Show error message instead of redirect
+                setError('Je email is nog niet geverifieerd. Controleer je inbox (en spam folder) voor de verificatie link.');
+                setIsSubmitting(false);
                 return;
             }
             
