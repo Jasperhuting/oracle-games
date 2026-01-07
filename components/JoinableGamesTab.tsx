@@ -14,7 +14,7 @@ import {
 } from "@/lib/types";
 
 export const JoinableGamesTab = () => {
-  const { user, impersonationStatus } = useAuth();
+  const { user, impersonationStatus, loading: authLoading } = useAuth();
   const [games, setGames] = useState<JoinableGame[]>([]);
   const [myGames, setMyGames] = useState<Set<string>>(new Set());
   const [myParticipants, setMyParticipants] = useState<Map<string, JoinableGameParticipant>>(new Map());
@@ -95,14 +95,18 @@ export const JoinableGamesTab = () => {
     } catch (error: unknown) {
       console.error('Error loading games:', error);
       setError(error instanceof Error ? error.message : 'Something went wrong loading games');
+      // Even on error, mark participations as loaded to prevent infinite loading
+      setParticipationsLoaded(true);
     } finally {
       setLoading(false);
     }
   });
 
   useEffect(() => {
+    // Don't load games until auth is ready
+    if (authLoading) return;
     loadGames();
-  }, [user, filterYear, filterStatus]);
+  }, [user, filterYear, filterStatus, authLoading]);
 
   // Fetch available game rules
   useEffect(() => {
@@ -368,8 +372,8 @@ export const JoinableGamesTab = () => {
   const regularGameGroups = gameGroups.filter(group => !isTestGame(group));
   const testGameGroups = gameGroups.filter(group => isTestGame(group));
 
-  // Show loading state until both games and participations are loaded
-  if (loading || (user && !participationsLoaded)) {
+  // Show loading state until auth is ready, games are loaded, and participations are loaded
+  if (authLoading || loading || (user && !participationsLoaded)) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-gray-600">{t('games.loadingGames')}</div>
