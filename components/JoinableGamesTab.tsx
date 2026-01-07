@@ -19,6 +19,7 @@ export const JoinableGamesTab = () => {
   const [myGames, setMyGames] = useState<Set<string>>(new Set());
   const [myParticipants, setMyParticipants] = useState<Map<string, JoinableGameParticipant>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [participationsLoaded, setParticipationsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -37,6 +38,7 @@ export const JoinableGamesTab = () => {
 
   const loadGames = (async () => {
     setLoading(true);
+    setParticipationsLoaded(false);
     setError(null);
 
     try {
@@ -85,6 +87,10 @@ export const JoinableGamesTab = () => {
           gameIds && setMyGames(gameIds);
           participantMap && setMyParticipants(participantMap);
         }
+        setParticipationsLoaded(true);
+      } else {
+        // No user logged in, participations are "loaded" (empty)
+        setParticipationsLoaded(true);
       }
     } catch (error: unknown) {
       console.error('Error loading games:', error);
@@ -362,7 +368,8 @@ export const JoinableGamesTab = () => {
   const regularGameGroups = gameGroups.filter(group => !isTestGame(group));
   const testGameGroups = gameGroups.filter(group => isTestGame(group));
 
-  if (loading && games.length === 0) {
+  // Show loading state until both games and participations are loaded
+  if (loading || (user && !participationsLoaded)) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-gray-600">{t('games.loadingGames')}</div>
