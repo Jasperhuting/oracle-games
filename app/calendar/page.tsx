@@ -100,13 +100,11 @@ function GameBadge({ game }: { game: CalendarGame }) {
 // Race card component (list view)
 function RaceCard({
   race,
-  seasonalGames,
 }: {
   race: CalendarRace;
-  seasonalGames: CalendarGame[];
 }) {
-  // Combine seasonal games with race-specific games (both filtered for test games)
-  const allGames = [...seasonalGames, ...filterTestGames(race.games)];
+  // Games are already attached to the race by the API (including seasonal games for non-women races)
+  const allGames = filterTestGames(race.games);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
@@ -385,14 +383,13 @@ function CalendarGrid({
 // Race detail popup
 function RaceDetailPopup({
   race,
-  seasonalGames,
   onClose,
 }: {
   race: CalendarRace;
-  seasonalGames: CalendarGame[];
   onClose: () => void;
 }) {
-  const allGames = [...seasonalGames, ...filterTestGames(race.games)];
+  // Games are already attached to the race by the API (including seasonal games for non-women races)
+  const allGames = filterTestGames(race.games);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -632,7 +629,6 @@ export default function CalendarPage() {
                           <RaceCard
                             key={race.id}
                             race={race}
-                            seasonalGames={data.seasonalGames}
                           />
                         ))}
                       </div>
@@ -694,10 +690,9 @@ export default function CalendarPage() {
       )}
 
       {/* Race detail popup */}
-      {selectedRace && data && (
+      {selectedRace && (
         <RaceDetailPopup
           race={selectedRace}
-          seasonalGames={data.seasonalGames}
           onClose={() => setSelectedRace(null)}
         />
       )}

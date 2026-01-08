@@ -69,10 +69,33 @@ export async function GET(request: NextRequest): Promise<NextResponse<CalendarRe
       }
     });
 
+    // Women's race classifications - these should not count seasonal games
+    const WOMEN_CLASSIFICATIONS = ['1.WWT', '2.WWT'];
+
+    // Keywords in race name/slug that indicate women's races
+    const WOMEN_KEYWORDS = ['women', 'woman', 'ladies', 'féminin', 'feminin', 'dames', '-we_', '-we-'];
+
+    // Helper function to check if a race is a women's race
+    const isWomenRace = (race: CalendarRace): boolean => {
+      // Check classification
+      if (WOMEN_CLASSIFICATIONS.includes(race.classification)) {
+        return true;
+      }
+      // Check race name and slug for women's keywords
+      const nameAndSlug = `${race.name} ${race.slug}`.toLowerCase();
+      return WOMEN_KEYWORDS.some(keyword => nameAndSlug.includes(keyword));
+    };
+
     // Attach games to races
     races.forEach(race => {
       const gamesForRace = raceToGamesMap.get(race.id) || [];
-      race.games = gamesForRace;
+
+      // For women's races, only include race-specific games, not seasonal games
+      if (isWomenRace(race)) {
+        race.games = gamesForRace; // Only race-specific games
+      } else {
+        race.games = [...seasonalGames, ...gamesForRace]; // Include seasonal games
+      }
     });
 
     return NextResponse.json({
