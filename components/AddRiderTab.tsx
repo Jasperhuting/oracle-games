@@ -83,8 +83,10 @@ export function AddRiderTab() {
       }
 
       // Fill form with scraped data
-      // Use suggestedRank if scraped rank is 0 or invalid
-      const rankToUse = (data.rank && data.rank > 0 && data.rank < 9900) ? data.rank : (suggestedRank || 9999);
+      // Always use suggestedRank from database, never the scraped rank
+      if (!suggestedRank) {
+        throw new Error('Kon geen beschikbare rank ophalen uit de database. Probeer de pagina te verversen.');
+      }
 
       setFormData({
         name: data.name || '',
@@ -94,7 +96,7 @@ export function AddRiderTab() {
         country: data.country || '',
         team: data.team || '',
         points: data.points || 0,
-        rank: rankToUse,
+        rank: suggestedRank,
         year: formData.year,
         age: data.age || '',
       });
@@ -192,14 +194,15 @@ export function AddRiderTab() {
           />
           <button
             onClick={handleScrape}
-            disabled={scraping}
+            disabled={scraping || !suggestedRank}
             className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {scraping ? 'Laden...' : 'Scrape Data'}
+            {scraping ? 'Laden...' : !suggestedRank ? 'Rank laden...' : 'Scrape Data'}
           </button>
         </div>
         <p className="text-sm text-gray-500 mt-2">
           Plak de ProCyclingStats URL van de renner om automatisch de data op te halen
+          {suggestedRank && <span className="ml-2 text-green-600">(Volgende rank: {suggestedRank})</span>}
         </p>
       </div>
 
