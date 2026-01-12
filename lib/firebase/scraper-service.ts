@@ -6,13 +6,15 @@ import { cleanFirebaseData } from './utils';
 export interface ScraperDataKey {
   race: string;
   year: number;
-  type: 'startlist' | 'stage';
+  type: 'startlist' | 'stage' | 'result';
   stage?: number;
 }
 
 export function generateDocumentId(key: ScraperDataKey): string {
   if (key.type === 'startlist') {
     return `${key.race}-${key.year}-startlist`;
+  } else if (key.type === 'result') {
+    return `${key.race}-${key.year}-result`;
   } else {
     return `${key.race}-${key.year}-stage-${key.stage}`;
   }

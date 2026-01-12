@@ -397,7 +397,7 @@ export const CreateGameTab = () => {
                   {loadingRaces ? 'Loading races...' : 'Select a race'}
                 </option>
                 {races.map((race) => (
-                  <option key={race.slug} value={race.slug}>
+                  <option key={race.id} value={race.id}>
                     {race.name} {race.year}
                   </option>
                 ))}

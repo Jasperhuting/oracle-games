@@ -450,10 +450,16 @@ export const JoinableGamesTab = () => {
               </button>
             </div>
             <Link
+              href={`/rankings/season/${new Date().getFullYear()}`}
+              className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1"
+            >
+              {t('games.seasonPoints', 'Seizoen Punten')}
+            </Link>
+            <Link
               href="/calendar"
               className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1"
             >
-              {t('games.viewCalendar', 'Bekijk race kalender')} →
+              {t('games.viewCalendar', 'Bekijk race kalender')}
             </Link>
           </div>
         </div>

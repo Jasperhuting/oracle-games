@@ -9,6 +9,8 @@ import { t } from "i18next";
 
 interface RaceFormData {
   race: string;
+  customSlug: string;
+  raceName: string;
   year: number;
   description: string;
 }
@@ -38,8 +40,14 @@ export const AddGameTab = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isCustomRace, setIsCustomRace] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<RaceFormData>();
+
+  // Update isCustomRace when race selection changes
+  const handleRaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setIsCustomRace(e.target.value === 'custom');
+  };
 
   const onSubmit: SubmitHandler<RaceFormData> = async (data) => {
     if (!user) return;
@@ -49,9 +57,27 @@ export const AddGameTab = () => {
     setSuccess(null);
 
     try {
-      // Get the race label from the selected value
-      const selectedRace = AVAILABLE_RACES.find(r => r.value === data.race);
-      const raceName = selectedRace?.label || data.race;
+      let raceSlug: string;
+      let raceName: string;
+
+      if (data.race === 'custom') {
+        // Custom race: use the custom slug and name
+        if (!data.customSlug || !data.raceName) {
+          throw new Error('Custom slug en race naam zijn verplicht voor custom races');
+        }
+        raceSlug = data.customSlug.toLowerCase().trim();
+        raceName = data.raceName.trim();
+
+        // Validate slug format
+        if (!/^[a-z0-9-]+$/.test(raceSlug)) {
+          throw new Error('Slug mag alleen kleine letters, cijfers en streepjes bevatten');
+        }
+      } else {
+        // Predefined race: use the selected value
+        const selectedRace = AVAILABLE_RACES.find(r => r.value === data.race);
+        raceSlug = data.race;
+        raceName = selectedRace?.label || data.race;
+      }
 
       const response = await fetch('/api/createRace', {
         method: 'POST',
@@ -62,7 +88,7 @@ export const AddGameTab = () => {
           adminUserId: user.uid,
           name: raceName,
           year: data.year,
-          slug: `${data.race}_${data.year}`,
+          slug: `${raceSlug}_${data.year}`,
           description: data.description,
         }),
       });
@@ -74,6 +100,7 @@ export const AddGameTab = () => {
 
       setSuccess('Race successfully added and starting list is loaded!');
       reset();
+      setIsCustomRace(false);
     } catch (error: unknown) {
       console.error('Error creating race:', error);
       setError(error instanceof Error ? error.message : 'Something went wrong adding the race');
@@ -94,7 +121,8 @@ export const AddGameTab = () => {
             </label>
             <select
               {...register('race', {
-                required: 'Race is verplicht'
+                required: 'Race is verplicht',
+                onChange: handleRaceChange
               })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
@@ -104,11 +132,57 @@ export const AddGameTab = () => {
                   {race.label}
                 </option>
               ))}
+              <option value="custom">-- Custom Race (PCS slug) --</option>
             </select>
             {errors.race && (
               <span className="text-red-500 text-xs mt-1 block">{errors.race.message}</span>
             )}
           </div>
+
+          {isCustomRace && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PCS Slug
+                </label>
+                <input
+                  type="text"
+                  {...register('customSlug', {
+                    required: isCustomRace ? 'Slug is verplicht voor custom races' : false,
+                    pattern: {
+                      value: /^[a-z0-9-]+$/,
+                      message: 'Alleen kleine letters, cijfers en streepjes toegestaan'
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="bijv. nc-australia-mj-itt"
+                />
+                <span className="text-gray-500 text-xs mt-1 block">
+                  De slug uit de PCS URL: procyclingstats.com/race/<strong>nc-australia-mj-itt</strong>/2026/result
+                </span>
+                {errors.customSlug && (
+                  <span className="text-red-500 text-xs mt-1 block">{errors.customSlug.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Race Naam
+                </label>
+                <input
+                  type="text"
+                  {...register('raceName', {
+                    required: isCustomRace ? 'Race naam is verplicht voor custom races' : false
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="bijv. NC Australia MJ ITT"
+                />
+                {errors.raceName && (
+                  <span className="text-red-500 text-xs mt-1 block">{errors.raceName.message}</span>
+                )}
+              </div>
+            </>
+          )}
 
           <div>
             <TextInput

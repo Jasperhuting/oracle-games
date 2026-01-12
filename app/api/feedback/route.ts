@@ -127,9 +127,7 @@ export async function POST(request: NextRequest) {
       if (apiKey) {
         const resend = new Resend(apiKey);
 
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : 'https://oracle-games.online';
+        const baseUrl = 'https://oracle-games.online';
 
         const emailBody = `Er is nieuwe feedback ontvangen op Oracle Games.\n\n` +
           `Van: ${displayName} (${userEmail})\n` +

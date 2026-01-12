@@ -1,16 +1,17 @@
 import * as cheerio from 'cheerio';
-import { KNOWN_RACE_SLUGS, type RaceSlug, type StartlistResult, type Team, type Rider } from './types';
+import { type StartlistResult, type Team, type Rider } from './types';
 import process from "process";
 
 
 export interface GetRidersOptions {
-  race: RaceSlug;
+  race: string;
   year: number;
 }
 
 export async function getRiders({ race, year }: GetRidersOptions): Promise<StartlistResult> {
-  if (!KNOWN_RACE_SLUGS.includes(race)) {
-    throw new Error(`Unknown race slug '${race}'`);
+  // Allow any valid race slug format (lowercase, alphanumeric with hyphens)
+  if (!/^[a-z0-9-]+$/.test(race)) {
+    throw new Error(`Invalid race slug format '${race}'. Use lowercase letters, numbers, and hyphens only.`);
   }
 
   const yearNum = Number(year);

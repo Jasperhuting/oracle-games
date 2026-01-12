@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getStageResult } from '@/lib/scraper/getStageResult';
-import { KNOWN_RACE_SLUGS, type RaceSlug } from '@/lib/scraper/types';
 import { POST as calculatePoints } from '@/app/api/games/calculate-points/route';
 
 // Helper function to remove undefined values from objects
@@ -130,12 +129,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract race name from slug (remove year suffix)
-    const raceName = raceSlug.replace(/_\d{4}$/, '') as RaceSlug;
+    const raceName = raceSlug.replace(/_\d{4}$/, '');
 
-    // Validate race slug
-    if (!KNOWN_RACE_SLUGS.includes(raceName)) {
+    // Validate race slug format (lowercase, alphanumeric with hyphens)
+    if (!/^[a-z0-9-]+$/.test(raceName)) {
       return NextResponse.json(
-        { error: `Unknown race slug '${raceName}'. Valid slugs: ${KNOWN_RACE_SLUGS.join(', ')}` },
+        { error: `Invalid race slug format '${raceName}'. Use lowercase letters, numbers, and hyphens only.` },
         { status: 400 }
       );
     }

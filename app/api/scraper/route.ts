@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { getRiders, getStageResult, type RaceSlug } from '@/lib/scraper';
+import { getRiders, getStageResult, getRaceResult } from '@/lib/scraper';
 import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 
 export async function POST(request: NextRequest) {
@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (!['startlist', 'stage', 'all-stages'].includes(type)) {
-      return Response.json({ 
-        error: 'Invalid type. Must be "startlist", "stage", or "all-stages"' 
+    if (!['startlist', 'stage', 'all-stages', 'result'].includes(type)) {
+      return Response.json({
+        error: 'Invalid type. Must be "startlist", "stage", "all-stages", or "result"'
       }, { status: 400 });
     }
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       for (let stageNum = 1; stageNum <= 21; stageNum++) {
         try {
           const stageData = await getStageResult({
-            race: race as RaceSlug,
+            race,
             year: Number(year),
             stage: stageNum
           });
@@ -83,32 +83,37 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Handle single scrape (startlist or single stage)
+    // Handle single scrape (startlist, single stage, or race result)
     const key: ScraperDataKey = {
       race,
       year: Number(year),
-      type: type as 'startlist' | 'stage',
+      type: type as 'startlist' | 'stage' | 'result',
       stage: type === 'stage' ? Number(stage) : undefined,
     };
 
     // Scrape the data
     let scraperData;
     if (type === 'startlist') {
-      scraperData = await getRiders({ 
-        race: race as RaceSlug, 
-        year: Number(year) 
+      scraperData = await getRiders({
+        race,
+        year: Number(year)
+      });
+    } else if (type === 'result') {
+      // Single-day race results (e.g., ITT, one-day classics)
+      scraperData = await getRaceResult({
+        race,
+        year: Number(year)
       });
     } else {
-      scraperData = await getStageResult({ 
-        race: race as RaceSlug, 
-        year: Number(year), 
-        stage: Number(stage) 
+      scraperData = await getStageResult({
+        race,
+        year: Number(year),
+        stage: Number(stage)
       });
     }
 
     // Save to Firebase (this will overwrite existing data)
     await saveScraperData(key, scraperData);
-
 
     // Calculate data count based on type
     let dataCount = 0;

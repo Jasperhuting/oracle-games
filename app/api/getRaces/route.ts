@@ -24,11 +24,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch all races
+    // Fetch all races, sorted by year descending
     const racesSnapshot = await db
       .collection('races')
       .orderBy('year', 'desc')
-      .orderBy('createdAt', 'desc')
       .get();
 
     interface Race {
