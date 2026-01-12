@@ -140,9 +140,7 @@ export async function GET(request: NextRequest) {
         console.log(`[CRON] Email notifications enabled: ${emailNotificationsEnabled}`);
 
         const displayName = userData?.displayName || userData?.playername || 'daar';
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : 'https://oracle-games.online';
+        const baseUrl = 'https://oracle-games.online';
 
         // Get user's preferred language (default to 'nl')
         const userLocale = userData?.preferredLanguage || 'nl';

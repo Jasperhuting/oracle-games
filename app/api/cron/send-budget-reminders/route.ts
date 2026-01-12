@@ -269,9 +269,7 @@ export async function GET(request: NextRequest) {
                       const resend = new Resend(apiKey);
 
                       const displayName = userData?.displayName || participant.playername || 'daar';
-                      const baseUrl = process.env.VERCEL_URL
-                        ? `https://${process.env.VERCEL_URL}`
-                        : 'https://oracle-games.online';
+                      const baseUrl = 'https://oracle-games.online';
 
                       // Build bids info string
                       let bidsInfo: string;
