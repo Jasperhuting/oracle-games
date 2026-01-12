@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/hooks/useAuth";
@@ -185,7 +185,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     checkAdmin();
   }, [user]);
 
-  const loadAuctionData = (async () => {
+  const loadAuctionData = useCallback(async (skipCache: boolean = false) => {
     if (!user) return;
 
     try {
@@ -202,7 +202,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       // Try to load from cache first (unless forced to refresh)
       // NOTE: Cache is invalidated on page load, so this will only be used during the session
-      const cachedData = !forceRefresh ? await getCachedAuctionData(gameId) : null;
+      // Use skipCache parameter instead of forceRefresh state to avoid stale closure issues
+      const cachedData = !skipCache ? await getCachedAuctionData(gameId) : null;
       if (cachedData && rankingsRiders.length > 0) {
 
         // Set state from cache
@@ -374,9 +375,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
       const filteredUserBidsFromAPI = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
 
-      console.log('[AUCTION] User bids from API - total:', userBids.length, 'filtered:', filteredUserBidsFromAPI.length);
-      console.log('[AUCTION] Bid statuses from API:', userBids.map(b => ({ id: b.id, status: b.status, riderNameId: b.riderNameId })));
-
       setAllBids(allBidsData);
       setMyBids(filteredUserBidsFromAPI);
 
@@ -476,7 +474,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       setLoading(false);
       setForceRefresh(false); // Reset force refresh flag
     }
-  });
+  }, [user, rankingsLoading, rankingsRiders, gameId]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -488,8 +486,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     // Wait for rankings to load before loading auction data
     if (rankingsLoading) return;
 
-    loadAuctionData();
-  }, [gameId, user, authLoading, router, forceRefresh, rankingsLoading]);
+    loadAuctionData(forceRefresh);
+  }, [gameId, user, authLoading, router, forceRefresh, rankingsLoading, loadAuctionData]);
 
   // Load all participants in the same division
   useEffect(() => {
@@ -1031,7 +1029,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   // config.auctionStatus is kept in sync but game.status is authoritative
   const auctionActive = game.status === 'bidding';
   const auctionClosed = game.status === 'active' || game.status === 'finished';
-
+  
   // Calculate min/max prices for the slider
   const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points || 0);
   const minRiderPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
@@ -1064,9 +1062,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               <Button
                 type="button"
                 text={t('global.refresh')}
-                onClick={() => {
-                  invalidateAuctionCache(gameId);
-                  setForceRefresh(true);
+                onClick={async () => {
+                  console.log('[AUCTION] Refresh button clicked');
+                  await invalidateAuctionCache(gameId);
+                  // Call loadAuctionData directly with skipCache=true
+                  // instead of using forceRefresh state to avoid stale closure issues
+                  loadAuctionData(true);
                 }}
                 ghost
                 title="Force refresh data from server"
