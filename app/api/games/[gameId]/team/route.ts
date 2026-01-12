@@ -43,6 +43,7 @@ export async function GET(
         acquisitionType: data.acquisitionType,
         draftRound: data.draftRound,
         draftPick: data.draftPick,
+        racePoints: data.racePoints || null,
       };
     });
 

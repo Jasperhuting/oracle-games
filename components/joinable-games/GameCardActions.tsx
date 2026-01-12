@@ -93,6 +93,15 @@ export const GameCardActions = ({
         />
       )}
 
+      {/* View Results Button - Only for joined games that are active or finished */}
+      {isJoined && !isWaitingForDivision && joinedGame && (joinedGame.status === 'active' || joinedGame.status === 'finished') && (
+        <Button
+          text={t('games.viewResults', 'Resultaten')}
+          onClick={() => router.push(`/games/${joinedGame.id}/results`)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+        />
+      )}
+
       {/* Leave Button */}
       {leaveable && joinedGame && (
         <Button

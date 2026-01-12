@@ -930,13 +930,21 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       // After finalization, only use spentBudget (which already includes won riders)
       return budget - spentBudget;
     } else {
-      // During auction, calculate total active bids (including outbid for legacy data)
+      // During auction, calculate total from active and won bids
+      // For worldtour-manager: bids stay 'active' until finalization, so we count them directly
+      // For auctioneer: we need both active bids AND already won bids from previous periods
       const activeBidsTotal = myBids
         .filter(b => b.status === 'active' || b.status === 'outbid')
         .filter(b => !excludeRiderNameId || b.riderNameId !== excludeRiderNameId)
         .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
 
-      return budget - spentBudget - activeBidsTotal;
+      const wonBidsTotal = myBids
+        .filter(b => b.status === 'won')
+        .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
+
+      // Use wonBidsTotal instead of spentBudget to avoid double-counting
+      // (spentBudget may be out of sync with actual bid statuses)
+      return budget - wonBidsTotal - activeBidsTotal;
     }
   };
 
