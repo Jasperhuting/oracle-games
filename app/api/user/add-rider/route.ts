@@ -279,7 +279,15 @@ export async function POST(req: NextRequest) {
     let addedToGamesCount = 0;
     for (const gameDoc of seasonalGamesSnapshot.docs) {
       const gameData = gameDoc.data();
-      const eligibleRiders = gameData.eligibleRiders || [];
+
+      // Only add to games that already have an eligibleRiders array
+      // Games without eligibleRiders show all riders by default
+      // Adding to an empty/undefined array would restrict the game to only this rider!
+      if (!gameData.eligibleRiders || !Array.isArray(gameData.eligibleRiders) || gameData.eligibleRiders.length === 0) {
+        continue;
+      }
+
+      const eligibleRiders = gameData.eligibleRiders;
 
       if (!eligibleRiders.includes(riderData.nameID)) {
         await gameDoc.ref.update({
