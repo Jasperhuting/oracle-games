@@ -261,7 +261,20 @@ export async function POST(
     // Skip budget validation for marginal-gains (no budget system)
     // Use game's budget (in case admin updated it) instead of participant's budget
     const budget = gameData?.config?.budget || 0;
-    const spentBudget = participantData?.spentBudget || 0;
+    
+    // IMPORTANT: Calculate spentBudget from actual won bids instead of using stored value
+    // This prevents double-counting when the game goes back to 'bidding' status after finalization
+    // The stored spentBudget may include won bids that are now active again
+    const wonBidsSnapshot = await db.collection('bids')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .where('status', '==', 'won')
+      .get();
+    
+    const spentBudget = wonBidsSnapshot.docs.reduce((sum, doc) => {
+      return sum + (doc.data().amount || 0);
+    }, 0);
+    
     const availableBudget = budget - spentBudget - totalActiveBids;
 
     if (gameData?.gameType !== 'marginal-gains' && amount > availableBudget) {
