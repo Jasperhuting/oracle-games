@@ -50,7 +50,7 @@ export const GameCard = ({
         isJoined ? 'border-primary bg-primary' : 'border-gray-200'
       }`}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex-1">
           {/* Header with badges */}
           <div className="flex items-center gap-2 mb-2">

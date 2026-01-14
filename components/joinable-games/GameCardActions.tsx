@@ -37,7 +37,7 @@ export const GameCardActions = ({
   };
 
   return (
-    <div className="ml-4 flex flex-col gap-2">
+    <div className="ml-4 flex flex-row gap-2 justify-center">
       {/* Admin View Buttons - Not joined */}
       {isAdmin && !isJoined && (
         <AdminViewButtons
@@ -98,7 +98,18 @@ export const GameCardActions = ({
         <Button
           text={t('games.viewResults', 'Resultaten')}
           onClick={() => router.push(`/games/${joinedGame.id}/results`)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+          className="px-4 py-2 whitespace-nowrap"
+          variant="success"
+        />
+      )}
+
+      {/* Standings Button - For joined games that are bidding, active, or finished */}
+      {isJoined && !isWaitingForDivision && joinedGame && (joinedGame.status === 'bidding' || joinedGame.status === 'active' || joinedGame.status === 'finished') && (
+        <Button
+          text={t('games.standings', 'Tussenstand')}
+          onClick={() => router.push(`/games/${joinedGame.id}/standings`)}
+          className="px-4 py-2 whitespace-nowrap"
+          variant="secondary"
         />
       )}
 
@@ -108,7 +119,8 @@ export const GameCardActions = ({
           text={leaving === joinedGame.id ? t('games.leaving') : t('games.leaveGame')}
           onClick={() => onLeave(joinedGame.id)}
           disabled={leaving === joinedGame.id}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 whitespace-nowrap"
+          variant="danger"
+          className="px-4 py-2 whitespace-nowrap"
         />
       )}
 
