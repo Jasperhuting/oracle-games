@@ -1,4 +1,4 @@
-import { RiderWithBid } from "@/app/games/[gameId]/auction/page";
+import { RiderWithBid } from "@/lib/types/pages";
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -8,9 +8,12 @@ export function cn(...inputs: ClassValue[]) {
 
 
 // Helper to calculate rider's age
-  export const calculateAge = (birthDate: string | number): number => {
+  export const calculateAge = (birthDate: string): number => {
     const today = new Date();
     const birth = new Date(birthDate);
+
+    console.log('birth', birth);
+
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
 

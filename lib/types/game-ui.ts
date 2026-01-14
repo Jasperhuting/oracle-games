@@ -55,11 +55,16 @@ export interface Race {
   year: number;
   slug: string;
   description?: string;
-  createdAt: string;
-  active: boolean;
+  createdAt?: string;
+  scrapedAt?: string;
+  active?: boolean;
   startDate?: string;
   endDate?: string;
   stages?: number;
+  classification?: string;
+  country?: string;
+  hasResults?: boolean;
+  resultsCount?: number;
 }
 
 // Modal Props

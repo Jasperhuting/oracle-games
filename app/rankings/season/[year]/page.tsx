@@ -7,11 +7,24 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { AuthGuard } from '@/components/AuthGuard';
 
+interface StageDetails {
+  stage: string;
+  finishPosition: number | null;
+  stageResult: number;
+  gcPoints: number;
+  pointsClass: number;
+  mountainsClass: number;
+  youthClass: number;
+  total: number;
+}
+
 interface RaceSummary {
   raceSlug: string;
   raceName: string;
   totalPoints: number;
   stagesCount: number;
+  bestFinishPosition: number | null;
+  stages: StageDetails[];
 }
 
 interface SeasonPointsRider {
@@ -276,19 +289,53 @@ export default function SeasonLeaderboardPage() {
                                       .map((race) => (
                                         <div
                                           key={race.raceSlug}
-                                          className="flex items-center justify-between bg-white rounded px-3 py-2 border border-gray-200"
+                                          className="bg-white rounded border border-gray-200 overflow-hidden"
                                         >
-                                          <div>
-                                            <span className="font-medium text-gray-900">
-                                              {race.raceName || formatRaceName(race.raceSlug)}
-                                            </span>
-                                            <span className="text-sm text-gray-500 ml-2">
-                                              ({race.stagesCount} etappes)
+                                          <div className="flex items-center justify-between px-3 py-2 bg-gray-50">
+                                            <div className="flex items-center gap-3">
+                                              <span className="font-medium text-gray-900">
+                                                {race.raceName || formatRaceName(race.raceSlug)}
+                                              </span>
+                                              {race.bestFinishPosition && (
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                  race.bestFinishPosition === 1 ? 'bg-yellow-100 text-yellow-800' :
+                                                  race.bestFinishPosition === 2 ? 'bg-gray-200 text-gray-800' :
+                                                  race.bestFinishPosition === 3 ? 'bg-orange-100 text-orange-800' :
+                                                  race.bestFinishPosition <= 10 ? 'bg-green-100 text-green-800' :
+                                                  'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                  #{race.bestFinishPosition}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <span className="font-bold text-primary">
+                                              {race.totalPoints} pts
                                             </span>
                                           </div>
-                                          <span className="font-bold text-primary">
-                                            {race.totalPoints} pts
-                                          </span>
+                                          {/* Stage breakdown for multi-stage races or single-day with details */}
+                                          {race.stages.length > 0 && (
+                                            <div className="px-3 py-2 text-sm">
+                                              {race.stages.length === 1 && race.stages[0].stage === 'result' ? (
+                                                // Single-day race - show inline breakdown
+                                                <div className="flex items-center gap-4 text-gray-600">
+                                                  {race.stages[0].finishPosition && (
+                                                    <span>Positie: <strong>#{race.stages[0].finishPosition}</strong></span>
+                                                  )}
+                                                  {race.stages[0].stageResult > 0 && (
+                                                    <span>Uitslag: {race.stages[0].stageResult} pts</span>
+                                                  )}
+                                                  {race.stages[0].gcPoints > 0 && (
+                                                    <span>GC: {race.stages[0].gcPoints} pts</span>
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                // Multi-stage race - show stages count
+                                                <span className="text-gray-500">
+                                                  {race.stagesCount} etappe{race.stagesCount !== 1 ? 's' : ''} met punten
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                       ))}
                                   </div>

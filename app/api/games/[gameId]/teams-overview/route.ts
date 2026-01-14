@@ -32,22 +32,6 @@ export async function GET(
       return NextResponse.json({ teams: [] });
     }
 
-    // Sort participants by total points (descending), then by playername
-    const sortedDocs = participantsSnapshot.docs.sort((a, b) => {
-      const dataA = a.data();
-      const dataB = b.data();
-      const pointsA = dataA.totalPoints || 0;
-      const pointsB = dataB.totalPoints || 0;
-
-      // First sort by points (highest first)
-      if (pointsB !== pointsA) {
-        return pointsB - pointsA;
-      }
-
-      // If points are equal, sort by playername alphabetically
-      return (dataA.playername || '').localeCompare(dataB.playername || '');
-    });
-
     // Get all player teams for this game
     const playerTeamsSnapshot = await db
       .collection('playerTeams')
@@ -168,8 +152,8 @@ export async function GET(
       });
     });
 
-    // Combine participants with their teams and calculate rankings
-    const teams = sortedDocs.map((doc) => {
+    // Combine participants with their teams and calculate points
+    const teams = participantsSnapshot.docs.map((doc) => {
       const participant = doc.data();
       const userId = participant.userId;
       const riders = teamsMap.get(userId) || [];
@@ -185,6 +169,9 @@ export async function GET(
         ? Math.round((totalDifference / totalBaseValue) * 100)
         : 0;
 
+      // Calculate totalPoints from riders' pointsScored (source of truth)
+      const calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.pointsScored || 0), 0);
+
       return {
         participantId: doc.id,
         userId,
@@ -194,7 +181,7 @@ export async function GET(
         remainingBudget: (participant.budget || 0) - (participant.spentBudget || 0),
         rosterSize: participant.rosterSize || 0,
         rosterComplete: participant.rosterComplete || false,
-        totalPoints: participant.totalPoints || 0,
+        totalPoints: calculatedTotalPoints,
         ranking: 0, // Will be calculated below
         riders,
         totalRiders: riders.length,
@@ -208,11 +195,19 @@ export async function GET(
       };
     });
 
+    // Sort teams by calculated totalPoints (descending), then by playername
+    teams.sort((a: { totalPoints: number; playername: string }, b: { totalPoints: number; playername: string }) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      return (a.playername || '').localeCompare(b.playername || '');
+    });
+
     // Calculate proper rankings based on totalPoints
     // Teams with the same points get the same ranking
     let currentRank = 1;
     let previousPoints = -1;
-    teams.forEach((team, index) => {
+    teams.forEach((team: { totalPoints: number; ranking: number }, index: number) => {
       if (team.totalPoints !== previousPoints) {
         currentRank = index + 1;
         previousPoints = team.totalPoints;

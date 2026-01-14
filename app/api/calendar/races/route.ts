@@ -86,6 +86,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<CalendarRe
       return WOMEN_KEYWORDS.some(keyword => nameAndSlug.includes(keyword));
     };
 
+    // const YOUTH_CLASSIFICATIONS = ['2.2U', '1.2U', '2.1', '2.2']
+    // const YOUTH_KEYWORDS = ['mj', 'u23']
+
+    // const isYouthRace = (race: CalendarRace): boolean => {
+    //   if (YOUTH_CLASSIFICATIONS.includes(race.classification)) {
+    //     return true;
+    //   }
+    //   // Check race name and slug for women's keywords
+    //   const nameAndSlug = `${race.name} ${race.slug}`.toLowerCase();
+    //   return YOUTH_KEYWORDS.some(keyword => nameAndSlug.includes(keyword));
+    // }
+
     // Attach games to races
     races.forEach(race => {
       const gamesForRace = raceToGamesMap.get(race.id) || [];

@@ -17,7 +17,7 @@ export interface Rider {
   teamId?: string;         // Team document reference ID
   jerseyImage?: string;    // URL to rider's jersey/photo
   retired?: boolean;       // Whether rider is retired
-  age?: string | number;   // Age or date of birth
+  age?: string;   // Age or date of birth
   firstName?: string;      // First name
   lastName?: string;       // Last name
 }

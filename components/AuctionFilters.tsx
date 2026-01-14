@@ -8,7 +8,6 @@ import { Toggle } from "./Toggle";
 import { Collapsible } from "./Collapsible";
 import { useState, useEffect } from "react";
 import { Divider } from "./Divider";
-import { calculateAge } from "@/lib/utils";
 
 export const AuctionFilters = ({
     searchTerm,

@@ -62,22 +62,67 @@ export async function GET(request: NextRequest) {
     // Apply pagination
     const paginatedDocs = allDocs.slice(offset, offset + limit);
 
+    // Points to position mapping (reverse lookup from TOP_20_POINTS)
+    // TOP_20_POINTS = [100, 80, 66, 56, 50, 44, 40, 36, 32, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8]
+    const pointsToPosition: Record<number, number> = {
+      100: 1, 80: 2, 66: 3, 56: 4, 50: 5, 44: 6, 40: 7, 36: 8, 32: 9, 28: 10,
+      26: 11, 24: 12, 22: 13, 20: 14, 18: 15, 16: 16, 14: 17, 12: 18, 10: 19, 8: 20
+    };
+
+    // Helper to derive position from stageResult points (fallback for old data without finishPosition)
+    const derivePositionFromPoints = (stageResultPoints: number): number | null => {
+      return pointsToPosition[stageResultPoints] || null;
+    };
+
     const riders = paginatedDocs.map((doc, index) => {
       const data = doc.data();
+
+      // For single-day races (stage='result'), extract the finish position for display
+      // For multi-stage races, find the best finish position across all stages
+      const racesWithDetails = data.races ? Object.entries(data.races).map(([raceSlug, raceData]: [string, any]) => {
+        const stages = raceData.stages || {};
+        const stageEntries = Object.entries(stages);
+
+        // Find best finish position (lowest number = best result)
+        let bestFinishPosition: number | null = null;
+        for (const [, stagePoints] of stageEntries) {
+          // Use stored finishPosition, or derive from stageResult points as fallback
+          const fp = (stagePoints as any).finishPosition ||
+                     derivePositionFromPoints((stagePoints as any).stageResult);
+          if (fp && (bestFinishPosition === null || fp < bestFinishPosition)) {
+            bestFinishPosition = fp;
+          }
+        }
+
+        return {
+          raceSlug,
+          raceName: raceData.raceName || raceSlug,
+          totalPoints: raceData.totalPoints || 0,
+          stagesCount: stageEntries.length,
+          bestFinishPosition,
+          // Include stage details for more granular view
+          stages: stageEntries.map(([stageKey, stagePoints]: [string, any]) => ({
+            stage: stageKey,
+            // Use stored finishPosition, or derive from stageResult points as fallback
+            finishPosition: stagePoints.finishPosition || derivePositionFromPoints(stagePoints.stageResult),
+            stageResult: stagePoints.stageResult || 0,
+            gcPoints: stagePoints.gcPoints || 0,
+            pointsClass: stagePoints.pointsClass || 0,
+            mountainsClass: stagePoints.mountainsClass || 0,
+            youthClass: stagePoints.youthClass || 0,
+            total: stagePoints.total || 0,
+          })),
+        };
+      }) : [];
+
       return {
         id: doc.id,
         rank: offset + index + 1,
         riderNameId: data.riderNameId,
         riderName: data.riderName,
         totalPoints: data.totalPoints || 0,
-        racesCount: data.races ? Object.keys(data.races).length : 0,
-        // Include summary of races (just names and totals, not full breakdown)
-        races: data.races ? Object.entries(data.races).map(([raceSlug, raceData]: [string, any]) => ({
-          raceSlug,
-          raceName: raceData.raceName || raceSlug,
-          totalPoints: raceData.totalPoints || 0,
-          stagesCount: raceData.stages ? Object.keys(raceData.stages).length : 0,
-        })) : [],
+        racesCount: racesWithDetails.length,
+        races: racesWithDetails,
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || null,
       };
     });

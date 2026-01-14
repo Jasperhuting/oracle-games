@@ -32,18 +32,58 @@ export async function GET(request: NextRequest) {
 
     interface Race {
       id: string;
+      hasResults?: boolean;
+      resultsCount?: number;
       [key: string]: unknown;
     }
-    
-    const races: Race[] = [];
-    racesSnapshot.forEach((doc) => {
-      races.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
 
-    return NextResponse.json({ races });
+    // Helper to check if race has passed (finished)
+    const isRacePassed = (raceData: FirebaseFirestore.DocumentData) => {
+      const dateStr = raceData.endDate || raceData.startDate;
+      if (!dateStr) return false;
+      const raceDate = new Date(dateStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return raceDate < today;
+    };
+
+    // Only check results for finished races (much faster)
+    const racesWithResultsCheck = await Promise.all(
+      racesSnapshot.docs.map(async (doc) => {
+        const raceData = doc.data();
+        const raceSlug = raceData.slug;
+        const passed = isRacePassed(raceData);
+
+        let hasResults = false;
+        let resultsCount = 0;
+
+        // Only check for results if race has finished
+        if (passed && raceSlug) {
+          try {
+            const resultsSnapshot = await db
+              .collection(raceSlug)
+              .doc('stages')
+              .collection('results')
+              .get();
+
+            hasResults = !resultsSnapshot.empty;
+            resultsCount = resultsSnapshot.size;
+          } catch {
+            // Collection might not exist yet, that's fine
+            hasResults = false;
+          }
+        }
+
+        return {
+          id: doc.id,
+          ...raceData,
+          hasResults,
+          resultsCount,
+        } as Race;
+      })
+    );
+
+    return NextResponse.json({ races: racesWithResultsCheck });
   } catch (error) {
     console.error('Error fetching races:', error);
     return NextResponse.json(

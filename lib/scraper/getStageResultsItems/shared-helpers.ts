@@ -37,7 +37,25 @@ export function createHelpers($: CheerioAPI) {
     getTeamShortName: (el: DomElement) => $(el).find('td.cu600 > a').attr('href')?.split('/')[1] || '',
     getRiderShortName: (el: DomElement) => $(el).find('td.ridername > a').attr('href')?.split('/')[1] || '',
     getUciPoints: (el: DomElement) => $(el).find('td.uci_pnt').text().trim(),
-    getPoints: (el: DomElement) => $(el).find('td.points').text().trim(),
+    // Get Pnt column - this is the race-specific points (15, 10, 7, 4, 2, 1 etc)
+    // The column right after UCI points column
+    getPoints: (el: DomElement) => {
+      // Try specific class selectors first
+      const points = $(el).find('td.points').text().trim();
+      if (points && points !== '-' && points !== '') return points;
+      const pnt = $(el).find('td.pnt').text().trim();
+      if (pnt && pnt !== '-' && pnt !== '') return pnt;
+
+      // Fallback: find by position - Pnt is usually the column after UCI points
+      const uciCell = $(el).find('td.uci_pnt');
+      if (uciCell.length) {
+        const nextCell = uciCell.next('td');
+        const pntValue = nextCell.text().trim();
+        if (pntValue && pntValue !== '-' && pntValue !== '') return pntValue;
+      }
+
+      return '-';
+    },
     getQualificationTime: (el: DomElement) => $(el).find('td.cu600 > .blue').text().trim(),
     getClass: (el: DomElement) => $(el).find('td').eq(4).text().trim(),
     

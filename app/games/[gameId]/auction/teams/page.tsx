@@ -343,6 +343,9 @@ export default function TeamsOverviewPage() {
                             Verschil: {team.totalPercentageDiff > 0 ? '+' : ''}{team.totalPercentageDiff}%
                           </span>
                           <span>€{team.remainingBudget.toLocaleString()} over</span>
+                          <span className="font-medium text-blue-600">
+                            {team.totalPoints} punten
+                          </span>
                         </div>
                       </div>
                     </div>
