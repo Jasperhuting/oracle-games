@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { enrichTeamsPuppeteer } from "@/lib/scraper/enrichTeamsPuppeteer";
 import { getServerFirebase } from "@/lib/firebase/server";
-import { EnrichedRider } from "@/lib/scraper/types";
+import { Timestamp } from 'firebase-admin/firestore';
 
 
 export async function GET(request: NextRequest) {
@@ -47,9 +47,18 @@ export async function GET(request: NextRequest) {
         // Only update if there's data to update
         if (Object.keys(updateData).length > 0) {
             await db.collection('teams').doc(team).update(updateData);
+
+            // Increment cache version to invalidate all user caches
+            const configRef = db.collection('config').doc('cache');
+            const configDoc = await configRef.get();
+            const currentVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
+            await configRef.set({
+                version: currentVersion + 1,
+                updatedAt: Timestamp.now()
+            }, { merge: true });
         }
 
-        return Response.json({ result });
+        return Response.json({ result, cacheInvalidated: true });
     } catch (error: unknown) {
         console.error('Error in setEnrichedTeams route for team', team, error);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithCustomToken, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { ImpersonationStatus } from '@/lib/types/hooks';
@@ -7,13 +7,13 @@ import { ImpersonationStatus } from '@/lib/types/hooks';
 let globalImpersonationStatus: ImpersonationStatus = { isImpersonating: false };
 const globalImpersonationListeners: Set<(status: ImpersonationStatus) => void> = new Set();
 let isCheckingImpersonation = false;
+let hasCheckedGlobally = false;
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [impersonationStatus, setImpersonationStatus] = useState<ImpersonationStatus>(globalImpersonationStatus);
   const [restoringSession, setRestoringSession] = useState(false);
-  const hasCheckedRef = useRef(false);
 
   // Function to update global impersonation status
   const updateGlobalImpersonationStatus = (status: ImpersonationStatus) => {
@@ -57,16 +57,15 @@ export function useAuth() {
 
   // Check impersonation status on mount (only once globally)
   useEffect(() => {
-    if (hasCheckedRef.current) {
+    if (hasCheckedGlobally) {
       return;
     }
-    hasCheckedRef.current = true;
+    hasCheckedGlobally = true;
     
     const checkImpersonation = async () => {
       try {
         // Check if we need to restore admin session after stopping impersonation
         const restoreAdminToken = localStorage.getItem('restore_admin_session');
-        console.log('Checking for restore_admin_session token:', restoreAdminToken ? 'FOUND' : 'NOT FOUND');
         if (restoreAdminToken) {
           console.log('Restoring admin session...');
           setRestoringSession(true);

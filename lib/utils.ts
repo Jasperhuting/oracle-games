@@ -12,8 +12,6 @@ export function cn(...inputs: ClassValue[]) {
     const today = new Date();
     const birth = new Date(birthDate);
 
-    console.log('birth', birth);
-
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
 

@@ -5,12 +5,34 @@
  */
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, getAuth } from 'firebase/auth';
 import { db } from '@/lib/firebase/client';
 
 let cachedVersion: number | null = null;
 let cachePromise: Promise<number> | null = null;
 let lastFetchTime: number = 0;
 const CACHE_TTL = 30 * 1000; // 30 seconds - refetch from Firebase after this time
+
+// Promise that resolves when auth state is first determined
+let authReadyPromise: Promise<void> | null = null;
+
+/**
+ * Wait for Firebase Auth to be initialized
+ */
+function waitForAuth(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+
+  if (!authReadyPromise) {
+    authReadyPromise = new Promise((resolve) => {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, () => {
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+  return authReadyPromise;
+}
 
 /**
  * Get current cache version from Firebase
@@ -30,13 +52,13 @@ export async function getCacheVersionAsync(): Promise<number> {
 
   cachePromise = (async () => {
     try {
-      // Import auth dynamically to avoid circular dependencies
-      const { getAuth } = await import('firebase/auth');
+      // Wait for auth to be initialized before checking currentUser
+      await waitForAuth();
+
       const auth = getAuth();
 
       // Check if user is authenticated before trying to access Firestore
       if (!auth.currentUser) {
-        console.log('[CacheVersion] User not authenticated, using default version 1');
         cachedVersion = 1;
         lastFetchTime = Date.now();
         return 1;
@@ -67,9 +89,8 @@ export async function getCacheVersionAsync(): Promise<number> {
     } catch (error) {
       // Silently handle permission errors for unauthenticated users
       const errorCode = (error as { code?: string })?.code;
-      if (errorCode === 'permission-denied') {
-        console.log('[CacheVersion] Permission denied (user not authenticated), using default version 1');
-      } else {
+      if (errorCode !== 'permission-denied') {
+        // Only log unexpected errors, not permission-denied (expected for unauthenticated users)
         console.error('[CacheVersion] Error fetching cache version from Firebase:', error);
       }
       // Fall back to version 1 if there's an error

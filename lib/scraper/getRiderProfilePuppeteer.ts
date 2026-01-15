@@ -119,31 +119,29 @@ export async function getRiderProfilePuppeteer(url: string): Promise<RiderProfil
       }
     });
 
-    // Extract PCS and UCI points from season summary
+    // Extract PCS points and rank from "PCS Ranking position per season" table
+    // Look for the 2025 row and get points (2nd column) and rank (3rd column)
     let rank = 0;
     let points = 0;
 
-    const seasonSummary = $('.rdrSeasonSum div').text();
-
-    // Try to extract PCS points first
-    const pcsPointsMatch = seasonSummary.match(/PCS points:\s*<b>(\d+)<\/b>/i) || seasonSummary.match(/PCS points:\s*(\d+)/i);
-    if (pcsPointsMatch) {
-      points = parseInt(pcsPointsMatch[1]) || 0;
-    } else {
-      // Fallback to UCI points if PCS not found
-      const uciPointsMatch = seasonSummary.match(/UCI points:\s*<b>(\d+)<\/b>/i) || seasonSummary.match(/UCI points:\s*(\d+)/i);
-      if (uciPointsMatch) {
-        points = parseInt(uciPointsMatch[1]) || 0;
-      }
-    }
-
-    // Try to find rank from any ranking link or text
-    // Look for rank patterns in the page
-    $('a[href*="rankings"]').each((_, el) => {
-      const text = $(el).text().trim();
-      const rankMatch = text.match(/(\d+)(?:st|nd|rd|th)?/);
-      if (rankMatch && !rank) {
-        rank = parseInt(rankMatch[1]) || 0;
+    // Find the table with PCS Ranking position per season
+    $('h4').each((_, h4) => {
+      if ($(h4).text().includes('PCS Ranking position per season')) {
+        const table = $(h4).next('table');
+        table.find('tbody tr').each((_, row) => {
+          const cells = $(row).find('td');
+          const yearLink = cells.eq(0).find('a').attr('href') || '';
+          // Check if this is the 2025 row
+          if (yearLink.includes('2025')) {
+            // Points are in the second column (inside .title element)
+            const pointsText = cells.eq(1).find('.title').text().trim();
+            points = parseInt(pointsText) || 0;
+            // Rank is in the third column
+            const rankText = cells.eq(2).text().trim();
+            rank = parseInt(rankText) || 0;
+            return false; // Break the loop
+          }
+        });
       }
     });
 

@@ -83,9 +83,11 @@ export function AddRiderTab() {
       }
 
       // Fill form with scraped data
-      // Always use suggestedRank from database, never the scraped rank
-      if (!suggestedRank) {
-        throw new Error('Kon geen beschikbare rank ophalen uit de database. Probeer de pagina te verversen.');
+      // Use scraped rank if available (not 0), otherwise use suggestedRank from database
+      const rankToUse = data.rank && data.rank !== 0 ? data.rank : suggestedRank;
+
+      if (!rankToUse) {
+        throw new Error('Kon geen beschikbare rank ophalen. Probeer de pagina te verversen.');
       }
 
       setFormData({
@@ -96,7 +98,7 @@ export function AddRiderTab() {
         country: data.country || '',
         team: data.team || '',
         points: data.points || 0,
-        rank: suggestedRank,
+        rank: rankToUse,
         year: formData.year,
         age: data.age || '',
       });
