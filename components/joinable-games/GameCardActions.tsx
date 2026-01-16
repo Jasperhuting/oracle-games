@@ -87,8 +87,12 @@ export const GameCardActions = ({
       {/* Game Navigation Buttons - Non-selection based games */}
       {isJoined && !isWaitingForDivision && joinedGame && !isSelectionBasedGame(game.gameType) && (
         <Button
-          text={t('games.selectTeam')}
-          onClick={() => router.push(`/games/${joinedGame.id}/team`)}
+          text={game.gameType === 'slipstream' ? t('games.makePick', 'Make Pick') : t('games.selectTeam')}
+          onClick={() => router.push(
+            game.gameType === 'slipstream' 
+              ? `/games/${joinedGame.id}/slipstream`
+              : `/games/${joinedGame.id}/team`
+          )}
           className="px-4 py-2 bg-green-600 hover:bg-green-600/80 whitespace-nowrap"
         />
       )}

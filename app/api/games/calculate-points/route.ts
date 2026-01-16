@@ -96,7 +96,10 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        console.log(`[CALCULATE_POINTS] Processing game: ${game.name}`);
+        console.log(`[CALCULATE_POINTS] Processing game: ${game.name} (raceType: ${game.raceType})`);
+
+        // For season games, use PCS points directly instead of TOP_20_POINTS
+        const useDirectPcsPoints = game.raceType === 'season';
 
         // Get race configuration for multipliers
         const raceConfig = config.countingRaces?.find(cr => 
@@ -166,11 +169,27 @@ export async function POST(request: NextRequest) {
             // Note: 'place' is the finish position, 'rank' is the UCI ranking
             const finishPosition = riderResult?.place || riderResult?.rank;
             if (riderResult && finishPosition) {
-              const stagePoints = calculateStagePoints(finishPosition);
+              let stagePoints: number;
+              
+              if (useDirectPcsPoints) {
+                // For season games, use PCS points directly from the 'points' field
+                const pcsPoints = typeof riderResult.points === 'number' ? riderResult.points :
+                  (typeof riderResult.points === 'string' && riderResult.points !== '-' ? parseInt(riderResult.points) : 0);
+                stagePoints = pcsPoints;
+                if (stagePoints > 0) {
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Stage result (PCS): ${stagePoints} pts (place ${finishPosition})`);
+                }
+              } else {
+                // For Grand Tour games, use TOP_20_POINTS system
+                stagePoints = calculateStagePoints(finishPosition);
+                if (stagePoints > 0) {
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Stage result: ${stagePoints} pts (place ${finishPosition})`);
+                }
+              }
+              
               if (stagePoints > 0) {
                 riderTotalPoints += stagePoints;
                 stagePointsBreakdown.stageResult = stagePoints;
-                console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Stage result: ${stagePoints} pts (place ${finishPosition})`);
               }
             }
 

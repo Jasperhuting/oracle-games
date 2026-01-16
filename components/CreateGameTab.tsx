@@ -237,6 +237,18 @@ export const CreateGameTab = () => {
           }),
           auctionStatus: 'pending',
         };
+      } else if (data.gameType === 'slipstream') {
+        // Slipstream config - races are added later via admin interface
+        config = {
+          allowReuse: false,
+          countingRaces: [],
+          penaltyMinutes: 1,
+          pickDeadlineMinutes: 60,
+          greenJerseyPoints: {
+            1: 10, 2: 9, 3: 8, 4: 7, 5: 6,
+            6: 5, 7: 4, 8: 3, 9: 2, 10: 1
+          }
+        };
       } else if (data.gameType === 'marginal-gains') {
         config = {
           teamSize: Number(data.mgTeamSize) || 20,
@@ -1021,6 +1033,31 @@ export const CreateGameTab = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Slipstream Specific Fields */}
+          {selectedGameType === 'slipstream' && (
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">Slipstream Configuration</h3>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Game Concept:</strong> Kies per wedstrijd één renner en neem diens tijdverlies over.
+                  Het doel is om over alle wedstrijden het minste tijd te verliezen (Gele trui)
+                  of de meeste punten te scoren (Groene trui: top 10 krijgt 10-1 punten).
+                  <br /><br />
+                  <strong>Regels:</strong> Elke renner mag maar één keer gekozen worden.
+                  Deadline is 1 uur voor de start.
+                  DNF/DNS/gemiste keuze = straftijd (tijd laatst gefinishte + 1 minuut).
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                <strong>Na het aanmaken:</strong> Ga naar Admin &rarr; Games Management &rarr; klik op &quot;View&quot; bij de game
+                om wedstrijden toe te voegen aan de kalender. Je kunt de standaard 2026 Classics kalender importeren
+                of individuele wedstrijden toevoegen.
+              </p>
             </div>
           )}
 

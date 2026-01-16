@@ -78,9 +78,49 @@ export interface AuctioneerConfig {
   countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])  
 }
 
-export interface CarryMeHomeConfig {
-  allowReuse: boolean;              // false = each rider can only be picked once
-  pointsSystem: 'time' | 'points';  // Score based on time or points
+// ============================================================================
+// SLIPSTREAM CONFIG (formerly CarryMeHome)
+// ============================================================================
+
+export const SLIPSTREAM_RACE_STATUSES = ['upcoming', 'locked', 'finished'] as const;
+export type SlipstreamRaceStatus = typeof SLIPSTREAM_RACE_STATUSES[number];
+
+export interface SlipstreamRace {
+  raceId: string;                   // e.g., "milano-sanremo_2025"
+  raceSlug: string;                 // e.g., "milano-sanremo"
+  raceName: string;                 // e.g., "Milano-Sanremo"
+  raceDate: Timestamp;              // Race start date/time
+  pickDeadline: Timestamp;          // Calculated: raceDate - pickDeadlineMinutes
+  status: SlipstreamRaceStatus;
+  order: number;                    // Order in calendar (1-25)
+}
+
+export type ClientSlipstreamRace = Omit<SlipstreamRace, 'raceDate' | 'pickDeadline'> & {
+  raceDate: string;
+  pickDeadline: string;
+};
+
+export const DEFAULT_GREEN_JERSEY_POINTS: Record<number, number> = {
+  1: 10, 2: 9, 3: 8, 4: 7, 5: 6,
+  6: 5, 7: 4, 8: 3, 9: 2, 10: 1
+};
+
+export interface SlipstreamConfig {
+  allowReuse: false;                              // Riders can only be picked once (always false)
+  countingRaces: SlipstreamRace[];                // Races that count for this game
+  penaltyMinutes: number;                         // Penalty for DNF/DNS/missed pick (default: 1)
+  pickDeadlineMinutes: number;                    // Minutes before race start for deadline (default: 60)
+  greenJerseyPoints: Record<number, number>;      // Position -> points (default: 1st=10...10th=1)
+}
+
+export interface SlipstreamParticipantData {
+  totalTimeLostSeconds: number;                   // For Yellow Jersey (cumulative time lost)
+  totalGreenJerseyPoints: number;                 // For Green Jersey (cumulative points)
+  usedRiders: string[];                           // List of rider nameIds already used
+  picksCount: number;                             // Number of picks made
+  missedPicksCount: number;                       // Number of missed picks (penalties)
+  yellowJerseyRanking: number;                    // Ranking in Yellow Jersey classification
+  greenJerseyRanking: number;                     // Ranking in Green Jersey classification
 }
 
 export interface LastManStandingConfig {
@@ -148,7 +188,7 @@ export interface MarginalGainsConfig {
 
 export type GameConfig =
   | AuctioneerConfig
-  | CarryMeHomeConfig
+  | SlipstreamConfig
   | LastManStandingConfig
   | PoisonedCupConfig
   | NationsCupConfig
@@ -350,7 +390,7 @@ export interface StagePick {
 
   // Stage info
   raceSlug: string;
-  stageNumber: number | string;     // "stage-1" or 1
+  stageNumber: number | string;     // "stage-1" or 1 or "result" for one-day races
 
   // For Carry Me Home
   riderId?: string;                 // Chosen rider
@@ -360,6 +400,15 @@ export interface StagePick {
 
   // For Fan Flandrien (top 15 prediction)
   predictions?: Prediction[];
+
+  // For Slipstream (time-based game)
+  timeLostSeconds?: number;                       // Time lost in seconds
+  timeLostFormatted?: string;                     // Human-readable format "MM:SS" or "HH:MM:SS"
+  greenJerseyPoints?: number;                     // Points earned for Green Jersey (0-10)
+  riderFinishPosition?: number;                   // Rider's finish position
+  isPenalty?: boolean;                            // True if this is a penalty (DNF/DNS/missed pick)
+  penaltyReason?: 'dnf' | 'dns' | 'dsq' | 'missed_pick';
+  processedAt?: Timestamp;                        // When results were calculated
 
   pickedAt: Timestamp;
   locked: boolean;                  // Cannot be changed anymore
@@ -614,7 +663,7 @@ export function isAuctioneer(game: Game): game is Game & { config: AuctioneerCon
   return game.gameType === 'auctioneer';
 }
 
-export function isSlipstream(game: Game): game is Game & { config: CarryMeHomeConfig } {
+export function isSlipstream(game: Game): game is Game & { config: SlipstreamConfig } {
   return game.gameType === 'slipstream';
 }
 

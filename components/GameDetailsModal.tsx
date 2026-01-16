@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "./Button";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/utils";
+import { SlipstreamRaceManager } from "./slipstream/SlipstreamRaceManager";
 
 interface Game {
   id: string;
@@ -34,8 +35,33 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [slipstreamRaces, setSlipstreamRaces] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [loadingRaces, setLoadingRaces] = useState(false);
 
   const { t } = useTranslation();
+
+  const loadSlipstreamRaces = useCallback(async () => {
+    if (!game || game.gameType !== 'slipstream') return;
+
+    setLoadingRaces(true);
+    try {
+      const response = await fetch(`/api/games/${gameId}/slipstream/admin/races`);
+      if (response.ok) {
+        const data = await response.json();
+        setSlipstreamRaces(data.races || []);
+      }
+    } catch (error) {
+      console.error('Error loading slipstream races:', error);
+    } finally {
+      setLoadingRaces(false);
+    }
+  }, [gameId, game]);
+
+  useEffect(() => {
+    if (game?.gameType === 'slipstream') {
+      loadSlipstreamRaces();
+    }
+  }, [game?.gameType, loadSlipstreamRaces]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -252,12 +278,47 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                       </div>
                     )}
 
-                    {game.gameType !== 'auctioneer' && (
+                    {game.gameType === 'slipstream' && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Penalty Time (minutes)</label>
+                            <p className="text-gray-900">{game.config.penaltyMinutes || 1}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Pick Deadline (minutes before start)</label>
+                            <p className="text-gray-900">{game.config.pickDeadlineMinutes || 60}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Races Configured</label>
+                            <p className="text-gray-900">{game.config.countingRaces?.length || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {game.gameType !== 'auctioneer' && game.gameType !== 'slipstream' && (
                       <pre className="text-sm text-gray-700 whitespace-pre-wrap">
                         {JSON.stringify(game.config, null, 2)}
                       </pre>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Slipstream Race Management */}
+              {game.gameType === 'slipstream' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-700">Race Calendar Management</h3>
+                  {loadingRaces ? (
+                    <div className="text-center py-4 text-gray-500">Loading races...</div>
+                  ) : (
+                    <SlipstreamRaceManager
+                      gameId={gameId}
+                      races={slipstreamRaces}
+                      onRacesChange={loadSlipstreamRaces}
+                    />
+                  )}
                 </div>
               )}
             </div>

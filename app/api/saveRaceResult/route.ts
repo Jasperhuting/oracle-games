@@ -225,9 +225,61 @@ export async function POST(request: NextRequest) {
       // Don't fail the whole request if points calculation fails
     }
 
+    // Trigger Slipstream calculations for any Slipstream games that include this race
+    console.log(`[saveRaceResult] Checking for Slipstream games with race ${raceName}`);
+    let slipstreamGamesProcessed = 0;
+    try {
+      const slipstreamGamesSnapshot = await db.collection('games')
+        .where('gameType', '==', 'slipstream')
+        .where('status', 'in', ['active', 'bidding'])
+        .get();
+
+      for (const gameDoc of slipstreamGamesSnapshot.docs) {
+        const gameData = gameDoc.data();
+        const countingRaces = gameData.config?.countingRaces || [];
+        
+        // Check if this race is in the game's counting races
+        const matchingRace = countingRaces.find((r: { raceSlug: string }) => 
+          r.raceSlug === raceName || r.raceSlug === raceSlug
+        );
+
+        if (matchingRace) {
+          console.log(`[saveRaceResult] Processing Slipstream game ${gameDoc.id} for race ${raceName}`);
+          
+          try {
+            const slipstreamResponse = await fetch(
+              `${request.nextUrl.origin}/api/games/${gameDoc.id}/slipstream/calculate-results`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  raceSlug: matchingRace.raceSlug,
+                  stageResults: enrichedStageResults
+                })
+              }
+            );
+
+            if (slipstreamResponse.ok) {
+              slipstreamGamesProcessed++;
+              console.log(`[saveRaceResult] Slipstream calculation completed for game ${gameDoc.id}`);
+            } else {
+              const errorData = await slipstreamResponse.json();
+              console.error(`[saveRaceResult] Slipstream calculation failed for game ${gameDoc.id}:`, errorData);
+            }
+          } catch (slipstreamError) {
+            console.error(`[saveRaceResult] Error calculating Slipstream for game ${gameDoc.id}:`, slipstreamError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[saveRaceResult] Error processing Slipstream games:', error);
+      // Don't fail the whole request if Slipstream calculation fails
+    }
+
     return NextResponse.json({
       success: true,
       ridersCount: raceData.stageResults.length,
+      slipstreamGamesProcessed,
       message: `Race result succesvol opgeslagen`
     });
   } catch (error) {
