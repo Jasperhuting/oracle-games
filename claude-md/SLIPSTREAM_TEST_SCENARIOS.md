@@ -3,6 +3,51 @@
 ## Overview
 This document outlines test scenarios for verifying the Slipstream game implementation.
 
+## Automated Tests
+
+### Unit Tests (Vitest)
+Located in `tests/unit/slipstreamCalculation.test.ts`
+
+Run with:
+```bash
+npm test                  # Run all unit tests
+npm run test:watch        # Watch mode
+npm run test:coverage     # With coverage report
+```
+
+**Covered scenarios:**
+- Time parsing (MM:SS, HH:MM:SS, same time, edge cases)
+- Time formatting
+- Time loss calculation (winner, finishers, DNF penalty)
+- Green jersey points calculation
+- Missed pick penalty
+- Standings sorting (Yellow Jersey, Green Jersey)
+- Ranking calculation with ties
+- Deadline helpers
+
+### E2E Tests (Playwright)
+Located in `tests/e2e/slipstream.spec.ts`
+
+Run with:
+```bash
+npm run test:e2e          # Run all e2e tests
+npm run test:e2e:ui       # With UI
+npm run test:e2e:headed   # In headed browser
+```
+
+**Covered scenarios:**
+- Page navigation and loading
+- Filter tab URL persistence
+- Race selection
+- Rider selection and search
+- User stats display
+- Standings (Yellow/Green Jersey tabs)
+- Pick submission UI
+- Deadline display
+- Admin features
+
+---
+
 ## Test Scenarios
 
 ### 1. Pick maken (Submit a Pick)

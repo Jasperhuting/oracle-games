@@ -21,7 +21,11 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:e2e:full": "start-server-and-test emulators http://127.0.0.1:4000 'start-server-and-test dev:emulator http://localhost:3210 scripts/run-tests-with-seed.sh'",
-    "test:e2e:full:ui": "start-server-and-test emulators http://127.0.0.1:4000 'start-server-and-test dev:emulator http://localhost:3210 \"scripts/run-tests-with-seed.sh --ui\"'"
+    "test:e2e:full:ui": "start-server-and-test emulators http://127.0.0.1:4000 'start-server-and-test dev:emulator http://localhost:3210 \"scripts/run-tests-with-seed.sh --ui\"'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.20",
@@ -79,6 +83,8 @@
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
     "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^20",
     "@types/react": "^19.2.7",
@@ -87,12 +93,14 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "istanbul-lib-coverage": "^3.2.2",
+    "jsdom": "^27.4.0",
     "nyc": "^17.1.0",
     "start-server-and-test": "^2.1.3",
     "tailwindcss": "^4",
     "ts-loader": "^9.5.4",
     "tsx": "^4.21.0",
     "typescript": "^5",
+    "vitest": "^4.0.17",
     "wait-on": "^9.0.3"
   }
 }

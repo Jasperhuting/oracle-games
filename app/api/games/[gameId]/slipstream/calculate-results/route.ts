@@ -6,6 +6,7 @@ import {
   calculateTimeLoss,
   calculateGreenJerseyPoints,
   applyMissedPickPenalty,
+  formatTime,
   StageRider
 } from '@/lib/utils/slipstreamCalculation';
 
@@ -131,7 +132,8 @@ export async function POST(
       })
     );
 
-    // 5. Process each participant
+    // 5. First pass: Calculate results for all participants who made valid picks
+    // (riders that finished the race)
     const batch = db.batch();
     const results: Array<{
       userId: string;
@@ -146,64 +148,228 @@ export async function POST(
       penaltyReason: string | null;
     }> = [];
 
+    // Track valid picks to find the worst one for penalty calculation
+    const validPickResults: Array<{
+      userId: string;
+      timeLostSeconds: number;
+    }> = [];
+
+    // Track participants who need penalties (DNF/DNS/DSQ or missed pick)
+    const penaltyParticipants: Array<{
+      userId: string;
+      playername: string;
+      participantRef: FirebaseFirestore.DocumentReference;
+      existingPick?: {
+        id: string;
+        ref: FirebaseFirestore.DocumentReference;
+        riderId: string;
+        riderName: string;
+        alreadyProcessed: boolean;
+        previousTimeLost: number;
+        previousGreenPoints: number;
+      };
+      penaltyReason: 'dnf' | 'dns' | 'dsq' | 'missed_pick';
+    }> = [];
+
+    // First pass: process valid picks and identify penalty participants
     for (const participant of participants) {
       const { userId, playername, ref: participantRef } = participant;
       const existingPick = existingPicks.get(userId);
 
-      let timeLostSeconds: number;
-      let timeLostFormatted: string;
-      let greenJerseyPoints: number = 0;
-      let riderFinishPosition: number | null = null;
-      let isPenalty: boolean;
-      let penaltyReason: 'dnf' | 'dns' | 'dsq' | 'missed_pick' | null = null;
-      let riderId: string | null = null;
-      let riderName: string | null = null;
-
       if (existingPick) {
-        // Participant made a pick - calculate their result
-        riderId = existingPick.riderId as string;
-        riderName = existingPick.riderName as string;
+        // Participant made a pick - check if rider finished
+        const riderId = existingPick.riderId as string;
+        const riderName = existingPick.riderName as string;
 
         const timeLossResult = calculateTimeLoss(
           stageResults,
           riderId,
-          config.penaltyMinutes
+          0 // Don't apply penalty yet, we'll calculate it based on other picks
         );
 
-        timeLostSeconds = timeLossResult.timeLostSeconds;
-        timeLostFormatted = timeLossResult.timeLostFormatted;
-        isPenalty = timeLossResult.isPenalty;
-        penaltyReason = timeLossResult.penaltyReason || null;
-        riderFinishPosition = timeLossResult.riderFinishPosition || null;
+        if (!timeLossResult.isPenalty) {
+          // Valid pick - rider finished the race
+          const timeLostSeconds = timeLossResult.timeLostSeconds;
+          const timeLostFormatted = timeLossResult.timeLostFormatted;
+          const riderFinishPosition = timeLossResult.riderFinishPosition || null;
 
-        // Calculate green jersey points (only if not a penalty)
-        if (!isPenalty && riderFinishPosition) {
-          greenJerseyPoints = calculateGreenJerseyPoints(
+          // Calculate green jersey points
+          let greenJerseyPoints = 0;
+          if (riderFinishPosition) {
+            greenJerseyPoints = calculateGreenJerseyPoints(
+              riderFinishPosition,
+              config.greenJerseyPoints
+            );
+          }
+
+          // Track this as a valid pick for penalty calculation
+          validPickResults.push({ userId, timeLostSeconds });
+
+          // Update the existing pick
+          batch.update(existingPick.ref, {
+            timeLostSeconds,
+            timeLostFormatted,
+            greenJerseyPoints,
             riderFinishPosition,
-            config.greenJerseyPoints
-          );
-        }
+            isPenalty: false,
+            penaltyReason: null,
+            processedAt: Timestamp.now(),
+            locked: true
+          });
 
-        // Update the existing pick
+          // Update participant totals
+          if (existingPick.alreadyProcessed) {
+            const prevTime = existingPick.previousTimeLost || 0;
+            const prevPoints = existingPick.previousGreenPoints || 0;
+            const timeDelta = timeLostSeconds - prevTime;
+            const pointsDelta = greenJerseyPoints - prevPoints;
+            const updates: Record<string, unknown> = {};
+            if (timeDelta !== 0 && !isNaN(timeDelta) && isFinite(timeDelta)) {
+              updates['slipstreamData.totalTimeLostSeconds'] = FieldValue.increment(timeDelta);
+            }
+            if (pointsDelta !== 0 && !isNaN(pointsDelta) && isFinite(pointsDelta)) {
+              updates['slipstreamData.totalGreenJerseyPoints'] = FieldValue.increment(pointsDelta);
+            }
+            if (Object.keys(updates).length > 0) {
+              batch.update(participantRef, updates);
+            }
+          } else {
+            const updates: Record<string, unknown> = {};
+            if (timeLostSeconds > 0 && !isNaN(timeLostSeconds) && isFinite(timeLostSeconds)) {
+              updates['slipstreamData.totalTimeLostSeconds'] = FieldValue.increment(timeLostSeconds);
+            }
+            if (greenJerseyPoints > 0 && !isNaN(greenJerseyPoints) && isFinite(greenJerseyPoints)) {
+              updates['slipstreamData.totalGreenJerseyPoints'] = FieldValue.increment(greenJerseyPoints);
+            }
+            if (Object.keys(updates).length > 0) {
+              batch.update(participantRef, updates);
+            }
+          }
+
+          results.push({
+            userId,
+            playername,
+            riderId,
+            riderName,
+            timeLostSeconds,
+            timeLostFormatted,
+            greenJerseyPoints,
+            riderFinishPosition,
+            isPenalty: false,
+            penaltyReason: null
+          });
+        } else {
+          // DNF/DNS/DSQ - mark for penalty processing
+          penaltyParticipants.push({
+            userId,
+            playername,
+            participantRef,
+            existingPick,
+            penaltyReason: timeLossResult.penaltyReason || 'dnf'
+          });
+        }
+      } else {
+        // Participant missed the pick - mark for penalty processing
+        penaltyParticipants.push({
+          userId,
+          playername,
+          participantRef,
+          penaltyReason: 'missed_pick'
+        });
+      }
+    }
+
+    // Second pass: Calculate penalty based on worst pick of OTHER players
+    // Penalty = worst time of other valid picks + penalty minutes
+    // If no other valid picks exist, fall back to last finisher of the race
+    const penaltyMinutes = config.penaltyMinutes ?? 1;  // Default to 1 minute if not configured
+    const penaltySeconds = penaltyMinutes * 60;
+
+    console.log('[SLIPSTREAM] Penalty minutes from config:', config.penaltyMinutes, '-> using:', penaltyMinutes, '-> penaltySeconds:', penaltySeconds);
+    console.log('[SLIPSTREAM] Valid pick results for penalty calculation:', validPickResults);
+    console.log('[SLIPSTREAM] Penalty participants:', penaltyParticipants.map(p => ({ userId: p.userId, playername: p.playername, reason: p.penaltyReason })));
+
+    for (const penaltyParticipant of penaltyParticipants) {
+      const { userId, playername, participantRef, existingPick, penaltyReason } = penaltyParticipant;
+
+      // Find the worst time among OTHER participants' valid picks
+      const otherValidPicks = validPickResults.filter(p => p.userId !== userId);
+      console.log(`[SLIPSTREAM] Other valid picks for ${playername}:`, otherValidPicks);
+
+      let worstTimeOfOthers: number;
+      if (otherValidPicks.length > 0) {
+        // Use the worst (highest) time from other players' valid picks
+        const times = otherValidPicks.map(p => p.timeLostSeconds);
+        worstTimeOfOthers = Math.max(...times);
+        console.log(`[SLIPSTREAM] Worst time of others for ${playername}: ${worstTimeOfOthers} (from times: ${JSON.stringify(times)})`);
+      } else {
+        // Fallback: use last finisher from race results if no other valid picks
+        const penalty = applyMissedPickPenalty(stageResults, 0);
+        worstTimeOfOthers = penalty.timeLostSeconds;
+        console.log(`[SLIPSTREAM] Using fallback penalty for ${playername}: ${worstTimeOfOthers}`);
+      }
+
+      // Ensure we have valid numbers
+      if (isNaN(worstTimeOfOthers) || worstTimeOfOthers === undefined || worstTimeOfOthers === null) {
+        console.log(`[SLIPSTREAM] WARNING: worstTimeOfOthers is invalid, using 0`);
+        worstTimeOfOthers = 0;
+      }
+
+      const timeLostSeconds = worstTimeOfOthers + penaltySeconds;
+      const timeLostFormatted = formatTime(timeLostSeconds);
+      console.log(`[SLIPSTREAM] Calculated penalty for ${playername}: ${timeLostSeconds} (${timeLostFormatted})`);
+
+      if (existingPick) {
+        // Update existing pick with penalty
         batch.update(existingPick.ref, {
           timeLostSeconds,
           timeLostFormatted,
-          greenJerseyPoints,
-          riderFinishPosition,
-          isPenalty,
+          greenJerseyPoints: 0,
+          riderFinishPosition: null,
+          isPenalty: true,
           penaltyReason,
           processedAt: Timestamp.now(),
           locked: true
         });
-      } else {
-        // Participant missed the pick - apply penalty
-        const penalty = applyMissedPickPenalty(stageResults, config.penaltyMinutes);
-        timeLostSeconds = penalty.timeLostSeconds;
-        timeLostFormatted = penalty.timeLostFormatted;
-        isPenalty = true;
-        penaltyReason = 'missed_pick';
 
-        // Create a penalty pick record
+        // Update participant totals
+        if (existingPick.alreadyProcessed) {
+          const prevTime = existingPick.previousTimeLost || 0;
+          const prevPoints = existingPick.previousGreenPoints || 0;
+          const timeDelta = timeLostSeconds - prevTime;
+          const pointsDelta = 0 - prevPoints;
+          if (timeDelta !== 0 && !isNaN(timeDelta) && isFinite(timeDelta)) {
+            batch.update(participantRef, {
+              'slipstreamData.totalTimeLostSeconds': FieldValue.increment(timeDelta)
+            });
+          }
+          if (pointsDelta !== 0 && !isNaN(pointsDelta) && isFinite(pointsDelta)) {
+            batch.update(participantRef, {
+              'slipstreamData.totalGreenJerseyPoints': FieldValue.increment(pointsDelta)
+            });
+          }
+        } else {
+          if (timeLostSeconds > 0 && !isNaN(timeLostSeconds) && isFinite(timeLostSeconds)) {
+            batch.update(participantRef, {
+              'slipstreamData.totalTimeLostSeconds': FieldValue.increment(timeLostSeconds)
+            });
+          }
+        }
+
+        results.push({
+          userId,
+          playername,
+          riderId: existingPick.riderId,
+          riderName: existingPick.riderName,
+          timeLostSeconds,
+          timeLostFormatted,
+          greenJerseyPoints: 0,
+          riderFinishPosition: null,
+          isPenalty: true,
+          penaltyReason
+        });
+      } else {
+        // Create a penalty pick record for missed pick
         const penaltyPickRef = db.collection('stagePicks').doc();
         batch.set(penaltyPickRef, {
           gameId,
@@ -224,40 +390,28 @@ export async function POST(
           locked: true
         });
 
-        // Update participant's missed picks count
-        batch.update(participantRef, {
+        // Update participant totals and missed picks count
+        const missedPickUpdates: Record<string, unknown> = {
           'slipstreamData.missedPicksCount': FieldValue.increment(1)
+        };
+        if (timeLostSeconds > 0 && !isNaN(timeLostSeconds) && isFinite(timeLostSeconds)) {
+          missedPickUpdates['slipstreamData.totalTimeLostSeconds'] = FieldValue.increment(timeLostSeconds);
+        }
+        batch.update(participantRef, missedPickUpdates);
+
+        results.push({
+          userId,
+          playername,
+          riderId: null,
+          riderName: null,
+          timeLostSeconds,
+          timeLostFormatted,
+          greenJerseyPoints: 0,
+          riderFinishPosition: null,
+          isPenalty: true,
+          penaltyReason: 'missed_pick'
         });
       }
-
-      // Update participant totals
-      // If already processed, subtract old values first to avoid double counting
-      if (existingPick?.alreadyProcessed) {
-        const timeDelta = timeLostSeconds - existingPick.previousTimeLost;
-        const pointsDelta = greenJerseyPoints - existingPick.previousGreenPoints;
-        batch.update(participantRef, {
-          'slipstreamData.totalTimeLostSeconds': FieldValue.increment(timeDelta),
-          'slipstreamData.totalGreenJerseyPoints': FieldValue.increment(pointsDelta)
-        });
-      } else {
-        batch.update(participantRef, {
-          'slipstreamData.totalTimeLostSeconds': FieldValue.increment(timeLostSeconds),
-          'slipstreamData.totalGreenJerseyPoints': FieldValue.increment(greenJerseyPoints)
-        });
-      }
-
-      results.push({
-        userId,
-        playername,
-        riderId,
-        riderName,
-        timeLostSeconds,
-        timeLostFormatted,
-        greenJerseyPoints,
-        riderFinishPosition,
-        isPenalty,
-        penaltyReason
-      });
     }
 
     // 6. Update race status to 'finished' in game config
