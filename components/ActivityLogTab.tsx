@@ -89,6 +89,7 @@ const FILTER_OPTIONS = {
   games: ['GAME_JOINED', 'GAME_LEFT', 'GAME_UPDATED', 'GAME_CREATED', 'GAME_DELETED', 'GAME_STATUS_CHANGED', 'DIVISION_ASSIGNED', 'PARTICIPANT_REMOVED'],
   bids: ['BID_PLACED', 'BID_CANCELLED'],
   messaging: ['MESSAGE_SENT', 'MESSAGE_BROADCAST'],
+  scraper: ['SCRAPE_STARTED', 'SCRAPE_COMPLETED', 'SCRAPE_FAILED', 'SCRAPE_REQUESTED', 'RACES_SCRAPED', 'YEAR_RESCRAPED'],
   system: ['ERROR', 'IMPERSONATION_STARTED', 'IMPERSONATION_STOPPED']
 };
 
@@ -363,6 +364,12 @@ export const ActivityLogTab = () => {
       'ERROR': 'bg-red-100 text-red-800',
       'IMPERSONATION_STARTED': 'bg-orange-100 text-orange-800',
       'IMPERSONATION_STOPPED': 'bg-green-100 text-green-800',
+      'SCRAPE_STARTED': 'bg-blue-100 text-blue-800',
+      'SCRAPE_COMPLETED': 'bg-green-100 text-green-800',
+      'SCRAPE_FAILED': 'bg-red-100 text-red-800',
+      'SCRAPE_REQUESTED': 'bg-yellow-100 text-yellow-800',
+      'RACES_SCRAPED': 'bg-purple-100 text-purple-800',
+      'YEAR_RESCRAPED': 'bg-indigo-100 text-indigo-800',
     };
     return colors[action] || 'bg-gray-100 text-gray-800';
   };
@@ -642,6 +649,63 @@ export const ActivityLogTab = () => {
       return <ErrorDetails details={log.details} />;
     }
 
+    // SCRAPE details
+    if (log.action.startsWith('SCRAPE_') || log.action === 'RACES_SCRAPED' || log.action === 'YEAR_RESCRAPED') {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="flex flex-wrap gap-2 text-xs">
+            {log.details.race && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                {log.details.race}
+              </span>
+            )}
+            {log.details.year && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                {log.details.year}
+              </span>
+            )}
+            {log.details.scrapeType && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+                {log.details.scrapeType}
+              </span>
+            )}
+            {log.details.stage && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-purple-50 text-purple-700">
+                Stage {log.details.stage}
+              </span>
+            )}
+          </div>
+          {(log.details.dataCount !== undefined || log.details.totalDataCount !== undefined) && (
+            <div className="text-xs text-gray-600">
+              Data: {log.details.dataCount ?? log.details.totalDataCount} items
+            </div>
+          )}
+          {log.details.successfulStages !== undefined && (
+            <div className="text-xs text-gray-600">
+              Stages: {log.details.successfulStages} successful, {log.details.failedStages} failed
+            </div>
+          )}
+          {log.details.executionTimeSec !== undefined && (
+            <div className="flex flex-wrap gap-2 text-xs mt-1">
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-yellow-50 text-yellow-700">
+                {log.details.executionTimeSec}s
+              </span>
+              {log.details.estimatedCostEur !== undefined && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded bg-orange-50 text-orange-700">
+                  ~{Number(log.details.estimatedCostEur).toFixed(5)} EUR
+                </span>
+              )}
+            </div>
+          )}
+          {log.details.errorMessage && (
+            <div className="text-sm text-red-800 bg-red-50 p-2 rounded border border-red-200 mt-1">
+              {log.details.errorMessage}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // For other details, show them in a cleaner way
     if (log.details.reason) {
       return (
@@ -689,6 +753,12 @@ export const ActivityLogTab = () => {
       'BID_CANCELLED': 'Bid Cancelled',
       'MESSAGE_SENT': 'Messages Sent',
       'MESSAGE_BROADCAST': 'Broadcast Messages',
+      'SCRAPE_STARTED': 'Scrape Started',
+      'SCRAPE_COMPLETED': 'Scrape Completed',
+      'SCRAPE_FAILED': 'Scrape Failed',
+      'SCRAPE_REQUESTED': 'Scrape Requested',
+      'RACES_SCRAPED': 'Races Scraped',
+      'YEAR_RESCRAPED': 'Year Rescraped',
       'ERROR': 'Errors',
       'IMPERSONATION_STARTED': 'Impersonation Started',
       'IMPERSONATION_STOPPED': 'Impersonation Stopped',
@@ -753,7 +823,7 @@ export const ActivityLogTab = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {/* Users */}
           <div>
             <CategoryCheckbox
@@ -833,6 +903,29 @@ export const ActivityLogTab = () => {
             />
             <div className="space-y-1.5">
               {FILTER_OPTIONS.messaging.map((filterValue) => (
+                <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filterValue)}
+                    onChange={() => handleFilterToggle(filterValue)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-gray-700">{getFilterLabel(filterValue)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Scraper */}
+          <div>
+            <CategoryCheckbox
+              label="Scraper"
+              checked={getCategoryState('scraper').checked}
+              indeterminate={getCategoryState('scraper').indeterminate}
+              onChange={() => toggleCategory('scraper')}
+            />
+            <div className="space-y-1.5">
+              {FILTER_OPTIONS.scraper.map((filterValue) => (
                 <label key={filterValue} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"

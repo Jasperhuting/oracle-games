@@ -2,19 +2,19 @@
   "crons": [
     {
       "path": "/api/cron/check-auction-finalizations",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/send-message-notifications",
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/send-message-notifications",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/check-auction-closing-soon",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/30 * * * *"
     },
     {
       "path": "/api/cron/send-budget-reminders",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/send-birthday-notifications",
@@ -28,6 +28,26 @@
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60,
+      "memory": 1024
+    },
+    "app/api/scraper/**/*.ts": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
+    "app/api/scrape/**/*.ts": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
+    "app/api/run-scraper/**/*.ts": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
+    "app/api/jobs/process/**/*.ts": {
+      "maxDuration": 300,
+      "memory": 3008
+    },
+    "app/api/admin/rescrape-year/**/*.ts": {
+      "maxDuration": 300,
       "memory": 3008
     }
   }

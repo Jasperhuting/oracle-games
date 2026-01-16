@@ -1,13 +1,15 @@
 import { NextRequest } from 'next/server';
 import { KNOWN_RACE_SLUGS } from '@/lib/scraper';
 import { createJob } from '@/lib/firebase/job-queue';
+import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Use races from the scraper module
 const RACES = KNOWN_RACE_SLUGS;
 
 export async function POST(request: NextRequest) {
   try {
-    const { type, race, stage, year = new Date().getFullYear() } = await request.json();
+    const { type, race, stage, year = new Date().getFullYear(), userId, userEmail, userName } = await request.json();
 
     // Validation
     if (!type || !race) {
@@ -53,7 +55,31 @@ export async function POST(request: NextRequest) {
         race,
         stage,
         year: Number(year),
+        triggeredBy: {
+          userId: userId || 'unknown',
+          userEmail: userEmail || 'unknown',
+          userName: userName || 'unknown',
+        },
       },
+    });
+
+    // Log scrape request
+    const db = getServerFirebase();
+    await db.collection('activityLogs').add({
+      action: 'SCRAPE_REQUESTED',
+      userId: userId || 'unknown',
+      userEmail: userEmail || undefined,
+      userName: userName || undefined,
+      details: {
+        jobId,
+        scrapeType: type,
+        race,
+        stage: stage || null,
+        year: Number(year),
+      },
+      timestamp: Timestamp.now(),
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
     // Trigger background processing

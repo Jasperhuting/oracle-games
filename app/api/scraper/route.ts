@@ -2,10 +2,14 @@ import { NextRequest } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getRiders, getStageResult, getRaceResult } from '@/lib/scraper';
 import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import { getServerFirebase } from '@/lib/firebase/server';
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const db = getServerFirebase();
+  
   try {
-    const { race, year, type, stage } = await request.json();
+    const { race, year, type, stage, userId, userEmail, userName } = await request.json();
 
     // Validation
     if (!race || !year || !type) {
@@ -25,6 +29,23 @@ export async function POST(request: NextRequest) {
         error: 'Stage number required for stage type' 
       }, { status: 400 });
     }
+
+    // Log scrape start
+    await db.collection('activityLogs').add({
+      action: 'SCRAPE_STARTED',
+      userId: userId || 'unknown',
+      userEmail: userEmail || undefined,
+      userName: userName || undefined,
+      details: {
+        scrapeType: type,
+        race,
+        year: Number(year),
+        stage: stage || null,
+      },
+      timestamp: Timestamp.now(),
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+    });
 
     // Handle all-stages scraping
     if (type === 'all-stages') {
@@ -69,6 +90,31 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Calculate execution time and cost (EUR, ~0.92 USD/EUR rate)
+      const executionTimeMs = Date.now() - startTime;
+      const executionTimeSec = executionTimeMs / 1000;
+      const estimatedCostEur = executionTimeSec * 0.00005 * 0.92;
+
+      // Log completion
+      await db.collection('activityLogs').add({
+        action: 'SCRAPE_COMPLETED',
+        userId: userId || 'unknown',
+        userEmail: userEmail || undefined,
+        userName: userName || undefined,
+        details: {
+          scrapeType: type,
+          race,
+          year: Number(year),
+          successfulStages: results.filter(r => r.success).length,
+          failedStages: errors.length,
+          totalDataCount,
+          executionTimeMs,
+          executionTimeSec: Math.round(executionTimeSec * 10) / 10,
+          estimatedCostEur: Math.round(estimatedCostEur * 100000) / 100000,
+        },
+        timestamp: Timestamp.now(),
+      });
+
       return Response.json({
         success: true,
         message: `All stages scraped. ${results.filter(r => r.success).length} successful, ${errors.length} failed.`,
@@ -80,6 +126,8 @@ export async function POST(request: NextRequest) {
         results,
         errors: errors.length > 0 ? errors : undefined,
         timestamp: Timestamp.now(),
+        executionTimeMs,
+        estimatedCostEur,
       });
     }
 
@@ -123,16 +171,60 @@ export async function POST(request: NextRequest) {
       dataCount = 'stageResults' in scraperData ? scraperData.stageResults.length : 0;
     }
 
+    // Calculate execution time and cost (EUR, ~0.92 USD/EUR rate)
+    const executionTimeMs = Date.now() - startTime;
+    const executionTimeSec = executionTimeMs / 1000;
+    const estimatedCostEur = executionTimeSec * 0.00005 * 0.92;
+
+    // Log completion
+    await db.collection('activityLogs').add({
+      action: 'SCRAPE_COMPLETED',
+      userId: userId || 'unknown',
+      userEmail: userEmail || undefined,
+      userName: userName || undefined,
+      details: {
+        scrapeType: type,
+        race,
+        year: Number(year),
+        stage: stage || null,
+        dataCount,
+        executionTimeMs,
+        executionTimeSec: Math.round(executionTimeSec * 10) / 10,
+        estimatedCostEur: Math.round(estimatedCostEur * 100000) / 100000,
+      },
+      timestamp: Timestamp.now(),
+    });
+
     return Response.json({
       success: true,
       message: 'Data scraped and saved to Firebase',
       key,
       dataCount,
       timestamp: Timestamp.now(),
+      executionTimeMs,
+      estimatedCostEur,
     });
 
   } catch (error) {
     console.error('Scraper error:', error);
+
+    // Calculate execution time for failed scrape
+    const executionTimeMs = Date.now() - startTime;
+
+    // Log failure
+    try {
+      await db.collection('activityLogs').add({
+        action: 'SCRAPE_FAILED',
+        userId: 'unknown',
+        details: {
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          executionTimeMs,
+        },
+        timestamp: Timestamp.now(),
+      });
+    } catch {
+      // Ignore logging errors
+    }
     
     return Response.json({ 
       error: error instanceof Error ? error.message : 'Unknown scraping error',

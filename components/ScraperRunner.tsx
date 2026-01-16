@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ScraperJob } from '@/lib/types/admin';
+import { useAuth } from '@/hooks/useAuth';
 
 const RACES = [
   'tour-de-france',
@@ -24,6 +25,7 @@ const RACES = [
 ];
 
 export function ScraperRunner() {
+  const { user } = useAuth();
   const [type, setType] = useState<'startlist' | 'stage-result'>('startlist');
   const [race, setRace] = useState('tour-de-france');
   const [stage, setStage] = useState('');
@@ -35,7 +37,14 @@ export function ScraperRunner() {
     setLoading(true);
     
     try {
-      const body: { type: 'startlist' | 'stage-result'; race: string; year: number; stage?: number } = { type, race, year: parseInt(year) };
+      const body: { type: 'startlist' | 'stage-result'; race: string; year: number; stage?: number; userId?: string; userEmail?: string; userName?: string } = { 
+        type, 
+        race, 
+        year: parseInt(year),
+        userId: user?.uid,
+        userEmail: user?.email || undefined,
+        userName: user?.displayName || user?.email || undefined,
+      };
       if (type === 'stage-result' && stage) {
         body.stage = parseInt(stage);
       }

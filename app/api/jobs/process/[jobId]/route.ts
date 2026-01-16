@@ -8,6 +8,8 @@ import {
 } from '@/lib/firebase/job-queue';
 import { getStageResult, getRiders, type RaceSlug } from '@/lib/scraper';
 import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import { getServerFirebase } from '@/lib/firebase/server';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export const maxDuration = 300; // 5 minutes (Vercel Pro)
 
@@ -45,6 +47,20 @@ export async function POST(
 
     // Start the job
     await startJob(jobId);
+    const startTime = Date.now();
+
+    // Log scrape start
+    const db = getServerFirebase();
+    await db.collection('activityLogs').add({
+      action: 'SCRAPE_STARTED',
+      userId: 'system',
+      details: {
+        jobId,
+        jobType: job.type,
+        ...job.data,
+      },
+      timestamp: Timestamp.now(),
+    });
 
     try {
       // Process based on job type
@@ -60,15 +76,56 @@ export async function POST(
 
       await completeJob(jobId);
 
+      // Calculate execution time and estimated cost
+      const executionTimeMs = Date.now() - startTime;
+      const executionTimeSec = executionTimeMs / 1000;
+      // Vercel Pro: $0.18 per GB-hour for functions (1GB memory)
+      // ~$0.00005 per second for 1GB function, converted to EUR (~0.92 rate)
+      const estimatedCostEur = executionTimeSec * 0.00005 * 0.92;
+
+      // Log scrape completion with cost
+      await db.collection('activityLogs').add({
+        action: 'SCRAPE_COMPLETED',
+        userId: 'system',
+        details: {
+          jobId,
+          jobType: job.type,
+          ...job.data,
+          executionTimeMs,
+          executionTimeSec: Math.round(executionTimeSec * 10) / 10,
+          estimatedCostEur: Math.round(estimatedCostEur * 100000) / 100000,
+        },
+        timestamp: Timestamp.now(),
+      });
+
       return Response.json({
         success: true,
         jobId,
         status: 'completed',
+        executionTimeMs,
+        estimatedCostEur,
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       await failJob(jobId, errorMessage);
+
+      // Calculate execution time for failed job
+      const executionTimeMs = Date.now() - startTime;
+
+      // Log scrape failure
+      await db.collection('activityLogs').add({
+        action: 'SCRAPE_FAILED',
+        userId: 'system',
+        details: {
+          jobId,
+          jobType: job.type,
+          ...job.data,
+          executionTimeMs,
+          errorMessage,
+        },
+        timestamp: Timestamp.now(),
+      });
 
       return Response.json(
         {
