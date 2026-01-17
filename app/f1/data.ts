@@ -21,6 +21,7 @@ export interface Race {
 }
 
 export const races2026: Race[] = [
+    { name: "Test Race", subName: "FORMULA 1 TEST GRAND PRIX 2026", startDate: "2025-01-01", endDate: "2025-01-03", round: 0, raceImage: "" },
     { name: "Australia", subName: "FORMULA 1 QATAR AIRWAYS AUSTRALIAN GRAND PRIX 2026", startDate: "2026-03-06", endDate: "2026-03-08", round: 1, raceImage: "https://media.formula1.com/image/upload/c_lfill,w_3392/v1740000000/common/f1/2026/track/2026trackmelbourneblackoutline.svg" },
     { name: "China", subName: "FORMULA 1 HEINEKEN CHINESE GRAND PRIX 2026", startDate: "2026-03-13", endDate: "2026-03-15", round: 2, raceImage: "https://media.formula1.com/image/upload/c_lfill,w_3392/v1740000000/common/f1/2026/track/2026trackshanghaiblackoutline.svg" },
     { name: "Japan", subName: "FORMULA 1 ARAMCO JAPANESE GRAND PRIX 2026", startDate: "2026-03-27", endDate: "2026-03-29", round: 3, raceImage: "https://media.formula1.com/image/upload/c_lfill,w_3392/v1740000000/common/f1/2026/track/2026tracksuzukablackoutline.svg" },

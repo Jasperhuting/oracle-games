@@ -26,6 +26,7 @@ import { BidBackupTab } from "@/components/BidBackupTab";
 import { FinalizeOverviewTab } from "@/components/FinalizeOverviewTab";
 import { SimulateResultsTab } from "@/components/SimulateResultsTab";
 import { TodosTab } from "@/components/TodosTab";
+import { F1ResultsTab } from "@/components/F1ResultsTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -180,6 +181,11 @@ export default function AdminPageClient() {
                                     id: 'simulate-results',
                                     label: '🎲 Simuleer Results',
                                     content: <SimulateResultsTab />
+                                },
+                                {
+                                    id: 'f1-results',
+                                    label: '🏎️ F1 Uitslagen',
+                                    content: <F1ResultsTab />
                                 }
                             ]
                         },
