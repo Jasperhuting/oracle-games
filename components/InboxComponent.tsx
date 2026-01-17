@@ -5,7 +5,7 @@ import { ClientMessage } from '@/lib/types/games';
 import { useEffect, useState } from 'react';
 import { Mail, MailOpened, X, Trash, Send, Edit, AlertCircle } from 'tabler-icons-react';
 import { db } from '@/lib/firebase/client';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -74,9 +74,12 @@ export default function InboxComponent() {
     const messagesRef = collection(db, 'messages');
 
     // Set up real-time listener for inbox messages (received)
+    // Limit to 50 most recent messages to reduce Firestore reads
     const inboxQuery = query(
       messagesRef,
-      where('recipientId', '==', user.uid)
+      where('recipientId', '==', user.uid),
+      orderBy('sentAt', 'desc'),
+      limit(50)
     );
 
     const unsubscribeInbox = onSnapshot(
@@ -101,12 +104,7 @@ export default function InboxComponent() {
             readAt: data.readAt?.toDate().toISOString(),
           };
         });
-        // Sort by sentAt descending (most recent first)
-        messagesData.sort((a, b) => {
-          const aTime = new Date(a.sentAt || 0).getTime();
-          const bTime = new Date(b.sentAt || 0).getTime();
-          return bTime - aTime;
-        });
+        // Already sorted by Firestore query (sentAt desc)
         setInboxMessages(messagesData);
         setLoading(false);
       },
@@ -118,9 +116,12 @@ export default function InboxComponent() {
     );
 
     // Set up real-time listener for outbox messages (sent)
+    // Limit to 50 most recent messages to reduce Firestore reads
     const outboxQuery = query(
       messagesRef,
-      where('senderId', '==', user.uid)
+      where('senderId', '==', user.uid),
+      orderBy('sentAt', 'desc'),
+      limit(50)
     );
 
     const unsubscribeOutbox = onSnapshot(
@@ -145,12 +146,7 @@ export default function InboxComponent() {
             readAt: data.readAt?.toDate().toISOString(),
           };
         });
-        // Sort by sentAt descending (most recent first)
-        messagesData.sort((a, b) => {
-          const aTime = new Date(a.sentAt || 0).getTime();
-          const bTime = new Date(b.sentAt || 0).getTime();
-          return bTime - aTime;
-        });
+        // Already sorted by Firestore query (sentAt desc)
         setOutboxMessages(messagesData);
       },
       (error) => {
