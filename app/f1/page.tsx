@@ -207,26 +207,106 @@ const F1Page = () => {
     const completedRaces = tableData.filter((row) => row.status === "done").length;
     const predictedRaces = tableData.filter((row) => row.prediction !== null).length;
 
+    // Mobile card component for races
+    const RaceCard = ({ row }: { row: RaceTableRow }) => {
+        const startDate = new Date(row.race.startDate);
+        const endDate = new Date(row.race.endDate);
+
+        const getStatusBadge = () => {
+            if (row.status === "done") {
+                return (
+                    <span className="inline-flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-1 rounded-full">
+                        <Check size={14} /> Afgelopen
+                    </span>
+                );
+            } else if (row.status === "open") {
+                return (
+                    <span className="inline-flex items-center gap-1 text-orange-600 text-xs bg-orange-50 px-2 py-1 rounded-full">
+                        <Clock size={14} /> Bezig
+                    </span>
+                );
+            } else {
+                return (
+                    <span className="inline-flex items-center gap-1 text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded-full">
+                        <Clock size={14} /> Aankomend
+                    </span>
+                );
+            }
+        };
+
+        return (
+            <Link href={`/f1/race/${row.race.round}`} className="block">
+                <div className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <span className="text-sm bg-gray-600 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center tabular-nums font-bold">
+                                {row.race.round}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-gray-900 truncate">{row.race.name}</div>
+                                <div className="text-xs text-gray-500 truncate">{row.race.subName}</div>
+                                <div className="text-xs text-gray-400 mt-1">
+                                    {startDate.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} - {endDate.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                            {getStatusBadge()}
+                            {row.points !== null && (
+                                <span className={`text-lg font-bold ${row.points > 0 ? "text-green-600" : "text-gray-400"}`}>
+                                    {row.points} pt
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    {row.status === "upcoming" && !row.prediction && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                            <span className="inline-flex items-center gap-1 text-blue-500 text-sm">
+                                <Edit size={14} /> Voorspelling invullen
+                            </span>
+                        </div>
+                    )}
+                    {row.status === "open" && !row.prediction && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                            <span className="inline-flex items-center gap-1 text-orange-500 text-sm font-medium">
+                                <Edit size={14} /> Nog invullen!
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </Link>
+        );
+    };
+
     return (
         <>
-            <h1 className="text-3xl font-bold mb-6">F1 2026 Voorspellingen</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">F1 2026 Voorspellingen</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="text-sm text-gray-500">Totaal punten</div>
-                    <div className="text-3xl font-bold text-green-600">{totalPoints}</div>
+            {/* Stats cards - optimized for mobile */}
+            <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <div className="text-xs md:text-sm text-gray-500">Totaal punten</div>
+                    <div className="text-xl md:text-3xl font-bold text-green-600">{totalPoints}</div>
                 </div>
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="text-sm text-gray-500">Races afgerond</div>
-                    <div className="text-3xl font-bold">{completedRaces} / {races2026.length}</div>
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <div className="text-xs md:text-sm text-gray-500">Races</div>
+                    <div className="text-xl md:text-3xl font-bold">{completedRaces}/{races2026.length}</div>
                 </div>
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="text-sm text-gray-500">Voorspellingen ingevuld</div>
-                    <div className="text-3xl font-bold">{predictedRaces} / {races2026.length}</div>
+                <div className="bg-white rounded-lg shadow p-3 md:p-4">
+                    <div className="text-xs md:text-sm text-gray-500">Ingevuld</div>
+                    <div className="text-xl md:text-3xl font-bold">{predictedRaces}/{races2026.length}</div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Mobile view - card list */}
+            <div className="md:hidden flex flex-col gap-3">
+                {tableData.map((row) => (
+                    <RaceCard key={row.race.round} row={row} />
+                ))}
+            </div>
+
+            {/* Desktop view - table */}
+            <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         {table.getHeaderGroups().map((headerGroup) => (
