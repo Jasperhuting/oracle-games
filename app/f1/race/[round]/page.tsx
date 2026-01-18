@@ -154,7 +154,7 @@ interface StartingGridElementProps {
     even: boolean;
     position: number;
     onDrop: (position: number, driver: Driver) => void;
-    onDragStart: (position: number) => void;
+    onDragStart: (position: number, e: React.DragEvent) => void;
     onDragEnd: (e: React.DragEvent, position: number) => void;
     disabled?: boolean;
 }
@@ -187,7 +187,7 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
         if (disabled) return;
         if (driver) {
             e.dataTransfer.setData("application/json", JSON.stringify(driver));
-            onDragStart(position);
+            onDragStart(position, e);
 
             const emptyImg = document.createElement('img');
             emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -327,13 +327,15 @@ export default function RacePage() {
         setDraggingDriver(null);
     };
 
-    const handleDragStartFromGrid = (position: number) => {
+    const handleDragStartFromGrid = (position: number, e: React.DragEvent) => {
         setDraggedFromGrid(position);
         const driver = grid[position - 1];
         if (driver) {
             setDraggingDriver(driver.shortName);
             setDraggingDriverData(driver);
             setIsOutsideGrid(false);
+            // Set initial position immediately to prevent "fly-in" effect
+            setDragPosition({ x: e.clientX, y: e.clientY });
         }
     };
 
