@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { MessageCircle } from 'tabler-icons-react';
@@ -13,6 +13,19 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
     const [feedbackExpanded, setFeedbackExpanded] = useState(false);
     const [coffeeExpanded, setCoffeeExpanded] = useState(false);
     const { user } = useAuth();
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Click outside to collapse
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setFeedbackExpanded(false);
+                setCoffeeExpanded(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleCoffeeClick = async () => {
         try {
@@ -40,28 +53,25 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
         }
     };
 
-    const handleCoffeeButtonClick = () => {
-        if (!coffeeExpanded) {
+    const handleCoffeeButtonClick = (e: React.MouseEvent) => {
+        if (coffeeExpanded) {
+            // Already expanded, let the link work
+            handleCoffeeClick();
+        } else {
+            e.preventDefault();
             setCoffeeExpanded(true);
             setFeedbackExpanded(false);
         }
     };
 
     return (
-        <div className="md:hidden fixed bottom-4 left-4 z-50 flex flex-col gap-3">
+        <div ref={containerRef} className="md:hidden fixed bottom-4 left-4 z-50 flex flex-col gap-3">
             {/* Buy me a coffee button */}
             <a
-                href={coffeeExpanded ? "https://buymeacoffee.com/jasperh" : undefined}
+                href="https://buymeacoffee.com/jasperh"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                    if (!coffeeExpanded) {
-                        e.preventDefault();
-                        handleCoffeeButtonClick();
-                    } else {
-                        handleCoffeeClick();
-                    }
-                }}
+                onClick={handleCoffeeButtonClick}
                 className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-[#FFDD00] hover:bg-[#FFED4E] overflow-hidden ${coffeeExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
             >
                 <Image

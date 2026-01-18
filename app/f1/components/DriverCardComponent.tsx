@@ -15,7 +15,7 @@ export const DriverCard = ({ driver, small }: { driver: Driver, small?: boolean 
                             {driver.firstName}
                         </span>
                         <span className="text-md lg:text-2xl xl:text-xl text-white font-nunito font-regular hidden lg:block">{driver.lastName}</span>
-                        <span className="text-xs lg:text-lg xl:text-base text-white font-nunito font-regular whitespace-nowrap ml-2 md:ml-0">{driver.team}</span>
+                        <span className="text-xs lg:text-lg xl:text-base text-white font-nunito font-regular whitespace-nowrap ml-2 md:ml-0 hidden md:block">{driver.team}</span>
                         <span className="text-md lg:text-lg xl:text-base text-white absolute md:top-4 md:bottom-1 top-2 right-2 md:right-0 font-lato font-black hidden md:block">{driver.numberImage ? <img className="z-0 w-[25px] h-[25px] md:w-[20px] md:h-[20px] lg:h-[25px] lg:w-[25px]" src={driver.numberImage} alt={driver.lastName} /> : <span className="text-xl md:text-xl lg:text-3xl font-sans">{driver.number}</span>}</span>
                         <span className="text-md lg:text-lg xl:text-base text-white hidden lg:block"><Flag countryCode={driver.country} /></span>
                     </div>

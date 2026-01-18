@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation";
 import { DriverCard } from "../../components/DriverCardComponent";
-import { Button } from "@/components/Button";
 import { useState, useRef, useEffect } from "react";
 import { Driver, races2026, drivers } from "../../data";
 import Link from "next/link";
@@ -159,6 +158,78 @@ interface StartingGridElementProps {
     disabled?: boolean;
 }
 
+// Combined grid element showing actual result vs prediction with position difference
+interface CombinedGridElementProps {
+    actualDriver: Driver | null;
+    predictedDriver: Driver | null;
+    position: number;
+    predictedPosition: number | null; // Position where this actual driver was predicted
+}
+
+const CombinedGridElement = ({ actualDriver, predictedDriver, position, predictedPosition }: CombinedGridElementProps) => {
+    if (!actualDriver) return null;
+
+    const isCorrect = predictedDriver?.shortName === actualDriver.shortName;
+    const positionDiff = predictedPosition ? predictedPosition - position : null;
+
+    // Podium colors for top 3
+    const getPositionStyle = () => {
+        if (position === 1) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-black';
+        if (position === 2) return 'bg-gradient-to-r from-gray-400 to-gray-300 text-black';
+        if (position === 3) return 'bg-gradient-to-r from-amber-700 to-amber-600 text-white';
+        return 'bg-gray-700 text-white';
+    };
+
+    return (
+        <div className={`relative flex items-center gap-1 p-0.5 rounded ${isCorrect ? 'ring-1 ring-green-500/50' : ''}`}>
+            {/* Position number */}
+            <div className={`w-6 h-6 flex items-center justify-center rounded text-xs font-black ${getPositionStyle()}`}>
+                {position}
+            </div>
+
+            {/* Driver slot */}
+            <div className={`flex-1 h-8 rounded flex items-center gap-1.5 px-1.5 bg-gray-800 ${isCorrect ? 'bg-green-900/30' : ''}`}>
+                <span
+                    className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
+                    style={{ backgroundColor: actualDriver.teamColor }}
+                >
+                    <img
+                        src={actualDriver.image}
+                        alt={actualDriver.lastName}
+                        className="w-7 h-auto absolute top-0 left-0 pointer-events-none"
+                    />
+                </span>
+                <div className="flex flex-col flex-1 min-w-0">
+                    <span className={`text-xs font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>
+                        {actualDriver.shortName}
+                    </span>
+                    {!isCorrect && predictedDriver && (
+                        <span className="text-[9px] text-gray-500 line-through">
+                            {predictedDriver.shortName}
+                        </span>
+                    )}
+                </div>
+                <div
+                    className="w-0.5 h-4 rounded-full"
+                    style={{ backgroundColor: actualDriver.teamColor }}
+                />
+            </div>
+
+            {/* Position difference badge */}
+            {positionDiff !== null && positionDiff !== 0 && (
+                <div className={`absolute -right-1 -top-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${positionDiff > 0 ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                    {positionDiff > 0 ? `+${positionDiff}` : positionDiff}
+                </div>
+            )}
+            {isCorrect && (
+                <div className="absolute -right-1 -top-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-green-600 text-white">
+                    ✓
+                </div>
+            )}
+        </div>
+    );
+};
+
 const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDragEnd, disabled }: StartingGridElementProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
 
@@ -205,7 +276,7 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
 
     return (
         <div
-            className={`relative flex items-center gap-1 p-0.5 rounded transition-all ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
+            className={`relative flex items-center gap-0.5 md:gap-1 p-0.5 rounded transition-all ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -214,32 +285,32 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
             onDragEnd={(e) => onDragEnd(e, position)}
         >
             {/* Position number */}
-            <div className={`w-6 h-6 flex items-center justify-center rounded text-xs font-black ${getPositionStyle()}`}>
+            <div className={`w-4 h-4 md:w-6 md:h-6 flex items-center justify-center rounded text-[8px] md:text-xs font-black ${getPositionStyle()}`}>
                 {position}
             </div>
 
             {/* Driver slot */}
-            <div className={`flex-1 h-8 rounded flex items-center gap-1.5 px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600'}`}>
+            <div className={`flex-1 h-5 md:h-8 rounded flex items-center gap-0.5 md:gap-1.5 px-0.5 md:px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600'}`}>
                 {driver ? (
                     <>
                         <span
-                            className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
+                            className="w-3 h-3 md:w-5 md:h-5 rounded-full overflow-hidden relative flex-shrink-0"
                             style={{ backgroundColor: driver.teamColor }}
                         >
                             <img
                                 src={driver.image}
                                 alt={driver.lastName}
-                                className="w-7 h-auto absolute top-0 left-0 pointer-events-none"
+                                className="w-4 md:w-7 h-auto absolute top-0 left-0 pointer-events-none"
                             />
                         </span>
-                        <span className="text-white text-xs font-bold pointer-events-none">{driver.shortName}</span>
+                        <span className="text-white text-[7px] md:text-xs font-bold pointer-events-none truncate">{driver.shortName}</span>
                         <div
-                            className="w-0.5 h-4 rounded-full ml-auto"
+                            className="w-0.5 h-3 md:h-4 rounded-full ml-auto hidden md:block"
                             style={{ backgroundColor: driver.teamColor }}
                         />
                     </>
                 ) : (
-                    <span className="text-gray-500 text-[10px]">Drop</span>
+                    <span className="text-gray-500 text-[7px] md:text-[10px]">Drop</span>
                 )}
             </div>
         </div>
@@ -435,79 +506,189 @@ export default function RacePage() {
 
     return (
         <>
-            <div className="mb-6">
-                <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm bg-gray-600 text-white rounded-full w-8 h-8 inline-flex items-center justify-center tabular-nums font-bold">{race.round}</span>
-                    <h2 className="text-2xl font-bold">{race.name}</h2>
-                    {isRaceDone && <span className="bg-green-500 text-white text-sm px-3 py-1 rounded-full">Afgelopen</span>}
-                    {!isRaceDone && <span className="bg-blue-500 text-white text-sm px-3 py-1 rounded-full">Aankomend</span>}
-                </div>
-                <p className="text-gray-500 text-sm">{race.subName}</p>
-                <p className="text-gray-600">{new Date(race.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })} - {new Date(race.endDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            </div>
+            {/* F1-styled race header */}
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-4 md:p-6 mb-6 border border-gray-700 relative overflow-hidden">
+                {/* Checkered flag pattern */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')]"></div>
 
-            
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-lg flex items-center justify-center">
+                            <span className="text-xl md:text-2xl font-black text-white">{race.round}</span>
+                        </div>
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-black text-white">{race.name}</h2>
+                            <p className="text-gray-400 text-sm">{race.subName}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="text-right">
+                            <p className="text-gray-400 text-xs uppercase tracking-wider">Datum</p>
+                            <p className="text-white text-sm">{new Date(race.startDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} - {new Date(race.endDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        </div>
+                        {isRaceDone ? (
+                            <span className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Afgelopen</span>
+                        ) : (
+                            <span className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Aankomend</span>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             {isRaceDone ? (
                 <div className="flex flex-col gap-6">
-                    {/* Podium with top 3 */}
+                    {/* F1-styled Podium */}
                     {actualResult[0] && actualResult[1] && actualResult[2] && (
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold mb-4 text-center">Podium</h3>
-                            <div className="flex justify-center items-end gap-2">
+                        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg p-4 md:p-6 border border-gray-700">
+                            {/* Podium header */}
+                            <div className="flex items-center justify-center gap-2 mb-6">
+                                <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                                <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-wider">Podium</h3>
+                                <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                            </div>
+
+                            <div className="flex justify-center items-end gap-2 md:gap-4 max-w-2xl mx-auto">
                                 {/* P2 - Second place (left, shorter) */}
-                                <div className="flex flex-col items-center">
-                                    <div className="w-40 lg:w-48">
-                                        <DriverCard driver={actualResult[1]} />
+                                <div className="flex flex-col items-center flex-1 max-w-[140px] md:max-w-[180px]">
+                                    <div className="w-full mb-2">
+                                        <div className="bg-gray-800 rounded-t-lg p-2 text-center border-t border-x border-gray-600">
+                                            <span className="text-white font-bold text-xs md:text-sm">{actualResult[1].shortName}</span>
+                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{actualResult[1].team}</span>
+                                        </div>
                                     </div>
-                                    <div className="bg-gray-300 w-full h-16 flex items-center justify-center rounded-t-lg mt-2">
-                                        <span className="text-2xl font-bold text-gray-600">2</span>
+                                    <div className="bg-gradient-to-b from-gray-400 to-gray-500 w-full h-20 md:h-24 flex flex-col items-center justify-center rounded-t-lg relative">
+                                        <span className="text-4xl md:text-5xl font-black text-white drop-shadow-lg">2</span>
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gray-400" style={{ backgroundColor: actualResult[1].teamColor }}>
+                                            <img src={actualResult[1].image} alt={actualResult[1].lastName} className="w-10 md:w-12 h-auto absolute top-0 left-0" />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* P1 - First place (center, tallest) */}
-                                <div className="flex flex-col items-center">
-                                    <div className="w-44 lg:w-56">
-                                        <DriverCard driver={actualResult[0]} />
+                                <div className="flex flex-col items-center flex-1 max-w-[160px] md:max-w-[200px]">
+                                    <div className="w-full mb-2">
+                                        <div className="bg-gray-800 rounded-t-lg p-2 text-center border-t border-x border-yellow-500">
+                                            <span className="text-yellow-400 font-bold text-xs md:text-sm">{actualResult[0].shortName}</span>
+                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{actualResult[0].team}</span>
+                                        </div>
                                     </div>
-                                    <div className="bg-yellow-400 w-full h-24 flex items-center justify-center rounded-t-lg mt-2">
-                                        <span className="text-3xl font-bold text-yellow-800">1</span>
+                                    <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 w-full h-28 md:h-36 flex flex-col items-center justify-center rounded-t-lg relative">
+                                        <span className="text-5xl md:text-6xl font-black text-white drop-shadow-lg">1</span>
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-yellow-400" style={{ backgroundColor: actualResult[0].teamColor }}>
+                                            <img src={actualResult[0].image} alt={actualResult[0].lastName} className="w-12 md:w-14 h-auto absolute top-0 left-0" />
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* P3 - Third place (right, shortest) */}
-                                <div className="flex flex-col items-center">
-                                    <div className="w-36 lg:w-44">
-                                        <DriverCard driver={actualResult[2]} />
+                                <div className="flex flex-col items-center flex-1 max-w-[130px] md:max-w-[160px]">
+                                    <div className="w-full mb-2">
+                                        <div className="bg-gray-800 rounded-t-lg p-2 text-center border-t border-x border-amber-600">
+                                            <span className="text-amber-500 font-bold text-xs md:text-sm">{actualResult[2].shortName}</span>
+                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{actualResult[2].team}</span>
+                                        </div>
                                     </div>
-                                    <div className="bg-amber-600 w-full h-12 flex items-center justify-center rounded-t-lg mt-2">
-                                        <span className="text-xl font-bold text-amber-100">3</span>
+                                    <div className="bg-gradient-to-b from-amber-600 to-amber-800 w-full h-16 md:h-20 flex flex-col items-center justify-center rounded-t-lg relative">
+                                        <span className="text-3xl md:text-4xl font-black text-white drop-shadow-lg">3</span>
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-7 h-7 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-amber-600" style={{ backgroundColor: actualResult[2].teamColor }}>
+                                            <img src={actualResult[2].image} alt={actualResult[2].lastName} className="w-9 md:w-11 h-auto absolute top-0 left-0" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Checkered floor */}
+                            <div className="h-3 mt-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] max-w-2xl mx-auto rounded-b"></div>
                         </div>
                     )}
 
-                    {/* Summary stats */}
+                    {/* F1-styled Summary stats */}
                     {penaltyData && (
-                        <div className="grid grid-cols-3 gap-3">
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                                <div className="text-2xl font-bold text-green-600">{penaltyData.correctPredictions}</div>
-                                <div className="text-xs text-green-700">Correct</div>
+                        <div className="grid grid-cols-3 gap-2 md:gap-4">
+                            <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-green-600 rounded-lg p-3 md:p-4 text-center">
+                                <div className="text-2xl md:text-3xl font-black text-green-500">{penaltyData.correctPredictions}</div>
+                                <div className="text-xs text-gray-400 uppercase tracking-wider">Correct</div>
                             </div>
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
-                                <div className="text-2xl font-bold text-red-600">{penaltyData.totalPenalty}</div>
-                                <div className="text-xs text-red-700">Strafpunten</div>
+                            <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-red-600 rounded-lg p-3 md:p-4 text-center">
+                                <div className="text-2xl md:text-3xl font-black text-red-500">{penaltyData.totalPenalty}</div>
+                                <div className="text-xs text-gray-400 uppercase tracking-wider">Strafpunten</div>
                             </div>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                                <div className="text-2xl font-bold text-blue-600">{penaltyData.penalties.length}</div>
-                                <div className="text-xs text-blue-700">Fout</div>
+                            <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-orange-500 rounded-lg p-3 md:p-4 text-center">
+                                <div className="text-2xl md:text-3xl font-black text-orange-500">{penaltyData.penalties.length}</div>
+                                <div className="text-xs text-gray-400 uppercase tracking-wider">Fout</div>
                             </div>
                         </div>
                     )}
 
-                    {/* Full results table sorted by actual ranking */}
-                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                    {/* Combined Results Grid - F1 style */}
+                    <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700">
+                        {/* Header */}
+                        <div className="flex items-center justify-center gap-2 mb-4 pb-3 border-b border-gray-700">
+                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                            <span className="text-white font-black text-lg tracking-tight uppercase">Resultaat vs Voorspelling</span>
+                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                        </div>
+
+                        {/* Checkered flag pattern at top */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-t-lg"></div>
+
+                        {/* Grid positions - 2 column F1-style staggered layout */}
+                        <div className="flex flex-col gap-0.5">
+                            {Array.from({ length: 11 }, (_, rowIndex) => {
+                                const leftPosition = rowIndex * 2 + 1;
+                                const rightPosition = rowIndex * 2 + 2;
+                                const leftActualDriver = actualResult[leftPosition - 1];
+                                const rightActualDriver = actualResult[rightPosition - 1];
+                                const leftPredictedDriver = grid[leftPosition - 1];
+                                const rightPredictedDriver = grid[rightPosition - 1];
+                                // Where did user predict this actual driver would finish?
+                                const leftPredictedPos = leftActualDriver ? grid.findIndex(d => d?.shortName === leftActualDriver.shortName) + 1 : null;
+                                const rightPredictedPos = rightActualDriver ? grid.findIndex(d => d?.shortName === rightActualDriver.shortName) + 1 : null;
+
+                                return (
+                                    <div key={rowIndex} className="flex gap-1">
+                                        {/* Left side - odd positions */}
+                                        <div className="flex-1">
+                                            <CombinedGridElement
+                                                actualDriver={leftActualDriver}
+                                                predictedDriver={leftPredictedDriver}
+                                                position={leftPosition}
+                                                predictedPosition={leftPredictedPos || null}
+                                            />
+                                        </div>
+                                        {/* Right side - even positions (slightly offset down) */}
+                                        <div className="flex-1 mt-3">
+                                            <CombinedGridElement
+                                                actualDriver={rightActualDriver}
+                                                predictedDriver={rightPredictedDriver}
+                                                position={rightPosition}
+                                                predictedPosition={rightPredictedPos || null}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Legend */}
+                        <div className="mt-4 pt-3 border-t border-gray-700 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-400">
+                            <div className="flex items-center gap-1">
+                                <div className="w-4 h-4 rounded-full bg-green-600 flex items-center justify-center text-[8px] text-white">✓</div>
+                                <span>Correct</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-[8px] text-white">+3</div>
+                                <span>Te laag voorspeld</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-4 h-4 rounded-full bg-green-600 flex items-center justify-center text-[8px] text-white">-2</div>
+                                <span>Te hoog voorspeld</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Full results table sorted by actual ranking - desktop only */}
+                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
                         <table className="w-full">
                             <thead className="bg-gray-100">
                                 <tr>
@@ -600,17 +781,33 @@ export default function RacePage() {
                 </div>
             ) : (
                 <>
-                <div className="flex flex-row gap-4 w-full">
-                <div className="bg-blue-50 flex-1 border border-blue-200 rounded-lg p-4 mb-6">
-                    <p className="text-blue-800">Sleep de coureurs naar de startgrid om je voorspelling te maken.</p>
+                {/* F1-styled info bar with actions */}
+                <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 md:p-4 mb-6 border border-gray-700">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-red-600 rounded-full hidden md:block"></div>
+                            <p className="text-gray-300 text-sm md:text-base">
+                                <span className="text-white font-semibold">Tip:</span> Sleep de coureurs naar de startgrid om je voorspelling te maken.
+                            </p>
+                        </div>
+                        {!isRaceDone && (
+                            <div className="flex gap-2 md:gap-3">
+                                <button
+                                    onClick={() => setGrid(Array(22).fill(null))}
+                                    className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={handleSavePrediction}
+                                    className="flex-1 md:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition-colors"
+                                >
+                                    Opslaan
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                  {!isRaceDone && (
-                <div className="flex justify-end items-center content-center gap-4 mb-4">
-                    <Button onClick={() => setGrid(Array(22).fill(null))}>Reset</Button>
-                    <Button onClick={handleSavePrediction}>Voorspelling opslaan</Button>
-                </div>
-                
-            )}</div>
                 {/* Extra predictions */}
                 <div className="mb-6">
                     <h3 className="font-bold text-lg mb-4">Extra voorspellingen</h3>
@@ -700,8 +897,8 @@ export default function RacePage() {
                 </div>
 
                 {/* For upcoming races: Driver cards + Starting grid */}
-                <div className="flex flex-row gap-4">
-                    <div className="flex-5/6 mb-4 grid grid-cols-1 xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-2 gap-2 lg:gap-2 auto-rows-min">
+                <div className="flex flex-row gap-2 md:gap-4">
+                    <div className="flex-1 mb-4 grid grid-cols-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-1 md:gap-2 auto-rows-min">
                         {drivers.map((driver) => {
                             const gridIndex = grid.findIndex((gridDriver) => gridDriver?.shortName === driver.shortName);
                             const gridPosition = gridIndex !== -1 ? gridIndex + 1 : undefined;
@@ -730,12 +927,12 @@ export default function RacePage() {
                         })}
                     </div>
 
-                    <div ref={gridRef} className="rounded-lg flex-1/6 min-w-[340px] max-w-[380px] mb-4 relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 p-4 h-fit shadow-xl border border-gray-700" title="grid">
+                    <div ref={gridRef} className="rounded-lg min-w-[180px] max-w-[200px] md:min-w-[340px] md:max-w-[380px] mb-4 relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 p-2 md:p-4 h-fit shadow-xl border border-gray-700 flex-shrink-0" title="grid">
                         {/* Header with F1 logo style */}
-                        <div className="flex items-center justify-center gap-2 mb-4 pb-3 border-b border-gray-700">
-                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
-                            <span className="text-white font-black text-lg tracking-tight uppercase">Starting Grid</span>
-                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                        <div className="flex items-center justify-center gap-1 md:gap-2 mb-2 md:mb-4 pb-2 md:pb-3 border-b border-gray-700">
+                            <div className="w-0.5 md:w-1 h-4 md:h-6 bg-red-600 rounded-full"></div>
+                            <span className="text-white font-black text-[10px] md:text-lg tracking-tight uppercase">Grid</span>
+                            <div className="w-0.5 md:w-1 h-4 md:h-6 bg-red-600 rounded-full"></div>
                         </div>
 
                         {/* Checkered flag pattern at top */}
@@ -761,7 +958,7 @@ export default function RacePage() {
                                             />
                                         </div>
                                         {/* Right side - even positions (slightly offset down) */}
-                                        <div className="flex-1 mt-3">
+                                        <div className="flex-1 mt-1.5 md:mt-3">
                                             <StartingGridElement
                                                 driver={grid[rightPosition - 1]}
                                                 even={true}
@@ -777,11 +974,11 @@ export default function RacePage() {
                             })}
                         </div>
 
-                        {/* Finish line at bottom */}
-                        <div className="mt-4 pt-3 border-t border-gray-700 flex items-center justify-center">
+                        {/* Finish line at bottom - hidden on mobile */}
+                        <div className="hidden md:flex mt-4 pt-3 border-t border-gray-700 items-center justify-center">
                             <span className="text-gray-500 text-xs uppercase tracking-wider">Finish Line</span>
                         </div>
-                        <div className="h-2 mt-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-b"></div>
+                        <div className="hidden md:block h-2 mt-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-b"></div>
                     </div>
                 </div>
                 </>
