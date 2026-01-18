@@ -28,15 +28,15 @@ export const DriverRow = ({
                 </span>
             )}
 
-            <span className="break-keep whitespace-nowrap font-nunito font-bold">
+            <span className="break-keep whitespace-nowrap font-lato font-bold">
                 {driver.firstName}
             </span>
-            <span className="break-keep whitespace-nowrap font-nunito font-regular">
+            <span className="break-keep whitespace-nowrap font-lato font-regular">
                 {driver.lastName}
             </span>
 
 
-            <span className="break-keep whitespace-nowrap font-nunito font-bold">
+            <span className="break-keep whitespace-nowrap font-lato font-bold">
                 {driver.numberImage ? <img src={driver.numberImage} style={{ width: '20px', height: 'auto' }} className=" invert" alt={driver.firstName} /> : driver.number}
             </span>
             <span className="break-keep whitespace-nowrap" style={{ color: driver.teamColor }}>

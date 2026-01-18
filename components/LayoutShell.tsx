@@ -110,7 +110,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             </div>
             
             {!hideHeader && <Header hideBetaBanner={showBanner} />}
-            <main>{children}</main>
+            {children}
 
             {/* Desktop: rotated sidebar buttons */}
             <button className="hidden md:block fixed bottom-[100px] rotate-90 -left-[40px] z-50 rounded-t-lg bg-primary text-white px-4 py-2 cursor-pointer hover:bg-[#357771] transition-colors" onClick={() => setShowFeedbackModal(true)}>Feedback</button>

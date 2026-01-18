@@ -31,10 +31,6 @@
     font-family: var(--font-lato), Lato, sans-serif;
 }
 
-@utility font-nunito {
-    font-family: var(--font-nunito), Nunito, sans-serif;
-}
-
 @keyframes slide-in-right {
   from {
     transform: translateX(100%);

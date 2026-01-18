@@ -9,9 +9,8 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
     const currentRound = params.round ? parseInt(params.round as string) : undefined;
 
     return (
-        <div className="container mx-auto mt-5 px-4 md:px-6">
-            <h1 className="text-3xl font-bold mb-6">F1 2026</h1>
-
+        <div className="bg-gray-900 min-h-screen">
+        <div className="container mx-auto pt-5 px-4 md:px-6">
             <div title="races" className="flex w-full overflow-x-scroll gap-1 mb-6 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
                 {races2026.map((race) => {
                     const now = new Date();
@@ -31,6 +30,7 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             {children}
+        </div>
         </div>
     );
 }

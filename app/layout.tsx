@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Lato, Nunito } from "next/font/google";
+import { Inter, Lato } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 import { LayoutShell } from "@/components/LayoutShell";
@@ -23,13 +23,6 @@ const lato = Lato({
   variable: "--font-lato",
   display: "swap",
 });
-
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["200", "300", "400", "500", "700", "900"],
-  variable: "--font-nunito",
-  display: "swap",
-})
 
 export const metadata: Metadata = {
   title: "Oracle Games",

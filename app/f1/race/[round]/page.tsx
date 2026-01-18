@@ -514,8 +514,9 @@ export default function RacePage() {
 
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-lg flex items-center justify-center">
-                            <span className="text-xl md:text-2xl font-black text-white">{race.round}</span>
+                        <div className="relative w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-lg flex items-center justify-center">
+                            <span className={`text-xl md:text-2xl font-black text-white z-10 absolute ${race.raceRoundPosition[0] === 'center' && race.raceRoundPosition[1] === 'center' ? 'opacity-75' : ''}`} style={{ [race.raceRoundPosition[0]]: '4px', [race.raceRoundPosition[1]]: '4px'}}>{race.round}</span>
+                            {race.raceImage && <img src={race.raceImage} alt={race.name} className="w-12 h-12 absolute opacity-70 z-0" />}
                         </div>
                         <div>
                             <h2 className="text-xl md:text-2xl font-black text-white">{race.name}</h2>
@@ -689,7 +690,7 @@ export default function RacePage() {
                     </div>
 
                     {/* Full results table sorted by actual ranking - desktop only */}
-                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden mb-10">
                         <table className="w-full">
                             <thead className="bg-gray-100">
                                 <tr>
@@ -782,36 +783,9 @@ export default function RacePage() {
                 </div>
             ) : (
                 <>
-                {/* F1-styled info bar with actions */}
-                <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 md:p-4 mb-6 border border-gray-700">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-1 h-8 bg-red-600 rounded-full hidden md:block"></div>
-                            <p className="text-gray-300 text-sm md:text-base">
-                                <span className="text-white font-semibold">Tip:</span> Sleep de coureurs naar de startgrid om je voorspelling te maken.
-                            </p>
-                        </div>
-                        {!isRaceDone && (
-                            <div className="flex gap-2 md:gap-3">
-                                <button
-                                    onClick={() => setGrid(Array(22).fill(null))}
-                                    className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
-                                >
-                                    Reset
-                                </button>
-                                <button
-                                    onClick={handleSavePrediction}
-                                    className="flex-1 md:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition-colors"
-                                >
-                                    Opslaan
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
                 {/* Extra predictions */}
                 <div className="mb-6">
-                    <h3 className="font-bold text-lg mb-4">Extra voorspellingen</h3>
+                    <h3 className="font-bold text-lg mb-4 text-white">Extra voorspellingen</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Pole Position - P1 style */}
                         <div className="bg-black rounded-lg overflow-visible">
@@ -898,8 +872,9 @@ export default function RacePage() {
                 </div>
 
                 {/* For upcoming races: Driver cards + Starting grid */}
-                <div className="flex flex-row gap-2 md:gap-4">
-                    <div className="flex-1 mb-4 grid grid-cols-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-1 md:gap-2 auto-rows-min">
+                <div className="flex flex-row gap-2 md:gap-4 justify-between">
+                    
+                    <div className="mb-4 grid md:flex-1 grid-cols-2 content-center md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-1 md:gap-2 auto-rows-min">
                         {drivers.map((driver) => {
                             const gridIndex = grid.findIndex((gridDriver) => gridDriver?.shortName === driver.shortName);
                             const gridPosition = gridIndex !== -1 ? gridIndex + 1 : undefined;
@@ -919,16 +894,19 @@ export default function RacePage() {
                                         </div>
                                     </div>
                                     {gridPosition && (
-                                        <div className="absolute right-1 bottom-1 md:top-1 md:bottom-auto lg:bottom-3 lg:top-auto lg:right-3 z-10 bg-white text-gray-600 font-nunito font-black text-xs md:text-xs lg:text-xl xl:text-xl px-1 md:px-1 py-0 md:py-0 xl:py-1 rounded-lg shadow-2xl">
+                                        <div className="absolute right-1 bottom-1 md:top-1 md:bottom-auto lg:bottom-3 lg:top-auto lg:right-3 z-10 bg-white text-gray-600 font-lato font-black text-xs md:text-xs lg:text-xl xl:text-xl px-1 md:px-1 py-0 md:py-0 xl:py-1 rounded-lg shadow-2xl">
                                             P{gridPosition}
                                         </div>
                                     )}
                                 </div>
                             );
                         })}
+                        
                     </div>
+               
+                    
 
-                    <div ref={gridRef} className="rounded-lg min-w-[180px] max-w-[200px] md:min-w-[340px] md:max-w-[380px] mb-4 relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 p-2 md:p-4 h-fit shadow-xl border border-gray-700 flex-shrink-0" title="grid">
+                    <div ref={gridRef} className="rounded-lg min-w-[180px] flex-1 md:min-w-[340px] md:max-w-[380px] mb-4 relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 p-2 md:p-4 h-fit shadow-xl border border-gray-700 flex-shrink-0" title="grid">
                         {/* Header with F1 logo style */}
                         <div className="flex items-center justify-center gap-1 md:gap-2 mb-2 md:mb-4 pb-2 md:pb-3 border-b border-gray-700">
                             <div className="w-0.5 md:w-1 h-4 md:h-6 bg-red-600 rounded-full"></div>
@@ -980,6 +958,33 @@ export default function RacePage() {
                             <span className="text-gray-500 text-xs uppercase tracking-wider">Finish Line</span>
                         </div>
                         <div className="hidden md:block h-2 mt-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-b"></div>
+                    </div>
+                </div>
+                      {/* F1-styled info bar with actions */}
+                <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 md:p-4 mb-6 border border-gray-700">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-red-600 rounded-full hidden md:block"></div>
+                            <p className="text-gray-300 text-sm md:text-base">
+                                <span className="text-white font-semibold">Tip:</span> Sleep de coureurs naar de startgrid om je voorspelling te maken.
+                            </p>
+                        </div>
+                        {!isRaceDone && (
+                            <div className="flex gap-2 md:gap-3">
+                                <button
+                                    onClick={() => setGrid(Array(22).fill(null))}
+                                    className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={handleSavePrediction}
+                                    className="flex-1 md:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition-colors"
+                                >
+                                    Opslaan
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
                 </>
