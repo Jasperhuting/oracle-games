@@ -276,7 +276,7 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
 
     return (
         <div
-            className={`relative flex items-center gap-0.5 md:gap-1 p-0.5 rounded transition-all ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
+            className={`relative flex items-center gap-0.5 md:gap-1 p-0.5 rounded transition-all touch-none ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -361,6 +361,7 @@ export default function RacePage() {
     const [isOutsideGrid, setIsOutsideGrid] = useState(false);
     const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
     const gridRef = useRef<HTMLDivElement>(null);
+
 
     useEffect(() => {
         if (draggedFromGrid === null) return;
@@ -911,7 +912,7 @@ export default function RacePage() {
                                         draggable={!isOnGrid}
                                         onDragStart={(e) => handleDragStartFromCard(e, driver)}
                                         onDragEnd={handleDragEnd}
-                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
+                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-none ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
                                     >
                                         <div className="pointer-events-none">
                                             <DriverCard driver={driver} />
