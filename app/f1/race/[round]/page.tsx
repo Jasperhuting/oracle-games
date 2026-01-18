@@ -195,9 +195,17 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
         }
     };
 
+    // Podium colors for top 3
+    const getPositionStyle = () => {
+        if (position === 1) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-black';
+        if (position === 2) return 'bg-gradient-to-r from-gray-400 to-gray-300 text-black';
+        if (position === 3) return 'bg-gradient-to-r from-amber-700 to-amber-600 text-white';
+        return 'bg-gray-700 text-white';
+    };
+
     return (
-        <span
-            className={`xl:h-10 h-8 relative border-2 border-l-2 border-r-2 border-b-0 border-t-2 border-white ${even ? 'mt-10 lg:mt-4' : 'mb-5 mt-5 lg:mt-1 lg:mb-1'} transition-colors ${isDragOver ? 'bg-white/30 border-green-400' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
+        <div
+            className={`relative flex items-center gap-1 p-0.5 rounded transition-all ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -205,11 +213,36 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
             onDragStart={handleDragStart}
             onDragEnd={(e) => onDragEnd(e, position)}
         >
-            <span className="text-white absolute -top-4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 xl:text-xl text-lg font-nunito font-black">{position}</span>
-            {driver && (
-                <span className="text-white xl:text-xl text-lg font-nunito font-black content-center flex justify-center items-center xl:mt-1 mt-0 pointer-events-none">{driver.shortName}</span>
-            )}
-        </span>
+            {/* Position number */}
+            <div className={`w-6 h-6 flex items-center justify-center rounded text-xs font-black ${getPositionStyle()}`}>
+                {position}
+            </div>
+
+            {/* Driver slot */}
+            <div className={`flex-1 h-8 rounded flex items-center gap-1.5 px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600'}`}>
+                {driver ? (
+                    <>
+                        <span
+                            className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
+                            style={{ backgroundColor: driver.teamColor }}
+                        >
+                            <img
+                                src={driver.image}
+                                alt={driver.lastName}
+                                className="w-7 h-auto absolute top-0 left-0 pointer-events-none"
+                            />
+                        </span>
+                        <span className="text-white text-xs font-bold pointer-events-none">{driver.shortName}</span>
+                        <div
+                            className="w-0.5 h-4 rounded-full ml-auto"
+                            style={{ backgroundColor: driver.teamColor }}
+                        />
+                    </>
+                ) : (
+                    <span className="text-gray-500 text-[10px]">Drop</span>
+                )}
+            </div>
+        </div>
     );
 };
 
@@ -695,25 +728,58 @@ export default function RacePage() {
                         })}
                     </div>
 
-                    <div ref={gridRef} className="rounded-md flex-1/6 min-w-[200px] mb-4 pt-18 relative grid grid-cols-2 bg-gray-600 gap-x-8 p-8 xl:auto-rows-[70px] auto-rows-[60px] h-fit" title="grid">
-                        <div className="absolute flex left-0 right-0 top-0 content-center items-center justify-center w-full z-10 text-white font-nunito font-regular text-xl px-4 py-2 rounded-lg bg-white/10">
-                            Starting Grid
+                    <div ref={gridRef} className="rounded-lg flex-1/6 min-w-[340px] max-w-[380px] mb-4 relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 p-4 h-fit shadow-xl border border-gray-700" title="grid">
+                        {/* Header with F1 logo style */}
+                        <div className="flex items-center justify-center gap-2 mb-4 pb-3 border-b border-gray-700">
+                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                            <span className="text-white font-black text-lg tracking-tight uppercase">Starting Grid</span>
+                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
                         </div>
-                        {Array.from({ length: 22 }, (_, index) => {
-                            const position = index + 1;
-                            return (
-                                <StartingGridElement
-                                    key={index}
-                                    driver={grid[index]}
-                                    even={position % 2 === 0}
-                                    position={position}
-                                    onDrop={handleDropOnGrid}
-                                    onDragStart={handleDragStartFromGrid}
-                                    onDragEnd={handleGridDragEnd}
-                                    disabled={false}
-                                />
-                            );
-                        })}
+
+                        {/* Checkered flag pattern at top */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-t-lg"></div>
+
+                        {/* Grid positions - 2 column F1-style staggered layout */}
+                        <div className="flex flex-col gap-0.5">
+                            {Array.from({ length: 11 }, (_, rowIndex) => {
+                                const leftPosition = rowIndex * 2 + 1; // 1, 3, 5, 7, ...
+                                const rightPosition = rowIndex * 2 + 2; // 2, 4, 6, 8, ...
+                                return (
+                                    <div key={rowIndex} className="flex gap-1">
+                                        {/* Left side - odd positions */}
+                                        <div className="flex-1">
+                                            <StartingGridElement
+                                                driver={grid[leftPosition - 1]}
+                                                even={false}
+                                                position={leftPosition}
+                                                onDrop={handleDropOnGrid}
+                                                onDragStart={handleDragStartFromGrid}
+                                                onDragEnd={handleGridDragEnd}
+                                                disabled={false}
+                                            />
+                                        </div>
+                                        {/* Right side - even positions (slightly offset down) */}
+                                        <div className="flex-1 mt-3">
+                                            <StartingGridElement
+                                                driver={grid[rightPosition - 1]}
+                                                even={true}
+                                                position={rightPosition}
+                                                onDrop={handleDropOnGrid}
+                                                onDragStart={handleDragStartFromGrid}
+                                                onDragEnd={handleGridDragEnd}
+                                                disabled={false}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Finish line at bottom */}
+                        <div className="mt-4 pt-3 border-t border-gray-700 flex items-center justify-center">
+                            <span className="text-gray-500 text-xs uppercase tracking-wider">Finish Line</span>
+                        </div>
+                        <div className="h-2 mt-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-b"></div>
                     </div>
                 </div>
                 </>
