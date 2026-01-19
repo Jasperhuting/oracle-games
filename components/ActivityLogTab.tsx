@@ -87,7 +87,7 @@ const CategoryCheckbox = ({
 const FILTER_OPTIONS = {
   users: ['USER_REGISTERED', 'USER_BLOCKED', 'USER_UNBLOCKED', 'USER_PROFILE_UPDATED'],
   games: ['GAME_JOINED', 'GAME_LEFT', 'GAME_UPDATED', 'GAME_CREATED', 'GAME_DELETED', 'GAME_STATUS_CHANGED', 'DIVISION_ASSIGNED', 'PARTICIPANT_REMOVED'],
-  bids: ['BID_PLACED', 'BID_CANCELLED'],
+  bids: ['BID_PLACED', 'BID_CANCELLED', 'AUCTION_FINALIZED'],
   messaging: ['MESSAGE_SENT', 'MESSAGE_BROADCAST'],
   scraper: ['SCRAPE_STARTED', 'SCRAPE_COMPLETED', 'SCRAPE_FAILED', 'SCRAPE_REQUESTED', 'RACES_SCRAPED', 'YEAR_RESCRAPED'],
   system: ['ERROR', 'IMPERSONATION_STARTED', 'IMPERSONATION_STOPPED']
@@ -356,6 +356,7 @@ export const ActivityLogTab = () => {
       'GAME_DELETED': 'bg-red-100 text-red-800',
       'BID_PLACED': 'bg-emerald-100 text-emerald-800',
       'BID_CANCELLED': 'bg-red-100 text-red-800',
+      'AUCTION_FINALIZED': 'bg-purple-100 text-purple-800',
       'DIVISION_ASSIGNED': 'bg-indigo-100 text-indigo-800',
       'PARTICIPANT_REMOVED': 'bg-red-100 text-red-800',
       'GAME_STATUS_CHANGED': 'bg-yellow-100 text-yellow-800',
@@ -751,6 +752,7 @@ export const ActivityLogTab = () => {
       'PARTICIPANT_REMOVED': 'Participant Removed',
       'BID_PLACED': 'Bid Placed',
       'BID_CANCELLED': 'Bid Cancelled',
+      'AUCTION_FINALIZED': 'Auction Finalized',
       'MESSAGE_SENT': 'Messages Sent',
       'MESSAGE_BROADCAST': 'Broadcast Messages',
       'SCRAPE_STARTED': 'Scrape Started',

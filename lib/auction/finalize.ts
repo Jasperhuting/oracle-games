@@ -271,28 +271,154 @@ export async function finalizeAuction(
       errors: [] as string[],
     };
 
+    // Get game config for limits
+    let maxRiders = 0;
+    let maxBudget = 0;
+    if (gameData.gameType === 'auctioneer') {
+      maxRiders = (gameData.config as AuctioneerConfig).maxRiders || 0;
+      maxBudget = (gameData.config as AuctioneerConfig).budget || 0;
+    } else if (gameData.gameType === 'worldtour-manager') {
+      maxRiders = (gameData.config as WorldTourManagerConfig).maxRiders || 0;
+      maxBudget = (gameData.config as WorldTourManagerConfig).budget || 0;
+    } else if (gameData.gameType === 'marginal-gains') {
+      maxRiders = (gameData.config as MarginalGainsConfig).teamSize || 0;
+      maxBudget = 0; // No budget for marginal-gains
+    }
+
+    console.log(`[FINALIZE] Game limits: maxRiders=${maxRiders}, maxBudget=${maxBudget}`);
+
     // First pass: collect all winning bids per participant
     const winsByParticipant = new Map<string, Array<{ riderNameId: string, bid: BidWithId }>>();
 
-    for (const [riderNameId, bids] of bidsByRider.entries()) {
-      if (isSelectionBased) {
-        // For selection-based games (WorldTour Manager, Marginal Gains):
-        // ALL bids win - multiple users can select the same rider
-        console.log(`[FINALIZE] Selection-based game: all ${bids.length} bids for ${riderNameId} win`);
-
+    // For selection-based games, we need to group bids by user FIRST, then validate limits
+    if (isSelectionBased) {
+      // Group all active bids by user
+      const bidsByUser = new Map<string, BidWithId[]>();
+      for (const [riderNameId, bids] of bidsByRider.entries()) {
         for (const bid of bids) {
-          // Collect wins by participant
-          if (!winsByParticipant.has(bid.userId)) {
-            winsByParticipant.set(bid.userId, []);
+          if (!bidsByUser.has(bid.userId)) {
+            bidsByUser.set(bid.userId, []);
           }
-          winsByParticipant.get(bid.userId)!.push({ riderNameId, bid });
-
-          // Mark bid as "won"
-          await db.collection('bids').doc(bid.id).update({ status: 'won' });
+          bidsByUser.get(bid.userId)!.push({ ...bid, riderNameId });
         }
-      } else {
-        // For auction-based games (Auctioneer):
-        // Only the highest bid wins
+      }
+
+      // Process each user's bids with validation
+      for (const [userId, userBids] of bidsByUser.entries()) {
+        // Sort bids by bidAt (oldest first) - first come, first served
+        userBids.sort((a, b) => {
+          const timeA = a.bidAt?.toDate ? a.bidAt.toDate() : new Date();
+          const timeB = b.bidAt?.toDate ? b.bidAt.toDate() : new Date();
+          return timeA.getTime() - timeB.getTime();
+        });
+
+        // Get current team state from existing won bids and PlayerTeams
+        const existingWonBids = await db.collection('bids')
+          .where('gameId', '==', gameId)
+          .where('userId', '==', userId)
+          .where('status', '==', 'won')
+          .get();
+
+        let currentSpent = 0;
+        const currentRiderIds = new Set<string>();
+        existingWonBids.docs.forEach(doc => {
+          currentSpent += doc.data().amount || 0;
+          currentRiderIds.add(doc.data().riderNameId);
+        });
+
+        console.log(`[FINALIZE] User ${userId}: current spent=${currentSpent}, current riders=${currentRiderIds.size}`);
+
+        // Track rejected bids for logging
+        const rejectedBids: Array<{ bid: BidWithId; reason: string; details: Record<string, unknown> }> = [];
+
+        // Process bids respecting limits
+        for (const bid of userBids) {
+          const riderNameId = bid.riderNameId;
+
+          // Skip if rider already in team
+          if (currentRiderIds.has(riderNameId)) {
+            console.log(`[FINALIZE]   - Skipping ${bid.riderName}: already in team`);
+            await db.collection('bids').doc(bid.id).update({ status: 'cancelled_duplicate' });
+            rejectedBids.push({
+              bid,
+              reason: 'DUPLICATE_RIDER',
+              details: { message: 'Rider already in team' },
+            });
+            continue;
+          }
+
+          // Check team size limit
+          if (maxRiders > 0 && currentRiderIds.size >= maxRiders) {
+            console.log(`[FINALIZE]   - Rejecting ${bid.riderName}: team full (${currentRiderIds.size}/${maxRiders})`);
+            await db.collection('bids').doc(bid.id).update({ status: 'cancelled_team_full' });
+            rejectedBids.push({
+              bid,
+              reason: 'TEAM_FULL',
+              details: { currentSize: currentRiderIds.size, maxRiders },
+            });
+            results.errors.push(`${bid.riderName} rejected for user ${userId}: team full`);
+            continue;
+          }
+
+          // Check budget limit (skip for marginal-gains)
+          if (maxBudget > 0 && currentSpent + bid.amount > maxBudget) {
+            console.log(`[FINALIZE]   - Rejecting ${bid.riderName}: over budget (${currentSpent + bid.amount} > ${maxBudget})`);
+            await db.collection('bids').doc(bid.id).update({ status: 'cancelled_over_budget' });
+            rejectedBids.push({
+              bid,
+              reason: 'OVER_BUDGET',
+              details: { currentSpent, bidAmount: bid.amount, totalWouldBe: currentSpent + bid.amount, maxBudget },
+            });
+            results.errors.push(`${bid.riderName} rejected for user ${userId}: over budget`);
+            continue;
+          }
+
+          // Bid is valid - mark as won
+          console.log(`[FINALIZE]   - Accepting ${bid.riderName} for ${bid.amount}`);
+          await db.collection('bids').doc(bid.id).update({ status: 'won' });
+
+          // Track the win
+          if (!winsByParticipant.has(userId)) {
+            winsByParticipant.set(userId, []);
+          }
+          winsByParticipant.get(userId)!.push({ riderNameId, bid });
+
+          // Update current state
+          currentSpent += bid.amount;
+          currentRiderIds.add(riderNameId);
+        }
+
+        // Log rejected bids if any
+        if (rejectedBids.length > 0) {
+          await db.collection('activityLogs').add({
+            action: 'BIDS_REJECTED_AT_FINALIZE',
+            details: {
+              gameId,
+              gameName: gameData?.name,
+              userId,
+              auctionPeriodName: auctionPeriodName || 'all',
+              rejectedCount: rejectedBids.length,
+              rejectedBids: rejectedBids.map(rb => ({
+                riderName: rb.bid.riderName,
+                riderNameId: rb.bid.riderNameId,
+                amount: rb.bid.amount,
+                reason: rb.reason,
+                ...rb.details,
+              })),
+              acceptedCount: winsByParticipant.get(userId)?.length || 0,
+            },
+            timestamp: Timestamp.now(),
+            ipAddress: 'internal',
+            userAgent: 'finalize-auction',
+          });
+          console.log(`[FINALIZE] Logged ${rejectedBids.length} rejected bids for user ${userId}`);
+        }
+      }
+    } else {
+      // For auction-based games (Auctioneer):
+      // Process each rider's bids - only highest bid wins
+      for (const [riderNameId, bids] of bidsByRider.entries()) {
+        // Sort bids: highest amount first, then earliest time
         bids.sort((a, b) => {
           if (b.amount !== a.amount) {
             return b.amount - a.amount; // Higher bid wins

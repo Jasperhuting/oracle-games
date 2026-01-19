@@ -1,13 +1,11 @@
 /**
  * Script to fix season game points for nc-australia-itt race
  * The race was calculated with TOP_20_POINTS (50 for 1st) but should use PCS points (15 for 1st)
- * 
- * Run with: npx ts-node scripts/fix-season-points.ts
+ *
+ * Run with: node scripts/fix-season-points.cjs
  */
 
-import * as admin from 'firebase-admin';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+const admin = require('firebase-admin');
 
 // Initialize Firebase Admin
 const serviceAccount = require('../oracle-games-b6af6-firebase-adminsdk-fbsvc-b1fdf0e6b2.json');
@@ -20,7 +18,7 @@ const db = admin.firestore();
 
 // PCS points for nc-australia-itt (from the HTML data provided)
 // Only top 3 get PCS points in this race
-const NC_AUSTRALIA_ITT_PCS_POINTS: Record<string, number> = {
+const NC_AUSTRALIA_ITT_PCS_POINTS = {
   'jay-vine': 15,        // 1st place
   'oliver-bleddyn': 7,   // 2nd place
   'kelland-brien': 2,    // 3rd place
@@ -60,18 +58,18 @@ async function fixSeasonPoints() {
       if (racePoints[RACE_SLUG]) {
         const currentRaceData = racePoints[RACE_SLUG];
         const currentTotal = currentRaceData.totalPoints || 0;
-        
+
         // Get the correct PCS points for this rider
         const correctPcsPoints = NC_AUSTRALIA_ITT_PCS_POINTS[riderNameId] || 0;
-        
+
         if (currentTotal !== correctPcsPoints) {
           console.log(`\n${data.riderName} (${riderNameId}):`);
           console.log(`  Current points: ${currentTotal}`);
           console.log(`  Correct PCS points: ${correctPcsPoints}`);
-          
+
           // Calculate the points difference
           const pointsDiff = correctPcsPoints - currentTotal;
-          
+
           // Update racePoints
           const updatedRacePoints = { ...racePoints };
           updatedRacePoints[RACE_SLUG] = {
@@ -83,19 +81,19 @@ async function fixSeasonPoints() {
               }
             }
           };
-          
+
           // Update pointsScored
           const currentPointsScored = data.pointsScored || 0;
           const newPointsScored = currentPointsScored + pointsDiff;
-          
+
           console.log(`  Points scored: ${currentPointsScored} -> ${newPointsScored}`);
-          
+
           // Update the document
           await doc.ref.update({
             racePoints: updatedRacePoints,
             pointsScored: newPointsScored,
           });
-          
+
           console.log(`  ✓ Updated`);
         }
       }
@@ -103,7 +101,7 @@ async function fixSeasonPoints() {
 
     // Now update the gameParticipants totalPoints
     console.log(`\nUpdating participant totals for game ${gameId}...`);
-    
+
     const participantsSnapshot = await db.collection('gameParticipants')
       .where('gameId', '==', gameId)
       .where('status', '==', 'active')
@@ -136,7 +134,7 @@ async function fixSeasonPoints() {
 
     // Update rankings
     console.log(`\nUpdating rankings for game ${gameId}...`);
-    
+
     const updatedParticipantsSnapshot = await db.collection('gameParticipants')
       .where('gameId', '==', gameId)
       .where('status', '==', 'active')
