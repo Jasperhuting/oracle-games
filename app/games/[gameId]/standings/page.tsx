@@ -60,7 +60,12 @@ export default function StandingsPage() {
       columnHelper.accessor('playername', {
         header: 'Speler',
         cell: (info) => (
-          <span className="font-medium text-gray-900">{info.getValue()}</span>
+          <Link
+            href={`/games/${gameId}/team/${info.row.original.participantId}`}
+            className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
+          >
+            {info.getValue()}
+          </Link>
         ),
       }),
       columnHelper.accessor('totalPoints', {

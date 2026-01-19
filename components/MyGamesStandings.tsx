@@ -10,6 +10,7 @@ import {
   createColumnHelper,
   SortingState,
 } from '@tanstack/react-table';
+import Link from 'next/link';
 
 interface Standing {
   ranking: number;
@@ -64,10 +65,13 @@ export function MyGamesStandings() {
         cell: (info) => {
           const isCurrentUser = info.row.original.oddsUserId === user?.uid;
           return (
-            <span className={`${isCurrentUser ? 'font-bold text-primary' : 'font-medium text-gray-900'}`}>
+            <Link
+              href={`/games/${activeTab}/team/${info.row.original.participantId}`}
+              className={`${isCurrentUser ? 'font-bold text-primary' : 'font-medium text-gray-900'} hover:text-primary hover:underline cursor-pointer`}
+            >
               {info.getValue()}
               {isCurrentUser && ' (jij)'}
-            </span>
+            </Link>
           );
         },
       }),
