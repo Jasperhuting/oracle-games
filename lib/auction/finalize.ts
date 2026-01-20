@@ -5,6 +5,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 export interface FinalizeAuctionOptions {
   gameId: string;
   auctionPeriodName?: string;
+  resumeFromUserId?: string; // Resume from this user (exclusive)
 }
 
 export interface FinalizeAuctionResult {
@@ -15,6 +16,9 @@ export interface FinalizeAuctionResult {
     winnersAssigned: number;
     losersRefunded: number;
     errors: string[];
+    lastProcessedUserId?: string; // Last successfully processed user
+    totalParticipants: number;
+    processedParticipants: number;
   };
   error?: string;
   details?: string;
@@ -29,10 +33,10 @@ export interface FinalizeAuctionResult {
 export async function finalizeAuction(
   options: FinalizeAuctionOptions
 ): Promise<FinalizeAuctionResult> {
-  const { gameId, auctionPeriodName } = options;
+  const { gameId, auctionPeriodName, resumeFromUserId } = options;
 
   try {
-    console.log(`[FINALIZE] Request for gameId: ${gameId}, auctionPeriodName: ${auctionPeriodName || 'ALL'}`);
+    console.log(`[FINALIZE] Request for gameId: ${gameId}, auctionPeriodName: ${auctionPeriodName || 'ALL'}${resumeFromUserId ? `, resuming from user: ${resumeFromUserId}` : ''}`);
 
     const db = getServerFirebase();
 
@@ -269,6 +273,8 @@ export async function finalizeAuction(
       winnersAssigned: 0,
       losersRefunded: 0,
       errors: [] as string[],
+      totalParticipants: 0, // Will be set later
+      processedParticipants: 0,
     };
 
     // Get game config for limits
@@ -452,7 +458,32 @@ export async function finalizeAuction(
     // Second pass: update each participant once with all their wins
     console.log(`[FINALIZE] Processing ${winsByParticipant.size} participants with wins`);
 
-    for (const [userId, wins] of winsByParticipant.entries()) {
+    // Sort participants for consistent processing order
+    const sortedParticipantIds = Array.from(winsByParticipant.entries())
+      .map(([userId, wins]) => ({ userId, wins }))
+      .sort((a, b) => a.userId.localeCompare(b.userId));
+
+    // Set total participants count
+    results.totalParticipants = sortedParticipantIds.length;
+
+    // Find starting point if resuming
+    let startIndex = 0;
+    if (resumeFromUserId) {
+      startIndex = sortedParticipantIds.findIndex(p => p.userId === resumeFromUserId);
+      if (startIndex >= 0) {
+        startIndex++; // Skip the resume user itself (exclusive)
+        console.log(`[FINALIZE] Resuming from index ${startIndex} (after user ${resumeFromUserId})`);
+      } else {
+        console.log(`[FINALIZE] Resume user ${resumeFromUserId} not found, starting from beginning`);
+        startIndex = 0;
+      }
+    }
+
+    for (let i = startIndex; i < sortedParticipantIds.length; i++) {
+      const { userId, wins } = sortedParticipantIds[i];
+      results.processedParticipants++;
+      results.lastProcessedUserId = userId;
+      
       try {
         const participantSnapshot = await db.collection('gameParticipants')
           .where('gameId', '==', gameId)
@@ -574,7 +605,7 @@ export async function finalizeAuction(
 
           results.winnersAssigned += wins.length;
 
-          console.log(`[FINALIZE] User ${userId}: UPDATED in database`);
+          console.log(`[FINALIZE] User ${userId}: UPDATED in database (${results.processedParticipants}/${results.totalParticipants})`);
         }
       } catch (error) {
         const errorMsg = `Failed to update participant ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`;

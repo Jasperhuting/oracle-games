@@ -52,7 +52,7 @@ export async function GET(
         rank: data.riderRank || 0,
         pointsScored: data.pointsScored || 0,
         points: data.pointsScored || 0,
-        racePoints: data.racePoints || null,
+        racePoints: (data.racePoints && typeof data.racePoints === 'object' && !Array.isArray(data.racePoints)) ? data.racePoints : undefined,
         jerseyImage: data.jerseyImage,
         pricePaid: data.pricePaid,
         acquisitionType: data.acquisitionType,
@@ -67,13 +67,14 @@ export async function GET(
     let totalPoints = 0;
     for (const rider of riders) {
       let riderCorrectPoints = 0;
-      
+
       // Calculate correct points from racePoints
       if (rider.racePoints) {
         Object.entries(rider.racePoints).forEach(([raceSlug, raceData]) => {
+          const raceDataTyped = raceData as { stagePoints?: Record<string, { stageResult?: number; total?: number }> };
           // Only count NC-Australia races
           if (raceSlug.toLowerCase().includes('nc-australia')) {
-            Object.entries(raceData.stagePoints || {}).forEach(([stage, stagePoints]) => {
+            Object.entries(raceDataTyped.stagePoints || {}).forEach(([stage, stagePoints]) => {
               // Convert 50 points to 15 points (as requested)
               if (stagePoints.stageResult === 50) {
                 riderCorrectPoints += 15;
@@ -84,7 +85,7 @@ export async function GET(
           }
         });
       }
-      
+
       totalPoints += riderCorrectPoints;
     }
     

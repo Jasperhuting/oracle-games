@@ -161,7 +161,45 @@ export async function GET(request: NextRequest) {
                     gameId,
                     periodName: period.name,
                     winnersAssigned: result.results?.winnersAssigned,
+                    totalParticipants: result.results?.totalParticipants,
+                    processedParticipants: result.results?.processedParticipants,
                   });
+
+                  // Check if finalization was incomplete
+                  if (result.results && 
+                      result.results.processedParticipants < result.results.totalParticipants) {
+                    console.warn('[CRON] Finalization was incomplete!', {
+                      gameId,
+                      periodName: period.name,
+                      processed: result.results.processedParticipants,
+                      total: result.results.totalParticipants,
+                      lastProcessedUserId: result.results.lastProcessedUserId,
+                    });
+                    
+                    // Try to resume from where it left off
+                    console.log('[CRON] Attempting to resume finalization...');
+                    const resumeResult = await finalizeAuction({
+                      gameId,
+                      auctionPeriodName: period.name,
+                      resumeFromUserId: result.results.lastProcessedUserId,
+                    });
+
+                    if (resumeResult.success) {
+                      console.log('[CRON] Resume successful', {
+                        gameId,
+                        periodName: period.name,
+                        additionalProcessed: resumeResult.results?.processedParticipants,
+                      });
+                      results.finalizationsTriggered++; // Count as additional finalization
+                    } else {
+                      console.error('[CRON] Resume failed', {
+                        gameId,
+                        periodName: period.name,
+                        error: resumeResult.error,
+                      });
+                      results.errors.push(`Resume failed for ${gameId}/${period.name}: ${resumeResult.error}`);
+                    }
+                  }
                 }
               } catch (error) {
                 console.error('[CRON] Error finalizing auction', {

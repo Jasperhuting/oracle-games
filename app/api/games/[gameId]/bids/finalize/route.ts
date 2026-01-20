@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { finalizeAuction } from '@/lib/auction/finalize';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
@@ -8,14 +11,15 @@ export async function POST(
   try {
     const { gameId } = await params;
 
-    // Parse request body to get auction period name
+    // Parse request body to get auction period name and resume option
     const body = await request.json().catch(() => ({}));
-    const { auctionPeriodName } = body;
+    const { auctionPeriodName, resumeFromUserId } = body;
 
     // Call the shared finalize function
     const result = await finalizeAuction({
       gameId,
       auctionPeriodName,
+      resumeFromUserId,
     });
 
     if (!result.success) {
