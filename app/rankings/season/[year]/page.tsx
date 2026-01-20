@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { AuthGuard } from '@/components/AuthGuard';
+import { useRankings } from '@/contexts/RankingsContext';
 
 interface StageDetails {
   stage: string;
@@ -59,6 +60,7 @@ export default function SeasonLeaderboardPage() {
   const [total, setTotal] = useState(0);
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
   const [selectedYear, setSelectedYear] = useState(year);
+  const { riders: rankingsRiders, loading: rankingsLoading } = useRankings();
 
   const loadSeasonPoints = useCallback(async (offset = 0, append = false) => {
     if (offset === 0) {
@@ -250,8 +252,8 @@ export default function SeasonLeaderboardPage() {
                               </span>
                             </td>
                             <td className="px-4 py-4">
-                              <div className="font-medium text-gray-900">{rider.riderName}</div>
-                              <div className="text-sm text-gray-500">{rider.riderNameId}</div>
+                              <div className="font-medium text-gray-900">{rankingsRiders.find((rankedRider) => rankedRider.nameID === rider.riderNameId)?.name || rider.riderName}</div>
+                              <div className="text-sm text-gray-500">{rankingsRiders.find((rankedRider) => rankedRider.nameID === rider.riderNameId)?.team?.name || ''}</div>
                             </td>
                             <td className="px-4 py-4 text-right text-gray-600">
                               {rider.racesCount}
