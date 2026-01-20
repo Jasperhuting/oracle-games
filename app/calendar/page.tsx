@@ -49,6 +49,34 @@ function filterTestGames(games: CalendarGame[]): CalendarGame[] {
   return games.filter(g => !g.name.toLowerCase().includes('test'));
 }
 
+// Filter out unwanted race classifications
+function filterUnwantedClassifications(races: CalendarRace[]): CalendarRace[] {
+  const unwantedClassifications = ['MJ', 'MU', 'WJ', 'WU', 'WE', 'WWT'];
+  
+  // Check if classification is in race name instead
+  const filtered = races.filter(race => {
+    const classification = (race.classification || '').trim();
+    const hasUnwantedInName = unwantedClassifications.some(cls => 
+      race.name.includes(cls) || race.name.includes(`${cls} -`)
+    );
+    const hasUnwantedInClassification = unwantedClassifications.some(cls => 
+      classification.includes(cls)
+    );
+    const hasWomenInName = race.name.toLowerCase().includes('women');
+    const hasWWTInClassification = classification.includes('WWT');
+    
+    if (hasUnwantedInName || hasUnwantedInClassification || hasWomenInName || hasWWTInClassification) {
+      console.log('Filtering out race:', race.name, 'classification:', classification, 'hasWWT:', hasWWTInClassification);
+    }
+    
+    return !hasUnwantedInName && !hasUnwantedInClassification && !hasWomenInName && !hasWWTInClassification;
+  });
+  
+  console.log('Original races:', races.length);
+  console.log('Filtered races:', filtered.length);
+  return filtered;
+}
+
 // Group races by month
 function groupRacesByMonth(races: CalendarRace[]): Map<number, CalendarRace[]> {
   const grouped = new Map<number, CalendarRace[]>();
@@ -104,10 +132,20 @@ function RaceCard({
   race: CalendarRace;
 }) {
   // Games are already attached to the race by the API (including seasonal games for non-women races)
-  const allGames = filterTestGames(race.games);
+  const filteredGames = filterTestGames(race.games);
+  
+  // Remove duplicates based on game ID
+  const uniqueGamesMap = new Map<string, CalendarGame>();
+  filteredGames.forEach(game => {
+    if (!uniqueGamesMap.has(game.name)) {
+      uniqueGamesMap.set(game.name, game);
+    }
+  });
+  
+  const allGames = Array.from(uniqueGamesMap.values());
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+    <div className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow ${new Date(race.startDate) < new Date() ? 'opacity-50' : ''}`}>
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{race.name}</h3>
@@ -389,7 +427,17 @@ function RaceDetailPopup({
   onClose: () => void;
 }) {
   // Games are already attached to the race by the API (including seasonal games for non-women races)
-  const allGames = filterTestGames(race.games);
+  const filteredGames = filterTestGames(race.games);
+  
+  // Remove duplicates based on game name
+  const uniqueGamesMap = new Map<string, CalendarGame>();
+  filteredGames.forEach(game => {
+    if (!uniqueGamesMap.has(game.name)) {
+      uniqueGamesMap.set(game.name, game);
+    }
+  });
+  
+  const allGames = Array.from(uniqueGamesMap.values());
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -448,28 +496,15 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRace, setSelectedRace] = useState<CalendarRace | null>(null);
-  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
 
   // Available years for dropdown
-  const years = [currentYear - 1, currentYear, currentYear + 1];
+  const years = [currentYear, currentYear + 1];
 
-  // Get unique classifications from races
-  const availableClassifications = useMemo(() => {
-    if (!data?.races) return [];
-    const classes = data.races
-      .map(race => race.classification)
-      .filter(Boolean);
-    return Array.from(new Set(classes)).sort();
-  }, [data?.races]);
-
-  // Filter races by selected classes
+  // Filter races by removing unwanted classifications
   const filteredRaces = useMemo(() => {
     if (!data?.races) return [];
-    if (selectedClasses.length === 0) return data.races;
-    return data.races.filter(race =>
-      selectedClasses.includes(race.classification)
-    );
-  }, [data?.races, selectedClasses]);
+    return filterUnwantedClassifications(data.races);
+  }, [data?.races]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -552,27 +587,6 @@ export default function CalendarPage() {
       {/* Filters */}
       <div className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-gray-600">{t('calendar.filterByClass', 'Filter op classificatie')}:</span>
-          <select
-            value={selectedClasses[0] || ''}
-            onChange={e => setSelectedClasses(e.target.value ? [e.target.value] : [])}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">{t('calendar.allClasses', 'Alle classificaties')}</option>
-            {availableClassifications.map(cls => (
-              <option key={cls} value={cls}>
-                {cls} - {getClassificationLabel(cls)}
-              </option>
-            ))}
-          </select>
-          {selectedClasses.length > 0 && (
-            <button
-              onClick={() => setSelectedClasses([])}
-              className="text-sm text-primary hover:underline"
-            >
-              {t('calendar.clearFilter', 'Filter wissen')}
-            </button>
-          )}
           <span className="text-sm text-gray-400">
             ({filteredRaces.length} {filteredRaces.length === 1 ? 'race' : 'races'})
           </span>

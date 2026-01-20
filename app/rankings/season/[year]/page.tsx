@@ -131,7 +131,7 @@ export default function SeasonLeaderboardPage() {
 
   // Generate year options (current year and a few years back)
   const currentYear = new Date().getFullYear();
-  const yearOptions = [currentYear + 1, currentYear, currentYear - 1, currentYear - 2];
+  const yearOptions = [currentYear, currentYear + 1];
 
   return (
     <AuthGuard>
@@ -163,8 +163,9 @@ export default function SeasonLeaderboardPage() {
                 {yearOptions.map(y => (
                   <button
                     key={y}
+                    disabled={y !== currentYear}
                     onClick={() => handleYearChange(y.toString())}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
+                    className={`px-4 py-2 rounded-lg transition-colors ${y !== currentYear ? 'bg-gray-100! cursor-not-allowed' : 'cursor-pointer'} ${
                       selectedYear === y.toString()
                         ? 'bg-primary text-white'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
