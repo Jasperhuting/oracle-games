@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { KNOWN_RACE_SLUGS } from '@/lib/scraper/types';
 import { ScraperFormData, ScraperFormProps } from '@/lib/types/admin';
 
-export default function ScraperForm({ onSubmit, loading = false }: ScraperFormProps) {
+export default function ScraperForm({ onSubmit, onPreview, loading = false }: ScraperFormProps & { onPreview?: (formData: ScraperFormData) => Promise<void> }) {
   const [formData, setFormData] = useState<ScraperFormData>({
     race: 'tour-de-france',
     year: new Date().getFullYear(),
@@ -18,7 +18,13 @@ export default function ScraperForm({ onSubmit, loading = false }: ScraperFormPr
     }
   };
 
-  const handleTypeChange = (type: 'startlist' | 'stage' | 'all-stages') => {
+  const handlePreview = async () => {
+    if (onPreview && formData.type === 'stage' && formData.stage !== undefined) {
+      await onPreview(formData);
+    }
+  };
+
+  const handleTypeChange = (type: 'startlist' | 'stage' | 'result' | 'all-stages' | 'tour-gc') => {
     setFormData(prev => ({
       ...prev,
       type,
@@ -102,12 +108,34 @@ export default function ScraperForm({ onSubmit, loading = false }: ScraperFormPr
               <input
                 type="radio"
                 name="type"
+                value="result"
+                checked={formData.type === 'result'}
+                onChange={() => handleTypeChange('result')}
+                className="mr-2 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">Single Day Race Result</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="type"
                 value="all-stages"
                 checked={formData.type === 'all-stages'}
                 onChange={() => handleTypeChange('all-stages')}
                 className="mr-2 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-gray-700">All Stages (1-21)</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="type"
+                value="tour-gc"
+                checked={formData.type === 'tour-gc'}
+                onChange={() => handleTypeChange('tour-gc')}
+                className="mr-2 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">Tour GC Results</span>
             </label>
           </div>
         </div>
@@ -121,16 +149,19 @@ export default function ScraperForm({ onSubmit, loading = false }: ScraperFormPr
             <input
               id="stage"
               type="number"
-              min="1"
+              min="0"
               max="25"
-              value={formData.stage || 1}
+              value={formData.stage !== undefined ? formData.stage : 1}
               onChange={(e) => setFormData(prev => ({ 
                 ...prev, 
-                stage: parseInt(e.target.value) || 1 
+                stage: parseInt(e.target.value) || 0 
               }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter 0 for prologue, 1-21 for regular stages
+            </p>
           </div>
         )}
 
@@ -142,6 +173,18 @@ export default function ScraperForm({ onSubmit, loading = false }: ScraperFormPr
         >
           {loading ? 'Scraping...' : 'Start Scraping'}
         </button>
+
+        {/* Preview Points Button (only for stage results) */}
+        {formData.type === 'stage' && (
+          <button
+            type="button"
+            onClick={handlePreview}
+            disabled={loading}
+            className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 mt-2"
+          >
+            Preview Points
+          </button>
+        )}
       </form>
     </div>
   );

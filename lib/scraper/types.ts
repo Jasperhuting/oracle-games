@@ -16,6 +16,9 @@ export const KNOWN_RACE_SLUGS = [
   'ronde-van-vlaanderen',
   'gent-wevelgem',
   'san-sebastian',
+  'tour-down-under',
+  'vuelta-al-tachira',
+  'pune-grand-tour',
 ] as const;
 
 export type RaceSlug = typeof KNOWN_RACE_SLUGS[number];
@@ -190,6 +193,7 @@ export interface StageResult {
   youthClassification: ClassificationRider[];
   teamClassification: TeamClassification[];
   scrapedAt: string;
+  isTourGC?: boolean; // Flag to identify this as tour GC data
 }
 
 export interface Country {

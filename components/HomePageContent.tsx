@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { SiteStats } from "./SiteStats";
 
 export function HomePageContent() {
     const { user } = useAuth();
@@ -31,12 +32,15 @@ export function HomePageContent() {
     }, []);
 
     return (
-        <div className="flex flex-col min-h-screen p-8 mt-[36px]">
-            <div className="mx-auto container">
-   
-                <h1 className="text-2xl font-bold mb-6">Home</h1>
+        <div className="flex flex-col min-h-screen">
 
-                <div className="bg-white p-6 border border-gray-200 rounded-md">
+            <div style={{background: `url('/homepage_picture_6.jpg') center/cover no-repeat`}} className="h-screen aspect-video z-0 relative mb-5">
+                <div className="absolute -z-10 inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black"></div>
+                <div className="mx-auto container z-20 ralative text-white">
+
+                    <h1 className="text-4xl mb-6 text-center p-20 font-lato font-black">ORACLE GAMES</h1>
+   
+                <div className="p-6 backdrop-blur-xs w-fit mx-auto rounded-full">
                     {loading ? (
                         <div className="flex items-center justify-center py-8">
                             <div className="text-gray-500">{t('global.loading')}</div>
@@ -58,6 +62,10 @@ export function HomePageContent() {
                     )}
                 </div>
             </div>
+            <SiteStats />
+            </div>
+
+            
         </div>
     );
 }

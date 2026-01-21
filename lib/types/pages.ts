@@ -5,6 +5,7 @@
 
 import { Rider } from './rider';
 import { GameType, RaceType, GameStatus, AuctionPeriod } from './games';
+import { SerializedFirestoreTimestamp } from '../utils/timestamp';
 
 // Rider Points Page
 export interface StagePoint {
@@ -49,7 +50,7 @@ export interface ScrapingResult {
   message?: string;
   error?: string;
   dataCount?: number;
-  timestamp?: string;
+  timestamp: SerializedFirestoreTimestamp | string;
   // For all-stages results
   type?: string;
   totalStages?: number;

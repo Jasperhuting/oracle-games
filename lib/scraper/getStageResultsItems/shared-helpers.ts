@@ -7,11 +7,21 @@ import type { Element as DomElement } from 'domhandler';
 export function createHelpers($: CheerioAPI) {
   return {
     // Basic getters
-    getPlace: (el: DomElement) => Number($(el).find('td').eq(0).text().trim()),
+    getPlace: (el: DomElement) => {
+      // Try different column positions for place/rank
+      const place1 = Number($(el).find('td').eq(0).text().trim());
+      const place2 = Number($(el).find('td[data-code="rnk"]').text().trim());
+      return place1 || place2 || 0;
+    },
     getGc: (el: DomElement) => $(el).find('td.fs11').eq(0).text().trim(),
     breakAway: (el: DomElement) => Boolean($(el).find('td.ridername > .svg_shield').length),
     getTimeDifferenceGc: (el: DomElement) => $(el).find('td.fs11').eq(1).text().trim(),
-    getStartNumber: (el: DomElement) => $(el).find('td.bibs').text().trim(),
+    getStartNumber: (el: DomElement) => {
+      // Try different selectors for bib/start number
+      const bib1 = $(el).find('td.bibs').text().trim();
+      const bib2 = $(el).find('td[data-code="bib"]').text().trim();
+      return bib1 || bib2 || '';
+    },
     getCountry: (el: DomElement) => $(el).find('td.ridername > .flag').attr('class')?.split(' ')[1] || '',
     getLastName: (el: DomElement) => $(el).find('td.ridername > a span.uppercase').text().trim(),
     
@@ -22,16 +32,10 @@ export function createHelpers($: CheerioAPI) {
     },
     
     getTeam: (el: DomElement) => {
-      // Find all td.cu600 elements and filter for the one with a team link
-      const teamCells = $(el).find('td.cu600');
-      for (let i = 0; i < teamCells.length; i++) {
-        const cell = teamCells.eq(i);
-        const teamLink = cell.find('a[href^="team/"]');
-        if (teamLink.length > 0) {
-          return teamLink.text().trim();
-        }
-      }
-      return '';
+      // Find team in different column positions
+      const team1 = $(el).find('td.cu600').text().trim();
+      const team2 = $(el).find('td[data-code="teamnamelink"]').text().trim();
+      return team1 || team2 || '';
     },
     
     getTeamShortName: (el: DomElement) => $(el).find('td.cu600 > a').attr('href')?.split('/')[1] || '',
