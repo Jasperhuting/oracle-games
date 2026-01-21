@@ -12,6 +12,7 @@ import {
   shouldCountForPoints 
 } from '@/lib/utils/pointsCalculation';
 import { Game, AuctioneerConfig, CountingRace } from '@/lib/types/games';
+import { ClassificationRider, StageRider } from '@/lib/scraper/types';
 
 interface StageResult {
   nameID?: string;
@@ -22,6 +23,7 @@ interface StageResult {
   uciPoints?: string;  // UCI points from PCS - NOT USED for scoring
   time?: string;
   gap?: string;
+  name?: string; // Full name from scraper
 }
 
 /**
@@ -79,15 +81,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const stageResults: StageResult[] = stageData.stageResults || [];
-    const generalClassification: ClassificationRider[] = stageData.generalClassification || [];
+    const stageResults: StageResult[] = stageData.stageResults ? 
+      (typeof stageData.stageResults === 'string' ? JSON.parse(stageData.stageResults) : stageData.stageResults) : [];
+    const generalClassification: ClassificationRider[] = stageData.generalClassification ? 
+      (typeof stageData.generalClassification === 'string' ? JSON.parse(stageData.generalClassification) : stageData.generalClassification) : [];
 
     console.log(`[CALCULATE_POINTS] Found ${stageResults.length} riders in stage results`);
     console.log(`[CALCULATE_POINTS] Found 55 riders in general classification`);
 
     // Debug: Check if Diego Alejandro Méndez is in the GC data
     const diegoInGC = generalClassification.find(r => 
-      r.nameID === 'diego-alejandro-mendez' || 
+      r.rider === 'diego-alejandro-mendez' || 
       r.shortName === 'diego-alejandro-mendez'
     );
     if (diegoInGC) {
@@ -192,12 +196,12 @@ export async function POST(request: NextRequest) {
                   r.nameID === riderNameId || 
                   r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
                 );
-                if (gcResult && gcResult.rank) {
-                  const gcPoints = calculateStagePoints(gcResult.rank) * gcMultiplier;
+                if (gcResult && gcResult.place) {
+                  const gcPoints = calculateStagePoints(gcResult.place) * gcMultiplier;
                   if (gcPoints > 0) {
                     riderTotalPoints += gcPoints;
                     stagePointsBreakdown.gcPoints = gcPoints;
-                    console.log(`[CALCULATE_POINTS] ${teamData.riderName} - GC: ${gcPoints} pts (rank ${gcResult.rank} x ${gcMultiplier})`);
+                    console.log(`[CALCULATE_POINTS] ${teamData.riderName} - GC: ${gcPoints} pts (place ${gcResult.place} x ${gcMultiplier})`);
                     ridersScored.push(teamData.riderName);
                   }
                 }
@@ -227,8 +231,8 @@ export async function POST(request: NextRequest) {
                        stageName === riderNameId;
               });
 
-              // Note: 'place' is the finish position, 'rank' is the UCI ranking
-              const finishPosition = riderResult?.place || riderResult?.rank;
+              // Note: 'place' is the finish position, 'place' is the UCI placeing
+              const finishPosition = riderResult?.place || riderResult?.place;
               if (riderResult && finishPosition) {
                 console.log(`[CALCULATE_POINTS] Found rider ${teamData.riderName} in stage results at position ${finishPosition}`);
                 let stagePoints: number;
@@ -268,12 +272,12 @@ export async function POST(request: NextRequest) {
                   r.nameID === riderNameId || 
                   r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
                 );
-                if (gcResult && gcResult.rank) {
-                  const gcPoints = calculateStagePoints(gcResult.rank) * gcMultiplier;
+                if (gcResult && gcResult.place) {
+                  const gcPoints = calculateStagePoints(gcResult.place) * gcMultiplier;
                   if (gcPoints > 0) {
                     riderTotalPoints += gcPoints;
                     stagePointsBreakdown.gcPoints = gcPoints;
-                    console.log(`[CALCULATE_POINTS] ${teamData.riderName} - GC: ${gcPoints} pts (rank ${gcResult.rank} x ${gcMultiplier})`);
+                    console.log(`[CALCULATE_POINTS] ${teamData.riderName} - GC: ${gcPoints} pts (place ${gcResult.place} x ${gcMultiplier})`);
                   }
                 }
               }
@@ -285,12 +289,12 @@ export async function POST(request: NextRequest) {
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
-              if (pointsResult && pointsResult.rank) {
-                const pointsClassPoints = calculateStagePoints(pointsResult.rank);
+              if (pointsResult && pointsResult.place) {
+                const pointsClassPoints = calculateStagePoints(pointsResult.place);
                 if (pointsClassPoints > 0) {
                   riderTotalPoints += pointsClassPoints;
                   stagePointsBreakdown.pointsClass = pointsClassPoints;
-                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Points class: ${pointsClassPoints} pts (rank ${pointsResult.rank})`);
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Points class: ${pointsClassPoints} pts (place ${pointsResult.place})`);
                 }
               }
             }
@@ -301,12 +305,12 @@ export async function POST(request: NextRequest) {
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
-              if (mountainsResult && mountainsResult.rank) {
-                const mountainsClassPoints = calculateStagePoints(mountainsResult.rank);
+              if (mountainsResult && mountainsResult.place) {
+                const mountainsClassPoints = calculateStagePoints(mountainsResult.place);
                 if (mountainsClassPoints > 0) {
                   riderTotalPoints += mountainsClassPoints;
                   stagePointsBreakdown.mountainsClass = mountainsClassPoints;
-                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Mountains class: ${mountainsClassPoints} pts (rank ${mountainsResult.rank})`);
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Mountains class: ${mountainsClassPoints} pts (place ${mountainsResult.place})`);
                 }
               }
             }
@@ -317,12 +321,12 @@ export async function POST(request: NextRequest) {
                 r.nameID === riderNameId || 
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
-              if (youthResult && youthResult.rank) {
-                const youthClassPoints = calculateStagePoints(youthResult.rank);
+              if (youthResult && youthResult.place) {
+                const youthClassPoints = calculateStagePoints(youthResult.place);
                 if (youthClassPoints > 0) {
                   riderTotalPoints += youthClassPoints;
                   stagePointsBreakdown.youthClass = youthClassPoints;
-                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Youth class: ${youthClassPoints} pts (rank ${youthResult.rank})`);
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Youth class: ${youthClassPoints} pts (place ${youthResult.place})`);
                 }
               }
             }
@@ -411,7 +415,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Update rankings for this game
+        // Update placeings for this game
         await updateGameRankings(db, game.id!);
 
         results.gamesProcessed++;
@@ -473,10 +477,10 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Update rankings for all participants in a game based on total points
+ * Update placeings for all participants in a game based on total points
  */
 async function updateGameRankings(db: FirebaseFirestore.Firestore, gameId: string): Promise<void> {
-  console.log(`[UPDATE_RANKINGS] Updating rankings for game ${gameId}`);
+  console.log(`[UPDATE_RANKINGS] Updating placeings for game ${gameId}`);
 
   // Get all participants sorted by totalPoints (descending)
   const participantsSnapshot = await db.collection('gameParticipants')
@@ -490,7 +494,7 @@ async function updateGameRankings(db: FirebaseFirestore.Firestore, gameId: strin
     return;
   }
 
-  // Update ranking for each participant
+  // Update placeing for each participant
   let currentRank = 1;
   let previousPoints = -1;
   let participantsWithSamePoints = 0;
@@ -499,7 +503,7 @@ async function updateGameRankings(db: FirebaseFirestore.Firestore, gameId: strin
     const participantData = participantDoc.data();
     const points = participantData.totalPoints || 0;
 
-    // Handle tied rankings
+    // Handle tied placeings
     if (points === previousPoints) {
       participantsWithSamePoints++;
     } else {
@@ -508,12 +512,12 @@ async function updateGameRankings(db: FirebaseFirestore.Firestore, gameId: strin
       previousPoints = points;
     }
 
-    // Only update if ranking changed
-    if (participantData.ranking !== currentRank) {
+    // Only update if placeing changed
+    if (participantData.placeing !== currentRank) {
       await participantDoc.ref.update({
-        ranking: currentRank,
+        placeing: currentRank,
       });
-      console.log(`[UPDATE_RANKINGS] ${participantData.playername}: rank ${currentRank} (${points} points)`);
+      console.log(`[UPDATE_RANKINGS] ${participantData.playername}: place ${currentRank} (${points} points)`);
     }
   }
 
@@ -593,7 +597,7 @@ async function updateSeasonPoints(
   if (!isTourGC) {
     // Note: 'place' is the finish position, 'points' is the Pnt column from PCS (15, 10, 7, 4, 2, 1...)
     for (const riderResult of stageResults) {
-      const finishPosition = riderResult.place || riderResult.rank;
+      const finishPosition = riderResult.place || riderResult.place;
       // Use Pnt points directly from scraped data (the 'points' field)
       const pntPoints = typeof riderResult.points === 'number' ? riderResult.points :
                         (typeof riderResult.points === 'string' && riderResult.points !== '-' ? parseInt(riderResult.points) : 0);
@@ -603,7 +607,7 @@ async function updateSeasonPoints(
       const riderName = riderResult.shortName || riderResult.nameID || riderNameId;
 
       if (finishPosition && finishPosition > 0 && riderNameId && pntPoints > 0) {
-        const entry = getOrCreateRider(riderNameId, riderName);
+        const entry = getOrCreateRider(riderNameId, riderName || '');
         entry.finishPosition = finishPosition;
         entry.stageResult = pntPoints;
         entry.total += pntPoints;
@@ -616,11 +620,11 @@ async function updateSeasonPoints(
     console.log(`[SEASON_POINTS] Processing ${generalClassification.length} GC riders with multiplier ${gcMultiplier}`);
     
     for (const gcResult of generalClassification) {
-      if (gcResult.rank) {
-        const gcNameId = gcResult.nameID || gcResult.shortName?.toLowerCase().replace(/\s+/g, '-');
-        const gcName = gcResult.shortName || gcResult.nameID || gcNameId;
+      if (gcResult.place) {
+        const gcNameId = gcResult.rider || gcResult.shortName?.toLowerCase().replace(/\s+/g, '-');
+        const gcName = gcResult.shortName || gcResult.rider || gcNameId;
         
-        console.log(`[SEASON_POINTS] Processing GC rider: ${gcName} (nameID: ${gcNameId}), Rank: ${gcResult.rank}`);
+        console.log(`[SEASON_POINTS] Processing GC rider: ${gcName} (nameID: ${gcNameId}), Rank: ${gcResult.place}`);
         
         if (gcNameId) {
           // For Grand Tours, use TOP_20_POINTS system
@@ -630,13 +634,13 @@ async function updateSeasonPoints(
           console.log(`[SEASON_POINTS] Debug - gcResult.points: ${gcResult.points}, typeof: ${typeof gcResult.points}`);
           
           if (isGrandTour) {
-            gcPoints = calculateStagePoints(gcResult.rank) * gcMultiplier;
+            gcPoints = calculateStagePoints(gcResult.place) * gcMultiplier;
           } else {
             // Use PCS points directly from scraped data
             gcPoints = (gcResult.points || 0) * gcMultiplier;
           }
           
-          console.log(`[SEASON_POINTS] GC points for ${gcName}: ${gcPoints} (rank ${gcResult.rank}, isGrandTour: ${isGrandTour}, multiplier: ${gcMultiplier}, originalPoints: ${gcResult.points})`);
+          console.log(`[SEASON_POINTS] GC points for ${gcName}: ${gcPoints} (place ${gcResult.place}, isGrandTour: ${isGrandTour}, multiplier: ${gcMultiplier}, originalPoints: ${gcResult.points})`);
           
           if (gcPoints > 0) {
             const entry = getOrCreateRider(gcNameId, gcName);
@@ -652,12 +656,12 @@ async function updateSeasonPoints(
   // 3. Process Points Classification (if applicable)
   if (pointsClassMultiplier > 0 && stageData.pointsClassification) {
     for (const pointsResult of stageData.pointsClassification) {
-      if (pointsResult.rank) {
-        const pointsNameId = pointsResult.nameID || pointsResult.shortName?.toLowerCase().replace(/\s+/g, '-');
-        const pointsName = pointsResult.shortName || pointsResult.nameID || pointsNameId;
+      if (pointsResult.place) {
+        const pointsNameId = pointsResult.rider || pointsResult.shortName?.toLowerCase().replace(/\s+/g, '-');
+        const pointsName = pointsResult.shortName || pointsResult.rider || pointsNameId;
         
         if (pointsNameId) {
-          const pointsClassPoints = calculateStagePoints(pointsResult.rank);
+          const pointsClassPoints = calculateStagePoints(pointsResult.place);
           if (pointsClassPoints > 0) {
             const entry = getOrCreateRider(pointsNameId, pointsName);
             entry.pointsClass = pointsClassPoints;
@@ -671,12 +675,12 @@ async function updateSeasonPoints(
   // 4. Process Mountains Classification (if applicable)
   if (mountainsClassMultiplier > 0 && stageData.mountainsClassification) {
     for (const mountainsResult of stageData.mountainsClassification) {
-      if (mountainsResult.rank) {
-        const mountainsNameId = mountainsResult.nameID || mountainsResult.shortName?.toLowerCase().replace(/\s+/g, '-');
-        const mountainsName = mountainsResult.shortName || mountainsResult.nameID || mountainsNameId;
+      if (mountainsResult.place) {
+        const mountainsNameId = mountainsResult.rider || mountainsResult.shortName?.toLowerCase().replace(/\s+/g, '-');
+        const mountainsName = mountainsResult.shortName || mountainsResult.rider || mountainsNameId;
         
         if (mountainsNameId) {
-          const mountainsClassPoints = calculateStagePoints(mountainsResult.rank);
+          const mountainsClassPoints = calculateStagePoints(mountainsResult.place);
           if (mountainsClassPoints > 0) {
             const entry = getOrCreateRider(mountainsNameId, mountainsName);
             entry.mountainsClass = mountainsClassPoints;
@@ -690,12 +694,12 @@ async function updateSeasonPoints(
   // 5. Process Youth Classification (if applicable)
   if (youthClassMultiplier > 0 && stageData.youthClassification) {
     for (const youthResult of stageData.youthClassification) {
-      if (youthResult.rank) {
-        const youthNameId = youthResult.nameID || youthResult.shortName?.toLowerCase().replace(/\s+/g, '-');
-        const youthName = youthResult.shortName || youthResult.nameID || youthNameId;
+      if (youthResult.place) {
+        const youthNameId = youthResult.rider || youthResult.shortName?.toLowerCase().replace(/\s+/g, '-');
+        const youthName = youthResult.shortName || youthResult.rider || youthNameId;
         
         if (youthNameId) {
-          const youthClassPoints = calculateStagePoints(youthResult.rank);
+          const youthClassPoints = calculateStagePoints(youthResult.place);
           if (youthClassPoints > 0) {
             const entry = getOrCreateRider(youthNameId, youthName);
             entry.youthClass = youthClassPoints;
@@ -718,7 +722,7 @@ async function updateSeasonPoints(
     if (generalClassification.length > 0) {
       console.log(`[SEASON_POINTS] First 3 GC riders:`);
       generalClassification.slice(0, 3).forEach((rider, i) => {
-        console.log(`[SEASON_POINTS]   ${i + 1}. ${rider.shortName || rider.nameID} (rank: ${rider.rank}, nameID: ${rider.nameID})`);
+        console.log(`[SEASON_POINTS]   ${i + 1}. ${rider.shortName || rider.rider} (place: ${rider.place}, rider: ${rider.rider})`);
       });
     }
   } else {
@@ -843,14 +847,14 @@ async function updateMarginalGainsGames(
   // Helper functions to get points
   const getStartingPoints = async (riderNameId: string): Promise<number> => {
     try {
-      const rankingDoc = await db.collection(`rankings_${yearNum}`).doc(riderNameId).get();
-      if (rankingDoc.exists) {
-        const data = rankingDoc.data();
+      const placeingDoc = await db.collection(`placeings_${yearNum}`).doc(riderNameId).get();
+      if (placeingDoc.exists) {
+        const data = placeingDoc.data();
         return data?.points || 0;
       }
       return 0;
     } catch (error) {
-      console.error(`[MARGINAL_GAINS_UPDATE] Error fetching ranking for ${riderNameId}:`, error);
+      console.error(`[MARGINAL_GAINS_UPDATE] Error fetching placeing for ${riderNameId}:`, error);
       return 0;
     }
   };
@@ -929,17 +933,17 @@ async function updateMarginalGainsGames(
         });
       }
 
-      // Update rankings for this game
-      const rankedParticipants = await db.collection('gameParticipants')
+      // Update placeings for this game
+      const placeedParticipants = await db.collection('gameParticipants')
         .where('gameId', '==', game.id)
         .where('status', '==', 'active')
         .orderBy('totalPoints', 'desc')
         .get();
 
-      let ranking = 1;
-      for (const participantDoc of rankedParticipants.docs) {
-        await participantDoc.ref.update({ ranking });
-        ranking++;
+      let placeing = 1;
+      for (const participantDoc of placeedParticipants.docs) {
+        await participantDoc.ref.update({ placeing });
+        placeing++;
       }
 
       console.log(`[MARGINAL_GAINS_UPDATE] Updated game ${game.name}`);
