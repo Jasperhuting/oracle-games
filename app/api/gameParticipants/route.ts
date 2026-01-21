@@ -34,10 +34,38 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamePartic
       const data = doc.data();
 
       // Convert team array timestamps to ISO strings
-      const team = data.team?.map((rider: any) => ({
-        ...rider,
-        acquiredAt: rider.acquiredAt?.toDate?.()?.toISOString() || rider.acquiredAt,
-      }));
+      let team = undefined;
+      if (data.team) {
+        // Handle case where team is stored as a string representation
+        if (typeof data.team === 'string') {
+          // Check if it's the corrupted "[object Object]" format
+          if (data.team.includes('[object Object]')) {
+            // This is corrupted data - we can't parse it, so set team to undefined
+            console.warn('Corrupted team data detected for participant:', doc.id);
+            team = undefined;
+          } else if (data.team.startsWith('[') && data.team.endsWith(']')) {
+            try {
+              // Try to parse valid JSON strings
+              const parsedTeam = JSON.parse(data.team);
+              if (Array.isArray(parsedTeam)) {
+                team = parsedTeam.map((rider: any) => ({
+                  ...rider,
+                  acquiredAt: rider.acquiredAt?.toDate?.()?.toISOString() || rider.acquiredAt,
+                }));
+              }
+            } catch (error) {
+              console.warn('Failed to parse team string:', error);
+              // If parsing fails, leave team as undefined
+            }
+          }
+        } else if (Array.isArray(data.team)) {
+          // Handle case where team is already an array
+          team = data.team.map((rider: any) => ({
+            ...rider,
+            acquiredAt: rider.acquiredAt?.toDate?.()?.toISOString() || rider.acquiredAt,
+          }));
+        }
+      }
 
       return {
         id: doc.id,
@@ -45,6 +73,20 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamePartic
         joinedAt: data.joinedAt?.toDate?.()?.toISOString() || data.joinedAt,
         eliminatedAt: data.eliminatedAt?.toDate?.()?.toISOString() || data.eliminatedAt,
         team,
+        // Handle leagueIds which might also be stored as a string
+        leagueIds: (() => {
+          if (!data.leagueIds) return [];
+          if (Array.isArray(data.leagueIds)) return data.leagueIds;
+          if (typeof data.leagueIds === 'string') {
+            try {
+              const parsed = JSON.parse(data.leagueIds);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        })(),
       } as ClientGameParticipant;
     });
 
