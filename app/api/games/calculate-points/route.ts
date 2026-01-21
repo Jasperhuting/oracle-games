@@ -82,12 +82,45 @@ export async function POST(request: NextRequest) {
     }
     
     const stageResults: StageResult[] = stageData.stageResults ? 
-      (typeof stageData.stageResults === 'string' ? JSON.parse(stageData.stageResults) : stageData.stageResults) : [];
+      (typeof stageData.stageResults === 'string' ? 
+        (() => {
+          try {
+            return JSON.parse(stageData.stageResults);
+          } catch (e) {
+            console.error(`[CALCULATE_POINTS] Error parsing stageResults: ${e.message}`);
+            console.error(`[CALCULATE_POINTS] Raw stageResults:`, stageData.stageResults.substring(0, 200));
+            return [];
+          }
+        })() : 
+        stageData.stageResults
+      ) : [];
     const generalClassification: ClassificationRider[] = stageData.generalClassification ? 
-      (typeof stageData.generalClassification === 'string' ? JSON.parse(stageData.generalClassification) : stageData.generalClassification) : [];
+      (typeof stageData.generalClassification === 'string' ? 
+        (() => {
+          try {
+            return JSON.parse(stageData.generalClassification);
+          } catch (e) {
+            console.error(`[CALCULATE_POINTS] Error parsing generalClassification: ${e.message}`);
+            return [];
+          }
+        })() : 
+        stageData.generalClassification
+      ) : [];
 
     console.log(`[CALCULATE_POINTS] Found ${stageResults.length} riders in stage results`);
     console.log(`[CALCULATE_POINTS] Found 55 riders in general classification`);
+    
+    // Debug: Check first few riders and data structure
+    console.log(`[CALCULATE_POINTS] Raw stageResults type: ${typeof stageData.stageResults}`);
+    console.log(`[CALCULATE_POINTS] Parsed stageResults type: ${Array.isArray(stageResults) ? 'array' : typeof stageResults}`);
+    if (stageResults.length > 0) {
+      console.log(`[CALCULATE_POINTS] First rider structure:`, stageResults[0]);
+      console.log(`[CALCULATE_POINTS] First 3 riders:`, stageResults.slice(0, 3).map(r => ({
+        shortName: r.shortName,
+        place: r.place,
+        points: r.points
+      })));
+    }
 
     // Debug: Check if Diego Alejandro Méndez is in the GC data
     const diegoInGC = generalClassification.find(r => 
