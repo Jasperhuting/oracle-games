@@ -20,6 +20,7 @@ export async function GET(
 
     const gameData = gameDoc.data();
     const riderValues = gameData?.config?.riderValues || {};
+    const maxRiders = gameData?.config?.maxRiders || gameData?.config?.teamSize || 32; // Default to 32 if not specified
 
     // Get all participants for this game
     const participantsSnapshot = await db
@@ -125,12 +126,28 @@ export async function GET(
     console.log('[TEAMS-OVERVIEW] Total riders in map:', ridersMap.size);
     console.log('[TEAMS-OVERVIEW] Total teams resolved:', teamsData.size);
 
-    // Create a map of userId -> riders
+    // Create a map of userId -> riders, with deduplication
     const teamsMap = new Map<string, any[]>();
+    const userRiderTracker = new Map<string, Set<string>>(); // Track unique riderNameId per user
 
     playerTeamsSnapshot.forEach(doc => {
       const team = doc.data();
       const userId = team.userId;
+      const riderNameId = team.riderNameId;
+
+      // Initialize user's rider tracker if not exists
+      if (!userRiderTracker.has(userId)) {
+        userRiderTracker.set(userId, new Set());
+      }
+
+      // Skip if this rider is already added for this user
+      if (userRiderTracker.get(userId)!.has(riderNameId)) {
+        console.log(`[TEAMS-OVERVIEW] Skipping duplicate rider ${riderNameId} for user ${userId}`);
+        return;
+      }
+
+      // Mark this rider as added for this user
+      userRiderTracker.get(userId)!.add(riderNameId);
 
       if (!teamsMap.has(userId)) {
         teamsMap.set(userId, []);
