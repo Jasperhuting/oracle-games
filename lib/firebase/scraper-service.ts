@@ -69,8 +69,59 @@ export async function getScraperData(
     return null;
   }
   
+  // Parse stringified arrays if they exist
+  const parsedData = { ...data };
+  if (parsedData.stageResults && typeof parsedData.stageResults === 'string') {
+    try {
+      parsedData.stageResults = JSON.parse(parsedData.stageResults);
+    } catch (e) {
+      console.error('Error parsing stageResults in getScraperData:', e);
+      parsedData.stageResults = [];
+    }
+  }
+  if (parsedData.generalClassification && typeof parsedData.generalClassification === 'string') {
+    try {
+      parsedData.generalClassification = JSON.parse(parsedData.generalClassification);
+    } catch (e) {
+      console.error('Error parsing generalClassification in getScraperData:', e);
+      parsedData.generalClassification = [];
+    }
+  }
+  if (parsedData.pointsClassification && typeof parsedData.pointsClassification === 'string') {
+    try {
+      parsedData.pointsClassification = JSON.parse(parsedData.pointsClassification);
+    } catch (e) {
+      console.error('Error parsing pointsClassification in getScraperData:', e);
+      parsedData.pointsClassification = [];
+    }
+  }
+  if (parsedData.mountainsClassification && typeof parsedData.mountainsClassification === 'string') {
+    try {
+      parsedData.mountainsClassification = JSON.parse(parsedData.mountainsClassification);
+    } catch (e) {
+      console.error('Error parsing mountainsClassification in getScraperData:', e);
+      parsedData.mountainsClassification = [];
+    }
+  }
+  if (parsedData.youthClassification && typeof parsedData.youthClassification === 'string') {
+    try {
+      parsedData.youthClassification = JSON.parse(parsedData.youthClassification);
+    } catch (e) {
+      console.error('Error parsing youthClassification in getScraperData:', e);
+      parsedData.youthClassification = [];
+    }
+  }
+  if (parsedData.teamClassification && typeof parsedData.teamClassification === 'string') {
+    try {
+      parsedData.teamClassification = JSON.parse(parsedData.teamClassification);
+    } catch (e) {
+      console.error('Error parsing teamClassification in getScraperData:', e);
+      parsedData.teamClassification = [];
+    }
+  }
+  
   // Remove Firebase metadata before returning
-  const { updatedAt, key: docKey, ...scraperData } = data;
+  const { updatedAt, key: docKey, ...scraperData } = parsedData;
   void updatedAt; // Explicitly mark as intentionally unused
   void docKey; // Explicitly mark as intentionally unused
   return scraperData as StartlistResult | StageResult;
