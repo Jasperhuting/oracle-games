@@ -7,9 +7,10 @@ import { getServerFirebase } from '@/lib/firebase/server';
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
+  // Initialize Firebase Admin with error handling
+  let db;
+  
   try {
-    // Initialize Firebase Admin with error handling
-    let db;
     try {
       db = getServerFirebase();
       console.log('[SCRAPER] Firebase Admin initialized successfully');
@@ -51,8 +52,8 @@ export async function POST(request: NextRequest) {
       await db.collection('activityLogs').add({
         action: 'SCRAPE_STARTED',
         userId: userId || 'unknown',
-        userEmail: userEmail || undefined,
-        userName: userName || undefined,
+        userEmail: userEmail || null,
+        userName: userName || null,
         details: {
           scrapeType: type,
           race,
@@ -137,8 +138,8 @@ export async function POST(request: NextRequest) {
       await db.collection('activityLogs').add({
         action: 'SCRAPE_COMPLETED',
         userId: userId || 'unknown',
-        userEmail: userEmail || undefined,
-        userName: userName || undefined,
+        userEmail: userEmail || null,
+        userName: userName || null,
         details: {
           scrapeType: type,
           race,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
         failedStages: errors.length,
         totalDataCount,
         results,
-        errors: errors.length > 0 ? errors : undefined,
+        errors: errors.length > 0 ? errors : null,
         timestamp: Timestamp.now(),
         executionTimeMs,
         estimatedCostEur,
@@ -297,15 +298,17 @@ export async function POST(request: NextRequest) {
 
     // Log failure
     try {
-      await db.collection('activityLogs').add({
-        action: 'SCRAPE_FAILED',
-        userId: 'unknown',
-        details: {
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          executionTimeMs,
-        },
-        timestamp: Timestamp.now(),
-      });
+      if (db) {
+        await db.collection('activityLogs').add({
+          action: 'SCRAPE_FAILED',
+          userId: 'unknown',
+          details: {
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            executionTimeMs,
+          },
+          timestamp: Timestamp.now(),
+        });
+      }
     } catch {
       // Ignore logging errors
     }
