@@ -13,7 +13,6 @@ interface PlayerTeamWithOwner {
   riderTeam: string;
   riderCountry: string;
   pricePaid?: number;
-  active: boolean;
   acquiredAt: string;
   acquisitionType: string;
 }
@@ -38,10 +37,6 @@ export async function GET(
 
     let query = db.collection('playerTeams')
       .where('gameId', '==', gameId);
-
-    if (activeOnly) {
-      query = query.where('active', '==', true);
-    }
 
     const snapshot = await query.get();
 

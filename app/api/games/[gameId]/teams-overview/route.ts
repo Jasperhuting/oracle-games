@@ -36,8 +36,33 @@ export async function GET(
     const playerTeamsSnapshot = await db
       .collection('playerTeams')
       .where('gameId', '==', gameId)
-      .where('active', '==', true)
       .get();
+
+    // Get all bids for this game to get bid dates
+    const bidsSnapshot = await db
+      .collection('bids')
+      .where('gameId', '==', gameId)
+      .where('status', '==', 'won')
+      .get();
+
+    // Create a map of (userId, riderNameId) -> bidAt
+    const bidsMap = new Map<string, string>();
+    bidsSnapshot.forEach(doc => {
+      const bid = doc.data();
+      const key = `${bid.userId}_${bid.riderNameId}`;
+      if (bid.bidAt) {
+        // Convert Firestore Timestamp to ISO string
+        let bidDate: string;
+        if (typeof bid.bidAt === 'object' && bid.bidAt._seconds) {
+          bidDate = new Date(bid.bidAt._seconds * 1000 + (bid.bidAt._nanoseconds || 0) / 1000000).toISOString();
+        } else if (bid.bidAt.toDate) {
+          bidDate = bid.bidAt.toDate().toISOString();
+        } else {
+          bidDate = bid.bidAt;
+        }
+        bidsMap.set(key, bidDate);
+      }
+    });
 
     // Get all riders from rankings to enrich the data
     // Use rankings_2026 collection (current year)
@@ -147,7 +172,17 @@ export async function GET(
         pricePaid,
         percentageDiff,
         pointsScored: team.pointsScored || 0,
-        acquiredAt: team.acquiredAt,
+        bidAt: bidsMap.get(`${userId}_${team.riderNameId}`) || (() => {
+        // Fallback to acquiredAt if no bid found
+        if (!team.acquiredAt) return null;
+        if (typeof team.acquiredAt === 'object' && team.acquiredAt._seconds) {
+          return new Date(team.acquiredAt._seconds * 1000 + (team.acquiredAt._nanoseconds || 0) / 1000000).toISOString();
+        } else if (team.acquiredAt.toDate) {
+          return team.acquiredAt.toDate().toISOString();
+        } else {
+          return team.acquiredAt;
+        }
+      })(),
         acquisitionType: team.acquisitionType || 'auction'
       });
     });

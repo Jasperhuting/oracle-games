@@ -326,10 +326,6 @@ export interface PlayerTeam {
   jerseyImage?: string;
   riderValue?: number;              // For Giorgio Armada (1-10)
 
-  // Status
-  active: boolean;
-  benched?: boolean;
-
   // Performance
   pointsScored: number;
   stagesParticipated: number;

@@ -400,6 +400,9 @@ export default function TeamsOverviewPage() {
                               Prijs
                             </th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Bieddatum
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Verschil
                             </th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -427,6 +430,13 @@ export default function TeamsOverviewPage() {
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                                 {rider.pricePaid}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                {rider.bidAt ? new Date(rider.bidAt).toLocaleDateString('nl-NL', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                }) : '-'}
                               </td>
                               <td className="px-4 py-3 text-sm text-right">
                                 <span className={`font-medium ${
@@ -513,6 +523,9 @@ export default function TeamsOverviewPage() {
                                         Prijs
                                       </th>
                                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Bieddatum
+                                      </th>
+                                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Verschil
                                       </th>
                                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -537,6 +550,13 @@ export default function TeamsOverviewPage() {
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                                           {rider.pricePaid}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                          {rider.acquiredAt ? new Date(rider.acquiredAt).toLocaleDateString('nl-NL', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                          }) : '-'}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-right">
                                           <span className={`font-medium ${
@@ -654,6 +674,9 @@ export default function TeamsOverviewPage() {
                               Prijs
                             </th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Bieddatum
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Verschil
                             </th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -681,6 +704,13 @@ export default function TeamsOverviewPage() {
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                                 {rider.pricePaid}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                {rider.bidAt ? new Date(rider.bidAt).toLocaleDateString('nl-NL', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                }) : '-'}
                               </td>
                               <td className="px-4 py-3 text-sm text-right">
                                 <span className={`font-medium ${

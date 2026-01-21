@@ -21,6 +21,7 @@
 
 @theme {
     --color-primary: #02554D;
+    --background: 0 0% 10%;
 }
 
 @utility drop-shadow-header {

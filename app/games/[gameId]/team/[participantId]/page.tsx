@@ -35,7 +35,6 @@ interface Rider {
   acquisitionType: string;
   draftRound: number | null;
   draftPick: number | null;
-  benched: boolean;
   stagesParticipated: number;
   jerseyImage?: string;
 }
@@ -51,8 +50,6 @@ interface Participant {
 interface TeamDetails {
   riders: Rider[];
   totalPoints: number;
-  activeRiders: number;
-  benchedRiders: number;
   riderCount: number;
 }
 
@@ -221,14 +218,10 @@ export default function TeamDetailPage() {
         {/* Team Statistics */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Team Statistieken</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{teamDetails.riderCount}</div>
               <div className="text-sm text-gray-600">Totaal renners</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{teamDetails.activeRiders}</div>
-              <div className="text-sm text-gray-600">Actieve renners</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{teamDetails.totalPoints}</div>

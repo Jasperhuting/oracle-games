@@ -37,7 +37,6 @@ export async function GET(
     const teamSnapshot = await db.collection('playerTeams')
       .where('gameId', '==', gameId)
       .where('userId', '==', participantData.userId)
-      .where('active', '==', true)
       .get();
 
     const riders = [];
@@ -58,7 +57,6 @@ export async function GET(
         acquisitionType: data.acquisitionType,
         draftRound: data.draftRound,
         draftPick: data.draftPick,
-        benched: data.benched || false,
         stagesParticipated: data.stagesParticipated || 0,
       });
     }
@@ -89,9 +87,6 @@ export async function GET(
       totalPoints += riderCorrectPoints;
     }
     
-    const activeRiders = riders.filter(r => !r.benched).length;
-    const benchedRiders = riders.filter(rider => rider.benched).length;
-
     return NextResponse.json({
       success: true,
       participant: {
@@ -104,8 +99,6 @@ export async function GET(
       team: {
         riders,
         totalPoints,
-        activeRiders,
-        benchedRiders,
         riderCount: riders.length,
       },
     });

@@ -495,10 +495,29 @@ export async function finalizeAuction(
           const participantDoc = participantSnapshot.docs[0];
           const participantData = participantDoc.data();
 
-          const currentTeam = participantData.team || [];
+          // FIX: Rebuild currentTeam from playerTeams collection instead of using corrupted participantData.team
+          // This prevents the [object Object] string corruption issue
+          const existingPlayerTeams = await db.collection('playerTeams')
+            .where('gameId', '==', gameId)
+            .where('userId', '==', userId)
+            .where('active', '==', true)
+            .get();
+
+          const currentTeam = existingPlayerTeams.docs.map(doc => {
+            const data = doc.data();
+            return {
+              riderNameId: data.riderNameId,
+              riderName: data.riderName,
+              riderTeam: data.riderTeam,
+              jerseyImage: data.jerseyImage,
+              pricePaid: data.pricePaid,
+              acquiredAt: data.acquiredAt,
+            };
+          });
+
           const currentSpentBudget = participantData.spentBudget || 0;
 
-          console.log(`[FINALIZE] User ${userId}: current spentBudget=${currentSpentBudget}, wins=${wins.length}`);
+          console.log(`[FINALIZE] User ${userId}: current spentBudget=${currentSpentBudget}, wins=${wins.length}, rebuilt team from ${existingPlayerTeams.size} playerTeams`);
 
           // Calculate total won amount and build new team
           let totalWonAmount = 0;
@@ -548,7 +567,7 @@ export async function finalizeAuction(
 
           // Update participant with all wins at once
           await participantDoc.ref.update({
-            team: newTeam,
+            team: newTeam, // Store the clean, properly formatted team array
             spentBudget: correctSpentBudget,
             rosterSize: newTeam.length,
             rosterComplete,
@@ -587,10 +606,6 @@ export async function finalizeAuction(
                 riderTeam: bid.riderTeam,
                 riderCountry: bid.riderCountry || '',
                 jerseyImage: bid.jerseyImage || '',
-
-                // Status
-                active: true,
-                benched: false,
 
                 // Performance (initialized to 0)
                 pointsScored: 0,

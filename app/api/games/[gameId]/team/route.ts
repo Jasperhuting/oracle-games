@@ -25,7 +25,6 @@ export async function GET(
     const teamSnapshot = await db.collection('playerTeams')
       .where('gameId', '==', gameId)
       .where('userId', '==', userId)
-      .where('active', '==', true)
       .get();
 
     const riders = teamSnapshot.docs.map(doc => {
