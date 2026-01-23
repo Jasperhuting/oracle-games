@@ -3,6 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getRaceResult } from '@/lib/scraper/getRaceResult';
 import { POST as calculatePoints } from '@/app/api/games/calculate-points/route';
+import { saveScraperData } from '@/lib/firebase/scraper-service';
 
 // Helper function to remove undefined values from objects
 function cleanData(obj: unknown): unknown {
@@ -146,8 +147,22 @@ export async function POST(request: NextRequest) {
 
     console.log(`[saveRaceResult] Fetching result for ${raceName} ${year}`);
 
+    // Check if this is a multi-stage race
+    const multiStageRaces = ['tour-de-france', 'giro-d-italia', 'vuelta-a-espana', 'tour-down-under', 'paris-nice', 'tirreno-adriatico', 'volta-a-catalunya', 'dauphine'];
+    const isMultiStage = multiStageRaces.includes(raceName);
+
+    let raceData;
+    if (isMultiStage) {
+      // For multi-stage races, we need to handle this differently
+      return NextResponse.json({
+        error: `Multi-stage race '${raceName}' detected. Please use the scraper API with 'all-stages' or individual stage scraping instead.`,
+        suggestion: 'Use /api/scraper with type "all-stages" or "stage" for multi-stage races.',
+        isMultiStage: true
+      }, { status: 400 });
+    }
+
     // Fetch race result from ProCyclingStats (single-day race)
-    const raceData = await getRaceResult({
+    raceData = await getRaceResult({
       race: raceName,
       year: parseInt(year),
     });
@@ -179,6 +194,19 @@ export async function POST(request: NextRequest) {
       scrapedAt: raceData.scrapedAt,
       source: raceData.source,
     });
+
+    // Save to scraper-data collection for points calculation
+    try {
+      await saveScraperData({
+        race: raceName,
+        year: parseInt(year),
+        type: 'result'
+      }, cleanedData);
+      console.log(`[saveRaceResult] Saved to scraper-data collection: ${raceName}-${year}-result`);
+    } catch (error) {
+      console.error('[saveRaceResult] Error saving to scraper-data:', error);
+      // Don't fail the whole request if scraper-data save fails
+    }
 
     // Save to Firestore - for single-day races, save as 'result' document
     const resultDocRef = db.collection(raceSlug).doc('stages').collection('results').doc('result');

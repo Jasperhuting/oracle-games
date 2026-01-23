@@ -51,7 +51,27 @@ export async function getRaceResult({ race, year, riders }: GetRaceResultOptions
     });
 
     // Wait for the page content to load
-    await page.waitForSelector('.page-title', { timeout: 30000 });
+    try {
+      await page.waitForSelector('.page-title', { timeout: 10000 });
+    } catch (error) {
+      // Try alternative selectors if page-title is not found
+      try {
+        await page.waitForSelector('h1', { timeout: 5000 });
+      } catch (h1Error) {
+        // Check if page shows "no results" or similar message
+        const content = await page.content();
+        const $ = cheerio.load(content);
+        
+        if ($('body').text().includes('No results') || 
+            $('body').text().includes('Results not available') ||
+            $('body').text().includes('No data') ||
+            $('body').text().includes('Not started')) {
+          throw new Error(`No results available for ${race} ${year}. The race may not have finished yet.`);
+        }
+        
+        throw new Error(`Page structure changed or no content found for ${race} ${year}`);
+      }
+    }
 
     html = await page.content();
   } finally {
@@ -60,7 +80,14 @@ export async function getRaceResult({ race, year, riders }: GetRaceResultOptions
 
   const $ = cheerio.load(html);
 
-  const raceTitle = $('.page-title > .imob').eq(0).text().trim();
+  let raceTitle = '';
+  if ($('.page-title > .imob').length) {
+    raceTitle = $('.page-title > .imob').eq(0).text().trim();
+  } else if ($('h1').length) {
+    raceTitle = $('h1').eq(0).text().trim();
+  } else {
+    raceTitle = `${race} ${year}`;
+  }
 
   // Scrape all classifications using modular functions
   // For single-day races, the main results are similar to stage results

@@ -59,7 +59,7 @@ export function scrapeStageResults(
         startNumber: helpers.getStartNumber(el) || '-',
         gc: helpers.getGc(el) || '-',
         breakAway: helpers.breakAway(el) || false,
-        place: helpers.getPlace(el) || 0,
+        place: helpers.getPlace(el),
         timeDifferenceGc: helpers.getTimeDifferenceGc(el) || '-',
         timeDifference: helpers.getTimeDifference(el) || '-',
         team: helpers.getTeam(el) || '-',
@@ -67,6 +67,9 @@ export function scrapeStageResults(
         uciPoints: helpers.getUciPoints(el) || '-',
         points: helpers.getPoints(el) || '-',
         qualificationTime: Number(helpers.getQualificationTime(el)) || undefined,
+        // Add the missing fields that calculate-points expects
+        name: `${helpers.getFirstName(el) || ''} ${helpers.getLastName(el) || ''}`.trim() || '-',
+        nameID: helpers.getRiderShortName(el) || '-',
       };
 
       if (!riders) {

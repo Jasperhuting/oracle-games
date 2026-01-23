@@ -9,6 +9,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { RankingsProvider } from "@/contexts/RankingsContext";
 import LanguageWrapper from "@/components/LanguageWrapper";
+import { PlayerTeamsProvider } from "@/contexts/PlayerTeamsContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
         <LanguageWrapper>
           <ImpersonationProvider>
             <RankingsProvider autoLoad={true}>
+              <PlayerTeamsProvider autoLoad={true}>
               <Toaster position="top-center" />
               <MessageNotification />
               <AuthGuard>
@@ -56,6 +58,7 @@ export default function RootLayout({
                   </main>
                 </LayoutShell>
               </AuthGuard>
+              </PlayerTeamsProvider>
             </RankingsProvider>
           </ImpersonationProvider>
         </LanguageWrapper>

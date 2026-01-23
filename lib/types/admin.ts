@@ -7,12 +7,13 @@
 export interface ScraperFormData {
   race: string;
   year: number;
-  type: 'startlist' | 'stage' | 'all-stages';
+  type: 'startlist' | 'stage' | 'result' | 'all-stages' | 'tour-gc';
   stage?: number;
 }
 
 export interface ScraperFormProps {
   onSubmit?: (data: ScraperFormData) => void;
+  onPreview?: (data: ScraperFormData) => Promise<void>;
   loading?: boolean;
 }
 

@@ -6,6 +6,7 @@
 import { ReactNode } from 'react';
 import { User } from 'firebase/auth';
 import { Rider } from './rider';
+import { PlayerTeam } from './games';
 
 // Rankings Context
 export interface RankingsContextType {
@@ -15,6 +16,13 @@ export interface RankingsContextType {
   refetch: (forceRefresh?: boolean) => Promise<void>;
   getRiderById: (id: string) => Rider | undefined;
   getRidersByIds: (ids: string[]) => Rider[];
+}
+export interface PlayerTeamsContextType {
+  riders: PlayerTeam[];
+  loading: boolean;
+  error: string | null;
+  refetch: (forceRefresh?: boolean) => Promise<void>;  
+  total: number;
 }
 
 export interface RankingsProviderProps {

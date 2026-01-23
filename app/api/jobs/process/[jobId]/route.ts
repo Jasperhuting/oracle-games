@@ -179,6 +179,34 @@ async function processBulkScrape(jobId: string, job: any) {
 
       await saveScraperData(stageKey, stageData);
 
+      // Trigger points calculation for this stage
+      try {
+        console.log(`[bulk-scrape] Triggering points calculation for ${race} stage ${stageNum}`);
+        const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
+        const calculatePoints = calculatePointsModule.POST;
+        
+        const mockRequest = new NextRequest('http://localhost:3000/api/games/calculate-points', {
+          method: 'POST',
+          body: JSON.stringify({
+            raceSlug: race,
+            stage: stageNum,
+            year,
+          }),
+        });
+
+        const calculatePointsResponse = await calculatePoints(mockRequest);
+        const pointsResult = await calculatePointsResponse.json();
+        
+        if (calculatePointsResponse.status === 200) {
+          console.log(`[bulk-scrape] Points calculation completed for stage ${stageNum}:`, pointsResult);
+        } else {
+          console.error(`[bulk-scrape] Failed to calculate points for stage ${stageNum}:`, pointsResult);
+        }
+      } catch (error) {
+        console.error(`[bulk-scrape] Error calculating points for stage ${stageNum}:`, error);
+        // Don't fail the scrape if points calculation fails
+      }
+
       // Small delay to avoid rate limiting
       await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error) {

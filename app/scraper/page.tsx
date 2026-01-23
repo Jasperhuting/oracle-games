@@ -4,12 +4,17 @@ import { useState, useEffect } from 'react';
 import ScraperForm from '@/components/ScraperForm';
 import { type ScraperFormData } from '@/lib/types/admin';
 import { ScrapingResult, BulkJob } from '@/lib/types/pages';
+import { useAuth } from '@/hooks/useAuth';
+import { formatTimestamp } from '@/lib/utils/timestamp';
 
 export default function ScraperPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScrapingResult | null>(null);
   const [bulkJob, setBulkJob] = useState<BulkJob | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<any | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+const { user } = useAuth();
 
   // Poll for bulk job progress
   useEffect(() => {
@@ -27,15 +32,18 @@ export default function ScraperPage() {
           setLoading(false);
           
           // Convert to result format for display
+          const results = jobData.results || [];
+          const errors = jobData.errors || [];
+          
           setResult({
             success: jobData.status === 'completed',
-            message: `All stages completed. ${jobData.results?.filter((r: any) => r.success).length || 0} successful, ${jobData.errors?.length || 0} failed.`, // eslint-disable-line @typescript-eslint/no-explicit-any
+            message: `All stages completed. ${results.filter((r: any) => r.success).length || 0} successful, ${errors.length || 0} failed.`, // eslint-disable-line @typescript-eslint/no-explicit-any
             type: 'all-stages',
             totalStages: jobData.totalStages,
-            successfulStages: jobData.results?.filter((r: any) => r.success).length || 0, // eslint-disable-line @typescript-eslint/no-explicit-any
-            failedStages: jobData.errors?.length || 0,
-            totalDataCount: jobData.results?.reduce((sum: number, r: any) => sum + (r.dataCount || 0), 0) || 0, // eslint-disable-line @typescript-eslint/no-explicit-any
-            results: jobData.results,
+            successfulStages: results.filter((r: any) => r.success).length || 0, // eslint-disable-line @typescript-eslint/no-explicit-any
+            failedStages: errors.length || 0,
+            totalDataCount: results.reduce((sum: number, r: any) => sum + (r.dataCount || 0), 0) || 0, // eslint-disable-line @typescript-eslint/no-explicit-any
+            results: results,
           });
         }
       } catch (error) {
@@ -46,14 +54,96 @@ export default function ScraperPage() {
     return () => clearInterval(pollInterval);
   }, [jobId]);
 
+  // Preview points function
+  const handlePreviewPoints = async (formData: ScraperFormData) => {
+    console.log('[PREVIEW] Starting preview with data:', formData);
+    
+    if (formData.type !== 'stage' || formData.stage === undefined) {
+      alert('Points preview is only available for single stage results');
+      return;
+    }
+
+    setLoadingPreview(true);
+    setPreview(null);
+
+    try {
+      console.log('[PREVIEW] Fetching preview for:', {
+        raceSlug: formData.race,
+        stage: formData.stage,
+        year: formData.year,
+      });
+
+      // Ensure all required fields are present and properly typed
+      const requestData = {
+        raceSlug: formData.race,
+        stage: Number(formData.stage),
+        year: Number(formData.year),
+      };
+      
+      console.log('[PREVIEW] Sending request data:', requestData);
+
+      const response = await fetch('/api/games/preview-points', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('[PREVIEW] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[PREVIEW] Response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('[PREVIEW] Response data:', data);
+      setPreview(data);
+    } catch (error) {
+      console.error('[PREVIEW] Error:', error);
+      setPreview({
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error occurred',
+      });
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
   const handleScrape = async (formData: ScraperFormData) => {
     setLoading(true);
     setResult(null);
     setBulkJob(null);
     setJobId(null);
 
+    // Add user data for logging purposes
+    const requestData = {
+      ...formData,
+      userId: user?.uid,
+      userEmail: user?.email,
+      userName: user?.displayName,
+    };
+
     try {
       if (formData.type === 'all-stages') {
+        // Determine number of stages based on race
+        let totalStages = 21; // default for grand tours
+        if (formData.race === 'tour-down-under') {
+          totalStages = 6; // Tour Down Under has 6 stages
+        } else if (formData.race === 'paris-nice') {
+          totalStages = 8;
+        } else if (formData.race === 'tirreno-adriatico') {
+          totalStages = 8;
+        } else if (formData.race === 'volta-a-catalunya') {
+          totalStages = 7;
+        } else if (formData.race === 'dauphine') {
+          totalStages = 8;
+        } else if (formData.race === 'vuelta-al-tachira') {
+          totalStages = 10; // Vuelta al Táchira has 10 stages
+        }
+
         // Use bulk scraping API for all stages
         const response = await fetch('/api/scraper/bulk', {
           method: 'POST',
@@ -63,6 +153,10 @@ export default function ScraperPage() {
           body: JSON.stringify({
             race: formData.race,
             year: formData.year,
+            totalStages,
+            userId: user?.uid,
+            userEmail: user?.email,
+            userName: user?.displayName,
           }),
         });
 
@@ -81,7 +175,7 @@ export default function ScraperPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(requestData),
         });
 
         const data = await response.json();
@@ -113,11 +207,115 @@ export default function ScraperPage() {
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Scraper Form */}
           <div>
-            <ScraperForm onSubmit={handleScrape} loading={loading} />
+            <ScraperForm onSubmit={handleScrape} onPreview={handlePreviewPoints} loading={loading || loadingPreview} />
           </div>
 
           {/* Results Panel */}
           <div>
+            {loadingPreview && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                  <div>
+                    <h3 className="text-lg font-medium text-purple-900">
+                      Calculating Points Preview...
+                    </h3>
+                    <p className="text-purple-700">
+                      Please wait while we calculate who will get how many points.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {preview && !loadingPreview && (
+              <div
+                className={`border rounded-lg p-6 ${
+                  preview.success
+                    ? 'bg-purple-50 border-purple-200'
+                    : 'bg-red-50 border-red-200'
+                }`}
+              >
+                <div className="flex items-start space-x-3">
+                  <div
+                    className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                      preview.success ? 'bg-purple-500' : 'bg-red-500'
+                    }`}
+                  >
+                    {preview.success ? '👁' : '!'}
+                  </div>
+                  <div className="flex-1">
+                    <h3
+                      className={`text-lg font-medium ${
+                        preview.success ? 'text-purple-900' : 'text-red-900'
+                      }`}
+                    >
+                      {preview.success ? 'Points Preview' : 'Error'}
+                    </h3>
+                    
+                    {preview.success ? (
+                      <div className={`mt-1 text-purple-700`}>
+                        <p className="mb-2">{preview.message}</p>
+                        
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <strong>Stage:</strong> {preview.stageInfo?.raceSlug} {preview.stageInfo?.stage} ({preview.stageInfo?.year})
+                          </div>
+                          <div className="text-sm">
+                            <strong>Games with points:</strong> {preview.stageInfo?.totalGamesWithPoints || 0}
+                          </div>
+                          
+                          {/* Preview results per game */}
+                          {preview.preview && preview.preview.length > 0 && (
+                            <div className="mt-3">
+                              <details className="text-sm">
+                                <summary className="cursor-pointer font-medium mb-2">
+                                  View Points Details ({preview.preview.length} games)
+                                </summary>
+                                <div className="max-h-64 overflow-y-auto space-y-3">
+                                  {preview.preview.map((game: any) => (
+                                    <div key={game.gameId} className="bg-white p-3 rounded border">
+                                      <div className="font-medium text-gray-900 mb-2">{game.gameName}</div>
+                                      <div className="space-y-2">
+                                        {game.participants.map((participant: any, pIndex: number) => (
+                                          <div key={pIndex} className="border-b pb-2 last:border-b-0">
+                                            <div className="font-medium text-xs text-gray-700 mb-1">
+                                              {participant.playerName} (total: +{participant.totalPoints} pts)
+                                            </div>
+                                            <div className="space-y-1">
+                                              {participant.riders.slice(0, 3).map((rider: any, rIndex: number) => (
+                                                <div key={rIndex} className="flex justify-between text-xs text-gray-600">
+                                                  <span>{rider.riderName} (place {rider.place})</span>
+                                                  <span className="font-medium">+{rider.stagePoints} pts</span>
+                                                </div>
+                                              ))}
+                                              {participant.riders.length > 3 && (
+                                                <div className="text-xs text-gray-500 italic">
+                                                  ...and {participant.riders.length - 3} more riders
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-red-700">
+                        {preview.error || 'An unknown error occurred'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                 <div className="space-y-4">
@@ -150,16 +348,16 @@ export default function ScraperPage() {
                       <div className="flex justify-between text-sm text-blue-700">
                         <span>{bulkJob.progress.percentage}% complete</span>
                         <span>
-                          {bulkJob.results.filter(r => r.success).length} successful, {' '}
-                          {bulkJob.errors.length} failed
+                          {(bulkJob.results || []).filter(r => r.success).length} successful, {' '}
+                          {(bulkJob.errors || []).length} failed
                         </span>
                       </div>
                       
                       {/* Recent Results */}
-                      {bulkJob.results.length > 0 && (
+                      {(bulkJob.results || []).length > 0 && (
                         <div className="mt-3 max-h-32 overflow-y-auto">
                           <div className="text-xs text-blue-600 mb-1">Recent stages:</div>
-                          {bulkJob.results.slice(-5).map((stageResult) => (
+                          {(bulkJob.results || []).slice(-5).map((stageResult) => (
                             <div 
                               key={stageResult.stage} 
                               className={`text-xs px-2 py-1 rounded mb-1 ${
@@ -269,7 +467,7 @@ export default function ScraperPage() {
                         {result.timestamp && (
                           <p className="text-sm mt-2">
                             <strong>Completed:</strong>{' '}
-                            {new Date(result.timestamp).toLocaleString()}
+                            {formatTimestamp(result.timestamp)}
                           </p>
                         )}
                       </div>

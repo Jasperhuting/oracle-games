@@ -142,13 +142,13 @@ export function getPointsSystem(): Record<number, number> {
  * Check if a race/stage should count for points in a game
  * @param raceSlug - The race slug (e.g., "tour-de-france_2025")
  * @param stage - The stage number
- * @param countingRaces - Array of counting races from game config
+ * @param countingRaces - Array of counting races from game config (can be strings or objects)
  * @returns True if this race/stage counts for points
  */
 export function shouldCountForPoints(
   raceSlug: string,
   stage: number | string,
-  countingRaces?: Array<{ raceId: string; raceSlug: string; raceName: string; stages?: number[] }>
+  countingRaces?: Array<string | { raceId: string; raceSlug: string; raceName: string; stages?: number[] }>
 ): boolean {
   // If no countingRaces specified, all races count
   if (!countingRaces || countingRaces.length === 0) {
@@ -156,12 +156,23 @@ export function shouldCountForPoints(
   }
 
   // Check if this race is in the counting races
-  const countingRace = countingRaces.find(cr => 
-    raceSlug.includes(cr.raceSlug) || raceSlug === cr.raceId
-  );
+  // countingRaces can be strings (e.g., "tour-down-under_2026") or objects with raceSlug/raceId
+  const countingRace = countingRaces.find(cr => {
+    if (typeof cr === 'string') {
+      // String format: check if raceSlug matches or contains the counting race string
+      return raceSlug === cr || raceSlug.includes(cr.replace(/_\d{4}$/, '')) || cr.includes(raceSlug.replace(/_\d{4}$/, ''));
+    }
+    // Object format: check raceSlug or raceId
+    return raceSlug.includes(cr.raceSlug) || raceSlug === cr.raceId;
+  });
 
   if (!countingRace) {
     return false;
+  }
+
+  // If countingRace is a string, all stages count (no stage filtering)
+  if (typeof countingRace === 'string') {
+    return true;
   }
 
   // If no specific stages specified, all stages of this race count

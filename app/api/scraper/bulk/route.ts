@@ -67,7 +67,8 @@ export async function GET(request: NextRequest) {
 
   if (jobId) {
     // Redirect to new job endpoint
-    return Response.redirect(`/api/jobs/${jobId}`);
+    const baseUrl = request.nextUrl.origin;
+    return Response.redirect(new URL(`/api/jobs/${jobId}`, baseUrl));
   }
 
   return Response.json({

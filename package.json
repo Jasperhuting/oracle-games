@@ -54,6 +54,7 @@
     "firestore": "^1.1.6",
     "flag-icons": "^7.5.0",
     "framer-motion": "^12.23.24",
+    "fuse.js": "^7.1.0",
     "i18next": "^25.7.2",
     "i18next-icu": "^2.4.1",
     "next": "15.5.9",

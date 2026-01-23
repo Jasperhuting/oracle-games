@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import { type StartlistResult, type Team, type Rider } from './types';
-import process from "process";
+import { launchBrowser } from './browserHelper';
 
 
 export interface GetRidersOptions {
@@ -20,16 +20,30 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
   }
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/startlist`;
-  
-  const res = await fetch(url, { 
-    headers: { 'User-Agent': 'Mozilla/5.0 (Node Script)' } 
-  });
-  
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+
+  const browser = await launchBrowser();
+
+  let html: string;
+  try {
+    const page = await browser.newPage();
+
+    // Set viewport and user agent
+    await page.setViewport({ width: 1920, height: 1080 });
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    console.log(`[getRiders] Navigating to: ${url}`);
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
+
+    // Wait for the page content to load
+    await page.waitForSelector('.startlist_v4', { timeout: 30000 });
+
+    html = await page.content();
+  } finally {
+    await browser.close();
   }
-  
-  const html = await res.text();
   const $ = cheerio.load(html);
 
   const riders: Team[] = [];
