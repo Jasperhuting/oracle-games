@@ -74,7 +74,7 @@ export interface AuctioneerConfig {
   maxMinimumBid?: number;           // Optional cap on minimum bid (e.g., 3000 - even if rider is worth 4921, minimum bid is capped at 3000)
   allowSharedRiders?: boolean;      // Allow multiple users to buy the same rider (default: false)
   maxOwnersPerRider?: number;       // Maximum number of users who can own the same rider (only applies if allowSharedRiders is true, default: unlimited)
-  countingRaces?: CountingRace[];   // Specific races that count for points
+  countingRaces?: (string | CountingRace)[];   // Specific races that count for points (can be strings like "tour-down-under_2026" or CountingRace objects)
   countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])  
 }
 

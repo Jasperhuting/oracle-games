@@ -143,6 +143,9 @@ export interface StageRider {
   uciPoints: string;
   points: string;
   qualificationTime?: number;
+  // Add missing fields for calculate-points compatibility
+  name?: string;
+  nameID?: string;
 }
 
 export interface TTTTeamResult {
@@ -204,4 +207,31 @@ export interface Country {
     flag_4x3: string,
     iso: boolean,
     name: string;
+}
+
+export interface RiderResult {
+  date: string;
+  result?: string;
+  position?: number;
+  flag?: string;
+  race: string;
+  raceUrl: string;
+  distance?: string;
+  pcsPoints?: number;
+  uciPoints?: number;
+  stageNumber?: string;
+  stageName?: string;
+  isMainRace?: boolean;
+}
+
+export interface RiderSeasonData {
+  nameID: string;
+  name: string;
+  year: number;
+  results: RiderResult[];
+  totalPcsPoints: number;
+  totalUciPoints: number;
+  totalDistance: number;
+  totalDays: number;
+  scrapedAt: string;
 }

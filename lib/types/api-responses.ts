@@ -12,7 +12,8 @@ import {
   ClientGameRule,
   GameStatus,
   GameType,
-  GameConfig
+  GameConfig,
+  PlayerTeam
 } from './games';
 import { User } from './user';
 import { Team } from '../scraper/types';
@@ -148,6 +149,11 @@ export interface ActivityLogsResponse {
 // GET /api/getRankings
 export interface RankingsResponse {
   riders: Ranking[];
+  pagination: PaginationInfo;
+}
+
+export interface PlayerTeamResponse {
+  riders: PlayerTeam[];
   pagination: PaginationInfo;
 }
 

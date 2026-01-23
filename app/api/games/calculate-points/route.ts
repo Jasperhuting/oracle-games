@@ -1,18 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { getRiderData } from '@/lib/firebase/rider-scraper-service';
+import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { 
-  calculateStagePoints, 
+import type { Game, Rider, Team, GameParticipant } from '@/lib/types';
+import {
+  calculateStagePoints,
   calculateMountainPoints,
   calculateSprintPoints,
   calculateTeamPoints,
   calculateCombativityBonus,
   getGCMultiplier,
   getClassificationMultiplier,
-  shouldCountForPoints 
+  getPointsSystem,
+  shouldCountForPoints
 } from '@/lib/utils/pointsCalculation';
-import { Game, AuctioneerConfig, CountingRace } from '@/lib/types/games';
+import { Game as GameType, AuctioneerConfig, CountingRace } from '@/lib/types/games';
 import { ClassificationRider, StageRider } from '@/lib/scraper/types';
+import { scrapeRidersWithPoints } from '@/lib/firebase/rider-points-service';
+import { validateStageResult, generateDataHash } from '@/lib/validation/scraper-validation';
+import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
 
 interface StageResult {
   nameID?: string;
@@ -45,24 +51,55 @@ export async function POST(request: NextRequest) {
 
     const db = getServerFirebase();
 
-    console.log(`[CALCULATE_POINTS] Starting points calculation for ${raceSlug} ${stage === 'tour-gc' ? 'tour GC' : `stage ${stage}`}`);
+    // Extract race name without year suffix for doc ID lookup
+    // raceSlug can be 'tour-down-under_2026' or 'tour-down-under'
+    const raceName = raceSlug.replace(/_\d{4}$/, '');
+    
+    // Convert year to number for consistency
+    const yearNum = typeof year === 'string' ? parseInt(year) : year;
+
+    console.log(`[CALCULATE_POINTS] Starting points calculation for ${raceSlug} (raceName: ${raceName}) ${stage === 'tour-gc' ? 'tour GC' : `stage ${stage}`}`);
 
     // Fetch the stage result from scraper-data collection
     // For single-day races, stage will be 'result', for multi-stage races it will be a number
     // For prologue (stage 0), use 'prologue' instead of 'stage-0'
     // For tour GC, use 'tour-gc'
+    // Note: doc IDs use raceName (without year suffix) + year, e.g., 'tour-down-under-2026-prologue'
     let docId: string;
     if (stage === 'result') {
-      docId = `${raceSlug}-${year}-result`;
+      docId = `${raceName}-${year}-result`;
     } else if (stage === 'tour-gc') {
-      docId = `${raceSlug}-${year}-tour-gc`;
+      docId = `${raceName}-${year}-tour-gc`;
     } else if (stage === 0) {
-      docId = `${raceSlug}-${year}-prologue`;
+      docId = `${raceName}-${year}-prologue`;
     } else {
-      docId = `${raceSlug}-${year}-stage-${stage}`;
+      docId = `${raceName}-${year}-stage-${stage}`;
     }
     
     const stageDocRef = db.collection('scraper-data').doc(docId);
+    
+    // Check if this stage was already processed to prevent duplicate points
+    const existingStageDoc = await stageDocRef.get();
+    if (existingStageDoc.exists) {
+      const existingData = existingStageDoc.data();
+      const lastUpdated = existingData?.updatedAt;
+      const lastUpdatedTime = lastUpdated ? new Date(lastUpdated).getTime() : 0;
+      const currentTime = new Date().getTime();
+      
+      // Only process if data was updated more than 5 minutes ago, or if we're in development
+      const timeDiffMinutes = (currentTime - lastUpdatedTime) / (1000 * 60);
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      if (timeDiffMinutes < 5 && !isDevelopment) {
+        console.log(`[CALCULATE_POINTS] Stage ${docId} was recently processed (${Math.round(timeDiffMinutes)} minutes ago). Skipping to prevent duplicate points.`);
+        return NextResponse.json({
+          success: true,
+          message: 'Stage recently processed, skipping to prevent duplicates',
+          skipped: true,
+        });
+      }
+    }
+    
     const stageDoc = await stageDocRef.get();
 
     if (!stageDoc.exists) {
@@ -73,21 +110,93 @@ export async function POST(request: NextRequest) {
     }
 
     const stageData = stageDoc.data();
-    
+
     if (!stageData) {
       return NextResponse.json(
         { error: 'Stage data is empty' },
         { status: 404 }
       );
     }
-    
+
+    // Track start time for duration logging
+    const startTime = Date.now();
+
+    // Generate hash for idempotency check
+    const inputDataHash = generateDataHash(stageData as any);
+
+    // Check for existing calculation with same hash (idempotency)
+    const existingCalcSnapshot = await db.collection('pointsCalculationLogs')
+      .where('raceSlug', '==', raceName)
+      .where('stage', '==', stage)
+      .where('year', '==', yearNum)
+      .where('inputDataHash', '==', inputDataHash)
+      .where('status', '==', 'success')
+      .limit(1)
+      .get();
+
+    if (!existingCalcSnapshot.empty) {
+      const existingCalc = existingCalcSnapshot.docs[0].data();
+      console.log(`[CALCULATE_POINTS] Idempotency check: Already processed with same data hash ${inputDataHash}`);
+      return NextResponse.json({
+        success: true,
+        message: 'Points already calculated for this exact data',
+        skipped: true,
+        idempotent: true,
+        previousCalculation: {
+          calculatedAt: existingCalc.calculatedAt,
+          totalPointsAwarded: existingCalc.totalPointsAwarded,
+          gamesAffected: existingCalc.gamesAffected?.length || 0,
+        },
+      });
+    }
+
+    // Validate stage data before calculation
+    const validationResult = validateStageResult(stageData as any);
+
+    if (!validationResult.valid) {
+      console.error(`[CALCULATE_POINTS] Validation failed for ${docId}:`, validationResult.errors);
+
+      // Log the failed calculation attempt
+      await db.collection('pointsCalculationLogs').add({
+        raceSlug: raceName,
+        stage,
+        year: yearNum,
+        calculatedAt: new Date(),
+        inputDataHash,
+        gamesAffected: [],
+        totalPointsAwarded: 0,
+        status: 'failed',
+        errors: validationResult.errors.map(e => e.message),
+        validationResult: {
+          valid: false,
+          errorCount: validationResult.errors.length,
+          warningCount: validationResult.warnings.length,
+        },
+        duration: Date.now() - startTime,
+      });
+
+      return NextResponse.json(
+        {
+          error: 'Stage data validation failed',
+          validationErrors: validationResult.errors,
+          validationWarnings: validationResult.warnings,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Log validation warnings if any
+    if (validationResult.warnings.length > 0) {
+      console.warn(`[CALCULATE_POINTS] Validation warnings for ${docId}:`, validationResult.warnings);
+    }
+
     const stageResults: StageResult[] = stageData.stageResults ? 
       (typeof stageData.stageResults === 'string' ? 
         (() => {
           try {
             return JSON.parse(stageData.stageResults);
           } catch (e) {
-            console.error(`[CALCULATE_POINTS] Error parsing stageResults: ${e.message}`);
+            console.error(`[CALCULATE_POINTS] Error parsing stageResults: ${e?.message}`);
             console.error(`[CALCULATE_POINTS] Raw stageResults:`, stageData.stageResults.substring(0, 200));
             return [];
           }
@@ -100,7 +209,7 @@ export async function POST(request: NextRequest) {
           try {
             return JSON.parse(stageData.generalClassification);
           } catch (e) {
-            console.error(`[CALCULATE_POINTS] Error parsing generalClassification: ${e.message}`);
+            console.error(`[CALCULATE_POINTS] Error parsing generalClassification: ${e?.message}`);
             return [];
           }
         })() : 
@@ -155,7 +264,9 @@ export async function POST(request: NextRequest) {
         const config = game.config as AuctioneerConfig;
 
         // Check if this race/stage counts for this game
-        if (!config || !shouldCountForPoints(raceSlug, stage, config.countingRaces)) {
+        // For season games, all races should count
+        const isSeasonGame = game.raceType === 'season';
+        if (!isSeasonGame && (!config || !shouldCountForPoints(raceSlug, stage, config.countingRaces))) {
           console.log(`[CALCULATE_POINTS] Game ${game.name} - race/stage does not count, skipping`);
           continue;
         }
@@ -166,12 +277,18 @@ export async function POST(request: NextRequest) {
         const useDirectPcsPoints = game.raceType === 'season';
 
         // Get race configuration for multipliers
-        const raceConfig = config?.countingRaces?.find(cr => 
-          raceSlug.includes(cr.raceSlug) || raceSlug === cr.raceId
-        );
-        const mountainMultiplier = raceConfig?.mountainPointsMultiplier || 4;
-        const sprintMultiplier = raceConfig?.sprintPointsMultiplier || 2;
-        const restDays = raceConfig?.restDays || [];
+        // countingRaces can be strings or objects
+        const raceConfig = config?.countingRaces?.find(cr => {
+          if (typeof cr === 'string') {
+            return raceSlug === cr || raceSlug.includes(cr.replace(/_\d{4}$/, '')) || cr.includes(raceSlug.replace(/_\d{4}$/, ''));
+          }
+          return raceSlug.includes(cr.raceSlug) || raceSlug === cr.raceId;
+        });
+        // If raceConfig is a string, use default multipliers
+        const raceConfigObj = typeof raceConfig === 'string' ? null : raceConfig;
+        const mountainMultiplier = raceConfigObj?.mountainPointsMultiplier || 4;
+        const sprintMultiplier = raceConfigObj?.sprintPointsMultiplier || 2;
+        const restDays = raceConfigObj?.restDays || [];
 
         // Determine total stages (TODO: get from race config or data)
         const totalStages = 21; // Default for Grand Tours
@@ -271,7 +388,7 @@ export async function POST(request: NextRequest) {
                 let stagePoints: number;
                 
                 if (useDirectPcsPoints) {
-                  // For season games, use PCS points directly from the 'points' field
+                  // For season games, use PCS points from current stage only (not total)
                   const pcsPoints = typeof riderResult.points === 'number' ? riderResult.points :
                     (typeof riderResult.points === 'string' && riderResult.points !== '-' ? parseInt(riderResult.points) : 0);
                   stagePoints = pcsPoints;
@@ -378,16 +495,14 @@ export async function POST(request: NextRequest) {
 
             // Update PlayerTeam if rider scored any points
             if (riderTotalPoints > 0) {
-              const currentPoints = teamData.pointsScored || 0;
+              // For season games, replace points instead of accumulating
+              const newTotalPoints = riderTotalPoints;
               const currentStages = teamData.stagesParticipated || 0;
 
               // Get existing race points data
+              // Use raceName (without year suffix) as the key for consistency
               const racePoints = teamData.racePoints || {};
-              const currentRaceData = racePoints[raceSlug] || { totalPoints: 0, stagePoints: {} };
-
-              // Check if this stage was already processed (for re-scraping)
-              const existingStagePoints = currentRaceData.stagePoints?.[stage.toString()]?.total || 0;
-              const isRescrape = existingStagePoints > 0;
+              const currentRaceData = racePoints[raceName] || { totalPoints: 0, stagePoints: {} };
 
               // Add this stage's points breakdown (overwrites existing if re-scraping)
               stagePointsBreakdown.total = riderTotalPoints;
@@ -399,22 +514,20 @@ export async function POST(request: NextRequest) {
                 raceTotalPoints += (stageData as any).total || 0;
               }
               currentRaceData.totalPoints = raceTotalPoints;
-              racePoints[raceSlug] = currentRaceData;
+              racePoints[raceName] = currentRaceData;
 
-              // Calculate net points change (new - old)
-              const pointsDelta = riderTotalPoints - existingStagePoints;
-
+              // Update PlayerTeam with new points (replace, don't accumulate)
               await teamDoc.ref.update({
-                pointsScored: currentPoints + pointsDelta,
-                stagesParticipated: isRescrape ? currentStages : currentStages + 1,
+                pointsScored: newTotalPoints,
+                stagesParticipated: currentStages + 1,
                 racePoints: racePoints,
               });
 
-              // Track the delta for participant total update
-              participantTotalPoints += pointsDelta;
+              // Track points for participant update
+              participantTotalPoints += newTotalPoints;
               ridersScored.push(teamData.riderName);
 
-              console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Updated race points for ${raceSlug} stage ${stage}: ${isRescrape ? 'rescrape ' : ''}${pointsDelta >= 0 ? '+' : ''}${pointsDelta} (race total: ${currentRaceData.totalPoints})`);
+              console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Updated race points for ${raceName} stage ${stage}: ${newTotalPoints} pts (race total: ${currentRaceData.totalPoints})`);
             }
           }
 
@@ -434,14 +547,23 @@ export async function POST(request: NextRequest) {
           const participantDoc = participantsSnapshot.docs.find(doc => doc.data().userId === userId);
 
           if (participantDoc && data.pointsDelta !== 0) {
-            const currentTotal = participantDoc.data().totalPoints || 0;
-            const newTotal = currentTotal + data.pointsDelta;
+            // For season games, recalculate total from all riders instead of adding delta
+            const teamSnapshot = await db.collection('playerTeams')
+              .where('gameId', '==', game.id)
+              .where('userId', '==', userId)
+              .get();
+            
+            let newTotal = 0;
+            for (const teamDoc of teamSnapshot.docs) {
+              const teamData = teamDoc.data();
+              newTotal += teamData.pointsScored || 0;
+            }
 
             await participantDoc.ref.update({
               totalPoints: newTotal,
             });
 
-            console.log(`[CALCULATE_POINTS] Updated ${participantDoc.data().playername}: ${data.pointsDelta >= 0 ? '+' : ''}${data.pointsDelta} points (total: ${newTotal})`);
+            console.log(`[CALCULATE_POINTS] Updated ${participantDoc.data().playername}: ${newTotal} total points`);
 
             results.participantsUpdated++;
             results.pointsAwarded += data.pointsDelta;
@@ -462,6 +584,34 @@ export async function POST(request: NextRequest) {
 
     console.log(`[CALCULATE_POINTS] Completed: ${results.gamesProcessed} games, ${results.participantsUpdated} participants, ${results.pointsAwarded} points awarded`);
 
+    // Log successful calculation to pointsCalculationLogs
+    const gamesAffectedIds = gamesSnapshot.docs
+      .filter(doc => {
+        const game = doc.data() as Game;
+        const config = game.config as AuctioneerConfig;
+        const isSeasonGame = game.raceType === 'season';
+        return isSeasonGame || shouldCountForPoints(raceSlug, stage, config?.countingRaces);
+      })
+      .map(doc => doc.id);
+
+    await db.collection('pointsCalculationLogs').add({
+      raceSlug: raceName,
+      stage,
+      year: yearNum,
+      calculatedAt: new Date(),
+      inputDataHash,
+      gamesAffected: gamesAffectedIds,
+      totalPointsAwarded: results.pointsAwarded,
+      status: results.errors.length > 0 ? 'partial' : 'success',
+      errors: results.errors,
+      validationResult: {
+        valid: validationResult.valid,
+        errorCount: validationResult.errors.length,
+        warningCount: validationResult.warnings.length,
+      },
+      duration: Date.now() - startTime,
+    });
+
     // Update season points for all riders who scored
     console.log(`[CALCULATE_POINTS] Updating season points for ${year}`);
     try {
@@ -478,6 +628,19 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('[CALCULATE_POINTS] Error updating Marginal Gains games:', error);
       // Don't fail the whole request if Marginal Gains update fails
+    }
+
+    // Trigger rider scraping for detailed points data
+    console.log(`[CALCULATE_POINTS] Triggering rider scraping for detailed points data`);
+    try {
+      // Run this in the background to avoid blocking the response
+      const yearNum = typeof year === 'string' ? parseInt(year) : year;
+      scrapeRidersWithPoints(yearNum).catch(error => {
+        console.error('[CALCULATE_POINTS] Background rider scraping error:', error);
+      });
+    } catch (error) {
+      console.error('[CALCULATE_POINTS] Error triggering rider scraping:', error);
+      // Don't fail the whole request if rider scraping fails
     }
 
     // Log the activity
@@ -502,6 +665,34 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[CALCULATE_POINTS] Error:', error);
+
+    // Send admin notification for calculation error
+    if (isNotificationsEnabled()) {
+      try {
+        // Extract race/year/stage from request body if possible
+        let race = 'unknown';
+        let year = 0;
+        let stage: number | string | undefined;
+        try {
+          const body = await request.clone().json();
+          race = body.raceSlug || 'unknown';
+          year = body.year || 0;
+          stage = body.stage;
+        } catch {
+          // Ignore JSON parse errors
+        }
+
+        await sendAdminNotification('calculation_error', {
+          race,
+          year,
+          stage,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      } catch (notifyError) {
+        console.error('[CALCULATE_POINTS] Failed to send admin notification:', notifyError);
+      }
+    }
+
     return NextResponse.json(
       { error: 'Failed to calculate points', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -581,8 +772,12 @@ async function updateSeasonPoints(
 
   console.log(`[SEASON_POINTS] isSingleDayRace: ${isSingleDayRace}, isTourGC: ${isTourGC}, stageKey: ${stageKey}, stageResults count: ${stageResults.length}, GC count: ${generalClassification.length}`);
 
-  // Extract race name from slug (e.g., "tour-de-france_2025" -> "Tour de France")
-  const raceName = raceSlug.replace(/_\d{4}$/, '').split('-').map((word: string) =>
+  // Extract race key (without year suffix) for consistent storage
+  // raceSlug can be 'tour-down-under_2026' or 'tour-down-under'
+  const raceKey = raceSlug.replace(/_\d{4}$/, '');
+
+  // Extract pretty race name from slug (e.g., "tour-de-france" -> "Tour de France")
+  const raceName = raceKey.split('-').map((word: string) =>
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ');
 
@@ -639,6 +834,12 @@ async function updateSeasonPoints(
       const riderNameId = riderResult.nameID || riderResult.shortName?.toLowerCase().replace(/\s+/g, '-');
       const riderName = riderResult.shortName || riderResult.nameID || riderNameId;
 
+      // Skip riders with invalid names (empty, just "-", or undefined)
+      if (!riderNameId || !riderName || riderNameId === '-' || riderName === '-' || riderNameId.trim() === '' || riderName.trim() === '') {
+        console.log(`[SEASON_POINTS] Skipping rider with invalid name: nameID="${riderNameId}", name="${riderName}"`);
+        continue;
+      }
+
       if (finishPosition && finishPosition > 0 && riderNameId && pntPoints > 0) {
         const entry = getOrCreateRider(riderNameId, riderName || '');
         entry.finishPosition = finishPosition;
@@ -658,6 +859,12 @@ async function updateSeasonPoints(
         const gcName = gcResult.shortName || gcResult.rider || gcNameId;
         
         console.log(`[SEASON_POINTS] Processing GC rider: ${gcName} (nameID: ${gcNameId}), Rank: ${gcResult.place}`);
+        
+        // Skip riders with invalid names (empty, just "-", or undefined)
+        if (!gcNameId || !gcName || gcNameId === '-' || gcName === '-' || gcNameId.trim() === '' || gcName.trim() === '') {
+          console.log(`[SEASON_POINTS] Skipping GC rider with invalid name: nameID="${gcNameId}", name="${gcName}"`);
+          continue;
+        }
         
         if (gcNameId) {
           // For Grand Tours, use TOP_20_POINTS system
@@ -693,6 +900,12 @@ async function updateSeasonPoints(
         const pointsNameId = pointsResult.rider || pointsResult.shortName?.toLowerCase().replace(/\s+/g, '-');
         const pointsName = pointsResult.shortName || pointsResult.rider || pointsNameId;
         
+        // Skip riders with invalid names (empty, just "-", or undefined)
+        if (!pointsNameId || !pointsName || pointsNameId === '-' || pointsName === '-' || pointsNameId.trim() === '' || pointsName.trim() === '') {
+          console.log(`[SEASON_POINTS] Skipping points classification rider with invalid name: nameID="${pointsNameId}", name="${pointsName}"`);
+          continue;
+        }
+        
         if (pointsNameId) {
           const pointsClassPoints = calculateStagePoints(pointsResult.place);
           if (pointsClassPoints > 0) {
@@ -712,6 +925,12 @@ async function updateSeasonPoints(
         const mountainsNameId = mountainsResult.rider || mountainsResult.shortName?.toLowerCase().replace(/\s+/g, '-');
         const mountainsName = mountainsResult.shortName || mountainsResult.rider || mountainsNameId;
         
+        // Skip riders with invalid names (empty, just "-", or undefined)
+        if (!mountainsNameId || !mountainsName || mountainsNameId === '-' || mountainsName === '-' || mountainsNameId.trim() === '' || mountainsName.trim() === '') {
+          console.log(`[SEASON_POINTS] Skipping mountains classification rider with invalid name: nameID="${mountainsNameId}", name="${mountainsName}"`);
+          continue;
+        }
+        
         if (mountainsNameId) {
           const mountainsClassPoints = calculateStagePoints(mountainsResult.place);
           if (mountainsClassPoints > 0) {
@@ -730,6 +949,12 @@ async function updateSeasonPoints(
       if (youthResult.place) {
         const youthNameId = youthResult.rider || youthResult.shortName?.toLowerCase().replace(/\s+/g, '-');
         const youthName = youthResult.shortName || youthResult.rider || youthNameId;
+        
+        // Skip riders with invalid names (empty, just "-", or undefined)
+        if (!youthNameId || !youthName || youthNameId === '-' || youthName === '-' || youthNameId.trim() === '' || youthName.trim() === '') {
+          console.log(`[SEASON_POINTS] Skipping youth classification rider with invalid name: nameID="${youthNameId}", name="${youthName}"`);
+          continue;
+        }
         
         if (youthNameId) {
           const youthClassPoints = calculateStagePoints(youthResult.place);
@@ -774,8 +999,15 @@ async function updateSeasonPoints(
       if (seasonPointsDoc.exists) {
         // Update existing document
         const existingData = seasonPointsDoc.data();
-        const races = existingData?.races || {};
-        const raceData = races[raceSlug] || { raceName, totalPoints: 0, stages: {} };
+        
+        // Fix: Ensure races is always an object, not a number or other type
+        let races = existingData?.races || {};
+        if (typeof races !== 'object' || Array.isArray(races)) {
+          console.log(`[SEASON_POINTS] Invalid races data for ${riderNameId}, resetting to object:`, races);
+          races = {};
+        }
+        
+        const raceData = races[raceKey] || { raceName, totalPoints: 0, stages: {} };
 
         // Add this stage's points (stageKey is already defined above)
         // Filter out undefined values to avoid Firestore errors
@@ -796,7 +1028,7 @@ async function updateSeasonPoints(
         }
         raceData.totalPoints = raceTotalPoints;
 
-        races[raceSlug] = raceData;
+        races[raceKey] = raceData;
 
         // Recalculate season total
         let seasonTotalPoints = 0;
@@ -829,7 +1061,7 @@ async function updateSeasonPoints(
           year: yearNum,
           totalPoints: pointsData.total,
           races: {
-            [raceSlug]: {
+            [raceKey]: {
               raceName,
               totalPoints: pointsData.total,
               stages: {

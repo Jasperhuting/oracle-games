@@ -9,9 +9,20 @@ export function createHelpers($: CheerioAPI) {
     // Basic getters
     getPlace: (el: DomElement) => {
       // Try different column positions for place/rank
-      const place1 = Number($(el).find('td').eq(0).text().trim());
-      const place2 = Number($(el).find('td[data-code="rnk"]').text().trim());
-      return place1 || place2 || 0;
+      const text1 = $(el).find('td').eq(0).text().trim();
+      const text2 = $(el).find('td[data-code="rnk"]').text().trim();
+
+      // Parse place from first column
+      const place1 = text1 ? Number(text1) : NaN;
+      // Parse place from data-code="rnk" column
+      const place2 = text2 ? Number(text2) : NaN;
+
+      // Return the first valid number (not NaN), or -1 if both fail
+      // Using -1 instead of 0 to indicate "no valid position found"
+      // since 0 could be a valid position (e.g., prologue winner or edge case)
+      if (!isNaN(place1) && place1 >= 0) return place1;
+      if (!isNaN(place2) && place2 >= 0) return place2;
+      return -1;
     },
     getGc: (el: DomElement) => $(el).find('td.fs11').eq(0).text().trim(),
     breakAway: (el: DomElement) => Boolean($(el).find('td.ridername > .svg_shield').length),
@@ -22,24 +33,57 @@ export function createHelpers($: CheerioAPI) {
       const bib2 = $(el).find('td[data-code="bib"]').text().trim();
       return bib1 || bib2 || '';
     },
-    getCountry: (el: DomElement) => $(el).find('td.ridername > .flag').attr('class')?.split(' ')[1] || '',
-    getLastName: (el: DomElement) => $(el).find('td.ridername > a span.uppercase').text().trim(),
-    
+    getCountry: (el: DomElement) => {
+      // Try multiple selectors for country flag
+      const flag1 = $(el).find('td.ridername > .flag').attr('class')?.split(' ')[1];
+      const flag2 = $(el).find('td.ridername .flag').attr('class')?.split(' ')[1];
+      const flag3 = $(el).find('.flag').attr('class')?.split(' ')[1];
+      return flag1 || flag2 || flag3 || '';
+    },
+    getLastName: (el: DomElement) => {
+      // Try multiple selectors for last name
+      // 1. Inside div.cont (newer PCS structure)
+      const lastName1 = $(el).find('td.ridername .cont a span.uppercase').text().trim();
+      // 2. Direct in ridername cell (older structure)
+      const lastName2 = $(el).find('td.ridername a span.uppercase').text().trim();
+      // 3. Any uppercase span in a link
+      const lastName3 = $(el).find('a span.uppercase').text().trim();
+      // 4. Try data-code attribute
+      const lastName4 = $(el).find('td[data-code="ridernamelink"] span.uppercase').text().trim();
+      return lastName1 || lastName2 || lastName3 || lastName4 || '-';
+    },
+
     getFirstName: (el: DomElement) => {
-      const fullName = $(el).find('td.ridername > a').text().trim();
-      const lastName = $(el).find('td.ridername > a span.uppercase').text().trim();
-      return fullName.replace(lastName, '').trim() || '';
+      // Try multiple selectors for first name
+      // First, get the full link text
+      const linkText1 = $(el).find('td.ridername .cont a').text().trim();
+      const linkText2 = $(el).find('td.ridername a').text().trim();
+      const linkText3 = $(el).find('td[data-code="ridernamelink"] a').text().trim();
+      const linkText = linkText1 || linkText2 || linkText3 || '';
+
+      // Get the last name to extract first name
+      const lastName1 = $(el).find('td.ridername .cont a span.uppercase').text().trim();
+      const lastName2 = $(el).find('td.ridername a span.uppercase').text().trim();
+      const lastName3 = $(el).find('a span.uppercase').text().trim();
+      const lastName = lastName1 || lastName2 || lastName3 || '';
+
+      const firstName = linkText.replace(lastName, '').trim();
+      return firstName || '-';
     },
-    
-    getTeam: (el: DomElement) => {
-      // Find team in different column positions
-      const team1 = $(el).find('td.cu600').text().trim();
-      const team2 = $(el).find('td[data-code="teamnamelink"]').text().trim();
-      return team1 || team2 || '';
+
+    getRiderShortName: (el: DomElement) => {
+      // Try multiple selectors for rider href/shortname
+      const href1 = $(el).find('td.ridername .cont a').attr('href');
+      const href2 = $(el).find('td.ridername a').attr('href');
+      const href3 = $(el).find('td[data-code="ridernamelink"] a').attr('href');
+      const href = href1 || href2 || href3 || '';
+
+      // Extract rider slug from href (e.g., "/rider/tadej-pogacar" -> "tadej-pogacar")
+      const parts = href.split('/').filter(Boolean);
+      // Usually the pattern is /rider/name or just /name
+      const shortName = parts.find(p => p !== 'rider') || parts[parts.length - 1] || '-';
+      return shortName;
     },
-    
-    getTeamShortName: (el: DomElement) => $(el).find('td.cu600 > a').attr('href')?.split('/')[1] || '',
-    getRiderShortName: (el: DomElement) => $(el).find('td.ridername > a').attr('href')?.split('/')[1] || '',
     getUciPoints: (el: DomElement) => $(el).find('td.uci_pnt').text().trim(),
     // Get Pnt column - this is the race-specific points (15, 10, 7, 4, 2, 1 etc)
     // The column right after UCI points column
@@ -50,15 +94,27 @@ export function createHelpers($: CheerioAPI) {
       const pnt = $(el).find('td.pnt').text().trim();
       if (pnt && pnt !== '-' && pnt !== '') return pnt;
 
-      // Fallback: find by position - Pnt is usually the column after UCI points
+      // Try to find by position (Pnt column is usually right after UCI points)
       const uciCell = $(el).find('td.uci_pnt');
-      if (uciCell.length) {
-        const nextCell = uciCell.next('td');
-        const pntValue = nextCell.text().trim();
-        if (pntValue && pntValue !== '-' && pntValue !== '') return pntValue;
+      if (uciCell.length > 0) {
+        const pntCell = uciCell.next('td.pnt');
+        if (pntCell.length > 0) {
+          const pntText = pntCell.text().trim();
+          if (pntText && pntText !== '-' && pntText !== '') return pntText;
+        }
       }
 
       return '-';
+    },
+    getTeam: (el: DomElement) => {
+      // Find team in different column positions/selectors
+      const team1 = $(el).find('td.cu600').text().trim();
+      const team2 = $(el).find('td[data-code="teamnamelink"]').text().trim();
+      const team3 = $(el).find('td.team a').text().trim();
+      const team4 = $(el).find('td.team').text().trim();
+      // Sometimes team is in a span with specific class
+      const team5 = $(el).find('td span.teamname').text().trim();
+      return team1 || team2 || team3 || team4 || team5 || '';
     },
     getQualificationTime: (el: DomElement) => $(el).find('td.cu600 > .blue').text().trim(),
     getClass: (el: DomElement) => $(el).find('td').eq(4).text().trim(),

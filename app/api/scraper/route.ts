@@ -3,6 +3,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { getRiders, getStageResult, getRaceResult, getTourGCResult } from '@/lib/scraper';
 import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -49,21 +50,28 @@ export async function POST(request: NextRequest) {
 
     // Log scrape start
     try {
-      await db.collection('activityLogs').add({
+      // Build activity log entry, excluding undefined values
+      const activityLogEntry: Record<string, unknown> = {
         action: 'SCRAPE_STARTED',
         userId: userId || 'unknown',
-        userEmail: userEmail || null,
-        userName: userName || null,
         details: {
           scrapeType: type,
           race,
           year: Number(year),
-          stage: stage || null,
         },
         timestamp: Timestamp.now(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
-      });
+      };
+
+      // Only add optional fields if they have values
+      if (userEmail) activityLogEntry.userEmail = userEmail;
+      if (userName) activityLogEntry.userName = userName;
+      if (stage !== undefined && stage !== null && stage !== '') {
+        (activityLogEntry.details as Record<string, unknown>).stage = stage;
+      }
+
+      await db.collection('activityLogs').add(activityLogEntry);
       console.log('[SCRAPER] Activity log entry created successfully');
     } catch (logError) {
       console.error('[SCRAPER] Failed to write activity log:', logError);
@@ -134,12 +142,10 @@ export async function POST(request: NextRequest) {
       const executionTimeSec = executionTimeMs / 1000;
       const estimatedCostEur = executionTimeSec * 0.00005 * 0.92;
 
-      // Log completion
-      await db.collection('activityLogs').add({
+      // Log completion - build entry without undefined values
+      const completionLogEntry: Record<string, unknown> = {
         action: 'SCRAPE_COMPLETED',
         userId: userId || 'unknown',
-        userEmail: userEmail || null,
-        userName: userName || null,
         details: {
           scrapeType: type,
           race,
@@ -152,7 +158,10 @@ export async function POST(request: NextRequest) {
           estimatedCostEur: Math.round(estimatedCostEur * 100000) / 100000,
         },
         timestamp: Timestamp.now(),
-      });
+      };
+      if (userEmail) completionLogEntry.userEmail = userEmail;
+      if (userName) completionLogEntry.userName = userName;
+      await db.collection('activityLogs').add(completionLogEntry);
 
       return Response.json({
         success: true,
@@ -261,24 +270,27 @@ export async function POST(request: NextRequest) {
     const executionTimeSec = executionTimeMs / 1000;
     const estimatedCostEur = executionTimeSec * 0.00005 * 0.92;
 
-    // Log completion
-    await db.collection('activityLogs').add({
+    // Log completion - build entry without undefined values
+    const singleCompletionLog: Record<string, unknown> = {
       action: 'SCRAPE_COMPLETED',
       userId: userId || 'unknown',
-      userEmail: userEmail || undefined,
-      userName: userName || undefined,
       details: {
         scrapeType: type,
         race,
         year: Number(year),
-        stage: stage || null,
         dataCount,
         executionTimeMs,
         executionTimeSec: Math.round(executionTimeSec * 10) / 10,
         estimatedCostEur: Math.round(estimatedCostEur * 100000) / 100000,
       },
       timestamp: Timestamp.now(),
-    });
+    };
+    if (userEmail) singleCompletionLog.userEmail = userEmail;
+    if (userName) singleCompletionLog.userName = userName;
+    if (stage !== undefined && stage !== null && stage !== '') {
+      (singleCompletionLog.details as Record<string, unknown>).stage = stage;
+    }
+    await db.collection('activityLogs').add(singleCompletionLog);
 
     return Response.json({
       success: true,
@@ -312,8 +324,35 @@ export async function POST(request: NextRequest) {
     } catch {
       // Ignore logging errors
     }
-    
-    return Response.json({ 
+
+    // Send admin notification for scrape failure
+    if (isNotificationsEnabled()) {
+      try {
+        // Extract race/year/stage from request body if possible
+        let race = 'unknown';
+        let year = 0;
+        let stage: number | string | undefined;
+        try {
+          const body = await request.clone().json();
+          race = body.race || 'unknown';
+          year = body.year || 0;
+          stage = body.stage;
+        } catch {
+          // Ignore JSON parse errors
+        }
+
+        await sendAdminNotification('scrape_failed', {
+          race,
+          year,
+          stage,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      } catch (notifyError) {
+        console.error('[SCRAPER] Failed to send admin notification:', notifyError);
+      }
+    }
+
+    return Response.json({
       error: error instanceof Error ? error.message : 'Unknown scraping error',
       success: false,
     }, { status: 500 });
