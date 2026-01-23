@@ -144,6 +144,18 @@ export default function TeamsOverviewPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
+
+        {/* Temp warning */}
+
+        <span className="bg-yellow-100 text-black p-2 text-sm italic block my-2">
+          <span className="font-bold">Let op!</span>
+          <br />
+          Mijn excuses, de standen kloppen momenteel nog niet. Ik ben druk bezig om dit correct te maken, maar dit kost helaas meer tijd dan ik op dit moment heb.
+          <br />
+          Bedankt voor jullie begrip!
+        </span>
+
+
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
