@@ -42,6 +42,10 @@ export async function GET(
     const riders = [];
     for (const doc of teamSnapshot.docs) {
       const data = doc.data();
+
+      // Use new totalPoints field with fallback to legacy pointsScored
+      const riderPoints = data.totalPoints ?? data.pointsScored ?? 0;
+
       riders.push({
         id: doc.id,
         nameId: data.riderNameId,
@@ -49,9 +53,15 @@ export async function GET(
         team: data.riderTeam,
         country: data.riderCountry,
         rank: data.riderRank || 0,
-        pointsScored: data.pointsScored || 0,
-        points: data.pointsScored || 0,
+        // LEGACY: pointsScored (kept for backwards compatibility)
+        pointsScored: riderPoints,
+        points: riderPoints,
+        // NEW: totalPoints as source of truth
+        totalPoints: riderPoints,
+        // LEGACY: racePoints (kept for backwards compatibility)
         racePoints: (data.racePoints && typeof data.racePoints === 'object' && !Array.isArray(data.racePoints)) ? data.racePoints : undefined,
+        // NEW: pointsBreakdown array
+        pointsBreakdown: data.pointsBreakdown || [],
         jerseyImage: data.jerseyImage,
         pricePaid: data.pricePaid,
         acquisitionType: data.acquisitionType,

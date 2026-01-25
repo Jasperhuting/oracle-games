@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Flag } from '@/components/Flag';
 import { AuctionTeamsRider as Rider, AuctionTeam as Team } from '@/lib/types/pages';
 import { useTranslation } from 'react-i18next';
+import { usePlayerTeams } from '@/contexts/PlayerTeamsContext';
+import { PlayerTeam } from '@/lib/types';
 
 export default function TeamsOverviewPage() {
   const params = useParams();
@@ -21,6 +23,16 @@ export default function TeamsOverviewPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'players' | 'cycling-teams'>('players');
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
+
+  const [gameRiders, setGameRiders] = useState<PlayerTeam[]>([]);
+
+  const { riders: allRiders, uniqueRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams();
+
+  useEffect(() => {
+    const gameRiders = allRiders.filter(r => r.gameId === gameId);
+    console.log(`[TeamsOverview] Found ${gameRiders.length} riders for game ${gameId}`);
+    setGameRiders(gameRiders);
+  }, [allRiders, gameId])
 
   const { t } = useTranslation();
 
@@ -362,11 +374,6 @@ export default function TeamsOverviewPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {team.rosterComplete && (
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                          Compleet
-                        </span>
-                      )}
                       <div className="text-gray-500">
                         <svg
                           className={`w-6 h-6 transition-transform ${

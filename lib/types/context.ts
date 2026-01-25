@@ -11,6 +11,7 @@ import { PlayerTeam } from './games';
 // Rankings Context
 export interface RankingsContextType {
   riders: Rider[];
+  uniqueRiders: Rider[];
   loading: boolean;
   error: string | null;
   refetch: (forceRefresh?: boolean) => Promise<void>;
@@ -19,6 +20,7 @@ export interface RankingsContextType {
 }
 export interface PlayerTeamsContextType {
   riders: PlayerTeam[];
+  uniqueRiders: PlayerTeam[];
   loading: boolean;
   error: string | null;
   refetch: (forceRefresh?: boolean) => Promise<void>;  

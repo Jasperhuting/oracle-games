@@ -1,19 +1,30 @@
 import { getServerFirebase } from '@/lib/firebase/server';
 
 /**
- * Script to fix corrupted team data in gameParticipants collection
- * Reconstructs team arrays from playerTeams collection
+ * @deprecated PHASE 3: This script is deprecated.
+ *
+ * This script previously reconstructed the gameParticipants.team[] array
+ * from playerTeams collection. Now that playerTeams is the single source of truth,
+ * this reconstruction is no longer needed.
+ *
+ * The team[] array in gameParticipants is being phased out.
+ * All team data should be read directly from playerTeams collection.
+ *
+ * This script now only scans for corrupted participants and logs them,
+ * but does NOT write to team[] anymore.
  */
 
 async function fixCorruptedTeamData() {
-  console.log('[FIX_CORRUPTED_TEAMS] Starting team data fix...');
-  
+  console.log('[FIX_CORRUPTED_TEAMS] DEPRECATED: This script no longer writes to team[]');
+  console.log('[FIX_CORRUPTED_TEAMS] playerTeams is now the source of truth');
+  console.log('[FIX_CORRUPTED_TEAMS] Starting scan for corrupted team data...');
+
   const db = getServerFirebase();
-  
+
   try {
-    // 1. Find all participants with corrupted team data
+    // 1. Find all participants with corrupted team data (for logging only)
     const allParticipantsSnapshot = await db.collection('gameParticipants').get();
-    
+
     const corruptedParticipants: Array<{
       id: string;
       gameId: string;
@@ -21,11 +32,11 @@ async function fixCorruptedTeamData() {
       playername: string;
       team: string;
     }> = [];
-    
+
     allParticipantsSnapshot.forEach(doc => {
       const data = doc.data();
       const team = data.team;
-      
+
       // Check if team is corrupted (contains "[object Object]" pattern)
       if (typeof team === 'string' && team.includes('[object Object]')) {
         corruptedParticipants.push({
@@ -37,101 +48,52 @@ async function fixCorruptedTeamData() {
         });
       }
     });
-    
+
     console.log(`[FIX_CORRUPTED_TEAMS] Found ${corruptedParticipants.length} participants with corrupted team data`);
-    
+
     if (corruptedParticipants.length === 0) {
       console.log('[FIX_CORRUPTED_TEAMS] No corrupted data found. All good!');
-      return;
+      return { total: 0, participants: [] };
     }
-    
-    // 2. For each corrupted participant, reconstruct team from playerTeams
-    let fixedCount = 0;
-    let errorCount = 0;
-    
+
+    // Log the corrupted participants (but don't fix - team[] is deprecated)
     for (const participant of corruptedParticipants) {
-      try {
-        console.log(`[FIX_CORRUPTED_TEAMS] Fixing participant: ${participant.playername} (${participant.userId})`);
-        
-        // Get playerTeams for this participant
-        const playerTeamsSnapshot = await db.collection('playerTeams')
-          .where('gameId', '==', participant.gameId)
-          .where('userId', '==', participant.userId)
-          .where('active', '==', true)
-          .get();
-        
-        if (playerTeamsSnapshot.empty) {
-          console.log(`[FIX_CORRUPTED_TEAMS] No playerTeams found for ${participant.playername}, setting team to empty array`);
-          await db.collection('gameParticipants').doc(participant.id).update({
-            team: []
-          });
-          fixedCount++;
-          continue;
-        }
-        
-        // Reconstruct team array from playerTeams
-        const reconstructedTeam = playerTeamsSnapshot.docs.map(doc => {
-          const teamData = doc.data();
-          return {
-            riderNameId: teamData.riderNameId,
-            riderName: teamData.riderName,
-            riderTeam: teamData.riderTeam,
-            riderCountry: teamData.riderCountry,
-            jerseyImage: teamData.jerseyImage,
-            acquiredAt: teamData.acquiredAt?.toDate?.()?.toISOString() || teamData.acquiredAt,
-            amount: teamData.pricePaid || 0,
-            acquisitionType: teamData.acquisitionType || 'auction',
-            active: teamData.active,
-            benched: teamData.benched,
-            pointsScored: teamData.pointsScored || 0,
-            stagesParticipated: teamData.stagesParticipated || 0
-          };
-        });
-        
-        console.log(`[FIX_CORRUPTED_TEAMS] Reconstructed team with ${reconstructedTeam.length} riders for ${participant.playername}`);
-        
-        // Update the participant with correct team data
-        await db.collection('gameParticipants').doc(participant.id).update({
-          team: reconstructedTeam
-        });
-        
-        fixedCount++;
-        
-      } catch (error) {
-        console.error(`[FIX_CORRUPTED_TEAMS] Error fixing participant ${participant.playername}:`, error);
-        errorCount++;
-      }
+      console.log(`[FIX_CORRUPTED_TEAMS] Corrupted: ${participant.playername} (game: ${participant.gameId})`);
+
+      // Verify playerTeams exists for this participant
+      const playerTeamsSnapshot = await db.collection('playerTeams')
+        .where('gameId', '==', participant.gameId)
+        .where('userId', '==', participant.userId)
+        .get();
+
+      console.log(`[FIX_CORRUPTED_TEAMS]   -> Has ${playerTeamsSnapshot.size} playerTeams (source of truth)`);
     }
-    
-    console.log(`[FIX_CORRUPTED_TEAMS] Fix complete: ${fixedCount} fixed, ${errorCount} errors`);
-    
-    // 3. Verify the fix by checking a few participants
-    console.log('[FIX_CORRUPTED_TEAMS] Verifying fix...');
-    const verificationSnapshot = await db.collection('gameParticipants')
-      .where('team', '!=', null)
-      .limit(5)
-      .get();
-    
-    verificationSnapshot.forEach(doc => {
-      const data = doc.data();
-      const team = data.team;
-      const isCorrupted = typeof team === 'string' && team.includes('[object Object]');
-      const isArray = Array.isArray(team);
-      
-      console.log(`[FIX_CORRUPTED_TEAMS] Verification - ${data.playername}: corrupted=${isCorrupted}, array=${isArray}, length=${isArray ? team.length : 'N/A'}`);
-    });
-    
+
+    console.log('[FIX_CORRUPTED_TEAMS] Scan complete');
+    console.log('[FIX_CORRUPTED_TEAMS] NOTE: team[] is deprecated, use playerTeams collection instead');
+
+    return {
+      total: corruptedParticipants.length,
+      participants: corruptedParticipants.map(p => ({
+        id: p.id,
+        playername: p.playername,
+        gameId: p.gameId,
+      })),
+      note: 'DEPRECATED: team[] is no longer the source of truth. Use playerTeams collection instead.',
+    };
+
   } catch (error) {
-    console.error('[FIX_CORRUPTED_TEAMS] Fatal error:', error);
+    console.error('[FIX_CORRUPTED_TEAMS] Error:', error);
     throw error;
   }
 }
 
-// Run the fix
+// Run the scan
 if (require.main === module) {
   fixCorruptedTeamData()
-    .then(() => {
-      console.log('[FIX_CORRUPTED_TEAMS] Script completed successfully');
+    .then((result) => {
+      console.log('[FIX_CORRUPTED_TEAMS] Script completed');
+      console.log('[FIX_CORRUPTED_TEAMS] Result:', JSON.stringify(result, null, 2));
       process.exit(0);
     })
     .catch((error) => {

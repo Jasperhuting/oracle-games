@@ -306,6 +306,31 @@ export interface GameParticipant {
 // PLAYER TEAM (Riders owned by a player in a game)
 // ============================================================================
 
+/**
+ * PointsEvent represents a single points-scoring event for a rider.
+ * This is the NEW format that will become the single source of truth.
+ *
+ * Migration status: PHASE 1 - Dual-write (both old and new format)
+ */
+export interface PointsEvent {
+  raceSlug: string;                 // e.g., "tour-de-france"
+  stage: string;                    // e.g., "1", "2", "result" (for one-day races)
+
+  // Points breakdown
+  stageResult?: number;             // Points from stage finish position
+  gcPoints?: number;                // Points from GC position
+  pointsClass?: number;             // Points from points classification
+  mountainsClass?: number;          // Points from mountains classification
+  youthClass?: number;              // Points from youth classification
+  mountainPoints?: number;          // Points from mountain points during stage
+  sprintPoints?: number;            // Points from sprint points during stage
+  combativityBonus?: number;        // Combativity bonus
+  teamPoints?: number;              // Team classification points
+
+  total: number;                    // Total points for this event
+  calculatedAt: Timestamp | string; // When this was calculated
+}
+
 export interface PlayerTeam {
   id?: string;                      // Document ID
   gameId: string;
@@ -326,11 +351,12 @@ export interface PlayerTeam {
   jerseyImage?: string;
   riderValue?: number;              // For Giorgio Armada (1-10)
 
-  // Performance
+  // Performance - LEGACY (will be deprecated in Phase 4)
   pointsScored: number;
   stagesParticipated: number;
 
-  // Race-specific performance tracking
+  // Race-specific performance tracking - LEGACY (will be deprecated in Phase 4)
+  // @deprecated Use pointsBreakdown instead
   racePoints?: Record<string, {    // Key: raceSlug (e.g., "tour-de-france_2025")
     totalPoints: number;            // Total points for this race
     stagePoints: Record<string, {   // Key: stage number (e.g., "1", "2")
@@ -346,6 +372,24 @@ export interface PlayerTeam {
       total: number;                // Total points for this stage
     }>;
   }>;
+
+  // ============================================================================
+  // NEW FIELDS (Phase 1: Dual-write - these are the source of truth going forward)
+  // ============================================================================
+
+  /**
+   * Total points for this rider in this game.
+   * This is the sum of all pointsBreakdown[].total
+   * Will replace pointsScored in Phase 4.
+   */
+  totalPoints?: number;
+
+  /**
+   * Array of all points-scoring events for this rider.
+   * This is the SINGLE SOURCE OF TRUTH for points.
+   * Each event contains the race, stage, breakdown, and total.
+   */
+  pointsBreakdown?: PointsEvent[];
 
   // For Carry Me Home (track which stages this rider was used)
   usedInStages?: string[];          // Stage IDs
@@ -704,8 +748,14 @@ export type ClientGameParticipant = Omit<GameParticipant, 'joinedAt' | 'eliminat
   team?: ClientParticipantTeamRider[];
 };
 
-export type ClientPlayerTeam = Omit<PlayerTeam, 'acquiredAt'> & {
+// Client version of PointsEvent with string timestamp
+export type ClientPointsEvent = Omit<PointsEvent, 'calculatedAt'> & {
+  calculatedAt: string;
+};
+
+export type ClientPlayerTeam = Omit<PlayerTeam, 'acquiredAt' | 'pointsBreakdown'> & {
   acquiredAt: string;
+  pointsBreakdown?: ClientPointsEvent[];
 };
 
 export type ClientBid = Omit<Bid, 'bidAt'> & {

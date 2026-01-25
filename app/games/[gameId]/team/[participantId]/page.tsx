@@ -7,6 +7,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 
+// PointsEvent interface for the new format
+interface PointsEvent {
+  raceSlug: string;
+  stage: string;
+  stageResult?: number;
+  gcPoints?: number;
+  pointsClass?: number;
+  mountainsClass?: number;
+  youthClass?: number;
+  mountainPoints?: number;
+  sprintPoints?: number;
+  combativityBonus?: number;
+  teamPoints?: number;
+  total: number;
+  calculatedAt: string;
+}
+
 interface Rider {
   id: string;
   nameId: string;
@@ -16,6 +33,11 @@ interface Rider {
   rank: number;
   pointsScored: number;
   points: number;
+  // NEW: totalPoints as source of truth
+  totalPoints?: number;
+  // NEW: pointsBreakdown array
+  pointsBreakdown?: PointsEvent[];
+  // LEGACY: racePoints object (for backwards compatibility)
   racePoints: Record<string, {
     totalPoints: number;
     stagePoints: Record<string, {
@@ -244,7 +266,10 @@ export default function TeamDetailPage() {
             <div className="divide-y divide-gray-200">
               {teamDetails.riders.map((rider) => {
                 const isExpanded = expandedRiders.has(rider.id);
+                // Check if rider has points data (either new format or legacy)
+                const hasPointsBreakdown = rider.pointsBreakdown && rider.pointsBreakdown.length > 0;
                 const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
+                const hasPointsData = hasPointsBreakdown || hasRacePoints;
 
                 return (
                   <div
@@ -253,8 +278,8 @@ export default function TeamDetailPage() {
                   >
                     {/* Rider Header */}
                     <div
-                      onClick={() => hasRacePoints && toggleRider(rider.id)}
-                      className={`p-6 ${hasRacePoints ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+                      onClick={() => hasPointsData && toggleRider(rider.id)}
+                      className={`p-6 ${hasPointsData ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -284,7 +309,7 @@ export default function TeamDetailPage() {
                             </div>
                             <div className="text-xs text-gray-500">punten</div>
                           </div>
-                          {hasRacePoints && (
+                          {hasPointsData && (
                             <div className="text-gray-400">
                               <svg
                                 className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -306,9 +331,10 @@ export default function TeamDetailPage() {
                     </div>
 
                     {/* Race Points Breakdown (Expanded) */}
-                    {isExpanded && hasRacePoints && (
-                      <div className="border-t border-gray-200 bg-gray-50">
+                    {isExpanded && hasPointsData && (
+                      <div className="border-t border-gray-200 bg-gray-50 p-4">
                         <RacePointsBreakdown
+                          pointsBreakdown={rider.pointsBreakdown}
                           racePoints={rider.racePoints}
                           riderName={rider.name}
                         />

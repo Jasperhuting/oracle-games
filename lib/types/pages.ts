@@ -201,6 +201,7 @@ export interface AuctionTeamsRider {
   percentageDiff: number;
   pointsScored: number;
   acquiredAt: Date;
+  bidAt: Date;
   acquisitionType: string;
 }
 

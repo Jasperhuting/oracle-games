@@ -179,6 +179,9 @@ export async function GET(
         });
       }
 
+      // Use new totalPoints field with fallback to legacy pointsScored
+      const riderPoints = team.totalPoints ?? team.pointsScored ?? 0;
+
       teamsMap.get(userId)?.push({
         riderId: doc.id,
         riderNameId: team.riderNameId,
@@ -188,7 +191,13 @@ export async function GET(
         baseValue,
         pricePaid,
         percentageDiff,
-        pointsScored: team.pointsScored || 0,
+        // NEW: Use totalPoints as source of truth with fallback
+        pointsScored: riderPoints,
+        totalPoints: riderPoints,
+        // NEW: Include pointsBreakdown for detailed views
+        pointsBreakdown: team.pointsBreakdown || [],
+        // LEGACY: Keep racePoints for backwards compatibility
+        racePoints: team.racePoints || {},
         bidAt: bidsMap.get(`${userId}_${team.riderNameId}`) || (() => {
         // Fallback to acquiredAt if no bid found
         if (!team.acquiredAt) return null;
@@ -221,8 +230,8 @@ export async function GET(
         ? Math.round((totalDifference / totalBaseValue) * 100)
         : 0;
 
-      // Calculate totalPoints from riders' pointsScored (source of truth)
-      const calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.pointsScored || 0), 0);
+      // Calculate totalPoints from riders' totalPoints (new) or pointsScored (legacy fallback)
+      const calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.totalPoints ?? r.pointsScored ?? 0), 0);
 
       return {
         participantId: doc.id,

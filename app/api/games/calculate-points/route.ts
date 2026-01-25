@@ -2,7 +2,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { getRiderData } from '@/lib/firebase/rider-scraper-service';
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import type { Game, Rider, Team, GameParticipant } from '@/lib/types';
+import type { Game, Rider, Team, GameParticipant, PointsEvent } from '@/lib/types';
 import {
   calculateStagePoints,
   calculateMountainPoints,
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
           try {
             return JSON.parse(stageData.stageResults);
           } catch (e) {
-            console.error(`[CALCULATE_POINTS] Error parsing stageResults: ${e?.message}`);
+            console.error(`[CALCULATE_POINTS] Error parsing stageResults: ${e instanceof Error ? e.message : String(e)}`);
             console.error(`[CALCULATE_POINTS] Raw stageResults:`, stageData.stageResults.substring(0, 200));
             return [];
           }
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
           try {
             return JSON.parse(stageData.generalClassification);
           } catch (e) {
-            console.error(`[CALCULATE_POINTS] Error parsing generalClassification: ${e?.message}`);
+            console.error(`[CALCULATE_POINTS] Error parsing generalClassification: ${e instanceof Error ? e.message : String(e)}`);
             return [];
           }
         })() : 
@@ -499,7 +499,7 @@ export async function POST(request: NextRequest) {
               const newTotalPoints = riderTotalPoints;
               const currentStages = teamData.stagesParticipated || 0;
 
-              // Get existing race points data
+              // Get existing race points data (LEGACY format)
               // Use raceName (without year suffix) as the key for consistency
               const racePoints = teamData.racePoints || {};
               const currentRaceData = racePoints[raceName] || { totalPoints: 0, stagePoints: {} };
@@ -516,18 +516,64 @@ export async function POST(request: NextRequest) {
               currentRaceData.totalPoints = raceTotalPoints;
               racePoints[raceName] = currentRaceData;
 
-              // Update PlayerTeam with new points (replace, don't accumulate)
+              // ================================================================
+              // NEW: Build pointsBreakdown array (PHASE 1 - Dual-write)
+              // This is the new single source of truth format
+              // ================================================================
+
+              // Get existing pointsBreakdown or initialize empty array
+              const existingBreakdown: PointsEvent[] = teamData.pointsBreakdown || [];
+
+              // Create new PointsEvent for this stage
+              const newPointsEvent: PointsEvent = {
+                raceSlug: raceName,
+                stage: stage.toString(),
+                total: riderTotalPoints,
+                calculatedAt: new Date().toISOString(),
+              };
+
+              // Add optional breakdown fields only if they have values
+              if (stagePointsBreakdown.stageResult) newPointsEvent.stageResult = stagePointsBreakdown.stageResult;
+              if (stagePointsBreakdown.gcPoints) newPointsEvent.gcPoints = stagePointsBreakdown.gcPoints;
+              if (stagePointsBreakdown.pointsClass) newPointsEvent.pointsClass = stagePointsBreakdown.pointsClass;
+              if (stagePointsBreakdown.mountainsClass) newPointsEvent.mountainsClass = stagePointsBreakdown.mountainsClass;
+              if (stagePointsBreakdown.youthClass) newPointsEvent.youthClass = stagePointsBreakdown.youthClass;
+              if (stagePointsBreakdown.mountainPoints) newPointsEvent.mountainPoints = stagePointsBreakdown.mountainPoints;
+              if (stagePointsBreakdown.sprintPoints) newPointsEvent.sprintPoints = stagePointsBreakdown.sprintPoints;
+              if (stagePointsBreakdown.combativityBonus) newPointsEvent.combativityBonus = stagePointsBreakdown.combativityBonus;
+              if (stagePointsBreakdown.teamPoints) newPointsEvent.teamPoints = stagePointsBreakdown.teamPoints;
+
+              // Remove existing entry for this race/stage if re-scraping (prevents duplicates)
+              const updatedBreakdown = existingBreakdown.filter(
+                (event) => !(event.raceSlug === raceName && event.stage === stage.toString())
+              );
+
+              // Add the new event
+              updatedBreakdown.push(newPointsEvent);
+
+              // Calculate new totalPoints from pointsBreakdown (source of truth)
+              const calculatedTotalPoints = updatedBreakdown.reduce(
+                (sum, event) => sum + (event.total || 0),
+                0
+              );
+
+              // Update PlayerTeam with BOTH old and new formats (dual-write)
               await teamDoc.ref.update({
+                // LEGACY fields (will be deprecated in Phase 4)
                 pointsScored: newTotalPoints,
                 stagesParticipated: currentStages + 1,
                 racePoints: racePoints,
+
+                // NEW fields (source of truth going forward)
+                pointsBreakdown: updatedBreakdown,
+                totalPoints: calculatedTotalPoints,
               });
 
               // Track points for participant update
               participantTotalPoints += newTotalPoints;
               ridersScored.push(teamData.riderName);
 
-              console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Updated race points for ${raceName} stage ${stage}: ${newTotalPoints} pts (race total: ${currentRaceData.totalPoints})`);
+              console.log(`[CALCULATE_POINTS] ${teamData.riderName} - Updated race points for ${raceName} stage ${stage}: ${newTotalPoints} pts (race total: ${currentRaceData.totalPoints}, new totalPoints: ${calculatedTotalPoints})`);
             }
           }
 
@@ -1186,9 +1232,21 @@ async function updateMarginalGainsGames(
 
           totalScore += gain;
 
-          // Update PlayerTeam
+          // Update PlayerTeam with BOTH old and new formats (dual-write)
+          // For Marginal Gains, we use a single "season-gain" entry in pointsBreakdown
+          const marginalGainsEvent: PointsEvent = {
+            raceSlug: 'season-gain',
+            stage: yearNum.toString(),
+            total: gain,
+            calculatedAt: new Date().toISOString(),
+          };
+
           await teamDoc.ref.update({
+            // LEGACY field
             pointsScored: gain,
+            // NEW fields
+            pointsBreakdown: [marginalGainsEvent],
+            totalPoints: gain,
           });
         }
 

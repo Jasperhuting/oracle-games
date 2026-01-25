@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { fixCorruptedTeamData } from '@/scripts/fix-corrupted-team-data';
 
 /**
- * Admin-only endpoint to fix corrupted team data in gameParticipants
- * Reconstructs team arrays from playerTeams collection
+ * @deprecated PHASE 3: This endpoint is deprecated.
+ *
+ * Previously, this endpoint reconstructed the gameParticipants.team[] array
+ * from playerTeams collection. Now that playerTeams is the single source of truth,
+ * this reconstruction is no longer needed.
+ *
+ * The team[] array in gameParticipants is being phased out.
+ * All team data should be read directly from playerTeams collection.
+ *
+ * This endpoint now only logs corrupted participants for reference,
+ * but does NOT write to team[] anymore.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,11 +37,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[FIX_CORRUPTED_TEAMS_API] Starting team data fix...');
+    console.log('[FIX_CORRUPTED_TEAMS_API] DEPRECATED: This endpoint no longer writes to team[]');
+    console.log('[FIX_CORRUPTED_TEAMS_API] playerTeams is now the source of truth');
 
-    // 1. Find all participants with corrupted team data
+    // 1. Find all participants with corrupted team data (for logging only)
     const allParticipantsSnapshot = await db.collection('gameParticipants').get();
-    
+
     const corruptedParticipants: Array<{
       id: string;
       gameId: string;
@@ -41,11 +50,11 @@ export async function POST(request: NextRequest) {
       playername: string;
       team: string;
     }> = [];
-    
+
     allParticipantsSnapshot.forEach(doc => {
       const data = doc.data();
       const team = data.team;
-      
+
       // Check if team is corrupted (contains "[object Object]" pattern)
       if (typeof team === 'string' && team.includes('[object Object]')) {
         corruptedParticipants.push({
@@ -57,109 +66,24 @@ export async function POST(request: NextRequest) {
         });
       }
     });
-    
+
     console.log(`[FIX_CORRUPTED_TEAMS_API] Found ${corruptedParticipants.length} participants with corrupted team data`);
-    
-    if (corruptedParticipants.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No corrupted data found. All good!',
-        fixedCount: 0,
-        errorCount: 0,
-        corruptedParticipants: []
-      });
-    }
-    
-    // 2. For each corrupted participant, reconstruct team from playerTeams
-    let fixedCount = 0;
-    let errorCount = 0;
-    const fixedDetails: Array<{
-      participantId: string;
-      playername: string;
-      gameId: string;
-      ridersReconstructed: number;
-    }> = [];
-    
-    for (const participant of corruptedParticipants) {
-      try {
-        console.log(`[FIX_CORRUPTED_TEAMS_API] Fixing participant: ${participant.playername} (${participant.userId})`);
-        
-        // Get playerTeams for this participant
-        const playerTeamsSnapshot = await db.collection('playerTeams')
-          .where('gameId', '==', participant.gameId)
-          .where('userId', '==', participant.userId)
-          .where('active', '==', true)
-          .get();
-        
-        if (playerTeamsSnapshot.empty) {
-          console.log(`[FIX_CORRUPTED_TEAMS_API] No playerTeams found for ${participant.playername}, setting team to empty array`);
-          await db.collection('gameParticipants').doc(participant.id).update({
-            team: []
-          });
-          fixedCount++;
-          fixedDetails.push({
-            participantId: participant.id,
-            playername: participant.playername,
-            gameId: participant.gameId,
-            ridersReconstructed: 0
-          });
-          continue;
-        }
-        
-        // Reconstruct team array from playerTeams
-        const reconstructedTeam = playerTeamsSnapshot.docs.map(doc => {
-          const teamData = doc.data();
-          return {
-            riderNameId: teamData.riderNameId,
-            riderName: teamData.riderName,
-            riderTeam: teamData.riderTeam,
-            riderCountry: teamData.riderCountry,
-            jerseyImage: teamData.jerseyImage,
-            acquiredAt: teamData.acquiredAt?.toDate?.()?.toISOString() || teamData.acquiredAt,
-            amount: teamData.pricePaid || 0,
-            acquisitionType: teamData.acquisitionType || 'auction',
-            active: teamData.active,
-            benched: teamData.benched,
-            pointsScored: teamData.pointsScored || 0,
-            stagesParticipated: teamData.stagesParticipated || 0
-          };
-        });
-        
-        console.log(`[FIX_CORRUPTED_TEAMS_API] Reconstructed team with ${reconstructedTeam.length} riders for ${participant.playername}`);
-        
-        // Update the participant with correct team data
-        await db.collection('gameParticipants').doc(participant.id).update({
-          team: reconstructedTeam
-        });
-        
-        fixedCount++;
-        fixedDetails.push({
-          participantId: participant.id,
-          playername: participant.playername,
-          gameId: participant.gameId,
-          ridersReconstructed: reconstructedTeam.length
-        });
-        
-      } catch (error) {
-        console.error(`[FIX_CORRUPTED_TEAMS_API] Error fixing participant ${participant.playername}:`, error);
-        errorCount++;
-      }
-    }
-    
-    console.log(`[FIX_CORRUPTED_TEAMS_API] Fix complete: ${fixedCount} fixed, ${errorCount} errors`);
-    
-    // Log the activity
+
+    // Log the activity (but don't fix - team[] is deprecated)
     const userData = userDoc.data();
     await db.collection('activityLogs').add({
-      action: 'CORRUPTED_TEAM_DATA_FIXED',
+      action: 'CORRUPTED_TEAM_DATA_SCAN',
       userId: userId,
       userEmail: userData?.email,
       userName: userData?.playername || userData?.email,
       details: {
         totalCorrupted: corruptedParticipants.length,
-        fixedCount,
-        errorCount,
-        fixedDetails
+        note: 'DEPRECATED: team[] is no longer the source of truth. Use playerTeams collection instead.',
+        corruptedParticipants: corruptedParticipants.map(p => ({
+          id: p.id,
+          playername: p.playername,
+          gameId: p.gameId,
+        }))
       },
       timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
@@ -168,11 +92,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Fixed ${fixedCount} participants with corrupted team data`,
+      deprecated: true,
+      message: 'DEPRECATED: This endpoint no longer writes to team[]. Use playerTeams as source of truth.',
+      note: 'The gameParticipants.team[] array is being phased out. Read team data from playerTeams collection instead.',
       totalCorrupted: corruptedParticipants.length,
-      fixedCount,
-      errorCount,
-      fixedDetails,
       corruptedParticipants: corruptedParticipants.map(p => ({
         id: p.id,
         playername: p.playername,
@@ -182,9 +105,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[FIX_CORRUPTED_TEAMS_API] Fatal error:', error);
+    console.error('[FIX_CORRUPTED_TEAMS_API] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fix corrupted team data', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to scan for corrupted team data', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

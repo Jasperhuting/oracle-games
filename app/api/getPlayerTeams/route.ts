@@ -48,6 +48,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
           }
         }
 
+        // Use new totalPoints field with fallback to legacy pointsScored
+        const riderPoints = data.totalPoints ?? data.pointsScored ?? 0;
+
         return {
           id: doc.id,
           gameId: data.gameId,
@@ -63,9 +66,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
           riderCountry: data.riderCountry,
           jerseyImage: data.jerseyImage,
           riderValue: data.riderValue,
-          pointsScored: data.pointsScored,
+          // LEGACY field (kept for backwards compatibility)
+          pointsScored: riderPoints,
+          // NEW: totalPoints as source of truth
+          totalPoints: riderPoints,
           stagesParticipated: data.stagesParticipated,
+          // LEGACY: racePoints (kept for backwards compatibility)
           racePoints: data.racePoints,
+          // NEW: pointsBreakdown array
+          pointsBreakdown: data.pointsBreakdown || [],
           team: teamData, // Replace reference with actual team data
         };
       })
@@ -84,7 +93,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
     console.log('uniqueRidersMap', uniqueRidersMap)
 
     const response = NextResponse.json({
-      riders,
+      uniqueRiders: riders,
+      riders: ridersWithTeamData,
       pagination: {
         offset,
         limit,

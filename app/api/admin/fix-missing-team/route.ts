@@ -5,6 +5,11 @@ import { Timestamp } from 'firebase-admin/firestore';
 /**
  * API endpoint to fix a missing team after finalize failed to process bids
  * This processes all active bids for a specific user/game combination
+ *
+ * PHASE 3 UPDATE: This endpoint no longer writes to gameParticipants.team[]
+ * as playerTeams is now the single source of truth for team data.
+ * Only playerTeams documents are created, and participant metadata
+ * (rosterSize, spentBudget) is updated.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -84,16 +89,8 @@ export async function POST(request: NextRequest) {
     results.push(`Current spent budget: ${participantData.spentBudget || 0}`);
 
     // Process each active bid
-    const newRiders: Array<{
-      riderNameId: string;
-      riderName: string;
-      riderTeam: string;
-      jerseyImage: string;
-      pricePaid: number;
-      acquiredAt: Timestamp;
-    }> = [];
-
-    let totalWonAmount = 0;
+    const newRiderNames: string[] = [];
+    let ridersCreated = 0;
 
     for (const bidDoc of activeBidsSnapshot.docs) {
       const bidData = bidDoc.data();
@@ -115,7 +112,7 @@ export async function POST(request: NextRequest) {
       if (!existingPlayerTeam.empty) {
         results.push(`  - PlayerTeam already exists, skipping creation`);
       } else {
-        // Create PlayerTeam document
+        // Create PlayerTeam document (source of truth)
         await db.collection('playerTeams').add({
           gameId: gameId,
           userId: userId,
@@ -129,23 +126,18 @@ export async function POST(request: NextRequest) {
           jerseyImage: bidData.jerseyImage || '',
           active: true,
           benched: false,
+          // LEGACY fields
           pointsScored: 0,
           stagesParticipated: 0,
+          // NEW fields (Phase 1+)
+          totalPoints: 0,
+          pointsBreakdown: [],
         });
         results.push(`  - Created PlayerTeam document`);
+        ridersCreated++;
       }
 
-      // Add to team array
-      newRiders.push({
-        riderNameId: bidData.riderNameId,
-        riderName: bidData.riderName,
-        riderTeam: bidData.riderTeam || '',
-        jerseyImage: bidData.jerseyImage || '',
-        pricePaid: bidData.amount,
-        acquiredAt: Timestamp.now(),
-      });
-
-      totalWonAmount += bidData.amount || 0;
+      newRiderNames.push(bidData.riderName);
     }
 
     // Calculate correct spent budget from ALL won bids
@@ -160,25 +152,32 @@ export async function POST(request: NextRequest) {
       correctSpentBudget += bidDoc.data().amount || 0;
     });
 
-    // Update participant
-    const currentTeam = participantData.team || [];
-    const newTeam = [...currentTeam, ...newRiders];
+    // Get actual team size from playerTeams (source of truth)
+    const playerTeamsSnapshot = await db.collection('playerTeams')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .get();
+
+    const actualTeamSize = playerTeamsSnapshot.size;
 
     // Check if roster is complete
     const maxRiders = gameData?.config?.maxRiders || 0;
-    const rosterComplete = newTeam.length >= maxRiders;
+    const rosterComplete = actualTeamSize >= maxRiders;
 
+    // Update participant metadata only (NOT team[] - deprecated)
+    // PHASE 3: team[] is no longer written to, playerTeams is source of truth
     await participantDoc.ref.update({
-      team: newTeam,
+      // NOT updating team[] anymore - it's deprecated
       spentBudget: correctSpentBudget,
-      rosterSize: newTeam.length,
+      rosterSize: actualTeamSize,
       rosterComplete,
     });
 
-    results.push(`\n✓ Updated participant:`);
-    results.push(`  - Team size: ${currentTeam.length} -> ${newTeam.length}`);
+    results.push(`\n✓ Updated participant (team[] NOT updated - deprecated):`);
+    results.push(`  - Team size (from playerTeams): ${actualTeamSize}`);
     results.push(`  - Spent budget: ${participantData.spentBudget || 0} -> ${correctSpentBudget}`);
     results.push(`  - Roster complete: ${rosterComplete}`);
+    results.push(`  - PlayerTeams created: ${ridersCreated}`);
 
     // Log the activity
     await db.collection('activityLogs').add({
@@ -189,7 +188,8 @@ export async function POST(request: NextRequest) {
         targetUserId: userId,
         playername: participantData.playername,
         bidsProcessed: activeBidsSnapshot.size,
-        ridersAdded: newRiders.map(r => r.riderName),
+        ridersAdded: newRiderNames,
+        note: 'PHASE 3: team[] no longer updated, playerTeams is source of truth',
       },
       timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
@@ -203,9 +203,10 @@ export async function POST(request: NextRequest) {
       results: results.join('\n'),
       summary: {
         bidsProcessed: activeBidsSnapshot.size,
-        ridersAdded: newRiders.length,
-        newTeamSize: newTeam.length,
+        playerTeamsCreated: ridersCreated,
+        teamSize: actualTeamSize,
         correctSpentBudget,
+        note: 'team[] no longer updated - playerTeams is source of truth',
       },
     });
   } catch (error) {

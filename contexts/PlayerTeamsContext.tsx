@@ -16,6 +16,7 @@ export function PlayerTeamsProvider({
   autoLoad = true
 }: RankingsProviderProps) {
   const [riders, setRiders] = useState<PlayerTeam[]>([]);
+  const [uniqueRiders, setUniqueRiders] = useState<PlayerTeam[]>([]);
   const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
   const lastKnownVersionRef = useRef<number | null>(null);
@@ -45,7 +46,7 @@ export function PlayerTeamsProvider({
       lastKnownVersionRef.current = cacheVersion;
 
       // Try to get from cache first (skip if forceRefresh)
-      const cacheKey = `playerTeams_2`;
+      const cacheKey = `playerTeams_1_2`;
       if (!forceRefresh) {
         const cached = await getFromCache<PlayerTeam[]>(cacheKey, cacheVersion);
 
@@ -63,7 +64,8 @@ export function PlayerTeamsProvider({
           const uniqueCachedRiders = Array.from(uniqueRidersMap.values());
           console.log(`[PlayerTeamsContext] Filtered cached data: ${cached.length} -> ${uniqueCachedRiders.length} unique riders`);
           
-          setRiders(uniqueCachedRiders);
+          setRiders(cached);
+          setUniqueRiders(uniqueCachedRiders);
           setLoading(false);
           return;
         }
@@ -73,7 +75,7 @@ export function PlayerTeamsProvider({
       console.log(`[PlayerTeamsContext] Fetching fresh player teams data (cache version ${cacheVersion})`);
       let allRiders: PlayerTeam[] = [];
       let offset = 0;
-      const limit = 500;
+      const limit = 2000;
       let hasMore = true;
 
       while (hasMore) {
@@ -109,7 +111,8 @@ export function PlayerTeamsProvider({
       await saveToCache(cacheKey, uniqueRiders, cacheVersion);
       await clearOldVersions(cacheVersion);
 
-      setRiders(uniqueRiders);
+      setRiders(allRiders);
+      setUniqueRiders(uniqueRiders);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load rankings';
       console.error('[RankingsContext] Error loading rankings:', err);
@@ -160,6 +163,7 @@ export function PlayerTeamsProvider({
     <PlayerTeamsContext.Provider
       value={{
         riders,
+        uniqueRiders,
         loading,
         error,
         refetch: fetchRankings,
