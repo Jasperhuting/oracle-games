@@ -101,6 +101,7 @@ export interface GameCardActionsProps {
   leaveable: boolean;
   isFull: boolean;
   isRegistrationOpen: boolean;
+  isDeadlinePassed: boolean;
   joining: string | null;
   leaving: string | null;
   onJoin: (gameId: string) => void;

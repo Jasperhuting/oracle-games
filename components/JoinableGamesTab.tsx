@@ -298,9 +298,11 @@ export const JoinableGamesTab = () => {
     const now = new Date();
     const openDate = game.registrationOpenDate ? new Date(game.registrationOpenDate) : null;
     const closeDate = game.registrationCloseDate ? new Date(game.registrationCloseDate) : null;
+    const teamDeadline = game.teamSelectionDeadline ? new Date(game.teamSelectionDeadline) : null;
 
     if (openDate && openDate > now) return false;
     if (closeDate && closeDate < now) return false;
+    if (teamDeadline && teamDeadline < now) return false;
 
     // For worldtour-manager and marginal-gains, allow joining during bidding status as well
     if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {

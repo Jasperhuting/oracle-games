@@ -10,30 +10,17 @@ export function scrapeGeneralClassification($: CheerioAPI): ClassificationRider[
   const generalClassification: ClassificationRider[] = [];
   
   // For tour GC pages, look for the main results table
-  // Use ResTab 1 (index 1) which contains the final GC results
-  let generalClassificationResult = $('#resultsCont > .resTab').eq(1).find('table');
-  
-  // Fallback selectors for tour GC pages
-  if (generalClassificationResult.length === 0) {
-    generalClassificationResult = $('.resTab').eq(1).find('table');
-  }
-  if (generalClassificationResult.length === 0) {
-    generalClassificationResult = $('#resultsCont > .resTab').eq(0).find('table'); // Try first tab
-  }
-  if (generalClassificationResult.length === 0) {
-    generalClassificationResult = $('.resTab').eq(0).find('table'); // Try first tab
-  }
-  if (generalClassificationResult.length === 0) {
-    generalClassificationResult = $('table.rdrResults');
-  }
-  if (generalClassificationResult.length === 0) {
-    generalClassificationResult = $('#resultsCont table').eq(1); // Try second table
-  }
-  if (generalClassificationResult.length === 0) {
-    generalClassificationResult = $('#resultsCont table').first(); // Fallback to first table
-  }
+  // Try to find the resTab with PCS points (usually index 1), fallback to first resTab
+  const resTabs = $('#resultsCont > .resTab');
+  const resTabCount = resTabs.length;
 
-  console.log(`[GC_SCRAPER] Found ${generalClassificationResult.length} GC result tables`);
+  console.log(`[GC_SCRAPER] Found ${resTabCount} resTabs`);
+
+  // Use second resTab (index 1) if available, otherwise first (index 0)
+  const targetIndex = resTabCount > 1 ? 1 : 0;
+  let generalClassificationResult = resTabs.eq(targetIndex).find('table');
+
+  console.log(`[GC_SCRAPER] Using resTab index ${targetIndex}, table found: ${generalClassificationResult.length > 0}`)
 
   generalClassificationResult.find('tbody > tr').each((_, el) => {
     // For GC, get time from the timelag column using data-code attributes
@@ -62,35 +49,20 @@ export function scrapeGeneralClassification($: CheerioAPI): ClassificationRider[
       if (gcTime === ',,') gcTime = '0:00';
     }
     
-    // Get PCS points from the correct column (Cell 10 for ResTab 1)
+    // Get PCS points - try data-code="pnt" first, then fallback to td.pnt class
     let pcsPoints = 0;
-    const pntCell = $(el).find('td').eq(10).text().trim(); // Cell 10 contains the points
+    let pntCell = $(el).find('td[data-code="pnt"]').text().trim();
+    if (!pntCell) {
+      pntCell = $(el).find('td.pnt').text().trim();
+    }
     if (pntCell && pntCell !== '-' && pntCell !== '') {
       pcsPoints = Number(pntCell) || 0;
     }
     
-    // Debug logging for Bryan specifically
+    // Debug logging for first few riders
     const riderName = helpers.getFirstName(el) + ' ' + helpers.getLastName(el);
-    if (riderName.includes('Bryan') || riderName.includes('Obando')) {
-      console.log(`[GC_SCRAPER] Bryan found: ${riderName.trim()}, Rank: ${gcRank}, Points: ${pcsPoints}, NameID: ${helpers.getRiderShortName(el)}, Cell 10: "${pntCell}"`);
-      
-      // Check all cells for Bryan to find the 2 points
-      const allCells = $(el).find('td');
-      console.log(`[GC_SCRAPER] Bryan has ${allCells.length} cells:`);
-      allCells.each((i, cell) => {
-        const $cell = $(cell);
-        const text = $cell.text().trim();
-        if (text === '2' || text === '2.0') {
-          console.log(`[GC_SCRAPER] Bryan Cell ${i}: "${text}" <-- FOUND 2 POINTS!`);
-        } else if (text && text !== '-' && text !== '') {
-          console.log(`[GC_SCRAPER] Bryan Cell ${i}: "${text}"`);
-        }
-      });
-    }
-    
-    // Also log first few riders
     if (generalClassification.length < 5) {
-      console.log(`[GC_SCRAPER] Rider ${generalClassification.length + 1}: ${riderName.trim()}, Rank: ${gcRank}, Points: ${pcsPoints}, NameID: ${helpers.getRiderShortName(el)}`);
+      console.log(`[GC_SCRAPER] Rider ${generalClassification.length + 1}: ${riderName.trim()}, Rank: ${gcRank}, Points: ${pcsPoints}, NameID: ${helpers.getRiderShortName(el)}, Cell 11: "${pntCell}"`);
     }
     
     const rider: ClassificationRider = {
@@ -100,11 +72,9 @@ export function scrapeGeneralClassification($: CheerioAPI): ClassificationRider[
       startNumber: helpers.getStartNumber(el),
       gc: helpers.getGc(el),
       place: gcRank, // Use the calculated rank
-      rank: gcRank, // Also set rank field for season points
       timeDifference: gcTime || '-',
       team: helpers.getTeam(el),
       shortName: helpers.getRiderShortName(el),
-      nameID: helpers.getRiderShortName(el), // Add nameID for proper matching
       uciPoints: helpers.getUciPoints(el),
       points: pcsPoints || undefined, // Use PCS points from Pnt column
       qualificationTime: Number(helpers.getQualificationTime(el)) || undefined,

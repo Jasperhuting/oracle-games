@@ -71,40 +71,51 @@ export async function GET(
       });
     }
 
-    // Calculate team statistics based on correct race points
-    let totalPoints = 0;
-    for (const rider of riders) {
-      let riderCorrectPoints = 0;
+    // Sort riders by totalPoints (highest to lowest)
+    riders.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
 
-      // Calculate correct points from racePoints
-      if (rider.racePoints) {
-        Object.entries(rider.racePoints).forEach(([raceSlug, raceData]) => {
-          const raceDataTyped = raceData as { stagePoints?: Record<string, { stageResult?: number; total?: number }> };
-          // Only count NC-Australia races
-          if (raceSlug.toLowerCase().includes('nc-australia')) {
-            Object.entries(raceDataTyped.stagePoints || {}).forEach(([stage, stagePoints]) => {
-              // Convert 50 points to 15 points (as requested)
-              if (stagePoints.stageResult === 50) {
-                riderCorrectPoints += 15;
-              } else if (stagePoints.total === 10 || stagePoints.stageResult === 10) {
-                riderCorrectPoints += (stagePoints.stageResult || stagePoints.total || 0);
-              }
-            });
-          }
-        });
+    // Calculate team statistics from totalPoints (source of truth from playerTeams)
+    const totalPoints = riders.reduce((sum, rider) => sum + (rider.totalPoints || 0), 0);
+
+    // Calculate actual ranking by comparing with all participants in the game
+    let ranking = participantData.ranking || 0;
+    if (ranking === 0) {
+      // Query all participants to calculate ranking
+      const allParticipantsSnapshot = await db.collection('gameParticipants')
+        .where('gameId', '==', gameId)
+        .get();
+
+      // Calculate total points for each participant
+      const participantPoints: { id: string; points: number }[] = [];
+      for (const pDoc of allParticipantsSnapshot.docs) {
+        const pData = pDoc.data();
+        const pTeamSnapshot = await db.collection('playerTeams')
+          .where('gameId', '==', gameId)
+          .where('userId', '==', pData.userId)
+          .get();
+
+        const pTotal = pTeamSnapshot.docs.reduce((sum, tDoc) => {
+          const tData = tDoc.data();
+          return sum + (tData.totalPoints ?? tData.pointsScored ?? 0);
+        }, 0);
+
+        participantPoints.push({ id: pDoc.id, points: pTotal });
       }
 
-      totalPoints += riderCorrectPoints;
+      // Sort by points descending and find ranking
+      participantPoints.sort((a, b) => b.points - a.points);
+      const rankIndex = participantPoints.findIndex(p => p.id === participantId);
+      ranking = rankIndex >= 0 ? rankIndex + 1 : 0;
     }
-    
+
     return NextResponse.json({
       success: true,
       participant: {
         id: participantId,
         userId: participantData.userId,
         playerName: userData?.playername || userData?.email || 'Unknown',
-        totalPoints: totalPoints, // Use calculated totalPoints instead of participantData.totalPoints
-        ranking: participantData.ranking || 0,
+        totalPoints: totalPoints,
+        ranking: ranking,
       },
       team: {
         riders,

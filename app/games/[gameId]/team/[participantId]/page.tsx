@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 
@@ -77,8 +76,6 @@ interface TeamDetails {
 
 export default function TeamDetailPage() {
   const params = useParams();
-  const router = useRouter();
-  const { user } = useAuth();
   const gameId = params?.gameId as string;
   const participantId = params?.participantId as string;
 
@@ -114,13 +111,6 @@ export default function TeamDetailPage() {
         setParticipant(data.participant);
         setTeamDetails(data.team);
 
-        // Update rider points in database if needed
-        if (data.team?.riders) {
-          for (const rider of data.team.riders) {
-            const correctPoints = getCorrectRiderPoints(rider);
-            await updateRiderPointsInDatabase(rider, correctPoints);
-          }
-        }
       } catch (err) {
         console.error('Error loading team details:', err);
         setError('Kon teamdetails niet laden');
@@ -142,51 +132,6 @@ export default function TeamDetailPage() {
     setExpandedRiders(newExpanded);
   };
 
-  const getCorrectRiderPoints = (rider: Rider) => {
-    if (!rider.racePoints) return 0;
-    
-    let correctPoints = 0;
-    Object.entries(rider.racePoints).forEach(([raceSlug, raceData]) => {
-      // Only count NC-Australia races
-      if (raceSlug.toLowerCase().includes('nc-australia')) {
-        Object.entries(raceData.stagePoints || {}).forEach(([stage, stagePoints]) => {
-          // Convert 50 points to 15 points (as requested)
-          if (stagePoints.stageResult === 50) {
-            correctPoints += 15;
-          } else if (stagePoints.total === 10 || stagePoints.stageResult === 10) {
-            correctPoints += 10;
-          }
-        });
-      }
-    });
-    
-    return correctPoints;
-  };
-
-  const updateRiderPointsInDatabase = async (rider: Rider, correctPoints: number) => {
-    // Only update if points are different
-    if (rider.pointsScored !== correctPoints) {
-      try {
-        const response = await fetch('/api/updateRiderPoints', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            riderId: rider.id,
-            correctPoints: correctPoints,
-            participantId: participantId, // Add participantId to update total
-          }),
-        });
-        
-        if (response.ok) {
-          console.log(`Updated ${rider.name} points from ${rider.pointsScored} to ${correctPoints}`);
-        }
-      } catch (error) {
-        console.error('Failed to update rider points:', error);
-      }
-    }
-  };
 
   if (loading) {
     return (
@@ -305,7 +250,7 @@ export default function TeamDetailPage() {
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <div className="text-2xl font-bold text-primary">
-                              {getCorrectRiderPoints(rider)}
+                              {rider.totalPoints ?? rider.pointsScored ?? 0}
                             </div>
                             <div className="text-xs text-gray-500">punten</div>
                           </div>

@@ -101,7 +101,6 @@ const UNWANTED_CLASSIFICATIONS = ['MJ', 'MU', 'WJ', 'WU', 'WE', 'WWT'];
 const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'vuelta-el-salvador', // Women's race incorrectly classified as 2.1
   'trofeo-felanitx-femina', // women's race
-  'classica-camp-de-morvedre', // 1.1
   'grand-prix-el-salvador', // women's race
   'grand-prix-san-salvador', // women's race
   'trofeo-palma-femina', // women's race
@@ -164,6 +163,7 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'eschborn-frankfurt',
   'gp-de-valence',
   'trofeo-palma',
+  'classica-camp-de-morvedre',
   // World Championships
   'world-championship',
   'world-championship-itt',
@@ -480,7 +480,7 @@ export async function GET(request: NextRequest) {
           });
         }
 
-        // Add numbered stages
+        // Add pending numbered stages (1 to numberedStages, not including prologue)
         for (let i = 1; i <= numberedStages; i++) {
           if (!scrapedStageNumbers.has(i)) {
             stages.push({
@@ -493,20 +493,6 @@ export async function GET(request: NextRequest) {
               docId: '',
             });
           }
-        }
-
-        // Add General Classification for multi-stage races
-        const hasGCScraped = stages.some(s => s.stageNumber === 'gc');
-        if (!hasGCScraped) {
-          stages.push({
-            stageNumber: 'gc',
-            status: 'pending',
-            scrapedAt: null,
-            riderCount: 0,
-            hasValidationErrors: false,
-            validationWarnings: 0,
-            docId: '',
-          });
         }
       }
 
@@ -529,13 +515,13 @@ export async function GET(request: NextRequest) {
       stages.length = 0;
       stages.push(...deduplicatedStages);
 
-      const pendingStages = (isSingleDay ? totalStages : totalStages + 1) - scrapedStages - failedStages;
+      const pendingStages = totalStages - scrapedStages - failedStages;
 
       races.push({
         raceSlug,
         raceName: raceConfig?.name || raceSlug,
         year,
-        totalStages: isSingleDay ? totalStages : totalStages + 1, // Add GC for multi-stage races
+        totalStages,
         scrapedStages,
         failedStages,
         pendingStages: Math.max(0, pendingStages),
@@ -617,27 +603,16 @@ export async function GET(request: NextRequest) {
             docId: '',
           });
         }
-
-        // Add General Classification for multi-stage races
-        stages.push({
-          stageNumber: 'gc',
-          status: 'pending',
-          scrapedAt: null,
-          riderCount: 0,
-          hasValidationErrors: false,
-          validationWarnings: 0,
-          docId: '',
-        });
       }
 
       races.push({
         raceSlug,
         raceName: config.name,
         year,
-        totalStages: isSingleDay ? totalStages : totalStages + 1, // Add GC for multi-stage races
+        totalStages,
         scrapedStages: 0,
         failedStages: 0,
-        pendingStages: isSingleDay ? totalStages : totalStages + 1, // Add GC for multi-stage races
+        pendingStages: totalStages,
         hasStartlist: false,
         startlistRiderCount: 0,
         lastScrapedAt: null,

@@ -43,7 +43,7 @@ interface GameConfig {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { raceSlug, stage, year } = await request.json();
+    const { raceSlug, stage, year, force = false } = await request.json();
 
     if (raceSlug === undefined || raceSlug === null || raceSlug === '' ||
         stage === undefined || stage === null ||
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .get();
 
-    if (!existingCalcSnapshot.empty) {
+    if (!existingCalcSnapshot.empty && !force) {
       const existingCalc = existingCalcSnapshot.docs[0].data();
       console.log(`[CALCULATE_POINTS] Idempotency check: Already processed with same data hash ${inputDataHash}`);
       return NextResponse.json({
@@ -153,6 +153,10 @@ export async function POST(request: NextRequest) {
           gamesAffected: existingCalc.gamesAffected?.length || 0,
         },
       });
+    }
+
+    if (force && !existingCalcSnapshot.empty) {
+      console.log(`[CALCULATE_POINTS] Force mode: bypassing idempotency check for hash ${inputDataHash}`);
     }
 
     // Validate stage data before calculation
@@ -392,15 +396,19 @@ export async function POST(request: NextRequest) {
           const stagePointsBreakdown: Record<string, number> = {};
           let riderTotalPoints = 0;
 
-          // For tour GC, only check general classification
+          // For tour GC, only check general classification - always use PCS points
           if (multipliers.isTourGC) {
             if (multipliers.gcMultiplier > 0 && gcResult && gcResult.place) {
-              const gcPoints = calculateStagePoints(gcResult.place) * multipliers.gcMultiplier;
+              // Always use PCS points for tour GC
+              const pcsPoints = typeof gcResult.points === 'number' ? gcResult.points :
+                (typeof gcResult.points === 'string' && gcResult.points !== '-' ? parseInt(gcResult.points as string) : 0);
+              const gcPoints = pcsPoints > 0 ? pcsPoints : calculateStagePoints(gcResult.place) * multipliers.gcMultiplier;
+
               if (gcPoints > 0) {
                 riderTotalPoints += gcPoints;
                 stagePointsBreakdown.gcPoints = gcPoints;
                 stagePointsBreakdown.gcPosition = gcResult.place;
-                console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - GC: ${gcPoints} pts (place ${gcResult.place})`);
+                console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - GC: ${gcPoints} pts (place ${gcResult.place}, pcsPoints: ${gcResult.points})`);
               }
             }
           } else {
@@ -530,13 +538,11 @@ export async function POST(request: NextRequest) {
             );
 
             // Update PlayerTeam
-            // NOTE: We do NOT update pointsScored here anymore - it was being incorrectly
-            // overwritten with just this race's points. The totalPoints (calculated from
-            // pointsBreakdown) is now the source of truth.
             await teamDoc.ref.update({
-              // LEGACY fields (kept for backward compatibility, but calculated from breakdown)
+              // LEGACY fields (kept for backward compatibility)
               stagesParticipated: currentStages + 1,
               racePoints: racePoints,
+              pointsScored: calculatedTotalPoints, // Sync with totalPoints for backward compatibility
 
               // NEW fields (source of truth)
               pointsBreakdown: updatedBreakdown,

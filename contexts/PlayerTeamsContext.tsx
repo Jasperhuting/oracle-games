@@ -46,7 +46,7 @@ export function PlayerTeamsProvider({
       lastKnownVersionRef.current = cacheVersion;
 
       // Try to get from cache first (skip if forceRefresh)
-      const cacheKey = `playerTeams_1_2`;
+      const cacheKey = `playerTeams_1_3`;
       if (!forceRefresh) {
         const cached = await getFromCache<PlayerTeam[]>(cacheKey, cacheVersion);
 

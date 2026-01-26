@@ -44,6 +44,15 @@ export const GameCard = ({
   const leaveable = joinedGame ? canLeave(joinedGame) : false;
   const isFull = !!(group.maxPlayers && group.totalPlayers >= group.maxPlayers);
 
+  // Check if deadline has passed (registration closed or team selection deadline passed)
+  const now = new Date();
+  const registrationCloseDate = game.registrationCloseDate ? new Date(game.registrationCloseDate) : null;
+  const teamSelectionDeadline = game.teamSelectionDeadline ? new Date(game.teamSelectionDeadline) : null;
+  const isDeadlinePassed = !!(
+    (registrationCloseDate && registrationCloseDate < now) ||
+    (teamSelectionDeadline && teamSelectionDeadline < now)
+  );
+
   return (
     <div
       className={`bg-white border rounded-lg p-4 ${
@@ -95,6 +104,7 @@ export const GameCard = ({
           leaveable={leaveable}
           isFull={isFull}
           isRegistrationOpen={isRegistrationOpen(game)}
+          isDeadlinePassed={isDeadlinePassed}
           joining={joining}
           leaving={leaving}
           onJoin={onJoin}

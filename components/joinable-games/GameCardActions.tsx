@@ -16,6 +16,7 @@ export const GameCardActions = ({
   leaveable,
   isFull,
   isRegistrationOpen,
+  isDeadlinePassed,
   joining,
   leaving,
   onJoin,
@@ -132,7 +133,10 @@ export const GameCardActions = ({
       {!joinable && !leaveable && !isJoined && isFull && !isAdmin && (
         <span className="text-sm text-red-600">{t('games.gameIsFull')}</span>
       )}
-      {!joinable && !isJoined && !isFull && !isRegistrationOpen && !isAdmin && (
+      {!joinable && !isJoined && !isFull && !isRegistrationOpen && isDeadlinePassed && !isAdmin && (
+        <span className="text-sm text-gray-500">{t('games.alreadyStarted', 'Reeds begonnen')}</span>
+      )}
+      {!joinable && !isJoined && !isFull && !isRegistrationOpen && !isDeadlinePassed && !isAdmin && (
         <span className="text-sm text-gray-500">{t('games.registrationClosed')}</span>
       )}
     </div>
