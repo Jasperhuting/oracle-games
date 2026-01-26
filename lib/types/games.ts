@@ -316,6 +316,10 @@ export interface PointsEvent {
   raceSlug: string;                 // e.g., "tour-de-france"
   stage: string;                    // e.g., "1", "2", "result" (for one-day races)
 
+  // Finish positions (for reference)
+  stagePosition?: number;           // Finish position in stage (1st, 2nd, etc.)
+  gcPosition?: number;              // Position in GC at this stage
+
   // Points breakdown
   stageResult?: number;             // Points from stage finish position
   gcPoints?: number;                // Points from GC position

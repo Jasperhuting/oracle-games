@@ -1,0 +1,548 @@
+{
+  "success": true,
+  "dryRun": true,
+  "message": "This is a DRY RUN - no database changes were made",
+  "summary": {
+    "scraperDataDoc": "nc-australia-itt-2026-result",
+    "raceSlug": "nc-australia-itt_2026",
+    "raceName": "nc-australia-itt",
+    "stage": "result",
+    "year": "2026",
+    "stageResultsCount": 21,
+    "uniqueRidersInResults": 21,
+    "playerTeamsFound": 23,
+    "playerTeamsWouldUpdate": 1,
+    "playerTeamsSkipped": 0,
+    "totalPointsWouldBeAwarded": 15,
+    "gamesInvolved": [
+      "Auction Master (Season)",
+      "WorldTour Manager",
+      "Marginal Gains"
+    ]
+  },
+  "stageResultsSample": [
+    {
+      "nameID": "jay-vine",
+      "shortName": "jay-vine",
+      "place": 1,
+      "points": "15"
+    },
+    {
+      "nameID": "oliver-bleddyn",
+      "shortName": "oliver-bleddyn",
+      "place": 2,
+      "points": "7"
+    },
+    {
+      "nameID": "kelland-brien",
+      "shortName": "kelland-brien",
+      "place": 3,
+      "points": "2"
+    },
+    {
+      "nameID": "ben-o-connor",
+      "shortName": "ben-o-connor",
+      "place": 4,
+      "points": "-"
+    },
+    {
+      "nameID": "conor-leahy",
+      "shortName": "conor-leahy",
+      "place": 5,
+      "points": "-"
+    },
+    {
+      "nameID": "hamish-mckenzie",
+      "shortName": "hamish-mckenzie",
+      "place": 6,
+      "points": "-"
+    },
+    {
+      "nameID": "oscar-chamberlain",
+      "shortName": "oscar-chamberlain",
+      "place": 7,
+      "points": "-"
+    },
+    {
+      "nameID": "luke-plapp",
+      "shortName": "luke-plapp",
+      "place": 8,
+      "points": "-"
+    },
+    {
+      "nameID": "matt-burton",
+      "shortName": "matt-burton",
+      "place": 9,
+      "points": "-"
+    },
+    {
+      "nameID": "tali-lane-welsh",
+      "shortName": "tali-lane-welsh",
+      "place": 10,
+      "points": "-"
+    }
+  ],
+  "playerTeamUpdates": [
+    {
+      "playerTeamId": "bK7nbVyfwt9Zk9FhSCyI",
+      "gameId": "xLbOq9mbPf6XJMIvzp2R",
+      "gameName": "Auction Master (Season)",
+      "userId": "FjaSVlxmoog9vBQNv4XFwoOL2bH2",
+      "riderNameId": "jay-vine",
+      "riderName": "Jay Vine",
+      "currentTotalPoints": 78,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 15,
+      "newTotalPoints": 15,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 1,
+        "stageResult": 15,
+        "total": 15
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "2FMxReHvb94IwCvvipqP",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "45DOxPKbqUUTDeWdVf9xbKQ8yFk2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "4NoQgK84Vovbpy4BUDSv",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "vr1CRFaSggb2IUSaigkOlaajpVM2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "5ZwOHxwEgb9XvVswhTZR",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "nib55ZNOsWhhWui4yogk4X5EG6A3",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "7ic6Rhm9Z7EBtcf1ZK8t",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "vr1CRFaSggb2IUSaigkOlaajpVM2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "8ZwnSs08VOBLs1N1m3Ls",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "PgnF5pNNj9TJxyGCpYISWypf6ob2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "BZXufLxJg4SazSNw6BdV",
+      "gameId": "qltELoRHMvweHzhM26bN",
+      "gameName": "Auction Master (Season)",
+      "userId": "s0yShmmkppdmlPUvzgVNyflpiaX2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "HXPkX9PcMfVKCnNM1uLF",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "HkMFC7bYPEQW2DPS4K6J6fX3wNh2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "Iixat6oRpq3g2Pf6EpNh",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "s0yShmmkppdmlPUvzgVNyflpiaX2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "NaK6lx5kIPDbggaKYvL9",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "FOEzsEEWVPVAP3BWull0FO96u7h1",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "QHcWWpQsg7bHy6Rqijk7",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "NpUWgSOUiHMfatAmJsKK7gApJuz2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "VYfin6BX9m0RrmLq4YQ0",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "PgnF5pNNj9TJxyGCpYISWypf6ob2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "bbxxX5pJ8NlAEMyV3K4A",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "s0yShmmkppdmlPUvzgVNyflpiaX2",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "gZXXaViRYzrD7hOCLBSJ",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "2IBY1KopZPSEsJZcQmHFI0bf9I63",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "viCAnU9rVQ5Qxf14gBY2",
+      "gameId": "xLbOq9mbPf6XJMIvzp2R",
+      "gameName": "Auction Master (Season)",
+      "userId": "yO66Lib2e0fzPyw3DWVlTta1AHv1",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "wsTiWcM3INAkvogtCnk4",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "CECkKiXLRLhApSLwEYrV7aUcxql1",
+      "riderNameId": "ben-o-connor",
+      "riderName": "Ben O'Connor",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 4,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "tVG81IC0WVuO9QoJFVMS",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "3vmkXo3JDOgp9nRCoR1c9kxZsMi2",
+      "riderNameId": "hamish-mckenzie",
+      "riderName": "Hamish McKenzie",
+      "currentTotalPoints": 0,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 6,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "kF5H9a0YVFzZ111A2f33",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "NEw5KyN1wLZVc7pmKDajLMYpV1R2",
+      "riderNameId": "oscar-chamberlain",
+      "riderName": "Oscar Chamberlain",
+      "currentTotalPoints": 7,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 7,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "3twaInYDGOsD26I3s7NW",
+      "gameId": "mGzPZfIOb2gAyEu0i6t6",
+      "gameName": "WorldTour Manager",
+      "userId": "tQKHLpLAgBNlfzo8AfpwrsnimQK2",
+      "riderNameId": "luke-plapp",
+      "riderName": "Luke Plapp",
+      "currentTotalPoints": 10,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 8,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "EfZQbPONSGkZBygGGgUL",
+      "gameId": "xLbOq9mbPf6XJMIvzp2R",
+      "gameName": "Auction Master (Season)",
+      "userId": "KP3FXrdHfuTRmbxzcrvH7xgxqMR2",
+      "riderNameId": "luke-plapp",
+      "riderName": "Luke Plapp",
+      "currentTotalPoints": 10,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 8,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "WNbeidYaXy7fYqcbB31W",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "tQKHLpLAgBNlfzo8AfpwrsnimQK2",
+      "riderNameId": "luke-plapp",
+      "riderName": "Luke Plapp",
+      "currentTotalPoints": 10,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 8,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "a3OezDs9YTenZEznq4Om",
+      "gameId": "qltELoRHMvweHzhM26bN",
+      "gameName": "Auction Master (Season)",
+      "userId": "nib55ZNOsWhhWui4yogk4X5EG6A3",
+      "riderNameId": "luke-plapp",
+      "riderName": "Luke Plapp",
+      "currentTotalPoints": 10,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 8,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    },
+    {
+      "playerTeamId": "ti3h5pc3biOnBShkKXad",
+      "gameId": "tG5QrMUSMBsbqfKa36Ii",
+      "gameName": "Marginal Gains",
+      "userId": "NpUWgSOUiHMfatAmJsKK7gApJuz2",
+      "riderNameId": "luke-plapp",
+      "riderName": "Luke Plapp",
+      "currentTotalPoints": 10,
+      "currentPointsBreakdown": [],
+      "wouldEarnPoints": 0,
+      "newTotalPoints": 0,
+      "breakdown": {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 8,
+        "stageResult": 0,
+        "total": 0
+      },
+      "raceCountsForGame": true
+    }
+  ],
+  "skippedPlayerTeams": []
+}

@@ -1,0 +1,176 @@
+{
+    "count": 28,
+    "documents": [
+        {
+            "id": "nc-australia-2026-result",
+            "race": "nc-australia",
+            "year": 2026,
+            "stageResultsCount": 92
+        },
+        {
+            "id": "nc-australia-itt-2026-result",
+            "race": "nc-australia-itt",
+            "year": 2026,
+            "stageResultsCount": 21
+        },
+        {
+            "id": "nc-thailand-2026-result",
+            "race": "nc-thailand",
+            "year": 2026,
+            "stage": "result",
+            "stageResultsCount": 26
+        },
+        {
+            "id": "pune-grand-tour-2026-prologue",
+            "race": "pune-grand-tour",
+            "year": 2026,
+            "stageResultsCount": 160
+        },
+        {
+            "id": "pune-grand-tour-2026-stage-1",
+            "race": "pune-grand-tour",
+            "year": 2026,
+            "stageResultsCount": 160
+        },
+        {
+            "id": "pune-grand-tour-2026-stage-2",
+            "race": "pune-grand-tour",
+            "year": 2026,
+            "stageResultsCount": 150
+        },
+        {
+            "id": "tour-down-under-2026-prologue",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 140
+        },
+        {
+            "id": "tour-down-under-2026-stage-0",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 140
+        },
+        {
+            "id": "tour-down-under-2026-stage-1",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 141
+        },
+        {
+            "id": "tour-down-under-2026-stage-2",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 138
+        },
+        {
+            "id": "tour-down-under-2026-stage-3",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 0
+        },
+        {
+            "id": "tour-down-under-2026-stage-4",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 0
+        },
+        {
+            "id": "tour-down-under-2026-stage-5",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 0
+        },
+        {
+            "id": "tour-down-under-2026-startlist",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stageResultsCount": 0
+        },
+        {
+            "id": "tour-down-under_2026-2026-stage-1",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stage": 1,
+            "stageResultsCount": 10
+        },
+        {
+            "id": "tour-down-under_2026-stage-1",
+            "race": "tour-down-under",
+            "year": 2026,
+            "stage": 1,
+            "stageResultsCount": 10
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-1",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 76
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-10",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 59
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-2",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 67
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-3",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 66
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-4",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 63
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-5",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 62
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-6",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 61
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-7",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 60
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-8",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 60
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-9",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 59
+        },
+        {
+            "id": "vuelta-al-tachira-2026-stage-undefined",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 0
+        },
+        {
+            "id": "vuelta-al-tachira-2026-tour-gc",
+            "race": "vuelta-al-tachira",
+            "year": 2026,
+            "stageResultsCount": 0
+        }
+    ]
+}

@@ -72,16 +72,16 @@ function validateStageRider(rider: StageRider, index: number): ValidationError[]
       message: 'Missing place/position',
       severity: 'error',
     });
-  } else if (rider.place === -1) {
-    // -1 indicates the scraper could not parse the position from HTML
+  } else if (rider.place === -1 || rider.place === 0) {
+    // -1 or 0 indicates DNF/DNS or the scraper could not parse the position
+    // This is common and should not block points calculation for other riders
     errors.push({
       field: `stageResults[${index}].place`,
-      message: 'Could not parse position from HTML',
-      severity: 'error',
+      message: `Rider did not finish or position unknown (place: ${rider.place})`,
+      severity: 'warning',
       value: rider.place,
     });
   } else if (rider.place < 0 || rider.place > VALIDATION_CONFIG.MAX_POSITION) {
-    // Position 0 can be valid for prologue winners in some edge cases
     errors.push({
       field: `stageResults[${index}].place`,
       message: `Invalid position: ${rider.place}`,
@@ -200,21 +200,19 @@ export function validateStageResult(data: StageResult): ValidationResult {
   const teams = Array.isArray(data.teamClassification) ? data.teamClassification : [];
 
   // Count only regular stage riders (not TTT team results)
-  const riderCount = stageResults.filter(r => !isTTTTeamResult(r)).length;
+  // For tour-gc documents, stageResults is empty - use generalClassification instead
+  const isTourGC = (data as any).isTourGC === true || (data as any).key?.type === 'tour-gc';
+  const riderCount = isTourGC
+    ? gc.length
+    : stageResults.filter(r => !isTTTTeamResult(r)).length;
 
-  // 1. Check minimum rider count
+  // 1. Check minimum rider count (only error for very low counts, no warning for "low" counts)
+  // Note: Some races like National Championship ITTs can have as few as 20-30 riders
   if (riderCount < VALIDATION_CONFIG.MIN_RIDERS_STAGE) {
     errors.push({
-      field: 'stageResults',
+      field: isTourGC ? 'generalClassification' : 'stageResults',
       message: `Too few riders: ${riderCount} (minimum: ${VALIDATION_CONFIG.MIN_RIDERS_STAGE})`,
       severity: 'error',
-      value: riderCount,
-    });
-  } else if (riderCount < VALIDATION_CONFIG.MIN_RIDERS_WARNING) {
-    warnings.push({
-      field: 'stageResults',
-      message: `Low rider count: ${riderCount} (expected: ${VALIDATION_CONFIG.MIN_RIDERS_WARNING}+)`,
-      severity: 'warning',
       value: riderCount,
     });
   }

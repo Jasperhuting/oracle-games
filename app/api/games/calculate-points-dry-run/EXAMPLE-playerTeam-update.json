@@ -1,0 +1,83 @@
+{
+  "_description": "This is what gets written to a playerTeams document when a rider scores points",
+  "_location": "playerTeams/{documentId}",
+
+  "_BEFORE_UPDATE": {
+    "gameId": "abc123",
+    "userId": "user456",
+    "riderNameId": "jay-vine",
+    "riderName": "Jay Vine",
+    "active": true,
+    "pointsScored": 63,
+    "totalPoints": 63,
+    "stagesParticipated": 1,
+    "racePoints": {
+      "nc-australia": {
+        "totalPoints": 63,
+        "stagePoints": {
+          "result": { "stageResult": 63, "total": 63 }
+        }
+      }
+    },
+    "pointsBreakdown": [
+      {
+        "raceSlug": "nc-australia",
+        "stage": "result",
+        "stagePosition": 2,
+        "stageResult": 63,
+        "total": 63,
+        "calculatedAt": "2026-01-25T10:00:00.000Z"
+      }
+    ]
+  },
+
+  "_AFTER_UPDATE": {
+    "gameId": "abc123",
+    "userId": "user456",
+    "riderNameId": "jay-vine",
+    "riderName": "Jay Vine",
+    "active": true,
+
+    "_comment_legacy": "LEGACY FIELDS (will be removed in Phase 4)",
+    "pointsScored": 15,
+    "stagesParticipated": 2,
+    "racePoints": {
+      "nc-australia": {
+        "totalPoints": 63,
+        "stagePoints": {
+          "result": { "stageResult": 63, "total": 63 }
+        }
+      },
+      "nc-australia-itt": {
+        "totalPoints": 15,
+        "stagePoints": {
+          "result": { "stageResult": 15, "total": 15 }
+        }
+      }
+    },
+
+    "_comment_new": "NEW FIELDS (source of truth)",
+    "totalPoints": 78,
+    "pointsBreakdown": [
+      {
+        "raceSlug": "nc-australia",
+        "stage": "result",
+        "stagePosition": 2,
+        "stageResult": 63,
+        "total": 63,
+        "calculatedAt": "2026-01-25T10:00:00.000Z"
+      },
+      {
+        "raceSlug": "nc-australia-itt",
+        "stage": "result",
+        "stagePosition": 1,
+        "stageResult": 15,
+        "total": 15,
+        "calculatedAt": "2026-01-25T11:00:00.000Z"
+      }
+    ]
+  },
+
+  "_UPDATE_CODE_LOCATION": "calculate-points/route.ts lines 559-571",
+  "_UPDATE_CODE": "await teamDoc.ref.update({ pointsScored, stagesParticipated, racePoints, pointsBreakdown, totalPoints })"
+}

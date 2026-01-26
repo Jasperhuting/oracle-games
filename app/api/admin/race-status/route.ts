@@ -70,6 +70,9 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'tour-de-langkawi': 8,
   'tour-of-guangxi': 6,
   'tour-of-britain': 8,
+  'pune-grand-tour': 4,
+  'tour-of-sharjah': 5, 
+  'alula-tour': 5,
 };
 
 // Races that typically have a prologue
@@ -77,6 +80,7 @@ const RACES_WITH_PROLOGUE: Set<string> = new Set([
   'tour-down-under',
   'tour-de-romandie',
   'tour-de-suisse',
+  'pune-grand-tour',
   // Grand tours sometimes have prologues
 ]);
 
@@ -90,9 +94,55 @@ const KNOWN_SINGLE_DAY_PATTERNS: string[] = [
   '-time-trial',
 ];
 
+// Classifications to exclude (youth, U23, women categories)
+const UNWANTED_CLASSIFICATIONS = ['MJ', 'MU', 'WJ', 'WU', 'WE', 'WWT'];
+
+// Race slugs to explicitly exclude (women's races with incorrect classification, etc.)
+const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
+  'vuelta-el-salvador', // Women's race incorrectly classified as 2.1
+  'trofeo-felanitx-femina', // women's race
+  'classica-camp-de-morvedre', // 1.1
+  'grand-prix-el-salvador', // women's race
+  'grand-prix-san-salvador', // women's race
+  'trofeo-palma-femina', // women's race
+  'trofeo-binissalem-andratx', // women's race
+]);
+
+/**
+ * Check if a race should be excluded based on classification, name, or slug
+ * Mirrors the logic from calendar page filterUnwantedClassifications
+ */
+function shouldExcludeRace(name: string, classification: string | null, slug?: string): boolean {
+  // Check explicit exclusion list first
+  if (slug && EXCLUDED_RACE_SLUGS.has(slug)) {
+    return true;
+  }
+
+  const cls = (classification || '').trim();
+
+  // Check if unwanted classification is in the race name
+  const hasUnwantedInName = UNWANTED_CLASSIFICATIONS.some(
+    unwanted => name.includes(unwanted) || name.includes(`${unwanted} -`)
+  );
+
+  // Check if unwanted classification is in the classification field
+  const hasUnwantedInClassification = UNWANTED_CLASSIFICATIONS.some(
+    unwanted => cls.includes(unwanted)
+  );
+
+  // Check for "women" in name
+  const hasWomenInName = name.toLowerCase().includes('women');
+
+  // Check for WWT in classification
+  const hasWWTInClassification = cls.includes('WWT');
+
+  return hasUnwantedInName || hasUnwantedInClassification || hasWomenInName || hasWWTInClassification;
+}
+
 const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   // Monuments
   'milano-sanremo',
+  'ruta-de-la-ceramica-gran-premio-castellon',
   'ronde-van-vlaanderen',
   'paris-roubaix',
   'liege-bastogne-liege',
@@ -112,6 +162,8 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'kuurne-brussel-kuurne',
   'dwars-door-vlaanderen',
   'eschborn-frankfurt',
+  'gp-de-valence',
+  'trofeo-palma',
   // World Championships
   'world-championship',
   'world-championship-itt',
@@ -224,13 +276,21 @@ export async function GET(request: NextRequest) {
     racesSnapshot.docs.forEach(doc => {
       const data = doc.data();
       const slug = data.slug || doc.id;
+      const classification = data.classification || null;
+
+      // Skip races with excluded classifications or patterns in name
+      const name = data.name || slug;
+      if (shouldExcludeRace(name, classification, slug)) {
+        return;
+      }
+
       raceConfigs.set(slug, {
         name: data.name || slug,
         totalStages: data.totalStages || data.stages || 1,
         isSingleDay: data.isSingleDay ?? false,
         startDate: data.startDate || null,
         endDate: data.endDate || null,
-        classification: data.classification || null,
+        classification,
       });
     });
 
@@ -257,6 +317,12 @@ export async function GET(request: NextRequest) {
 
     raceMap.forEach((docs, raceSlug) => {
       const raceConfig = raceConfigs.get(raceSlug);
+
+      // Skip races that are not in raceConfigs (they were filtered out due to excluded classification)
+      // Only show races that have a valid config (ME classification or no classification)
+      if (!raceConfig) {
+        return;
+      }
 
       // Detect if this is a single-day race based on:
       // 1. Database config (isSingleDay flag)
@@ -414,7 +480,7 @@ export async function GET(request: NextRequest) {
           });
         }
 
-        // Add pending numbered stages (1 to numberedStages, not including prologue)
+        // Add numbered stages
         for (let i = 1; i <= numberedStages; i++) {
           if (!scrapedStageNumbers.has(i)) {
             stages.push({
@@ -427,6 +493,20 @@ export async function GET(request: NextRequest) {
               docId: '',
             });
           }
+        }
+
+        // Add General Classification for multi-stage races
+        const hasGCScraped = stages.some(s => s.stageNumber === 'gc');
+        if (!hasGCScraped) {
+          stages.push({
+            stageNumber: 'gc',
+            status: 'pending',
+            scrapedAt: null,
+            riderCount: 0,
+            hasValidationErrors: false,
+            validationWarnings: 0,
+            docId: '',
+          });
         }
       }
 
@@ -449,13 +529,13 @@ export async function GET(request: NextRequest) {
       stages.length = 0;
       stages.push(...deduplicatedStages);
 
-      const pendingStages = totalStages - scrapedStages - failedStages;
+      const pendingStages = (isSingleDay ? totalStages : totalStages + 1) - scrapedStages - failedStages;
 
       races.push({
         raceSlug,
         raceName: raceConfig?.name || raceSlug,
         year,
-        totalStages,
+        totalStages: isSingleDay ? totalStages : totalStages + 1, // Add GC for multi-stage races
         scrapedStages,
         failedStages,
         pendingStages: Math.max(0, pendingStages),
@@ -537,16 +617,27 @@ export async function GET(request: NextRequest) {
             docId: '',
           });
         }
+
+        // Add General Classification for multi-stage races
+        stages.push({
+          stageNumber: 'gc',
+          status: 'pending',
+          scrapedAt: null,
+          riderCount: 0,
+          hasValidationErrors: false,
+          validationWarnings: 0,
+          docId: '',
+        });
       }
 
       races.push({
         raceSlug,
         raceName: config.name,
         year,
-        totalStages,
+        totalStages: isSingleDay ? totalStages : totalStages + 1, // Add GC for multi-stage races
         scrapedStages: 0,
         failedStages: 0,
-        pendingStages: totalStages,
+        pendingStages: isSingleDay ? totalStages : totalStages + 1, // Add GC for multi-stage races
         hasStartlist: false,
         startlistRiderCount: 0,
         lastScrapedAt: null,

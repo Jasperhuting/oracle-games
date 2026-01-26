@@ -100,14 +100,10 @@ export default function SeasonLeaderboardPage() {
             </div> */}
 
             {/* Stats Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="flex w-full gap-4 mb-6">
+              <div className="bg-white p-4 rounded-lg border border-gray-200 flex-1">
                 <div className="text-sm text-gray-600">Totaal Renners</div>
                 <div className="text-2xl font-bold text-gray-900">{totalRiders}</div>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-sm text-gray-600">Geladen</div>
-                <div className="text-2xl font-bold text-gray-900">{rankingsRiders.length}</div>
               </div>
             </div>
           </div>
@@ -178,11 +174,6 @@ export default function SeasonLeaderboardPage() {
                     })}
                   </tbody>
                 </table>
-              </div>
-
-              {/* Info text */}
-              <div className="mt-6 text-center text-sm text-gray-500">
-                Klik op een renner om de punten per race te zien
               </div>
             </>
           )}

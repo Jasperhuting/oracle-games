@@ -677,7 +677,15 @@ export function RaceManagementDashboard() {
       {/* Race List */}
       {data && data.races.length > 0 && (
         <div>
-          {data.races.map((race) => (
+          {[...data.races]
+            .sort((a, b) => {
+              // Sort by startDate, races without date go to the end
+              if (!a.startDate && !b.startDate) return 0;
+              if (!a.startDate) return 1;
+              if (!b.startDate) return -1;
+              return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+            })
+            .map((race) => (
             <RaceCard
               key={`${race.raceSlug}-${race.year}`}
               race={race}

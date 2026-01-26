@@ -126,22 +126,27 @@ export async function GET(request: NextRequest) {
     // Get backups
     const backups = await listScraperDataBackups(docId);
 
-    // Extract sample riders
+    // Extract sample riders - only those with points
     const sampleRiders: StageDetailResponse['sampleRiders'] = [];
 
     if (isStageResult(dataWithMeta.data)) {
       const stageResults = dataWithMeta.data.stageResults || [];
-      stageResults.slice(0, 5).forEach((rider) => {
+      stageResults.forEach((rider) => {
         if ('riders' in rider) {
           // TTT result - skip
           return;
         }
-        sampleRiders.push({
-          place: rider.place,
-          name: rider.shortName || `${rider.firstName} ${rider.lastName}`.trim() || rider.name || 'Unknown',
-          team: rider.team || '',
-          points: rider.points || '-',
-        });
+        // Only include riders with points
+        const points = rider.points;
+        const hasPoints = points && points !== '-' && Number(points) > 0;
+        if (hasPoints) {
+          sampleRiders.push({
+            place: rider.place,
+            name: rider.shortName || `${rider.firstName} ${rider.lastName}`.trim() || rider.name || 'Unknown',
+            team: rider.team || '',
+            points: rider.points,
+          });
+        }
       });
     }
 

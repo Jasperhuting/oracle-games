@@ -1,4 +1,4 @@
-import { getStageResult } from './lib/scraper';
+import { getStageResult } from './lib/scraper/index.js';
 import { saveScraperData } from './lib/firebase/scraper-service';
 
 async function rescindTourDownUnderPrologue() {
