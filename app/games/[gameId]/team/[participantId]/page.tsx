@@ -89,9 +89,6 @@ export default function TeamDetailPage() {
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
   const [totalPointsScored, setTotalPointsScored] = useState<number>(0);
   const [totalPoints, setTotalPoints] = useState<number>(0);
-
-  console.log('teamDetails', teamDetails)
-
   
 
   useEffect(() => {
@@ -119,8 +116,6 @@ export default function TeamDetailPage() {
 
         setParticipant(data.participant);
         setTeamDetails(data.team);
-
-        console.log(data);
 
         setTotalPoints(data.team.riders.reduce((total: number, rider: Rider) => total + (rider.pricePaid || 0), 0));
         setTotalPointsScored(data.team.riders.reduce((total: number, rider: Rider) => total + rider.pointsScored, 0))
