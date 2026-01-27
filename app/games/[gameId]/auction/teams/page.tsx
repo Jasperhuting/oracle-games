@@ -8,7 +8,7 @@ import { Flag } from '@/components/Flag';
 import { AuctionTeamsRider as Rider, AuctionTeam as Team } from '@/lib/types/pages';
 import { useTranslation } from 'react-i18next';
 import { usePlayerTeams } from '@/contexts/PlayerTeamsContext';
-import { PlayerTeam } from '@/lib/types';
+import { Game, PlayerTeam } from '@/lib/types';
 
 export default function TeamsOverviewPage() {
   const params = useParams();
@@ -25,6 +25,7 @@ export default function TeamsOverviewPage() {
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
 
   const [gameRiders, setGameRiders] = useState<PlayerTeam[]>([]);
+  const [game, setGame] = useState<Game | null>(null);
 
   const { riders: allRiders, uniqueRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams();
 
@@ -32,6 +33,8 @@ export default function TeamsOverviewPage() {
     const gameRiders = allRiders.filter(r => r.gameId === gameId);
     console.log(`[TeamsOverview] Found ${gameRiders.length} riders for game ${gameId}`);
     setGameRiders(gameRiders);
+
+    
   }, [allRiders, gameId])
 
   const { t } = useTranslation();
@@ -47,6 +50,13 @@ export default function TeamsOverviewPage() {
         if (!teamsResponse.ok) {
           throw new Error('Failed to load teams');
         }
+
+         const gameResponse = await fetch(`/api/games/${gameId}`);
+        if (!gameResponse.ok) {
+          throw new Error('Failed to load game');
+        }
+        const gameData = await gameResponse.json();
+        setGame(gameData.game);
 
         const data = await teamsResponse.json();
         setTeams(data.teams || []);
@@ -122,6 +132,25 @@ export default function TeamsOverviewPage() {
         comparison = a.totalBaseValue - b.totalBaseValue;
         break;
       case 'percentage':
+        if (game?.gameType === 'marginal-gains') {
+          const aPricePaid = a.totalSpent ?? 0;
+          const aPointsScored = (a.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0);
+          const aMarginalGainsValue = aPointsScored - aPricePaid;
+          const aMarginalGainsPercentage = aPricePaid > 0 ? (aMarginalGainsValue / aPricePaid) * 100 : null;
+
+          const bPricePaid = b.totalSpent ?? 0;
+          const bPointsScored = (b.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0);
+          const bMarginalGainsValue = bPointsScored - bPricePaid;
+          const bMarginalGainsPercentage = bPricePaid > 0 ? (bMarginalGainsValue / bPricePaid) * 100 : null;
+
+          if (aMarginalGainsPercentage === null && bMarginalGainsPercentage === null) return 0;
+          if (aMarginalGainsPercentage === null) return 1;
+          if (bMarginalGainsPercentage === null) return -1;
+
+          const pctComparison = aMarginalGainsPercentage - bMarginalGainsPercentage;
+          return sortDirection === 'asc' ? pctComparison : -pctComparison;
+        }
+
         comparison = a.totalPercentageDiff - b.totalPercentageDiff;
         break;
     }
@@ -334,6 +363,22 @@ export default function TeamsOverviewPage() {
             {sortedTeams.map((team) => {
             const isExpanded = expandedTeams.has(team.participantId);
 
+
+             const pricePaid = team.totalSpent ?? 0;
+             
+                const pointsScored = team.riders.reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0);
+                
+                const marginalGainsValue = pointsScored - pricePaid;
+                const marginalGainsPercentage = pricePaid > 0 ? (marginalGainsValue / pricePaid) * 100 : null;
+                const marginalGainsPercentageClass =
+                  marginalGainsPercentage === null
+                    ? 'text-gray-600'
+                    : marginalGainsPercentage > 0
+                      ? 'text-green-600'
+                      : marginalGainsPercentage < 0
+                        ? 'text-red-600'
+                        : 'text-gray-600';
+
             return (
               <div
                 key={team.participantId}
@@ -357,16 +402,15 @@ export default function TeamsOverviewPage() {
                           <span>{team.totalRiders} renners</span>
                           <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
                           <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
-                          <span className={`font-medium ${
-                            team.totalPercentageDiff > 0
+                          <span className={`font-medium ${game?.gameType === 'marginal-gains' ? marginalGainsPercentageClass : team.totalPercentageDiff > 0
                               ? 'text-red-600'
                               : team.totalPercentageDiff < 0
                               ? 'text-green-600'
                               : 'text-gray-600'
                           }`}>
-                            Verschil: {team.totalPercentageDiff > 0 ? '+' : ''}{team.totalPercentageDiff}%
+                            Verschil: 
+                            {game?.gameType === 'marginal-gains' ? `${Math.round(marginalGainsPercentage || 0)}%` : `${team.totalPercentageDiff > 0 ? '+' : ''}${team.totalPercentageDiff}%`}
                           </span>
-                          <span>€{team.remainingBudget.toLocaleString()} over</span>
                           <span className="font-medium text-blue-600">
                             {team.totalPoints} punten
                           </span>
