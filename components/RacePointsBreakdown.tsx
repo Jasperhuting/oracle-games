@@ -92,7 +92,7 @@ export default function RacePointsBreakdown({
               </div>
 
               <div className="space-y-2">
-                {sortedEvents.map((event, index) => (
+                {sortedEvents.sort((a, b) => a.stage.localeCompare(b.stage)).map((event, index) => (
                   <div key={`${event.raceSlug}-${event.stage}-${index}`} className="border-l-2 border-gray-300 pl-3 py-1">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -101,10 +101,10 @@ export default function RacePointsBreakdown({
                         </span>
                         <div className="text-xs text-gray-600 mt-1 space-y-0.5">
                           {event.stageResult && (
-                            <div>• Etappe uitslag: {event.stageResult} pts</div>
+                            <div>• Etappe uitslag ({event.stagePosition}e): {event.stageResult} pts</div>
                           )}
                           {event.gcPoints && (
-                            <div>• Algemeen klassement: {event.gcPoints} pts</div>
+                            <div>• Algemeen klassement ({event.gcPosition}e): {event.gcPoints} pts</div>
                           )}
                           {event.pointsClass && (
                             <div>• Puntenklassement: {event.pointsClass} pts</div>

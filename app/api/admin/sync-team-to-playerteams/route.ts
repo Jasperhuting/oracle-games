@@ -370,7 +370,7 @@ export async function POST(request: NextRequest) {
         riders: ridersToCreate.map(r => ({
           riderName: r.riderName,
           totalPoints: r.totalPoints,
-          sourcePlayerTeamId: r.sourcePlayerTeamId,
+          sourcePlayerTeamId: r.sourcePlayerTeamId || null,
         })),
       },
       timestamp: Timestamp.now(),
@@ -410,7 +410,7 @@ export async function PUT(request: NextRequest) {
     const db = getServerFirebase();
 
     const body = await request.json();
-    const { gameId, adminUserId, dryRun = true } = body;
+    const { gameId, adminUserId, dryRun = true, targetUserId } = body;
 
     // Verify admin
     if (!adminUserId) {
@@ -438,10 +438,18 @@ export async function PUT(request: NextRequest) {
     const gameData = gameDoc.data();
     results.push(`Game: ${gameData?.name}\n`);
 
-    // Get all participants in this game
-    const participantsSnapshot = await db.collection('gameParticipants')
-      .where('gameId', '==', gameId)
-      .get();
+    // Get all participants in this game (or specific participant if targetUserId is provided)
+    let participantsSnapshot;
+    if (targetUserId) {
+      participantsSnapshot = await db.collection('gameParticipants')
+        .where('gameId', '==', gameId)
+        .where('userId', '==', targetUserId)
+        .get();
+    } else {
+      participantsSnapshot = await db.collection('gameParticipants')
+        .where('gameId', '==', gameId)
+        .get();
+    }
 
     let totalCreated = 0;
     let totalDeleted = 0;

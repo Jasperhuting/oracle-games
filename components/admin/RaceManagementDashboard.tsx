@@ -419,6 +419,9 @@ function RaceCard({
     ? Math.round((race.scrapedStages / race.totalStages) * 100)
     : 0;
 
+  // Check if race is fully scraped
+  const isFullyScraped = race.scrapedStages === race.totalStages && race.failedStages === 0;
+
   // Format date range for display
   const formatDateRange = () => {
     if (!race.startDate) return null;
@@ -473,6 +476,11 @@ function RaceCard({
           {race.hasValidationErrors && (
             <span className="px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">
               Has errors
+            </span>
+          )}
+          {isFullyScraped && (
+            <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
+              Fully scraped
             </span>
           )}
         </div>
@@ -569,6 +577,12 @@ export function RaceManagementDashboard() {
   const [data, setData] = useState<RaceStatusResponse | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
+  const [hideFullyScraped, setHideFullyScraped] = useState(false);
+
+  // Helper function to check if a race is fully scraped
+  const isFullyScraped = (race: RaceStatus): boolean => {
+    return race.scrapedStages === race.totalStages && race.failedStages === 0;
+  };
 
   const fetchData = useCallback(async () => {
     if (!user?.uid) return;
@@ -623,6 +637,15 @@ export function RaceManagementDashboard() {
               </option>
             ))}
           </select>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={hideFullyScraped}
+              onChange={(e) => setHideFullyScraped(e.target.checked)}
+              className="rounded"
+            />
+            Hide fully scraped
+          </label>
           <Button onClick={fetchData} disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
           </Button>
@@ -674,10 +697,18 @@ export function RaceManagementDashboard() {
         </div>
       )}
 
+      {/* All races filtered out */}
+      {!loading && data && data.races.length > 0 && hideFullyScraped && data.races.every(isFullyScraped) && (
+        <div className="text-center py-8 text-gray-500">
+          All races are fully scraped. Uncheck "Hide fully scraped" to see all races.
+        </div>
+      )}
+
       {/* Race List */}
-      {data && data.races.length > 0 && (
+      {data && data.races.length > 0 && (!hideFullyScraped || !data.races.every(isFullyScraped)) && (
         <div>
           {[...data.races]
+            .filter(race => !hideFullyScraped || !isFullyScraped(race))
             .sort((a, b) => {
               // Sort by startDate, races without date go to the end
               if (!a.startDate && !b.startDate) return 0;

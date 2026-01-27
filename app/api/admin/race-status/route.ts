@@ -48,31 +48,152 @@ export interface RaceStatusResponse {
 // Known race stage counts (fallback if not in database)
 // Note: This is the number of regular stages, NOT including prologue
 const KNOWN_RACE_STAGES: Record<string, number> = {
-  // Grand Tours
-  'tour-de-france': 21,
-  'giro-d-italia': 21,
-  'vuelta-a-espana': 21,
-  // Major stage races
-  'tour-down-under': 5, // Has prologue + 5 stages
-  'paris-nice': 8,
-  'tirreno-adriatico': 7,
-  'volta-a-catalunya': 7,
-  'dauphine': 8,
-  'tour-de-suisse': 8,
-  'vuelta-al-tachira': 10,
-  'tour-de-romandie': 5, // Typically has prologue + 5 stages
-  'tour-of-the-alps': 5,
-  'itzulia-basque-country': 6,
-  'tour-of-oman': 6,
-  'uae-tour': 7,
-  'tour-of-california': 7,
-  'tour-of-turkey': 8,
-  'tour-de-langkawi': 8,
-  'tour-of-guangxi': 6,
-  'tour-of-britain': 8,
+  // Grand Tours (2.UWT)
+  'tour-de-france': 21, // Checked
+  'giro-d-italia': 21, // Checked
+  'vuelta-a-espana': 21, // Checked
+  
+  // WorldTour stage races (2.UWT)
+  'paris-nice': 8, // Checked
+  'tirreno-adriatico': 7, // Checked
+  'volta-a-catalunya': 7, // Checked
+  'dauphine': 8, // Checked
+  'tour-de-suisse': 8, // Checked
+  'tour-de-pologne': 7, // Checked
+  'renewi-tour': 5, // Checked
+  'deutschland-tour': 4, // Checked
+  
+  // 2.Pro races (Second tier professional stage races)
+  'tour-down-under': 6, // Checked
+  'tour-de-romandie': 5, // Checked
+  'tour-of-the-alps': 5, // Checked
+  'itzulia-basque-country': 6, // Checked
+  'tour-of-oman': 5, // Checked
+  'uae-tour': 7, // Checked
+  'arctic-race-of-norway': 4, // Checked
+  'czech-tour': 4, // Checked
+  'alula-tour': 5, // Checked
+  '4-jours-de-dunkerque': 5, // Checked
+  
+  // Other stage races
+  'dookola-mazowsza': 4, // Checked
+  'kreiz-breizh-elites': 3, // Checked
+  'acht-van-bladel2': 3, // Checked
+  'anna-vasa-race': 3, // Checked
+  'course-cycliste-de-solidarnosc': 4, // Checked
+  'course-de-la-paix-u23': 4, // Checked
+  'cote-d-or-classic-juniors': 2, // Checked
+  'istrian-spring-tour': 3, // Checked
+  'trofej-umag': 1, // Checked
+  'tour-of-albania': 5, // Checked
+  'tour-of-turkey': 8, // Checked
+  'tour-de-langkawi': 8, // Checked
+  'tour-of-guangxi': 6, // Checked
+  'tour-of-britain': 6, // Checked
+  'volta-a-portugal-em-bicicleta': 11, // To be checked
+  'tour-of-norway': 4, // Checked
+  'tour-of-austria': 5, // Checked
+  'tour-of-denmark': 5, // Checked
+  'tour-of-slovenia': 5, // Checked
+  'tour-of-sweden': 3, // To be checked
+  'tour-of-belgium': 5,
+  'vuelta-a-andalucia-ruta-ciclista-del-sol': 5,
+  'région-pays-de-la-loire-tour': 4,
+  'tour-of-hainan': 5, // Checked
+  'presidential-cycling-tour-of-turkiye': 8,
+  'tour-de-hongrie': 5, // Checked
+  'boucles-de-la-mayenne-crédit-mutuel': 3, // Checked
+  'ethias-tour-de-wallonie': 5, // Checked
+  'baloise-belgium-tour': 5,
+  'vuelta-al-tachira': 10, // Checked
   'pune-grand-tour': 4,
-  'tour-of-sharjah': 5, 
-  'alula-tour': 5,
+  'tour-of-sharjah': 5, // Checked
+  'tour-de-taiwan': 5, // Checked
+  'the-princess-maha-chakri-sirindhorns-cup-tour-of-thailand': 6, // Checked
+  'bakukhankendi-azerbaijan-cycling-race': 5,
+  'flèche-du-sud': 5, // Checked
+  'grande-prémio-internacional-beiras-e-serra-da-estrela': 3, // Checked
+  'la-route-doccitanie-cic': 4, // Checked
+  'lyon-torino': 1,
+  'tpc-en-nouvelle-aquitaine': 1,
+  'tour-of-istanbul': 3, // Checked
+  'il-giro-dabruzzo': 4, // Checked
+  'tour-of-holland': 5, // Checked
+  'jamaica-international-cycling-classic': 3, // Checked
+  'tour-dalgérie': 10, // Checked
+  'tour-du-bénin': 6, // Checked
+  'tour-de-maurice': 7,
+  'tour-du-cameroun': 5,
+  'grand-prix-chantal-biya': 1,
+  'tour-of-antalya': 4,
+  'tour-of-rhodes-powered-by-rodos-palace': 3,
+  'metec-olympias-tour': 4,
+  'volta-ao-alentejo': 3,
+  'circuit-des-ardennes': 3,
+  'ronde-de-loise': 5,
+  'tour-of-malopolska': 3,
+  'tour-szlakiem-mazurskich-twierdz': 3,
+  'course-cycliste-de-solidarnosc-et-des-champions-olympiques': 5,
+  'gp-internacional-torres-vedras-trofeu-joaquim-agostinho': 2,
+  'tour-alsace': 5,
+  'tour-of-kosovo': 3,
+  'tour-of-bulgaria': 5,
+  'tour-of-romania': 5,
+  'tour-darménie': 4,
+  'tour-de-serbie': 4,
+  'tour-of-germany': 4,
+  'tour-of-switzerland': 8,
+  'tour-of-france': 21,
+  'tour-of-spain': 21,
+  'tour-of-italy': 21,
+  'giro-del-friuli-venezia-giulia': 1,
+  'giro-delle-marche': 1,
+  'giro-della-valle-daosta-mont-blanc': 5,
+  'giro-del-trentino': 5,
+  'giro-del-veneto': 1,
+  'tour-de-luxembourg': 5,
+  'tour-de-normandie': 6,
+  'tour-de-savoie': 5,
+  'tour-du-gevaudan': 3,
+  'tour-du-var': 3,
+  'vuelta-a-burgos': 5,
+  'vuelta-a-castilla-y-leon': 3,
+  'vuelta-a-la-comunidad-de-madrid': 3,
+  'vuelta-a-la-rioja': 3,
+  'vuelta-al-pais-vasco': 6,
+  'vuelta-a-suecia': 6,
+  'vuelta-a-suiza': 5,
+  'vuelta-a-taiwan': 5,
+  'vuelta-a-uruguay': 8,
+  'vuelta-a-venezuela': 8,
+  'vuelta-yugoslavia': 5,
+  'tour-of-serbia': 4,
+  'tour-of-montenegro': 4,
+  'tour-of-greece': 5,
+  'tour-of-cyprus': 4,
+  'tour-of-iceland': 2,
+  'tour-of-latvia': 4,
+  'tour-of-netherlands': 4,
+  'tour-of-luxembourg': 5,
+  'tour-of-portugal': 11,
+  'tour-of-andorra': 4,
+  'tour-of-monaco': 4,
+  'tour-of-san-marino': 4,
+  'tour-of-vatican': 4,
+  'tour-of-israel': 5,
+  'tour-of-saudi-arabia': 5,
+  'tour-of-uae': 7,
+  'tour-of-qatar': 5,
+  'tour-of-kuwait': 5,
+  'tour-of-bahrain': 5,
+  'tour-of-pakistan': 7,
+  'tour-of-india': 8,
+  'tour-of-sri-lanka': 5,
+  'tour-of-thailand': 6,
+  'tour-of-malaysia': 8,
+  'tour-of-singapore': 5,
+  'tour-of-indonesia': 6,
+  'tour-of-philippines': 5,
 };
 
 // Races that typically have a prologue
@@ -81,6 +202,8 @@ const RACES_WITH_PROLOGUE: Set<string> = new Set([
   'tour-de-romandie',
   'tour-de-suisse',
   'pune-grand-tour',
+  'santos-tour-down-under',
+  'deutschland-tour',
   // Grand tours sometimes have prologues
 ]);
 
@@ -105,6 +228,7 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'grand-prix-san-salvador', // women's race
   'trofeo-palma-femina', // women's race
   'trofeo-binissalem-andratx', // women's race
+  'race-torquay', // race is cancelled
 ]);
 
 /**
@@ -139,35 +263,128 @@ function shouldExcludeRace(name: string, classification: string | null, slug?: s
 }
 
 const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
-  // Monuments
+  // Monuments (WorldTour)
   'milano-sanremo',
-  'ruta-de-la-ceramica-gran-premio-castellon',
   'ronde-van-vlaanderen',
   'paris-roubaix',
   'liege-bastogne-liege',
   'il-lombardia',
-  // World Tour one-day races
+
+  // WorldTour one-day races
   'amstel-gold-race',
-  'la-fleche-wallone',
+  'la-flèche-wallonne',
   'strade-bianche',
-  'e3-harelbeke',
   'gent-wevelgem',
-  'san-sebastian',
-  'bretagne-classic',
-  'cyclassics-hamburg',
-  'gp-quebec',
-  'gp-montreal',
   'omloop-het-nieuwsblad',
   'kuurne-brussel-kuurne',
   'dwars-door-vlaanderen',
   'eschborn-frankfurt',
-  'gp-de-valence',
-  'trofeo-palma',
-  'classica-camp-de-morvedre',
+  'cyclassics-hamburg',
+  'gp-quebec',
+  'gp-montreal',
+  'classic-brugge-de-panne',
+  'copenhagen-sprint',
+
   // World Championships
   'world-championship',
   'world-championship-itt',
   'world-championship-me',
+
+  // 1.Pro races (Second tier professional)
+  'classique-dunkerque',
+  'coppa-bernocchi',
+  'antwerp-port-epic-ladies', // This should be checked - might be women's race
+
+  // 1.1 races (Third tier professional)
+  'a-travers-les-hauts-de-france',
+  'alpes-gresivaudan-classic',
+  'andorra-morabanc-classica',
+  'antwerp-port-epic',
+  'aveiro-region-champions-classic',
+  'boucles-de-l-aulne',
+  'cholet-pays-de-loire',
+  'chrono-des-nations',
+  'circuit-de-wallonie',
+  'circuito-de-getxo',
+  'clasica-jaen-paraiso-interior',
+  'clasica-terres-de-l-ebre',
+  'circuit-des-xi-villes',
+  'grand-prix-longitudinal-del-norte',
+  'grand-prix-san-salvador',
+  'grote-prijs-jean-pierre-monsere',
+  'heist-op-den-berg',
+  'kampioenschap-van-vlaanderen1',
+  'konvert-koerse',
+  'la-classique-morbihan',
+  'la-classique-puisaye-forterre',
+  'la-poly-normande',
+  'la-roue-tourangelle',
+  'la-route-des-geants',
+  'classic-grand-besancon-doubs',
+  'classic-var',
+  'classica-camp-de-morvedre',
+  'coppa-agostoni',
+  'coppa-montes-gran-premio-della-resistenza',
+  'ruta-de-la-ceramica-gran-premio-castellon',
+
+  // 1.2 races (Non-professional)
+  'alanya-cup',
+  'albani-classic-fyen-rundt',
+  'arno-wallaard-memorial',
+  'beskid-classic',
+  'boucle-de-l-artois',
+  'circuito-del-porto-trofeo-arvedi',
+  'clasica-pascua',
+  'classic-annemasse-agglo',
+  'classic-loire-atlantique',
+  'classique-of-mauritius',
+  'coppa-citta-di-san-daniele2',
+  'de-hive-slag-om-woensdrecht',
+  'dhofar-classic',
+  'dorpenomloop-rucphen',
+  'due-giorni-marchigiana-gp-santa-rita',
+  'dwars-door-wingene',
+  'east-midlands-international-cicle-classic',
+  'fleche-ardennaise',
+  'giro-del-medio-brenta',
+  'gp-adria-mobil',
+  'gp-antalya',
+  'gp-brda-collio',
+  'gp-cerami',
+  'gp-czech-republic',
+  'gp-gippingen',
+  'gp-kranj',
+  'grand-prix-de-fourmies',
+  'gp-slovenian-istria',
+  'grand-prix-vorarlberg',
+  'halle-ingooigem',
+  'heistse-pijl',
+  'tour-of-istanbul',
+  'kattekoers-herentals',
+  'la-drome-classic',
+  'la-picto-charentaise',
+  'le-samyn',
+  'memorial-marco-pantani',
+  'nokere-koerse',
+  'omloop-van-het-houtland',
+  'paris-tours',
+  'porec-classic',
+  'ronde-van-drenthe',
+  'ronde-van-limburg',
+  'ronde-van-overijssel',
+  'ster-van-zwolle',
+  'syedra-ancient-city',
+  'tour-de-la-mirabelle',
+  'trofej-umag',
+  'trofeo-alcide-degasperi',
+  'trofeo-citta-di-brescia',
+  'trofeo-citta-di-castelfidardo',
+  'trofeo-torino-biella-giro-della-provincia-di-biell',
+  'trofeu-da-arrabida',
+  'visegrad-4-bicycle-race-gp-hungary',
+  'visegrad-4-bicycle-race-gp-polski-via-odra',
+  'visegrad-4-bicycle-race-gp-slovakia',
+  'youngster-coast-challenge'
 ]);
 
 /**
@@ -494,6 +711,20 @@ export async function GET(request: NextRequest) {
             });
           }
         }
+
+        // Add pending General Classification if not already scraped
+        const hasGCScraped = stages.some(s => s.stageNumber === 'gc');
+        if (!hasGCScraped) {
+          stages.push({
+            stageNumber: 'gc',
+            status: 'pending',
+            scrapedAt: null,
+            riderCount: 0,
+            hasValidationErrors: false,
+            validationWarnings: 0,
+            docId: '',
+          });
+        }
       }
 
       // Re-sort after adding pending (using same sorting logic)
@@ -603,6 +834,17 @@ export async function GET(request: NextRequest) {
             docId: '',
           });
         }
+
+        // Add pending General Classification for multi-stage races
+        stages.push({
+          stageNumber: 'gc',
+          status: 'pending',
+          scrapedAt: null,
+          riderCount: 0,
+          hasValidationErrors: false,
+          validationWarnings: 0,
+          docId: '',
+        });
       }
 
       races.push({

@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { AuthGuard } from '@/components/AuthGuard';
 import { usePlayerTeams } from '@/contexts/PlayerTeamsContext';
+import RacePointsBreakdown from '@/components/RacePointsBreakdown';
+import React from 'react';
+import { Star } from 'tabler-icons-react';
+import { Tooltip } from 'react-tooltip';
 
 interface StageDetails {
   stage: string;
@@ -46,19 +50,84 @@ interface PaginationInfo {
 }
 
 export default function SeasonLeaderboardPage() {
-  const params = useParams();
-  const router = useRouter();
+
+  const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
+
   const { user } = useAuth();
-  const year = params?.year as string;
-  const { t } = useTranslation();
+  const { riders: allPlayerTeams, uniqueRiders: rankingsRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams(user?.uid);
 
-  const { riders: rankingsRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams();
+  const [gamesById, setGamesById] = useState<Record<string, { name?: string; division?: string }>>({});
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadGames() {
+      try {
+        const response = await fetch('/api/games/list?limit=200');
+        if (!response.ok) return;
+        const data = await response.json();
+
+        if (isCancelled) return;
+        if (!data || !Array.isArray(data.games)) return;
+
+        const nextMap: Record<string, { name?: string; division?: string }> = {};
+        data.games.forEach((g: any) => {
+          if (!g?.id) return;
+          nextMap[g.id] = { name: g.name, division: g.division };
+        });
+        setGamesById(nextMap);
+      } catch {
+        // ignore
+      }
+    }
+
+    loadGames();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const myGameIdsByRiderNameId = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    if (!user?.uid) return map;
+
+    allPlayerTeams.forEach((pt) => {
+      if (pt.userId !== user.uid) return;
+      if (!pt.riderNameId) return;
+
+      const existing = map.get(pt.riderNameId) ?? new Set<string>();
+      existing.add(pt.gameId);
+      map.set(pt.riderNameId, existing);
+    });
+
+    return map;
+  }, [allPlayerTeams, user?.uid]);
+
+  const toggleRider = (riderId: string) => {
+    const newExpanded = new Set(expandedRiders);
+    if (newExpanded.has(riderId)) {
+      newExpanded.delete(riderId);
+    } else {
+      newExpanded.add(riderId);
+    }
+    setExpandedRiders(newExpanded);
+  };
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 py-8">
+          <Tooltip
+            id="owned-games-tooltip"
+            delayShow={0}
+            className="!opacity-100"
+            render={({ content }) => (
+              <div className="text-sm whitespace-pre-line">
+                {String(content || '')}
+              </div>
+            )}
+          />
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -78,27 +147,6 @@ export default function SeasonLeaderboardPage() {
               </Link>
             </div>
 
-            {/* Year Selector */}
-            {/* <div className="flex items-center gap-4 mb-6">
-              <label className="text-sm font-medium text-gray-700">Seizoen:</label>
-              <div className="flex gap-2">
-                {yearOptions.map(y => (
-                  <button
-                    key={y}
-                    disabled={y !== currentYear}
-                    onClick={() => handleYearChange(y.toString())}
-                    className={`px-4 py-2 rounded-lg transition-colors ${y !== currentYear ? 'bg-gray-100! cursor-not-allowed' : 'cursor-pointer'} ${
-                      selectedYear === y.toString()
-                        ? 'bg-primary text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {y}
-                  </button>
-                ))}
-              </div>
-            </div> */}
-
             {/* Stats Summary */}
             <div className="flex w-full gap-4 mb-6">
               <div className="bg-white p-4 rounded-lg border border-gray-200 flex-1">
@@ -107,13 +155,6 @@ export default function SeasonLeaderboardPage() {
               </div>
             </div>
           </div>
-
-          {/* Error */}
-          {/* {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-700">{error}</p>
-            </div>
-          )} */}
 
           {/* Loading */}
           {rankingsLoading ? (
@@ -147,29 +188,95 @@ export default function SeasonLeaderboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {rankingsRiders.map((rider, index) => {                      
+                    {rankingsRiders.map((rider, index) => {
+                      const isExpanded = expandedRiders.has(rider.id || 'no-id');
+                      const myGameIds = Array.from(myGameIdsByRiderNameId.get(rider.riderNameId) ?? []);
+                      const isMine = myGameIds.length > 0;
+
+                      const ownedInGamesLabel = isMine
+                        ? myGameIds
+                            .map((gameId) => {
+                              const game = gamesById[gameId];
+                              if (!game) return gameId;
+                              if (game.division) return `${game.name} - ${game.division}`;
+                              return game.name || gameId;
+                            })
+                            .join('\n')
+                        : undefined;
+
+                      const hasPointsBreakdown = rider.pointsBreakdown && rider.pointsBreakdown.length > 0;
+                      const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
+                      const hasPointsData = hasPointsBreakdown || hasRacePoints;
+
                       return (
-                        <tr
-                          key={`${rider.riderNameId}_${rider.id || 'no-id'}`}                            
-                          className={`transition-colors`}
-                        >
-                          <td className="px-4 py-4">
-                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                              (index + 1) === 1 ? 'bg-yellow-100 text-yellow-800' :
-                              (index + 1) === 2 ? 'bg-gray-200 text-gray-800' :
-                              (index + 1) === 3 ? 'bg-orange-100 text-orange-800' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {index + 1}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="font-medium text-gray-900">{rider.riderName}</div>
-                          </td>
-                          <td className="px-4 py-4 text-right">
-                            <div className="font-medium text-gray-900">{rider.pointsScored}</div>
-                          </td>
-                        </tr>
+                        <React.Fragment key={`${rider.riderNameId}_${rider.id || 'no-id'}`}>
+                          <tr                            
+                            className={`p-6 ${hasPointsData ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+                            onClick={() => hasPointsData && toggleRider(rider.id || 'no-id')}
+                          >
+                            <td className="px-4 py-4">
+                              <span className={`inline-flex items-center justify-center w-8 h-6 rounded-full text-sm font-bold ${(index + 1) === 1 ? 'bg-yellow-100 text-yellow-800' :
+                                  (index + 1) === 2 ? 'bg-gray-200 text-gray-800' :
+                                    (index + 1) === 3 ? 'bg-orange-100 text-orange-800' :
+                                      'bg-gray-100 text-gray-600'
+                                }`}>
+                                {index + 1}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 gap-2 flex flex-row items-center content-center">
+                              {isMine && (
+                                <span
+                                  data-tooltip-id="owned-games-tooltip"
+                                  data-tooltip-content={ownedInGamesLabel}
+                                >
+                                  <Star className={'text-yellow-500'} />
+                                </span>
+                              )}
+                              <div
+                                className="font-medium text-gray-900"
+                                data-tooltip-id={isMine ? 'owned-games-tooltip' : undefined}
+                                data-tooltip-content={isMine ? ownedInGamesLabel : undefined}
+                              >
+                                {rider.riderName}
+                              </div>
+                              {hasPointsData && (
+                                <div className="text-gray-400">
+                                  <svg
+                                    className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-4 text-right">
+                              <div className="font-medium text-gray-900">{rider.pointsScored}</div>
+                            </td>
+                            <td>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colSpan={100} >
+                              {isExpanded && hasPointsData && (
+                                <div className="border-t border-gray-200 bg-gray-50 p-4">
+                                  <RacePointsBreakdown
+                                    pointsBreakdown={rider.pointsBreakdown}
+                                    racePoints={rider.racePoints}
+                                    riderName={rider.riderName}
+                                  />
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        </React.Fragment>
                       );
                     })}
                   </tbody>
