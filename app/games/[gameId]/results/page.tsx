@@ -8,6 +8,7 @@ import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { useTranslation } from 'react-i18next';
 import { Game, GameParticipant } from '@/lib/types/games';
+import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 
 interface TeamRider {
   id: string;
@@ -225,7 +226,7 @@ export default function TeamResultsPage() {
                           <div className="flex gap-4 text-sm text-gray-600 mt-1">
                             <span>{rider.team}</span>
                             {rider.rank > 0 && <span>UCI #{rider.rank}</span>}
-                            {rider.pricePaid && <span>Betaald: €{rider.pricePaid}</span>}
+                            {rider.pricePaid && <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>}
                           </div>
                         </div>
                       </div>

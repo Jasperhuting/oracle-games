@@ -10,6 +10,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx --quiet",
+    "tsx": "tsx",
     "emulators": "export PATH=\"/opt/homebrew/opt/openjdk@17/bin:$PATH\" && firebase emulators:start --import=./emulator-data --export-on-exit",
     "emulators:clear": "rm -rf ./emulator-data && export PATH=\"/opt/homebrew/opt/openjdk@17/bin:$PATH\" && firebase emulators:start --export-on-exit=./emulator-data",
     "emulators:seed": "export PATH=\"/opt/homebrew/opt/openjdk@17/bin:$PATH\" && node scripts/seed-emulator.js",

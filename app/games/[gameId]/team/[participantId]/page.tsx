@@ -87,6 +87,12 @@ export default function TeamDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
+  const [totalPointsScored, setTotalPointsScored] = useState<number>(0);
+  const [totalPoints, setTotalPoints] = useState<number>(0);
+
+  console.log('teamDetails', teamDetails)
+
+  
 
   useEffect(() => {
     async function fetchTeamDetails() {
@@ -115,6 +121,9 @@ export default function TeamDetailPage() {
         setTeamDetails(data.team);
 
         console.log(data);
+
+        setTotalPoints(data.team.riders.reduce((total: number, rider: Rider) => total + (rider.pricePaid || 0), 0));
+        setTotalPointsScored(data.team.riders.reduce((total: number, rider: Rider) => total + rider.pointsScored, 0))
 
       } catch (err) {
         console.error('Error loading team details:', err);
@@ -191,7 +200,7 @@ export default function TeamDetailPage() {
         {/* Team Statistics */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Team Statistieken</h2>
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+          <div className={`grid ${gameType === 'marginal-gains' ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-2'} gap-4`}>
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{teamDetails.riderCount}</div>
               <div className="text-sm text-gray-600">Totaal renners</div>
@@ -200,6 +209,22 @@ export default function TeamDetailPage() {
               <div className="text-2xl font-bold text-primary">{teamDetails.totalPoints}</div>
               <div className="text-sm text-gray-600">Team punten</div>
             </div>
+            {gameType === 'marginal-gains' && 
+            <>
+             <div className="text-center">
+              <div className="text-2xl font-bold text-primary">
+                {totalPointsScored}
+              </div>
+              <div className="text-sm text-gray-600">Punten gehaald</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">
+                {Math.round(totalPointsScored / totalPoints * 100) + '%'}              
+              </div>
+              <div className="text-sm text-gray-600">Percentage</div>
+            </div>
+            </>
+            }
           </div>
         </div>
 
@@ -221,6 +246,19 @@ export default function TeamDetailPage() {
                 const hasPointsBreakdown = rider.pointsBreakdown && rider.pointsBreakdown.length > 0;
                 const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
                 const hasPointsData = hasPointsBreakdown || hasRacePoints;
+
+                const pricePaid = rider.pricePaid ?? 0;
+                const pointsScored = rider.pointsScored ?? 0;
+                const marginalGainsValue = pointsScored - pricePaid;
+                const marginalGainsPercentage = pricePaid > 0 ? (marginalGainsValue / pricePaid) * 100 : null;
+                const marginalGainsPercentageClass =
+                  marginalGainsPercentage === null
+                    ? 'text-gray-600'
+                    : marginalGainsPercentage > 0
+                      ? 'text-green-600'
+                      : marginalGainsPercentage < 0
+                        ? 'text-red-600'
+                        : 'text-gray-600';
 
                 return (
                   <div
@@ -249,8 +287,12 @@ export default function TeamDetailPage() {
                             <div className="flex gap-4 text-sm text-gray-600 mt-1">
                               <span>{rider.team}</span>
                               {rider.pricePaid && <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>}
-                              {gameType}
-                              {gameType === 'marginal-gains' && <span>Waarde: {-(rider.pricePaid || 0) + rider.pointsScored}</span>}
+                              {gameType === 'marginal-gains' && <>
+                                <span>Waarde: {marginalGainsValue}</span>
+                                <span>
+                                  Percentage: <span className={marginalGainsPercentageClass}>{marginalGainsPercentage === null ? '—' : `${marginalGainsPercentage.toFixed(2)}%`}</span>
+                                </span>
+                              </>}
                             </div>
                           </div>
                         </div>

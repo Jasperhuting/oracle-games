@@ -20,11 +20,30 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const oldUserData = userDoc.data();
+      const nextPlayername = typeof updates?.playername === 'string' ? updates.playername : undefined;
+
       // Update with the provided fields
       await db.collection('users').doc(userId).update({
         ...updates,
         updatedAt: Timestamp.now(),
       });
+
+      if (nextPlayername && oldUserData?.playername !== nextPlayername) {
+        const participantsSnapshot = await db
+          .collection('gameParticipants')
+          .where('userId', '==', userId)
+          .get();
+
+        const docs = participantsSnapshot.docs;
+        for (let i = 0; i < docs.length; i += 450) {
+          const batch = db.batch();
+          for (const doc of docs.slice(i, i + 450)) {
+            batch.update(doc.ref, { playername: nextPlayername });
+          }
+          await batch.commit();
+        }
+      }
 
       return NextResponse.json({
         success: true,
@@ -129,6 +148,22 @@ export async function POST(request: NextRequest) {
     const oldUserData = userDoc.data();
     
     await db.collection('users').doc(userId).update(updateData);
+
+    if (oldUserData?.playername !== playername) {
+      const participantsSnapshot = await db
+        .collection('gameParticipants')
+        .where('userId', '==', userId)
+        .get();
+
+      const docs = participantsSnapshot.docs;
+      for (let i = 0; i < docs.length; i += 450) {
+        const batch = db.batch();
+        for (const doc of docs.slice(i, i + 450)) {
+          batch.update(doc.ref, { playername });
+        }
+        await batch.commit();
+      }
+    }
 
     // Log the profile update activity
     const changes: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
