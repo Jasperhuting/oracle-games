@@ -586,6 +586,16 @@ export async function POST(request: NextRequest) {
       duration: Date.now() - startTime,
     });
 
+    await db.collection('scoreUpdates').add({
+      year: yearNum,
+      raceSlug: raceName,
+      stage: stage.toString(),
+      calculatedAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
+      totalPointsAwarded: results.pointsAwarded,
+      gamesAffected: gamesAffectedIds,
+    });
+
 
 
     // Trigger rider scraping for detailed points data

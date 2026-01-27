@@ -356,7 +356,7 @@ export default function TeamsOverviewPage() {
                         <div className="flex gap-4 text-sm text-gray-600 mt-1">
                           <span>{team.totalRiders} renners</span>
                           <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
-                          <span>Betaald: {team.totalSpent.toLocaleString()}</span>
+                          <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
                           <span className={`font-medium ${
                             team.totalPercentageDiff > 0
                               ? 'text-red-600'
@@ -512,7 +512,7 @@ export default function TeamsOverviewPage() {
                                     <div className="flex gap-4 text-sm text-gray-600">
                                       <span>{riders.length} renners</span>
                                       <span>Waarde: {teamTotalBaseValue.toLocaleString()}</span>
-                                      <span>Betaald: {teamTotalPricePaid.toLocaleString()}</span>
+                                      <span>Betaald: €{teamTotalPricePaid.toLocaleString()}</span>
                                       <span className={`font-medium ${
                                         teamPercentageDiff > 0
                                           ? 'text-red-600'
@@ -639,7 +639,7 @@ export default function TeamsOverviewPage() {
                         <div className="flex gap-4 text-sm text-gray-600 mt-1">
                           <span>{team.totalRiders} renners</span>
                           <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
-                          <span>Betaald: {team.totalPricePaid.toLocaleString()}</span>
+                          <span>Betaald: €{team.totalPricePaid.toLocaleString()}</span>
                           <span className={`font-medium ${
                             team.totalPercentageDiff > 0
                               ? 'text-red-600'

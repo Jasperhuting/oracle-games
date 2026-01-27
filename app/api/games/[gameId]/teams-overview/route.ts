@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import type { DocumentData } from 'firebase-admin/firestore';
+import { GameData, Team } from '@/lib/types';
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +20,7 @@ export async function GET(
       );
     }
 
-    const gameData = gameDoc.data();
+    const gameData: DocumentData | undefined = gameDoc.data();
     const riderValues = gameData?.config?.riderValues || {};
     const maxRiders = gameData?.config?.maxRiders || gameData?.config?.teamSize || 32; // Default to 32 if not specified
 
@@ -131,7 +133,7 @@ export async function GET(
     const userRiderTracker = new Map<string, Set<string>>(); // Track unique riderNameId per user
 
     playerTeamsSnapshot.forEach(doc => {
-      const team = doc.data();
+      const team: DocumentData = doc.data();
       const userId = team.userId;
       const riderNameId = team.riderNameId;
 
@@ -166,7 +168,7 @@ export async function GET(
         : 0;
 
       // Debug first rider
-      if (teamsMap.size === 0 && teamsMap.get(userId)?.length === 0) {
+      if (!teamsMap.has(userId) || teamsMap.get(userId)?.length === 0) {
         console.log('[TEAMS-OVERVIEW] First rider lookup:', {
           riderNameId: team.riderNameId,
           foundInMap: !!riderInfo,
@@ -180,7 +182,12 @@ export async function GET(
       }
 
       // Use new totalPoints field with fallback to legacy pointsScored
-      const riderPoints = team.totalPoints ?? team.pointsScored ?? 0;
+      let riderPoints = team.totalPoints ?? team.pointsScored ?? 0;
+
+      if (gameData?.config?.gameType === 'marginal-gains') {
+        riderPoints = (-team.spentBudget) + riderPoints
+      }
+
 
       teamsMap.get(userId)?.push({
         riderId: doc.id,
@@ -231,7 +238,12 @@ export async function GET(
         : 0;
 
       // Calculate totalPoints from riders' totalPoints (new) or pointsScored (legacy fallback)
-      const calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.totalPoints ?? r.pointsScored ?? 0), 0);
+      let calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.totalPoints ?? r.pointsScored ?? 0), 0);
+
+
+      if (gameData?.gameType === 'marginal-gains') {
+        calculatedTotalPoints = (-participant.spentBudget) + calculatedTotalPoints;
+      }
 
       return {
         participantId: doc.id,

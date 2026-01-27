@@ -11,6 +11,7 @@ import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import React from 'react';
 import { Star } from 'tabler-icons-react';
 import { Tooltip } from 'react-tooltip';
+import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
 
 interface StageDetails {
   stage: string;
@@ -50,6 +51,13 @@ interface PaginationInfo {
 }
 
 export default function SeasonLeaderboardPage() {
+
+  const params = useParams();
+  const year = useMemo(() => {
+    const raw = (params as any)?.year;
+    const parsed = typeof raw === 'string' ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(parsed) ? parsed : 2026;
+  }, [params]);
 
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
 
@@ -118,6 +126,7 @@ export default function SeasonLeaderboardPage() {
     <AuthGuard>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 py-8">
+          <ScoreUpdateBanner year={year} />
           <Tooltip
             id="owned-games-tooltip"
             delayShow={0}
@@ -133,7 +142,7 @@ export default function SeasonLeaderboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Seizoen Punten 2026
+                  Seizoen Punten {year}
                 </h1>
                 <p className="text-gray-600">
                   Overzicht van alle renners en hun gescoorde punten dit seizoen
@@ -163,7 +172,7 @@ export default function SeasonLeaderboardPage() {
             </div>
           ) : rankingsRiders.length === 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-              <p className="text-gray-600">Geen seizoenspunten gevonden voor 2026</p>
+              <p className="text-gray-600">Geen seizoenspunten gevonden voor {year}</p>
               <p className="text-sm text-gray-500 mt-2">
                 Punten worden toegevoegd wanneer etappe-uitslagen worden verwerkt.
               </p>

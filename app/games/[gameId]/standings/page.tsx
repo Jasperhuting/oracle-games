@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
+import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,6 +13,7 @@ import {
   createColumnHelper,
   SortingState,
 } from '@tanstack/react-table';
+import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 
 interface Standing {
   ranking: number;
@@ -29,6 +31,7 @@ export default function StandingsPage() {
 
   const [standings, setStandings] = useState<Standing[]>([]);
   const [gameName, setGameName] = useState<string>('');
+  const [gameYear, setGameYear] = useState<number>(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -100,9 +103,13 @@ export default function StandingsPage() {
       try {
         // Fetch game info for the name
         const gameResponse = await fetch(`/api/games/${gameId}`);
+
         if (gameResponse.ok) {
           const gameData = await gameResponse.json();
           setGameName(gameData.game?.name || '');
+          if (typeof gameData.game?.year === 'number') {
+            setGameYear(gameData.game.year);
+          }
         }
 
         // Fetch standings
@@ -116,7 +123,7 @@ export default function StandingsPage() {
         const mappedStandings: Standing[] = teams.map((team: any) => ({
           ranking: team.ranking,
           playername: team.playername,
-          totalPoints: team.totalPoints,
+          totalPoints: team.totalPoints.toLocaleString(),
           participantId: team.participantId,
         }));
 
@@ -159,6 +166,7 @@ export default function StandingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
+        <ScoreUpdateBanner year={gameYear} gameId={gameId} />
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">

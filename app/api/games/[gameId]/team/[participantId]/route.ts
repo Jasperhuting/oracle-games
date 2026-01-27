@@ -10,6 +10,12 @@ export async function GET(
     const { gameId, participantId } = await params;
     const db = getServerFirebase();
 
+    // Get game data (needed for gameType-specific scoring)
+    const gameDoc = await db.collection('games').doc(gameId).get();
+    const gameData = gameDoc.data();
+    const gameType = gameData?.gameType ?? gameData?.config?.gameType;
+    const isMarginalGains = gameType === 'marginal-gains';
+
     // Get participant details
     const participantDoc = await db.collection('gameParticipants').doc(participantId).get();
     
@@ -75,37 +81,59 @@ export async function GET(
     riders.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
 
     // Calculate team statistics from totalPoints (source of truth from playerTeams)
-    const totalPoints = riders.reduce((sum, rider) => sum + (rider.totalPoints || 0), 0);
+    const baseTotalPoints = riders.reduce((sum, rider) => sum + (rider.totalPoints || 0), 0);
+    const spentBudget = participantData?.spentBudget || 0;
+    const totalPoints = isMarginalGains ? (-spentBudget) + baseTotalPoints : baseTotalPoints;
 
     // Calculate actual ranking by comparing with all participants in the game
-    let ranking = participantData.ranking || 0;
-    if (ranking === 0) {
-      // Query all participants to calculate ranking
-      const allParticipantsSnapshot = await db.collection('gameParticipants')
+    // Mirror teams-overview behavior: rank only active participants, sort by points desc then playername,
+    // and give equal points the same rank.
+    const allParticipantsSnapshot = await db.collection('gameParticipants')
+      .where('gameId', '==', gameId)
+      .where('status', '==', 'active')
+      .get();
+
+    const participantPoints: { id: string; points: number; playername: string }[] = [];
+    for (const pDoc of allParticipantsSnapshot.docs) {
+      const pData = pDoc.data();
+      const pTeamSnapshot = await db.collection('playerTeams')
         .where('gameId', '==', gameId)
+        .where('userId', '==', pData.userId)
         .get();
 
-      // Calculate total points for each participant
-      const participantPoints: { id: string; points: number }[] = [];
-      for (const pDoc of allParticipantsSnapshot.docs) {
-        const pData = pDoc.data();
-        const pTeamSnapshot = await db.collection('playerTeams')
-          .where('gameId', '==', gameId)
-          .where('userId', '==', pData.userId)
-          .get();
+      const pBaseTotal = pTeamSnapshot.docs.reduce((sum, tDoc) => {
+        const tData = tDoc.data();
+        return sum + (tData.totalPoints ?? tData.pointsScored ?? 0);
+      }, 0);
 
-        const pTotal = pTeamSnapshot.docs.reduce((sum, tDoc) => {
-          const tData = tDoc.data();
-          return sum + (tData.totalPoints ?? tData.pointsScored ?? 0);
-        }, 0);
+      const pSpentBudget = pData?.spentBudget || 0;
+      const pTotal = isMarginalGains ? (-pSpentBudget) + pBaseTotal : pBaseTotal;
 
-        participantPoints.push({ id: pDoc.id, points: pTotal });
+      participantPoints.push({
+        id: pDoc.id,
+        points: pTotal,
+        playername: pData.playername || '',
+      });
+    }
+
+    participantPoints.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return a.playername.localeCompare(b.playername);
+    });
+
+    let ranking = 0;
+    let currentRank = 1;
+    let previousPoints: number | null = null;
+    for (let index = 0; index < participantPoints.length; index++) {
+      const row = participantPoints[index];
+      if (previousPoints === null || row.points !== previousPoints) {
+        currentRank = index + 1;
+        previousPoints = row.points;
       }
-
-      // Sort by points descending and find ranking
-      participantPoints.sort((a, b) => b.points - a.points);
-      const rankIndex = participantPoints.findIndex(p => p.id === participantId);
-      ranking = rankIndex >= 0 ? rankIndex + 1 : 0;
+      if (row.id === participantId) {
+        ranking = currentRank;
+        break;
+      }
     }
 
     return NextResponse.json({

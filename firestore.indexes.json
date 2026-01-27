@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "scoreUpdates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "races",
       "queryScope": "COLLECTION",
       "fields": [

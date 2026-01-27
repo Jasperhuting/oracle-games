@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
+import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 
 // PointsEvent interface for the new format
 interface PointsEvent {
@@ -82,6 +83,7 @@ export default function TeamDetailPage() {
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [teamDetails, setTeamDetails] = useState<TeamDetails | null>(null);
   const [gameName, setGameName] = useState<string>('');
+  const [gameType, setGameType] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
@@ -99,6 +101,7 @@ export default function TeamDetailPage() {
         if (gameResponse.ok) {
           const gameData = await gameResponse.json();
           setGameName(gameData.game?.name || '');
+          setGameType(gameData.game?.gameType || '');
         }
 
         // Fetch team details
@@ -110,6 +113,8 @@ export default function TeamDetailPage() {
 
         setParticipant(data.participant);
         setTeamDetails(data.team);
+
+        console.log(data);
 
       } catch (err) {
         console.error('Error loading team details:', err);
@@ -170,6 +175,7 @@ export default function TeamDetailPage() {
               <div className="flex items-center gap-4 text-gray-600">
                 <span>Ranking: #{participant.ranking}</span>
                 <span>Totaalpunten: {participant.totalPoints}</span>
+                
                 {gameName && <span>{gameName}</span>}
               </div>
             </div>
@@ -242,8 +248,9 @@ export default function TeamDetailPage() {
                             </h3>
                             <div className="flex gap-4 text-sm text-gray-600 mt-1">
                               <span>{rider.team}</span>
-                              {rider.rank > 0 && <span>UCI #{rider.rank}</span>}
-                              {rider.pricePaid && <span>Betaald: {rider.pricePaid}M</span>}
+                              {rider.pricePaid && <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>}
+                              {gameType}
+                              {gameType === 'marginal-gains' && <span>Waarde: {-(rider.pricePaid || 0) + rider.pointsScored}</span>}
                             </div>
                           </div>
                         </div>
