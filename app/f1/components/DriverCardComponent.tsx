@@ -4,7 +4,7 @@ import { Flag } from "@/components/Flag"
 export const DriverCard = ({ driver, small }: { driver: Driver, small?: boolean }) => {
 
     return <>
-    <div className={`group rounded-md p-1 pl-2 justify-center items-center content-center md:p-3 relative overflow-hidden ${small ? '' : ''}`}>
+    <div className={`group rounded-md p-1 pl-2 justify-center items-center content-center md:p-3 relative overflow-hidden h-[56px] lg:h-[140px] ${small ? '' : ''}`}>
                     <div
                         style={{ background: `linear-gradient(to left, ${driver.teamColor}, ${driver.teamColorAlt})` }}
                         className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-75 bg-gray-600"

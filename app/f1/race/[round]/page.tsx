@@ -359,7 +359,7 @@ export default function RacePage() {
     const [draggingDriver, setDraggingDriver] = useState<string | null>(null);
     const [draggingDriverData, setDraggingDriverData] = useState<Driver | null>(null);
     const [isOutsideGrid, setIsOutsideGrid] = useState(false);
-    const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+    const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
 
 
@@ -406,8 +406,8 @@ export default function RacePage() {
             setDraggingDriver(driver.shortName);
             setDraggingDriverData(driver);
             setIsOutsideGrid(false);
-            // Set initial position immediately to prevent "fly-in" effect
-            setDragPosition({ x: e.clientX, y: e.clientY });
+            // Don't set initial position - wait for first drag event to avoid fly-in effect
+            setDragPosition(null);
         }
     };
 
@@ -439,6 +439,7 @@ export default function RacePage() {
         setDraggedFromGrid(null);
         setDraggingDriverData(null);
         setIsOutsideGrid(false);
+        setDragPosition(null);
     };
 
     const handleGridDragEnd = (e: React.DragEvent, position: number) => {
@@ -453,6 +454,7 @@ export default function RacePage() {
         setDraggedFromGrid(null);
         setDraggingDriverData(null);
         setIsOutsideGrid(false);
+        setDragPosition(null);
     };
 
     const handleSavePrediction = () => {
@@ -782,7 +784,7 @@ export default function RacePage() {
                     </div>
                 </div>
             ) : (
-                <>
+                <> 
                 {/* Extra predictions */}
                 <div className="mb-6">
                     <h3 className="font-bold text-lg mb-4 text-white">Extra voorspellingen</h3>
@@ -871,10 +873,64 @@ export default function RacePage() {
                     </div>
                 </div>
 
-                {/* For upcoming races: Driver cards + Starting grid */}
-                <div className="flex flex-row gap-2 md:gap-4 justify-between">
+                <div className="flex flex-row gap-2 md:gap-4 justify-between items-start">
                     
-                    <div className="mb-4 grid md:flex-1 grid-cols-2 content-center md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-1 md:gap-2 auto-rows-min">
+                    <div className="mb-4 grid md:flex-1 grid-cols-2 content-center md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-1 md:gap-2">
+                        <div className="relative hidden lg:block">
+                            <div className="select-none">
+                                <div className="group rounded-md p-1 pl-2 justify-center items-center content-center md:p-3 relative overflow-hidden h-[32px] lg:h-[140px]">
+                                    <div
+                                        style={{ background: "linear-gradient(to left, #111827, #374151)" }}
+                                        className="absolute inset-0 transition-opacity duration-300 bg-gray-600"
+                                    />
+                                    <div className="relative z-10 flex flex-row md:flex-col min-w-0 overflow-hidden">
+                                        <span className="block text-xs lg:hidden text-white font-lato font-black">TRK</span>
+                                        <span className="text-md lg:text-3xl xl:text-2xl text-white font-lato font-black hidden lg:block truncate">
+                                            {race.name}
+                                        </span>
+                                        <span className="text-md lg:text-2xl xl:text-xl text-white font-lato font-regular hidden lg:block">Circuit</span>
+                                        <span className="text-xs lg:text-lg xl:text-base text-white font-lato font-regular whitespace-nowrap ml-2 md:ml-0 hidden md:block truncate">{race.subName}</span>
+                                    </div>
+                                    {race.raceImage && (
+                                        <img
+                                            className="absolute hidden lg:block top-0 z-[5] w-3/5 xl:w-4/5 right-5 opacity-70"
+                                            src={race.raceImage}
+                                            alt={race.name}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="relative hidden lg:block">
+                            <div className="select-none">
+                                <div className="group rounded-md p-1 pl-2 justify-center items-center content-center md:p-3 relative overflow-hidden h-[32px] lg:h-[140px]">
+                                    <div
+                                        style={{ background: "linear-gradient(to left, #1d4ed8, #0f172a)" }}
+                                        className="absolute inset-0 transition-opacity duration-300 bg-gray-600"
+                                    />
+                                    <div className="relative z-10 flex flex-row md:flex-col min-w-0 overflow-hidden">
+                                        <span className="block text-xs lg:hidden text-white font-lato font-black">INFO</span>
+                                        <span className="text-md lg:text-3xl xl:text-2xl text-white font-lato font-black hidden lg:block">
+                                            Ronde {race.round}
+                                        </span>
+                                        <span className="text-md lg:text-2xl xl:text-xl text-white font-lato font-regular hidden lg:block">
+                                            {isRaceDone
+                                                ? "Afgelopen"
+                                                : now < new Date(race.startDate)
+                                                    ? `Start over ${Math.max(0, Math.ceil((new Date(race.startDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))} d`
+                                                    : "Bezig"}
+                                        </span>
+                                        <span className="text-xs lg:text-lg xl:text-base text-white font-lato font-regular whitespace-nowrap ml-2 md:ml-0 hidden md:block">
+                                            {new Date(race.startDate).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
+                                            {" - "}
+                                            {new Date(race.endDate).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {drivers.map((driver) => {
                             const gridIndex = grid.findIndex((gridDriver) => gridDriver?.shortName === driver.shortName);
                             const gridPosition = gridIndex !== -1 ? gridIndex + 1 : undefined;
@@ -887,9 +943,9 @@ export default function RacePage() {
                                         draggable={!isOnGrid}
                                         onDragStart={(e) => handleDragStartFromCard(e, driver)}
                                         onDragEnd={handleDragEnd}
-                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-none ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
+                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-none h-full ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
                                     >
-                                        <div className="pointer-events-none">
+                                        <div className="pointer-events-none h-full">
                                             <DriverCard driver={driver} />
                                         </div>
                                     </div>
@@ -992,7 +1048,7 @@ export default function RacePage() {
 
           
 
-            {draggingDriverData && draggedFromGrid !== null && dragPosition.x > 0 && (
+            {draggingDriverData && draggedFromGrid !== null && dragPosition && (
                 <div
                     className="fixed pointer-events-none z-50 flex items-center px-4 py-2 rounded font-bold text-lg text-white"
                     style={{
