@@ -2,7 +2,7 @@
 
 import { useParams, usePathname } from "next/navigation";
 import { RaceCard } from "./components/RaceCardComponent";
-import { races2026 } from "./data";
+import { useF1Races } from "./hooks";
 import Link from "next/link";
 import { Trophy, Flag } from "tabler-icons-react";
 import { useEffect } from "react";
@@ -12,6 +12,8 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const currentRound = params.round ? parseInt(params.round as string) : undefined;
     const isStandingsPage = pathname === "/f1/standings";
+    
+    const { races, loading: racesLoading } = useF1Races();
 
     // Override body background color for F1 pages
     useEffect(() => {
@@ -59,21 +61,23 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
             {/* Race cards - hide on standings page */}
             {!isStandingsPage && (
                 <div title="races" className="flex w-full overflow-x-scroll gap-1 mb-6 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-                    {races2026.map((race) => {
-                        const now = new Date();
-                        const raceEndDate = new Date(race.endDate);
-                        const isDone = raceEndDate < now;
-                        const isSelected = currentRound === race.round;
+                    {racesLoading ? (
+                        <div className="text-gray-400 text-sm py-4">Races laden...</div>
+                    ) : (
+                        races.map((race) => {
+                            const isDone = race.status === 'done';
+                            const isSelected = currentRound === race.round;
 
-                        return (
-                            <RaceCard
-                                key={race.round}
-                                race={race}
-                                selected={isSelected}
-                                done={isDone}
-                            />
-                        );
-                    })}
+                            return (
+                                <RaceCard
+                                    key={race.round}
+                                    race={race}
+                                    selected={isSelected}
+                                    done={isDone}
+                                />
+                            );
+                        })
+                    )}
                 </div>
             )}
 

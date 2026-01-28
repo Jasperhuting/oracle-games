@@ -1,0 +1,186 @@
+rules_version = '2';
+
+// Firestore Security Rules for oracle-games-f1 database
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // Helper Functions
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is the owner of a document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user is an admin (you can customize this)
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Check if a race prediction deadline has passed
+    function isPredictionLocked(raceId) {
+      let race = get(/databases/$(database)/documents/races/$(raceId));
+      return race.data.status == 'done' || 
+             (race.data.predictionDeadline != null && 
+              request.time > race.data.predictionDeadline);
+    }
+    
+    // Check if user is member of a subLeague
+    function isSubLeagueMember(subLeagueId) {
+      let subLeague = get(/databases/$(database)/documents/subLeagues/$(subLeagueId));
+      return request.auth.uid in subLeague.data.memberIds;
+    }
+    
+    // ============================================
+    // Seasons Collection
+    // ============================================
+    match /seasons/{seasonId} {
+      // Anyone can read seasons
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // Teams Collection
+    // ============================================
+    match /teams/{teamId} {
+      // Anyone can read teams
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // Drivers Collection
+    // ============================================
+    match /drivers/{driverId} {
+      // Anyone can read drivers
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // Races Collection
+    // ============================================
+    match /races/{raceId} {
+      // Anyone can read races
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // Race Results Collection
+    // ============================================
+    match /raceResults/{resultId} {
+      // Anyone can read results
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // SubLeagues Collection
+    // ============================================
+    match /subLeagues/{subLeagueId} {
+      // Authenticated users can read subLeagues they're a member of
+      // or search by code (for joining)
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create subLeagues
+      allow create: if isAuthenticated() && 
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.memberIds.hasOnly([request.auth.uid]) &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.code.size() >= 4;
+      
+      // Only creator can update (except for memberIds which can be updated by joining)
+      allow update: if isAuthenticated() && (
+        // Creator can update anything
+        resource.data.createdBy == request.auth.uid ||
+        // Users can join (add themselves to memberIds)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'updatedAt']) &&
+         request.resource.data.memberIds.hasAll(resource.data.memberIds) &&
+         request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1 &&
+         request.auth.uid in request.resource.data.memberIds) ||
+        // Users can leave (remove themselves from memberIds)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'updatedAt']) &&
+         resource.data.memberIds.hasAll(request.resource.data.memberIds) &&
+         request.resource.data.memberIds.size() == resource.data.memberIds.size() - 1 &&
+         !(request.auth.uid in request.resource.data.memberIds))
+      );
+      
+      // Only creator can delete (and only if they're the only member)
+      allow delete: if isAuthenticated() && 
+        resource.data.createdBy == request.auth.uid &&
+        resource.data.memberIds.size() == 1;
+    }
+    
+    // ============================================
+    // Predictions Collection
+    // ============================================
+    match /predictions/{predictionId} {
+      // Users can read their own predictions
+      // After race is done, all predictions are public
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isPredictionLocked(resource.data.raceId)
+      );
+      
+      // Users can create their own predictions before deadline
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        !isPredictionLocked(request.resource.data.raceId) &&
+        request.resource.data.finishOrder.size() == 22;
+      
+      // Users can update their own predictions before deadline
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        !resource.data.isLocked &&
+        !isPredictionLocked(resource.data.raceId);
+      
+      // No one can delete predictions
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // Standings Collection
+    // ============================================
+    match /standings/{standingId} {
+      // Anyone authenticated can read standings
+      allow read: if isAuthenticated();
+      
+      // Only server/admin can write standings (calculated server-side)
+      allow write: if isAdmin();
+      
+      // Points History subcollection
+      match /pointsHistory/{historyId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+    
+    // ============================================
+    // Admins Collection (for admin check)
+    // ============================================
+    match /admins/{adminId} {
+      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      allow write: if false; // Only set via Firebase Console or Admin SDK
+    }
+  }
+}

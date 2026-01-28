@@ -25,6 +25,7 @@ const app = initializeFirebaseApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const footballDb = getFirestore(app, 'oracle-games-football');
+const f1Db = getFirestore(app, 'oracle-games-f1');
 
 // Track if emulators have been connected
 let emulatorsConnected = false;
@@ -51,6 +52,7 @@ function connectToEmulatorsIfNeeded() {
       // Connect Firestore emulators
       connectFirestoreEmulator(db, '127.0.0.1', 8080);
       connectFirestoreEmulator(footballDb, '127.0.0.1', 8080);
+      connectFirestoreEmulator(f1Db, '127.0.0.1', 8080);
 
       emulatorsConnected = true;
       console.log('🔧 Connected to Firebase Emulators');
@@ -83,9 +85,13 @@ export function getClientFirebaseFootball() {
   return footballDb;
 }
 
+export function getClientFirebaseF1() {
+  return f1Db;
+}
+
 export function getClientAuth() {
   return auth;
 }
 
 // Export instances directly
-export { db, footballDb, auth };
+export { db, footballDb, f1Db, auth };

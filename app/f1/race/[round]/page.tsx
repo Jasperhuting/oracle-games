@@ -3,8 +3,12 @@
 import { useParams } from "next/navigation";
 import { DriverCard } from "../../components/DriverCardComponent";
 import { useState, useRef, useEffect } from "react";
-import { Driver, races2026, drivers } from "../../data";
+import { useF1LegacyDrivers, useF1Race } from "../../hooks";
+import { LegacyDriver } from "../../types";
 import Link from "next/link";
+
+// Alias for backward compatibility
+type Driver = LegacyDriver;
 
 // Compact driver picker for F1 cards
 const F1DriverPicker = ({
@@ -155,6 +159,8 @@ interface StartingGridElementProps {
     onDrop: (position: number, driver: Driver) => void;
     onDragStart: (position: number, e: React.DragEvent) => void;
     onDragEnd: (e: React.DragEvent, position: number) => void;
+    onSelect: (position: number, driver: Driver | null) => void;
+    availableDrivers: Driver[];
     disabled?: boolean;
 }
 
@@ -230,8 +236,11 @@ const CombinedGridElement = ({ actualDriver, predictedDriver, position, predicte
     );
 };
 
-const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDragEnd, disabled }: StartingGridElementProps) => {
+const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDragEnd, onSelect, availableDrivers, disabled }: StartingGridElementProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const handleDragOver = (e: React.DragEvent) => {
         if (disabled) return;
@@ -266,6 +275,43 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
         }
     };
 
+    const handleClick = () => {
+        if (disabled) return;
+        setIsPickerOpen(!isPickerOpen);
+        setSearch("");
+    };
+
+    const handleSelectDriver = (selectedDriver: Driver) => {
+        onSelect(position, selectedDriver);
+        setIsPickerOpen(false);
+        setSearch("");
+    };
+
+    const handleClearDriver = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onSelect(position, null);
+    };
+
+    // Close picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsPickerOpen(false);
+                setSearch("");
+            }
+        };
+        if (isPickerOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isPickerOpen]);
+
+    const filteredDrivers = availableDrivers.filter(d =>
+        d.firstName.toLowerCase().includes(search.toLowerCase()) ||
+        d.lastName.toLowerCase().includes(search.toLowerCase()) ||
+        d.shortName.toLowerCase().includes(search.toLowerCase())
+    );
+
     // Podium colors for top 3
     const getPositionStyle = () => {
         if (position === 1) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-black';
@@ -276,13 +322,15 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
 
     return (
         <div
-            className={`relative flex items-center gap-0.5 md:gap-1 p-0.5 rounded transition-all touch-none ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : ''} ${disabled ? 'opacity-70' : ''}`}
+            ref={containerRef}
+            className={`relative flex items-center gap-0.5 md:gap-1 p-0.5 rounded transition-all touch-none ${isDragOver ? 'ring-2 ring-green-400 bg-green-900/30' : ''} ${driver && !disabled ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${disabled ? 'opacity-70' : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             draggable={!!driver && !disabled}
             onDragStart={handleDragStart}
             onDragEnd={(e) => onDragEnd(e, position)}
+            onClick={handleClick}
         >
             {/* Position number */}
             <div className={`w-4 h-4 md:w-6 md:h-6 flex items-center justify-center rounded text-[8px] md:text-xs font-black ${getPositionStyle()}`}>
@@ -290,7 +338,7 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
             </div>
 
             {/* Driver slot */}
-            <div className={`flex-1 h-5 md:h-8 rounded flex items-center gap-0.5 md:gap-1.5 px-0.5 md:px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600'}`}>
+            <div className={`flex-1 h-5 md:h-8 rounded flex items-center gap-0.5 md:gap-1.5 px-0.5 md:px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600 hover:border-gray-400'}`}>
                 {driver ? (
                     <>
                         <span
@@ -304,15 +352,61 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
                             />
                         </span>
                         <span className="text-white text-[7px] md:text-xs font-bold pointer-events-none truncate">{driver.shortName}</span>
-                        <div
-                            className="w-0.5 h-3 md:h-4 rounded-full ml-auto hidden md:block"
-                            style={{ backgroundColor: driver.teamColor }}
-                        />
+                        <button
+                            onClick={handleClearDriver}
+                            className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-gray-600 hover:bg-red-600 flex items-center justify-center ml-auto text-white text-[8px] md:text-xs"
+                        >
+                            ×
+                        </button>
                     </>
                 ) : (
-                    <span className="text-gray-500 text-[7px] md:text-[10px]">Drop</span>
+                    <span className="text-gray-500 text-[7px] md:text-[10px]">Klik om te kiezen</span>
                 )}
             </div>
+
+            {/* Driver picker dropdown */}
+            {isPickerOpen && !disabled && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-hidden">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Zoek coureur..."
+                        className="w-full px-2 py-1.5 bg-gray-800 border-b border-gray-700 text-white text-xs focus:outline-none"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="max-h-48 overflow-y-auto">
+                        {filteredDrivers.length === 0 ? (
+                            <div className="px-2 py-2 text-gray-500 text-xs">Geen coureurs gevonden</div>
+                        ) : (
+                            filteredDrivers.map((d) => (
+                                <div
+                                    key={d.shortName}
+                                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-800 cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelectDriver(d);
+                                    }}
+                                >
+                                    <span
+                                        className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
+                                        style={{ backgroundColor: d.teamColor }}
+                                    >
+                                        <img
+                                            src={d.image}
+                                            alt={d.lastName}
+                                            className="w-7 h-auto absolute top-0 left-0"
+                                        />
+                                    </span>
+                                    <span className="text-white text-xs font-bold">{d.shortName}</span>
+                                    <span className="text-gray-400 text-xs truncate">{d.lastName}</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -320,34 +414,48 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
 export default function RacePage() {
     const params = useParams();
     const round = parseInt(params.round as string);
-    const race = races2026.find(r => r.round === round);
+    
+    // Fetch data from Firestore
+    const { race, loading: raceLoading } = useF1Race(2026, round);
+    const { drivers, loading: driversLoading } = useF1LegacyDrivers();
 
-    const now = new Date();
-    const raceEndDate = race ? new Date(race.endDate) : now;
-    const isRaceDone = raceEndDate < now;
+    const isRaceDone = race?.status === 'done';
 
     // Mock predictions for testing - round 0
-    const getMockPrediction = (raceRound: number): (Driver | null)[] => {
-        if (raceRound === 0) {
-            // Mock prediction: VER, NOR, LEC, HAM, PIA, RUS, SAI, ALO, etc.
+    const getMockPrediction = (raceRound: number, driversList: Driver[]): (Driver | null)[] => {
+        if (raceRound === 0 && driversList.length > 0) {
             const predictionOrder = ['VER', 'NOR', 'LEC', 'HAM', 'PIA', 'RUS', 'SAI', 'ALO', 'GAS', 'STR', 'HUL', 'BOR', 'OCO', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
-            return predictionOrder.map(shortName => drivers.find(d => d.shortName === shortName) || null);
+            return predictionOrder.map(shortName => driversList.find(d => d.shortName === shortName) || null);
         }
         return Array(22).fill(null);
     };
 
     // Mock actual results for testing - round 0
-    const getMockResult = (raceRound: number): (Driver | null)[] => {
-        if (raceRound === 0) {
-            // Mock result: NOR wins, VER second, HAM third (different from prediction)
+    const getMockResult = (raceRound: number, driversList: Driver[]): (Driver | null)[] => {
+        if (raceRound === 0 && driversList.length > 0) {
             const resultOrder = ['NOR', 'VER', 'HAM', 'LEC', 'RUS', 'PIA', 'ALO', 'SAI', 'GAS', 'STR', 'OCO', 'HUL', 'BOR', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
-            return resultOrder.map(shortName => drivers.find(d => d.shortName === shortName) || null);
+            return resultOrder.map(shortName => driversList.find(d => d.shortName === shortName) || null);
         }
         return Array(22).fill(null);
     };
 
-    const [grid, setGrid] = useState<(Driver | null)[]>(() => getMockPrediction(round));
-    const actualResult = getMockResult(round);
+    const [grid, setGrid] = useState<(Driver | null)[]>(Array(22).fill(null));
+    const [actualResult, setActualResult] = useState<(Driver | null)[]>(Array(22).fill(null));
+    const [initialized, setInitialized] = useState(false);
+
+    // Update grid when drivers are loaded (only once)
+    useEffect(() => {
+        if (drivers.length > 0 && !initialized) {
+            const predictionOrder = ['VER', 'NOR', 'LEC', 'HAM', 'PIA', 'RUS', 'SAI', 'ALO', 'GAS', 'STR', 'HUL', 'BOR', 'OCO', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
+            const resultOrder = ['NOR', 'VER', 'HAM', 'LEC', 'RUS', 'PIA', 'ALO', 'SAI', 'GAS', 'STR', 'OCO', 'HUL', 'BOR', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
+            
+            if (round === 0) {
+                setGrid(predictionOrder.map(shortName => drivers.find(d => d.shortName === shortName) || null));
+                setActualResult(resultOrder.map(shortName => drivers.find(d => d.shortName === shortName) || null));
+            }
+            setInitialized(true);
+        }
+    }, [drivers.length, round, initialized]);
 
     // Extra predictions
     const [fastestLap, setFastestLap] = useState<string | null>(null);
@@ -398,6 +506,27 @@ export default function RacePage() {
         setDraggedFromGrid(null);
         setDraggingDriver(null);
     };
+
+    const handleSelectOnGrid = (position: number, selectedDriver: Driver | null) => {
+        setGrid((prevGrid) => {
+            const newGrid = [...prevGrid];
+            
+            // If selecting a driver that's already on the grid, swap them
+            if (selectedDriver) {
+                const existingIndex = newGrid.findIndex(d => d?.shortName === selectedDriver.shortName);
+                if (existingIndex !== -1 && existingIndex !== position - 1) {
+                    // Swap: put the current driver at the old position
+                    newGrid[existingIndex] = newGrid[position - 1];
+                }
+            }
+            
+            newGrid[position - 1] = selectedDriver;
+            return newGrid;
+        });
+    };
+
+    // All drivers for grid selection (allow swapping)
+    const availableDriversForGrid = drivers;
 
     const handleDragStartFromGrid = (position: number, e: React.DragEvent) => {
         setDraggedFromGrid(position);
@@ -498,10 +627,18 @@ export default function RacePage() {
 
     const penaltyData = calculatePenalties();
 
+    if (raceLoading || driversLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="text-gray-400">Laden...</div>
+            </div>
+        );
+    }
+
     if (!race) {
         return (
             <div>
-                <h1 className="text-3xl font-bold mb-6">Race niet gevonden</h1>
+                <h1 className="text-3xl font-bold mb-6 text-white">Race niet gevonden</h1>
                 <Link href="/f1" className="text-blue-500 hover:underline">Terug naar overzicht</Link>
             </div>
         );
@@ -917,8 +1054,8 @@ export default function RacePage() {
                                         <span className="text-md lg:text-2xl xl:text-xl text-white font-lato font-regular hidden lg:block">
                                             {isRaceDone
                                                 ? "Afgelopen"
-                                                : now < new Date(race.startDate)
-                                                    ? `Start over ${Math.max(0, Math.ceil((new Date(race.startDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))} d`
+                                                : race.status === 'upcoming'
+                                                    ? `Start over ${Math.max(0, Math.ceil((new Date(race.startDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} d`
                                                     : "Bezig"}
                                         </span>
                                         <span className="text-xs lg:text-lg xl:text-base text-white font-lato font-regular whitespace-nowrap ml-2 md:ml-0 hidden md:block">
@@ -989,6 +1126,8 @@ export default function RacePage() {
                                                 onDrop={handleDropOnGrid}
                                                 onDragStart={handleDragStartFromGrid}
                                                 onDragEnd={handleGridDragEnd}
+                                                onSelect={handleSelectOnGrid}
+                                                availableDrivers={availableDriversForGrid}
                                                 disabled={false}
                                             />
                                         </div>
@@ -1001,6 +1140,8 @@ export default function RacePage() {
                                                 onDrop={handleDropOnGrid}
                                                 onDragStart={handleDragStartFromGrid}
                                                 onDragEnd={handleGridDragEnd}
+                                                onSelect={handleSelectOnGrid}
+                                                availableDrivers={availableDriversForGrid}
                                                 disabled={false}
                                             />
                                         </div>

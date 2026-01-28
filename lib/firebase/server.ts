@@ -77,6 +77,15 @@ export function getServerFirebaseFootball() {
   return getAdminFirestore(app, "oracle-games-football");
 }
 
+export function getServerFirebaseF1() {
+  configureEmulatorsIfNeeded();
+  const app = initializeFirebaseAdmin();
+  if (!app) {
+    throw new Error("Firebase Admin not initialized — missing env vars.");
+  }
+  return getAdminFirestore(app, "oracle-games-f1");
+}
+
 export function getServerAuth() {
   configureEmulatorsIfNeeded();
   const app = initializeFirebaseAdmin();
@@ -88,4 +97,5 @@ export function getServerAuth() {
 
 export const adminDb = getServerFirebase();
 export const adminFootballDb = getServerFirebaseFootball();
+export const adminF1Db = getServerFirebaseF1();
 export const adminAuth = getServerAuth();
