@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Flag } from "./Flag";
 
 export function HomePageContent() {
     const { user } = useAuth();
