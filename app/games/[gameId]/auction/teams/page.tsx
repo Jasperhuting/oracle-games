@@ -22,8 +22,11 @@ export default function TeamsOverviewPage() {
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ranking' | 'points' | 'value' | 'percentage'>('ranking');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [viewMode, setViewMode] = useState<'players' | 'cycling-teams'>('players');
+  const [viewMode, setViewMode] = useState<'players' | 'cycling-teams' | 'all' | 'compare'>('players');
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
+  const [allViewSortBy, setAllViewSortBy] = useState<'points' | 'value' | 'owners' | 'team'>('points');
+  const [allViewSortDirection, setAllViewSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [compareUserId, setCompareUserId] = useState<string | null>(null);
 
   const [gameRiders, setGameRiders] = useState<PlayerTeam[]>([]);
   const [game, setGame] = useState<Game | null>(null);
@@ -141,6 +144,33 @@ export default function TeamsOverviewPage() {
       };
     })
     .sort((a, b) => b.totalRiders - a.totalRiders);
+
+  // All riders flattened from cycling teams, with dynamic sorting
+  const allRidersList = cyclingTeams
+    .flatMap(team => team.riders)
+    .sort((a: any, b: any) => {
+      let comparison = 0;
+      switch (allViewSortBy) {
+        case 'points':
+          comparison = a.pointsScored - b.pointsScored;
+          break;
+        case 'value':
+          comparison = a.baseValue - b.baseValue;
+          break;
+        case 'owners':
+          comparison = (a.owners?.length || 1) - (b.owners?.length || 1);
+          break;
+        case 'team':
+          comparison = (a.riderTeam || '').localeCompare(b.riderTeam || '');
+          break;
+      }
+      const primaryResult = allViewSortDirection === 'desc' ? -comparison : comparison;
+      // Secondary sort by points (highest first) when primary sort values are equal
+      if (primaryResult === 0) {
+        return b.pointsScored - a.pointsScored;
+      }
+      return primaryResult;
+    });
 
   const sortedTeams = [...(teams || [])].sort((a, b) => {
     let comparison = 0;
@@ -264,6 +294,26 @@ export default function TeamsOverviewPage() {
               }`}
             >
               Per Wielerteam
+            </button>
+            <button
+              onClick={() => setViewMode('all')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              }`}
+            >
+              Alles
+            </button>
+            <button
+              onClick={() => setViewMode('compare')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                viewMode === 'compare'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              }`}
+            >
+              Vergelijken
             </button>
           </div>
 
@@ -821,17 +871,22 @@ export default function TeamsOverviewPage() {
                                   {rider.riderName}
                                 </td>
                                 <td className="px-4 py-3 text-sm text-gray-600">
-                                  {ownerCount === 1 ? (
-                                    <span>{firstOwner.playername}</span>
-                                  ) : (
-                                    <span
-                                      className="cursor-help border-b border-dashed border-gray-400"
-                                      data-tooltip-id="owner-tooltip"
-                                      data-tooltip-content={allOwnersData}
-                                    >
-                                      {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
+                                  <div className="flex items-center gap-2">
+                                    {ownerCount === 1 ? (
+                                      <span>{firstOwner.playername}</span>
+                                    ) : (
+                                      <span
+                                        className="cursor-help border-b border-dashed border-gray-400"
+                                        data-tooltip-id="owner-tooltip"
+                                        data-tooltip-content={allOwnersData}
+                                      >
+                                        {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
+                                      </span>
+                                    )}
+                                    <span className="text-xs text-gray-400">
+                                      ({teams.length > 0 ? Math.round((ownerCount / teams.length) * 100) : 0}%)
                                     </span>
-                                  )}
+                                  </div>
                                 </td>
                                 <td className="px-4 py-3 text-sm text-gray-600">
                                   <Flag countryCode={rider.riderCountry} />
@@ -853,6 +908,341 @@ export default function TeamsOverviewPage() {
               );
             })}
           </div>
+        )}
+
+        {/* All Riders View */}
+        {viewMode === 'all' && (
+          <>
+            {/* Sort Controls for All view */}
+            <div className="flex gap-2 items-center mb-4">
+              <span className="text-sm text-gray-600">Sorteer op:</span>
+              <button
+                onClick={() => setAllViewSortBy('points')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  allViewSortBy === 'points'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300'
+                }`}
+              >
+                Punten
+              </button>
+              <button
+                onClick={() => setAllViewSortBy('value')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  allViewSortBy === 'value'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300'
+                }`}
+              >
+                Waarde
+              </button>
+              <button
+                onClick={() => setAllViewSortBy('owners')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  allViewSortBy === 'owners'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300'
+                }`}
+              >
+                Eigenaar(s)
+              </button>
+              <button
+                onClick={() => setAllViewSortBy('team')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  allViewSortBy === 'team'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300'
+                }`}
+              >
+                Team
+              </button>
+              <button
+                onClick={() => setAllViewSortDirection(allViewSortDirection === 'asc' ? 'desc' : 'asc')}
+                className="ml-2 px-3 py-1.5 rounded-lg text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-1"
+              >
+                {allViewSortDirection === 'asc' ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Oplopend
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Aflopend
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <Tooltip
+              id="owner-tooltip-all"
+              className="!opacity-100 !z-50 !max-w-xs"
+              clickable={true}
+              delayHide={300}
+              render={({ content }) => {
+                const owners = content?.split('|||') || [];
+                return (
+                  <div className="max-h-48 overflow-y-auto">
+                    {owners.map((ownerData, idx) => {
+                      const [playername, ownerId] = ownerData.split('::');
+                      const isCurrentUser = ownerId === user?.uid;
+                      return (
+                        <div key={idx} className="py-0.5">
+                          {isCurrentUser && <span className="text-yellow-400 mr-1">★</span>}
+                          {playername}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }}
+            />
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Renner
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Team
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Eigenaar(s)
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Land
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Waarde
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Punten
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {allRidersList.map((rider: any) => {
+                  const ownerCount = rider.owners?.length || 1;
+                  const sortedOwners = [...(rider.owners || [])].sort((a: any, b: any) => {
+                    if (a.userId === user?.uid) return -1;
+                    if (b.userId === user?.uid) return 1;
+                    return 0;
+                  });
+                  const firstOwner = sortedOwners[0] || { playername: 'Unknown', userId: '' };
+                  const currentUserIsOwner = sortedOwners.some((o: any) => o.userId === user?.uid);
+                  const allOwnersData = sortedOwners.slice(1).map((o: any) => `${o.playername}::${o.userId}`).join('|||') || '';
+
+                  return (
+                    <tr
+                      key={rider.riderId || rider.riderNameId}
+                      className="hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                        {currentUserIsOwner && <span className="text-yellow-500 mr-1">★</span>}
+                        {rider.riderName}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {rider.riderTeam}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          {ownerCount === 1 ? (
+                            <span>{firstOwner.playername}</span>
+                          ) : (
+                            <span
+                              className="cursor-help border-b border-dashed border-gray-400"
+                              data-tooltip-id="owner-tooltip-all"
+                              data-tooltip-content={allOwnersData}
+                            >
+                              {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400">
+                            ({teams.length > 0 ? Math.round((ownerCount / teams.length) * 100) : 0}%)
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <Flag countryCode={rider.riderCountry} />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                        {rider.baseValue}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                        {rider.pointsScored}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            </div>
+          </>
+        )}
+
+        {/* Compare View */}
+        {viewMode === 'compare' && (
+          <>
+            {/* User selector */}
+            <div className="flex gap-4 items-center mb-4">
+              <span className="text-sm text-gray-600">Vergelijk met:</span>
+              <select
+                value={compareUserId || ''}
+                onChange={(e) => setCompareUserId(e.target.value || null)}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white"
+              >
+                <option value="">Selecteer een speler...</option>
+                {teams
+                  .filter(t => t.userId !== user?.uid)
+                  .map(t => (
+                    <option key={t.userId} value={t.userId}>
+                      {t.playername}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {compareUserId ? (() => {
+              const myTeam = teams.find(t => t.userId === user?.uid);
+              const theirTeam = teams.find(t => t.userId === compareUserId);
+
+              if (!myTeam || !theirTeam) {
+                return (
+                  <div className="text-center py-12 text-gray-500">
+                    Team niet gevonden
+                  </div>
+                );
+              }
+
+              const theirRiderIds = new Set(theirTeam.riders.map(r => r.riderNameId || r.riderName));
+
+              const allRidersMap = new Map<string, any>();
+
+              myTeam.riders.forEach(r => {
+                const key = r.riderNameId || r.riderName;
+                allRidersMap.set(key, { ...r, inMyTeam: true, inTheirTeam: theirRiderIds.has(key) });
+              });
+
+              theirTeam.riders.forEach(r => {
+                const key = r.riderNameId || r.riderName;
+                if (allRidersMap.has(key)) {
+                  allRidersMap.get(key)!.inTheirTeam = true;
+                } else {
+                  allRidersMap.set(key, { ...r, inMyTeam: false, inTheirTeam: true });
+                }
+              });
+
+              const compareRiders = Array.from(allRidersMap.values()).sort((a, b) => b.pointsScored - a.pointsScored);
+
+              const myTotal = myTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
+              const theirTotal = theirTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
+              const sharedRiders = compareRiders.filter(r => r.inMyTeam && r.inTheirTeam);
+              const onlyMine = compareRiders.filter(r => r.inMyTeam && !r.inTheirTeam);
+              const onlyTheirs = compareRiders.filter(r => !r.inMyTeam && r.inTheirTeam);
+
+              return (
+                <>
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="text-sm text-blue-600">Jouw punten</div>
+                      <div className="text-2xl font-bold text-blue-900">{myTotal}</div>
+                      <div className="text-xs text-blue-500">{myTeam.riders.length} renners</div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
+                      <div className="text-sm text-gray-600">Gedeelde renners</div>
+                      <div className="text-2xl font-bold text-gray-900">{sharedRiders.length}</div>
+                      <div className="text-xs text-gray-500">
+                        Alleen jij: {onlyMine.length} | Alleen {theirTeam.playername}: {onlyTheirs.length}
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                      <div className="text-sm text-purple-600">{theirTeam.playername}</div>
+                      <div className="text-2xl font-bold text-purple-900">{theirTotal}</div>
+                      <div className="text-xs text-purple-500">{theirTeam.riders.length} renners</div>
+                    </div>
+                  </div>
+
+                  {/* Comparison table */}
+                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Renner
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Team
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider">
+                            Jij
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-purple-500 uppercase tracking-wider">
+                            {theirTeam.playername}
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Waarde
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Punten
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {compareRiders.map((rider: any) => (
+                          <tr
+                            key={rider.riderId || rider.riderNameId}
+                            className={`hover:bg-gray-50 ${
+                              rider.inMyTeam && rider.inTheirTeam
+                                ? 'bg-gray-50'
+                                : rider.inMyTeam
+                                ? 'bg-blue-50/30'
+                                : 'bg-purple-50/30'
+                            }`}
+                          >
+                            <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                              {rider.riderName}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {rider.riderTeam}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {rider.inMyTeam ? (
+                                <span className="text-blue-600 text-lg">✓</span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {rider.inTheirTeam ? (
+                                <span className="text-purple-600 text-lg">✓</span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                              {rider.baseValue}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600 text-right font-medium">
+                              {rider.pointsScored}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })() : (
+              <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-gray-200">
+                Selecteer een speler om mee te vergelijken
+              </div>
+            )}
+          </>
         )}
 
         {teams.length === 0 && (
