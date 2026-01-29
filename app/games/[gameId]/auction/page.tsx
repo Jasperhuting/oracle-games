@@ -1072,13 +1072,13 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                 ghost
                 title="Force refresh data from server"
               />
-              {game.bidding && (
+              {(game.status === 'active' || game.status === 'finished') && (
                 <Button
                   type="button"
-                  text="Teams"
-                  onClick={() => router.push(`/games/${gameId}/auction/teams`)}
+                  text="Dashboard"
+                  onClick={() => router.push(`/games/${gameId}/dashboard`)}
                   ghost
-                  title="Bekijk alle teams in één overzicht"
+                  title="Bekijk je team, klassement en alle teams"
                 />
               )}
               <Button

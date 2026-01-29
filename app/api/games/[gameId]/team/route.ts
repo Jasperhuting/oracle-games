@@ -27,8 +27,21 @@ export async function GET(
       .where('userId', '==', userId)
       .get();
 
+    // Get rankings to enrich with baseValue (rider's UCI points = their value)
+    const rankingsSnapshot = await db.collection('rankings_2026').get();
+    const ridersMap = new Map<string, { points: number }>();
+    rankingsSnapshot.forEach(doc => {
+      const rider = doc.data();
+      const riderId = rider.nameID || rider.id || doc.id;
+      if (riderId) {
+        ridersMap.set(riderId, { points: rider.points || 0 });
+      }
+    });
+
     const riders = teamSnapshot.docs.map(doc => {
       const data = doc.data();
+      const riderInfo = ridersMap.get(data.riderNameId);
+      const baseValue = riderInfo?.points || 0;
       return {
         id: doc.id,
         nameId: data.riderNameId,
@@ -39,10 +52,12 @@ export async function GET(
         points: data.pointsScored || 0,
         jerseyImage: data.jerseyImage,
         pricePaid: data.pricePaid,
+        baseValue,
         acquisitionType: data.acquisitionType,
         draftRound: data.draftRound,
         draftPick: data.draftPick,
         racePoints: data.racePoints || null,
+        acquiredAt: data.acquiredAt ? (data.acquiredAt.toDate ? data.acquiredAt.toDate().toISOString() : data.acquiredAt) : null,
       };
     });
 

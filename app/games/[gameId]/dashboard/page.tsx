@@ -21,7 +21,9 @@ interface TeamRider {
   points: number;
   jerseyImage?: string;
   pricePaid?: number;
+  baseValue?: number;
   acquisitionType?: string;
+  acquiredAt?: string;
   racePoints?: Record<string, {
     totalPoints: number;
     stagePoints: Record<string, {
@@ -332,12 +334,22 @@ export default function GameDashboardPage() {
                 Bekijk je team, de stand en alle teams
               </p>
             </div>
-            <Link
-              href="/games"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Terug naar Games
-            </Link>
+            <div className="flex gap-2">
+              {(game?.gameType === 'auctioneer' || game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains') && (
+                <Link
+                  href={`/games/${gameId}/auction`}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                >
+                  {game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? 'Selectie' : 'Auction'}
+                </Link>
+              )}
+              <Link
+                href="/games"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Terug naar Games
+              </Link>
+            </div>
           </div>
         </div>
 

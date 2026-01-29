@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { Game, GameParticipant } from '@/lib/types/games';
+
+type SortOption = 'points' | 'value' | 'roi' | 'pricePaid' | 'name';
 
 interface TeamRider {
   id: string;
@@ -16,7 +18,9 @@ interface TeamRider {
   points: number;
   jerseyImage?: string;
   pricePaid?: number;
+  baseValue?: number;
   acquisitionType?: string;
+  acquiredAt?: string;
   racePoints?: Record<string, {
     totalPoints: number;
     stagePoints: Record<string, {
@@ -44,6 +48,8 @@ interface MyTeamTabProps {
 
 export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamTabProps) {
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<SortOption>('points');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const toggleRider = (riderId: string) => {
     const newExpanded = new Set(expandedRiders);
@@ -55,8 +61,66 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
     setExpandedRiders(newExpanded);
   };
 
-  const getTotalPoints = () => {
-    return riders.reduce((sum, rider) => sum + (rider.points || 0), 0);
+  const isMarginalGains = game?.gameType === 'marginal-gains';
+
+  // Calculate team stats
+  const teamStats = useMemo(() => {
+    const totalPoints = riders.reduce((sum, rider) => sum + (rider.points || 0), 0);
+    const totalPricePaid = riders.reduce((sum, rider) => sum + (rider.pricePaid || 0), 0);
+    const totalBaseValue = riders.reduce((sum, rider) => sum + (rider.baseValue || 0), 0);
+    const marginalGains = totalPoints - totalPricePaid;
+    const avgRoi = totalBaseValue > 0 ? ((totalPoints - totalBaseValue) / totalBaseValue) * 100 : 0;
+    const avgPriceRoi = totalPricePaid > 0 ? ((totalPoints - totalPricePaid) / totalPricePaid) * 100 : 0;
+    
+    return {
+      totalPoints,
+      totalPricePaid,
+      totalBaseValue,
+      marginalGains,
+      avgRoi,
+      avgPriceRoi,
+    };
+  }, [riders]);
+
+  // Calculate ROI for a rider
+  const getRiderRoi = (rider: TeamRider) => {
+    const baseValue = rider.baseValue || 0;
+    if (baseValue === 0) return 0;
+    return ((rider.points - baseValue) / baseValue) * 100;
+  };
+
+  // Sort riders
+  const sortedRiders = useMemo(() => {
+    return [...riders].sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'points':
+          comparison = (a.points || 0) - (b.points || 0);
+          break;
+        case 'value':
+          comparison = (a.baseValue || 0) - (b.baseValue || 0);
+          break;
+        case 'roi':
+          comparison = getRiderRoi(a) - getRiderRoi(b);
+          break;
+        case 'pricePaid':
+          comparison = (a.pricePaid || 0) - (b.pricePaid || 0);
+          break;
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+      }
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+  }, [riders, sortBy, sortDirection]);
+
+  const handleSort = (option: SortOption) => {
+    if (sortBy === option) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(option);
+      setSortDirection('desc');
+    }
   };
 
   if (loading) {
@@ -78,11 +142,11 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
   return (
     <div>
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className={`grid grid-cols-1 gap-4 mb-6 ${isMarginalGains ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600">Totaal Punten</div>
           <div className="text-2xl font-bold text-primary">
-            {getTotalPoints()}
+            {teamStats.totalPoints}
           </div>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -97,18 +161,66 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
             {riders.length}
           </div>
         </div>
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="text-sm text-gray-600">Totaal Betaald</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {formatCurrencyWhole(teamStats.totalPricePaid)}
+          </div>
+        </div>
+        {isMarginalGains && (
+          <div className={`p-4 rounded-lg border ${teamStats.marginalGains >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <div className={`text-sm ${teamStats.marginalGains >= 0 ? 'text-green-600' : 'text-red-600'}`}>Marginal Gains</div>
+            <div className={`text-2xl font-bold ${teamStats.marginalGains >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {teamStats.marginalGains >= 0 ? '+' : ''}{teamStats.marginalGains}
+            </div>
+            <div className={`text-xs ${teamStats.marginalGains >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              ROI: {teamStats.avgPriceRoi >= 0 ? '+' : ''}{Math.round(teamStats.avgPriceRoi)}%
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Sort Controls */}
+      {riders.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="text-sm text-gray-500 self-center mr-2">Sorteer op:</span>
+          {[
+            { key: 'points' as SortOption, label: 'Punten' },
+            { key: 'value' as SortOption, label: 'Waarde' },
+            { key: 'roi' as SortOption, label: 'ROI' },
+            { key: 'pricePaid' as SortOption, label: 'Betaald' },
+            { key: 'name' as SortOption, label: 'Naam' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => handleSort(key)}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                sortBy === key
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {label}
+              {sortBy === key && (
+                <span className="ml-1">{sortDirection === 'desc' ? '↓' : '↑'}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Riders List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {riders.length === 0 ? (
           <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center text-gray-500">
             Je hebt nog geen renners in je team
           </div>
         ) : (
-          riders.map((rider) => {
+          sortedRiders.map((rider) => {
             const isExpanded = expandedRiders.has(rider.id);
             const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
+            const riderRoi = getRiderRoi(rider);
+            const roiColorClass = riderRoi > 0 ? 'text-green-600' : riderRoi < 0 ? 'text-red-600' : 'text-gray-600';
 
             return (
               <div
@@ -134,14 +246,36 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
                           {rider.name}
                           <Flag countryCode={rider.country} />
                         </h3>
-                        <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                           <span>{rider.team}</span>
                           {rider.rank > 0 && <span>UCI #{rider.rank}</span>}
-                          {rider.pricePaid && <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>}
+                          {rider.baseValue !== undefined && rider.baseValue > 0 && (
+                            <span>Waarde: {rider.baseValue}</span>
+                          )}
+                          {rider.pricePaid !== undefined && rider.pricePaid > 0 && (
+                            <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>
+                          )}
+                          {rider.acquisitionType && (
+                            <span className="text-gray-400 italic">
+                              {rider.acquisitionType === 'auction' ? 'Veiling' : 
+                               rider.acquisitionType === 'draft' ? 'Draft' : 
+                               rider.acquisitionType === 'selection' ? 'Selectie' : 
+                               rider.acquisitionType}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
+                      {/* ROI Badge */}
+                      {rider.baseValue !== undefined && rider.baseValue > 0 && (
+                        <div className={`text-right hidden sm:block`}>
+                          <div className={`text-lg font-semibold ${roiColorClass}`}>
+                            {riderRoi >= 0 ? '+' : ''}{Math.round(riderRoi)}%
+                          </div>
+                          <div className="text-xs text-gray-400">ROI</div>
+                        </div>
+                      )}
                       <div className="text-right">
                         <div className="text-2xl font-bold text-primary">
                           {rider.points}
