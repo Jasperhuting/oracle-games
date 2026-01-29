@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { Game, GameParticipant } from '@/lib/types/games';
+import { getRaceNamesClient } from '@/lib/race-names';
 
 type SortOption = 'points' | 'value' | 'roi' | 'pricePaid' | 'name';
 
@@ -50,6 +51,7 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortOption>('points');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
 
   const toggleRider = (riderId: string) => {
     const newExpanded = new Set(expandedRiders);
@@ -62,6 +64,23 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
   };
 
   const isMarginalGains = game?.gameType === 'marginal-gains';
+
+  // Load race names
+  useEffect(() => {
+    const loadRaceNames = async () => {
+      try {
+        const year = game?.year || new Date().getFullYear();
+        const names = await getRaceNamesClient(year);
+        setRaceNames(names);
+      } catch (error) {
+        console.error('Error loading race names:', error);
+      }
+    };
+    
+    if (game) {
+      loadRaceNames();
+    }
+  }, [game]);
 
   // Calculate team stats
   const teamStats = useMemo(() => {
@@ -309,6 +328,7 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
                     <RacePointsBreakdown
                       racePoints={rider.racePoints}
                       riderName={rider.name}
+                      raceNames={raceNames}
                     />
                   </div>
                 )}

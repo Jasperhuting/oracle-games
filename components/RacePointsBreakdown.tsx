@@ -28,6 +28,8 @@ interface RacePointsBreakdownProps {
   // LEGACY: racePoints object (fallback)
   racePoints?: Record<string, RacePoints>;
   riderName: string;
+  // NEW: race names mapping
+  raceNames?: Map<string, string>;
 }
 
 /**
@@ -39,7 +41,8 @@ interface RacePointsBreakdownProps {
 export default function RacePointsBreakdown({
   pointsBreakdown,
   racePoints,
-  riderName
+  riderName,
+  raceNames
 }: RacePointsBreakdownProps) {
   // Use new format if available and has data
   const useNewFormat = pointsBreakdown && pointsBreakdown.length > 0;
@@ -81,57 +84,112 @@ export default function RacePointsBreakdown({
           });
 
           return (
-            <div key={raceSlug} className="border rounded-lg p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-semibold text-lg">
-                  {raceSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </h4>
-                <span className="text-xl font-bold text-blue-600">
-                  {raceTotal} pts
-                </span>
+            <div key={raceSlug} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-bold text-lg text-gray-900">
+                    {raceNames?.get(raceSlug) || raceSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 font-medium">Totaal</span>
+                    <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                      {raceTotal} <span className="text-sm font-normal">pts</span>
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="p-6 space-y-3">
                 {sortedEvents.sort((a, b) => a.stage.localeCompare(b.stage)).map((event, index) => (
-                  <div key={`${event.raceSlug}-${event.stage}-${index}`} className="border-l-2 border-gray-300 pl-3 py-1">
+                  <div key={`${event.raceSlug}-${event.stage}-${index}`} className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <span className="font-medium text-gray-700">
-                          {event.stage === 'result' ? 'Uitslag' : `Etappe ${event.stage}`}
-                        </span>
-                        <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {event.stage === 'result' ? 'Uitslag' : `Etappe ${event.stage}`}
+                          </span>
+                          {event.stagePosition && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              {event.stagePosition}e
+                            </span>
+                          )}
+                          {event.gcPosition && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                              GC {event.gcPosition}e
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                           {event.stageResult && (
-                            <div>• Etappe uitslag ({event.stagePosition}e): {event.stageResult} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">🏁</span>
+                              <span className="font-medium">Etappe uitslag ({event.stagePosition}e):</span>
+                              <span className="font-bold text-green-600">{event.stageResult} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.gcPoints && (
-                            <div>• Algemeen klassement ({event.gcPosition}e): {event.gcPoints} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">👑</span>
+                              <span className="font-medium">Algemeen klassement ({event.gcPosition}e):</span>
+                              <span className="font-bold text-green-600">{event.gcPoints} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.pointsClass && (
-                            <div>• Puntenklassement: {event.pointsClass} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">🟢</span>
+                              <span className="font-medium">Puntenklassement:</span>
+                              <span className="font-bold text-green-600">{event.pointsClass} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.mountainsClass && (
-                            <div>• Bergklassement: {event.mountainsClass} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">⛰️</span>
+                              <span className="font-medium">Bergklassement:</span>
+                              <span className="font-bold text-green-600">{event.mountainsClass} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.youthClass && (
-                            <div>• Jongerenklassement: {event.youthClass} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">👶</span>
+                              <span className="font-medium">Jongerenklassement:</span>
+                              <span className="font-bold text-green-600">{event.youthClass} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.mountainPoints && (
-                            <div>• Bergpunten: {event.mountainPoints} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">🏔️</span>
+                              <span className="font-medium">Bergpunten:</span>
+                              <span className="font-bold text-green-600">{event.mountainPoints} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.sprintPoints && (
-                            <div>• Sprintpunten: {event.sprintPoints} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">⚡</span>
+                              <span className="font-medium">Sprintpunten:</span>
+                              <span className="font-bold text-green-600">{event.sprintPoints} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.combativityBonus && (
-                            <div>• Strijdlust bonus: {event.combativityBonus} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">💪</span>
+                              <span className="font-medium">Strijdlust bonus:</span>
+                              <span className="font-bold text-green-600">{event.combativityBonus} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                           {event.teamPoints && (
-                            <div>• Ploegenklassement: {event.teamPoints} pts</div>
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <span className="text-lg">👥</span>
+                              <span className="font-medium">Ploegenklassement:</span>
+                              <span className="font-bold text-green-600">{event.teamPoints} <span className="text-xs font-normal">pts</span></span>
+                            </div>
                           )}
                         </div>
                       </div>
-                      <span className="font-semibold text-green-600 ml-4">
-                        {event.total} pts
-                      </span>
+                      <div className="ml-4 text-right">
+                        <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">
+                          {event.total} <span className="text-sm font-normal">pts</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -147,57 +205,104 @@ export default function RacePointsBreakdown({
   return (
     <div className="space-y-4">
       {Object.entries(racePoints!).map(([raceSlug, raceData]) => (
-        <div key={raceSlug} className="border rounded-lg p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="font-semibold text-lg">
-              {raceSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            </h4>
-            <span className="text-xl font-bold text-blue-600">
-              {raceData.totalPoints} pts
-            </span>
+        <div key={raceSlug} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-lg text-gray-900">
+                {raceNames?.get(raceSlug) || raceSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </h4>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 font-medium">Totaal</span>
+                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                  {raceData.totalPoints} <span className="text-sm font-normal">pts</span>
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="p-6 space-y-3">
             {Object.entries(raceData.stagePoints)
               .sort(([a], [b]) => parseInt(a) - parseInt(b))
               .map(([stage, points]) => (
-                <div key={stage} className="border-l-2 border-gray-300 pl-3 py-1">
+                <div key={stage} className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <span className="font-medium text-gray-700">Etappe {stage}</span>
-                      <div className="text-xs text-gray-600 mt-1 space-y-0.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Etappe {stage}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                         {points.stageResult && (
-                          <div>• Etappe uitslag: {points.stageResult} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">🏁</span>
+                            <span className="font-medium">Etappe uitslag:</span>
+                            <span className="font-bold text-green-600">{points.stageResult} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.gcPoints && (
-                          <div>• Algemeen klassement: {points.gcPoints} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">👑</span>
+                            <span className="font-medium">Algemeen klassement:</span>
+                            <span className="font-bold text-green-600">{points.gcPoints} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.pointsClass && (
-                          <div>• Puntenklassement: {points.pointsClass} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">🟢</span>
+                            <span className="font-medium">Puntenklassement:</span>
+                            <span className="font-bold text-green-600">{points.pointsClass} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.mountainsClass && (
-                          <div>• Bergklassement: {points.mountainsClass} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">⛰️</span>
+                            <span className="font-medium">Bergklassement:</span>
+                            <span className="font-bold text-green-600">{points.mountainsClass} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.youthClass && (
-                          <div>• Jongerenklassement: {points.youthClass} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">👶</span>
+                            <span className="font-medium">Jongerenklassement:</span>
+                            <span className="font-bold text-green-600">{points.youthClass} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.mountainPoints && (
-                          <div>• Bergpunten: {points.mountainPoints} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">🏔️</span>
+                            <span className="font-medium">Bergpunten:</span>
+                            <span className="font-bold text-green-600">{points.mountainPoints} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.sprintPoints && (
-                          <div>• Sprintpunten: {points.sprintPoints} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">⚡</span>
+                            <span className="font-medium">Sprintpunten:</span>
+                            <span className="font-bold text-green-600">{points.sprintPoints} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.combativityBonus && (
-                          <div>• Strijdlust bonus: {points.combativityBonus} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">💪</span>
+                            <span className="font-medium">Strijdlust bonus:</span>
+                            <span className="font-bold text-green-600">{points.combativityBonus} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                         {points.teamPoints && (
-                          <div>• Ploegenklassement: {points.teamPoints} pts</div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-lg">👥</span>
+                            <span className="font-medium">Ploegenklassement:</span>
+                            <span className="font-bold text-green-600">{points.teamPoints} <span className="text-xs font-normal">pts</span></span>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <span className="font-semibold text-green-600 ml-4">
-                      {points.total} pts
-                    </span>
+                    <div className="ml-4 text-right">
+                      <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">
+                        {points.total} <span className="text-sm font-normal">pts</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

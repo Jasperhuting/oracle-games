@@ -12,6 +12,7 @@ import React from 'react';
 import { Star } from 'tabler-icons-react';
 import { Tooltip } from 'react-tooltip';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
+import { getRaceNamesClient } from '@/lib/race-names';
 
 interface StageDetails {
   stage: string;
@@ -67,6 +68,7 @@ export default function SeasonLeaderboardPage() {
 
   const [gamesById, setGamesById] = useState<Record<string, { name?: string; division?: string }>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     let isCancelled = false;
@@ -129,8 +131,20 @@ export default function SeasonLeaderboardPage() {
       }
     }
 
+    async function loadRaceNames() {
+      try {
+        const names = await getRaceNamesClient(year);
+        if (!isCancelled) {
+          setRaceNames(names);
+        }
+      } catch (error) {
+        console.error('Error loading race names:', error);
+      }
+    }
+
     loadGames();
     loadUserNames();
+    loadRaceNames();
 
     return () => {
       isCancelled = true;
@@ -462,6 +476,7 @@ export default function SeasonLeaderboardPage() {
                                     pointsBreakdown={rider.pointsBreakdown}
                                     racePoints={rider.racePoints}
                                     riderName={rider.riderName}
+                                    raceNames={raceNames}
                                   />
                                 </div>
                               )}

@@ -9,6 +9,7 @@ import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { useTranslation } from 'react-i18next';
 import { Game, GameParticipant } from '@/lib/types/games';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
+import { getRaceNamesClient } from '@/lib/race-names';
 
 interface TeamRider {
   id: string;
@@ -51,6 +52,7 @@ export default function TeamResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
+  const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (authLoading) return;
@@ -102,6 +104,23 @@ export default function TeamResultsPage() {
 
     loadTeamResults();
   }, [user, authLoading, gameId, router]);
+
+  // Load race names
+  useEffect(() => {
+    const loadRaceNames = async () => {
+      try {
+        if (game) {
+          const year = game.year || new Date().getFullYear();
+          const names = await getRaceNamesClient(year);
+          setRaceNames(names);
+        }
+      } catch (error) {
+        console.error('Error loading race names:', error);
+      }
+    };
+    
+    loadRaceNames();
+  }, [game]);
 
   const toggleRider = (riderId: string) => {
     const newExpanded = new Set(expandedRiders);
@@ -264,6 +283,7 @@ export default function TeamResultsPage() {
                       <RacePointsBreakdown
                         racePoints={rider.racePoints}
                         riderName={rider.name}
+                        raceNames={raceNames}
                       />
                     </div>
                   )}

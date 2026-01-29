@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
+import { getRaceNamesClient } from '@/lib/race-names';
 
 // PointsEvent interface for the new format
 interface PointsEvent {
@@ -89,6 +90,7 @@ export default function TeamDetailPage() {
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
   const [totalPointsScored, setTotalPointsScored] = useState<number>(0);
   const [totalPoints, setTotalPoints] = useState<number>(0);
+  const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
   
 
   useEffect(() => {
@@ -130,6 +132,29 @@ export default function TeamDetailPage() {
 
     fetchTeamDetails();
   }, [gameId, participantId]);
+
+  // Load race names
+  useEffect(() => {
+    const loadRaceNames = async () => {
+      try {
+        // We need to get the game year, but we don't have direct access to it
+        // Let's fetch the game info again to get the year
+        const gameResponse = await fetch(`/api/games/${gameId}`);
+        if (gameResponse.ok) {
+          const gameData = await gameResponse.json();
+          const year = gameData.game?.year || new Date().getFullYear();
+          const names = await getRaceNamesClient(year);
+          setRaceNames(names);
+        }
+      } catch (error) {
+        console.error('Error loading race names:', error);
+      }
+    };
+    
+    if (gameId) {
+      loadRaceNames();
+    }
+  }, [gameId]);
 
   const toggleRider = (riderId: string) => {
     const newExpanded = new Set(expandedRiders);
@@ -326,6 +351,7 @@ export default function TeamDetailPage() {
                           pointsBreakdown={rider.pointsBreakdown}
                           racePoints={rider.racePoints}
                           riderName={rider.name}
+                          raceNames={raceNames}
                         />
                       </div>
                     )}
