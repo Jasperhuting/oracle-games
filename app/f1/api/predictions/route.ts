@@ -22,28 +22,49 @@ async function getUserFromSession(): Promise<string | null> {
 
 // GET /api/f1/predictions?season=2026&round=1 (own prediction)
 // GET /api/f1/predictions?season=2026&round=1&all=true (all predictions after deadline)
+// GET /api/f1/predictions?userId=xxx&round=1 (specific user's prediction, only if race is done)
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserFromSession();
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+    const currentUserId = await getUserFromSession();
+    
     const { searchParams } = new URL(request.url);
     const season = parseInt(searchParams.get('season') || new Date().getFullYear().toString());
     const round = searchParams.get('round');
     const all = searchParams.get('all') === 'true';
+    const targetUserId = searchParams.get('userId');
 
     const predictionsRef = f1Db.collection(F1_COLLECTIONS.PREDICTIONS);
 
     if (round) {
+      const roundNum = parseInt(round);
+      const raceId = createRaceDocId(season, roundNum);
+      
+      // If requesting another user's prediction, check if race is done
+      if (targetUserId && targetUserId !== currentUserId) {
+        const raceDoc = await f1Db.collection(F1_COLLECTIONS.RACES).doc(raceId).get();
+        const raceData = raceDoc.data();
+
+        if (!raceData || raceData.status !== 'done') {
+          return NextResponse.json(
+            { success: false, error: 'Race not finished yet' },
+            { status: 403 }
+          );
+        }
+
+        // Get the specific user's prediction
+        const docId = createPredictionDocId(targetUserId, season, roundNum);
+        const doc = await predictionsRef.doc(docId).get();
+
+        if (!doc.exists) {
+          return NextResponse.json({ success: true, data: null });
+        }
+
+        return NextResponse.json({ success: true, data: doc.data() as F1Prediction });
+      }
+      
       // Get prediction for specific race
       if (all) {
         // Get all predictions for this race (only if race is done)
-        const raceId = createRaceDocId(season, parseInt(round));
         const raceDoc = await f1Db.collection(F1_COLLECTIONS.RACES).doc(raceId).get();
         const raceData = raceDoc.data();
 
@@ -58,8 +79,15 @@ export async function GET(request: NextRequest) {
         const predictions = snapshot.docs.map(doc => doc.data() as F1Prediction);
         return NextResponse.json({ success: true, data: predictions });
       } else {
-        // Get own prediction
-        const docId = createPredictionDocId(userId, season, parseInt(round));
+        // Get own prediction - requires auth
+        if (!currentUserId) {
+          return NextResponse.json(
+            { success: false, error: 'Unauthorized' },
+            { status: 401 }
+          );
+        }
+        
+        const docId = createPredictionDocId(currentUserId, season, roundNum);
         const doc = await predictionsRef.doc(docId).get();
 
         if (!doc.exists) {
@@ -69,9 +97,16 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, data: doc.data() as F1Prediction });
       }
     } else {
-      // Get all own predictions for season
+      // Get all own predictions for season - requires auth
+      if (!currentUserId) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      
       const snapshot = await predictionsRef
-        .where('userId', '==', userId)
+        .where('userId', '==', currentUserId)
         .where('season', '==', season)
         .get();
 

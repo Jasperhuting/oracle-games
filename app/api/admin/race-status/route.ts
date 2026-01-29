@@ -229,6 +229,7 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'trofeo-palma-femina', // women's race
   'trofeo-binissalem-andratx', // women's race
   'race-torquay', // race is cancelled
+  'grand-prix-de-oriente', // women's race
 ]);
 
 /**
@@ -326,6 +327,10 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'coppa-agostoni',
   'coppa-montes-gran-premio-della-resistenza',
   'ruta-de-la-ceramica-gran-premio-castellon',
+  'trofeo-calvia',
+  'deia-trophy',
+  'trofeo-pollenca-port-d-andratx',
+  'trofeo-ses-salines-felanitx',
 
   // 1.2 races (Non-professional)
   'alanya-cup',

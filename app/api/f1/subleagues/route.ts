@@ -5,17 +5,32 @@ import { cookies } from 'next/headers';
 
 const f1Db = getServerFirebaseF1();
 
-// Helper to get current user ID
-async function getCurrentUserId(): Promise<string | null> {
+// Helper to get current user ID from session cookie or Authorization header
+async function getCurrentUserId(request: NextRequest): Promise<string | null> {
   try {
+    const auth = getServerAuth();
+    
+    // First try Authorization header (ID token)
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const idToken = authHeader.substring(7);
+      try {
+        const decodedToken = await auth.verifyIdToken(idToken);
+        return decodedToken.uid;
+      } catch (tokenError) {
+        console.error('ID token verification failed:', tokenError);
+      }
+    }
+    
+    // Fallback to session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     if (!sessionCookie) return null;
 
-    const auth = getServerAuth();
     const decodedToken = await auth.verifySessionCookie(sessionCookie);
     return decodedToken.uid;
-  } catch {
+  } catch (error) {
+    console.error('Auth error:', error);
     return null;
   }
 }
@@ -31,9 +46,9 @@ function generateCode(): string {
 }
 
 // GET /api/f1/subleagues - Get user's sub-leagues
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
@@ -64,7 +79,7 @@ export async function GET() {
 // POST /api/f1/subleagues - Create a new sub-league
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
@@ -129,7 +144,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/f1/subleagues - Join a sub-league by code
 export async function PUT(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },

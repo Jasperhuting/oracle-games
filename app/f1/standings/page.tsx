@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
     useReactTable,
     getCoreRowModel,
@@ -10,10 +10,12 @@ import {
     SortingState,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World } from "tabler-icons-react";
-import { useF1Standings, useF1SubLeagues } from "../hooks";
+import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World, Eye } from "tabler-icons-react";
+import { useF1Standings, useF1SubLeagues, useF1LegacyDrivers, useF1RaceResult } from "../hooks";
 import { useUserNames } from "../hooks/useUserNames";
-import { F1Standing, F1SubLeague } from "../types";
+import { F1Standing, F1SubLeague, F1Prediction, LegacyDriver } from "../types";
+import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/lib/firebase/client";
 
 interface Player {
     id: string;
@@ -47,12 +49,19 @@ const StandingsPage = () => {
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+    const [playerPrediction, setPlayerPrediction] = useState<F1Prediction | null>(null);
+    const [predictionLoading, setPredictionLoading] = useState(false);
+    
+    // Fetch drivers and race result for prediction modal
+    const { drivers } = useF1LegacyDrivers();
+    const { result: raceResult } = useF1RaceResult(2026, 1);
 
     // Convert standings to Player format
     const players: Player[] = useMemo(() => {
         return standings.map(s => ({
             id: s.userId,
-            name: userNames[s.userId] || s.userId.substring(0, 8) + '...',
+            name: s.visibleName || userNames[s.userId] || s.userId.substring(0, 8) + '...',
             totalPoints: s.totalPoints,
             correctPredictions: s.correctPredictions,
             racesParticipated: s.racesParticipated,
@@ -161,9 +170,20 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
+            // Get ID token for authentication
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
+                setActionLoading(false);
+                return;
+            }
+
             const response = await fetch('/api/f1/subleagues', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
                 body: JSON.stringify({ name: newPouleName.trim() }),
             });
 
@@ -190,9 +210,20 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
+            // Get ID token for authentication
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
+                setActionLoading(false);
+                return;
+            }
+
             const response = await fetch('/api/f1/subleagues', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
                 body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
             });
 
@@ -219,6 +250,25 @@ const StandingsPage = () => {
         setTimeout(() => setCopiedCode(null), 2000);
     };
 
+    // Fetch prediction when player is selected
+    const handleViewPrediction = async (player: Player) => {
+        setSelectedPlayer(player);
+        setPredictionLoading(true);
+        setPlayerPrediction(null);
+        
+        try {
+            const response = await fetch(`/f1/api/predictions?userId=${player.id}&round=1`);
+            const data = await response.json();
+            if (data.success && data.data) {
+                setPlayerPrediction(data.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch prediction:', error);
+        } finally {
+            setPredictionLoading(false);
+        }
+    };
+
     // Mobile card component
     const PlayerCard = ({ player, position }: { player: Player; position: number }) => {
         const getPositionStyle = () => {
@@ -236,7 +286,10 @@ const StandingsPage = () => {
         };
 
         return (
-            <div className={`bg-gray-800 rounded-lg p-4 border-l-4 ${getBorderStyle()}`}>
+            <div 
+                className={`bg-gray-800 rounded-lg p-4 border-l-4 ${getBorderStyle()} cursor-pointer hover:bg-gray-700/50 transition-colors`}
+                onClick={() => handleViewPrediction(player)}
+            >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <span className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-sm ${getPositionStyle()}`}>
@@ -250,9 +303,12 @@ const StandingsPage = () => {
                             <div className="text-xs text-gray-400">{player.racesParticipated} races</div>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <div className="text-2xl font-black text-green-500">{player.totalPoints}</div>
-                        <div className="text-xs text-gray-400">punten</div>
+                    <div className="flex items-center gap-3">
+                        <div className="text-right">
+                            <div className="text-2xl font-black text-green-500">{player.totalPoints}</div>
+                            <div className="text-xs text-gray-400">punten</div>
+                        </div>
+                        <Eye size={18} className="text-gray-500" />
                     </div>
                 </div>
                 <div className="flex justify-between mt-3 pt-3 border-t border-gray-700 text-sm">
@@ -466,7 +522,11 @@ const StandingsPage = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                         {table.getRowModel().rows.map((row) => (
-                            <tr key={row.id} className="hover:bg-gray-700/50 transition-colors">
+                            <tr 
+                                key={row.id} 
+                                className="hover:bg-gray-700/50 transition-colors cursor-pointer"
+                                onClick={() => handleViewPrediction(row.original)}
+                            >
                                 {row.getVisibleCells().map((cell) => (
                                     <td key={cell.id} className="px-4 py-3">
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -565,6 +625,176 @@ const StandingsPage = () => {
                                 Deelnemen
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Player Prediction Modal */}
+            {selectedPlayer && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl border border-gray-700 my-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-lg">
+                                    {selectedPlayer.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">{selectedPlayer.name}</h2>
+                                    <p className="text-gray-400 text-sm">Voorspelling Race 1</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedPlayer(null)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {predictionLoading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-gray-400">Laden...</div>
+                            </div>
+                        ) : playerPrediction ? (
+                            <div className="space-y-4">
+                                {/* Points summary */}
+                                <div className="bg-gray-900 rounded-lg p-4 text-center">
+                                    <div className="text-3xl font-black text-green-500">{selectedPlayer.lastRacePoints || 0}</div>
+                                    <div className="text-sm text-gray-400">punten deze race</div>
+                                </div>
+
+                                {/* Bonus predictions */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-gray-900 rounded-lg p-3">
+                                        <div className="text-xs text-gray-500 uppercase mb-1">Pole Position</div>
+                                        <div className="flex items-center gap-2">
+                                            {(() => {
+                                                const driver = drivers.find(d => d.shortName === playerPrediction.polePosition);
+                                                const isCorrect = raceResult?.polePosition === playerPrediction.polePosition;
+                                                return driver ? (
+                                                    <>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                                        </span>
+                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
+                                                        {isCorrect && <span className="text-green-400 text-xs">+10</span>}
+                                                    </>
+                                                ) : <span className="text-gray-500">-</span>;
+                                            })()}
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-900 rounded-lg p-3">
+                                        <div className="text-xs text-gray-500 uppercase mb-1">Snelste Ronde</div>
+                                        <div className="flex items-center gap-2">
+                                            {(() => {
+                                                const driver = drivers.find(d => d.shortName === playerPrediction.fastestLap);
+                                                const isCorrect = raceResult?.fastestLap === playerPrediction.fastestLap;
+                                                return driver ? (
+                                                    <>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                                        </span>
+                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
+                                                        {isCorrect && <span className="text-green-400 text-xs">+10</span>}
+                                                    </>
+                                                ) : <span className="text-gray-500">-</span>;
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* DNF predictions */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-gray-900 rounded-lg p-3">
+                                        <div className="text-xs text-red-400 uppercase mb-1">DNF #1</div>
+                                        <div className="flex items-center gap-2">
+                                            {(() => {
+                                                const driver = drivers.find(d => d.shortName === playerPrediction.dnf1);
+                                                const isCorrect = raceResult?.dnfDrivers?.includes(playerPrediction.dnf1 || '');
+                                                return driver ? (
+                                                    <>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                                        </span>
+                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
+                                                        {isCorrect && <span className="text-green-400 text-xs">+5</span>}
+                                                    </>
+                                                ) : <span className="text-gray-500">-</span>;
+                                            })()}
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-900 rounded-lg p-3">
+                                        <div className="text-xs text-red-400 uppercase mb-1">DNF #2</div>
+                                        <div className="flex items-center gap-2">
+                                            {(() => {
+                                                const driver = drivers.find(d => d.shortName === playerPrediction.dnf2);
+                                                const isCorrect = raceResult?.dnfDrivers?.includes(playerPrediction.dnf2 || '');
+                                                return driver ? (
+                                                    <>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                                        </span>
+                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
+                                                        {isCorrect && <span className="text-green-400 text-xs">+5</span>}
+                                                    </>
+                                                ) : <span className="text-gray-500">-</span>;
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Finish order - compact grid */}
+                                <div>
+                                    <div className="text-sm text-gray-400 mb-2">Voorspelde volgorde</div>
+                                    <div className="grid grid-cols-2 gap-1 max-h-80 overflow-y-auto">
+                                        {playerPrediction.finishOrder.map((shortName, index) => {
+                                            const driver = drivers.find(d => d.shortName === shortName);
+                                            const actualPos = raceResult?.finishOrder.indexOf(shortName);
+                                            const predictedPos = index + 1;
+                                            const diff = actualPos !== undefined && actualPos !== -1 ? Math.abs((actualPos + 1) - predictedPos) : null;
+                                            
+                                            let points = 0;
+                                            if (diff === 0) points = 25;
+                                            else if (diff === 1) points = 10;
+                                            else if (diff === 2) points = 5;
+                                            else if (predictedPos <= 10 && actualPos !== undefined && actualPos + 1 <= 10) points = 2;
+
+                                            const bgColor = points >= 25 ? 'bg-green-900/50' : points >= 10 ? 'bg-green-900/30' : points >= 5 ? 'bg-yellow-900/30' : points > 0 ? 'bg-blue-900/30' : 'bg-gray-900';
+
+                                            return (
+                                                <div key={index} className={`flex items-center gap-2 p-1.5 rounded ${bgColor}`}>
+                                                    <span className="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold bg-gray-700 text-white">
+                                                        {predictedPos}
+                                                    </span>
+                                                    {driver && (
+                                                        <>
+                                                            <span className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                                <img src={driver.image} alt={driver.lastName} className="w-7 h-auto absolute top-0 left-0" />
+                                                            </span>
+                                                            <span className="text-xs text-white font-medium">{driver.shortName}</span>
+                                                        </>
+                                                    )}
+                                                    {points > 0 && (
+                                                        <span className="text-xs text-green-400 ml-auto">+{points}</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-gray-400">
+                                Geen voorspelling gevonden voor deze race
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => setSelectedPlayer(null)}
+                            className="w-full mt-4 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                        >
+                            Sluiten
+                        </button>
                     </div>
                 </div>
             )}

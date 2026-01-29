@@ -156,6 +156,8 @@ export interface TTTTeamResult {
     place: number;
     firstName: string;
     lastName: string;
+    shortName: string;
+    points: string;
   }[];
 }
 

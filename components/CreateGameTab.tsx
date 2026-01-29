@@ -330,7 +330,7 @@ export const CreateGameTab = () => {
     { value: 'worldtour-manager', label: 'WorldTour Manager - Full team' },
     { value: 'marginal-gains', label: 'Marginal Gains - Season improvement' },
     { value: 'fan-flandrien', label: 'Fan Flandrien - Predict top 15' },
-    { value: 'giorgio-armada', label: 'Giorgio Armada - Budget riders' },
+    { value: 'full-grid', label: 'Full Grid - Budget riders' },
   ];
 
   return (

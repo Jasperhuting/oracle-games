@@ -95,7 +95,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
       'worldtour-manager': 'WorldTour Manager',
       'marginal-gains': 'Marginal Gains',
       'fan-flandrien': 'Fan Flandrien',
-      'giorgio-armada': 'Giorgio Armada',
+      'full-grid': 'Full Grid',
     };
     return labels[gameType] || gameType;
   };

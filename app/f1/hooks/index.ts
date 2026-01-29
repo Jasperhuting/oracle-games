@@ -8,6 +8,7 @@ export {
   useF1Races,
   useF1Race,
   useF1RaceResult,
+  useF1RaceResults,
 } from './useF1Data';
 
 // F1 Prediction Hooks

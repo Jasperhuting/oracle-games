@@ -14,7 +14,7 @@ export const GAME_TYPES = [
   'country-roads',
   'worldtour-manager',
   'fan-flandrien',
-  'giorgio-armada',
+  'full-grid',
   'marginal-gains',
 ] as const;
 
@@ -171,7 +171,7 @@ export interface FanFlandrienConfig {
   races: string[];                  // Race slugs included
 }
 
-export interface GiorgioArmadaConfig {
+export interface FullGridConfig {
   budget: number;
   teamsInRace: number;              // Number of teams participating
   riderValues: Record<string, number>; // nameId -> value (1-10)
@@ -196,7 +196,7 @@ export type GameConfig =
   | CountryRoadsConfig
   | WorldTourManagerConfig
   | FanFlandrienConfig
-  | GiorgioArmadaConfig
+  | FullGridConfig
   | MarginalGainsConfig;
 
 // ============================================================================
@@ -353,7 +353,7 @@ export interface PlayerTeam {
   riderTeam: string;                // Professional team
   riderCountry: string;
   jerseyImage?: string;
-  riderValue?: number;              // For Giorgio Armada (1-10)
+  riderValue?: number;              // For Full Grid (1-10)
 
   // Performance - LEGACY (will be deprecated in Phase 4)
   pointsScored: number;

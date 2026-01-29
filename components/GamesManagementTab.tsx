@@ -278,7 +278,7 @@ export const GamesManagementTab = () => {
       'country-roads': 'Country Roads',
       'worldtour-manager': 'WorldTour Manager',
       'fan-flandrien': 'Fan Flandrien',
-      'giorgio-armada': 'Giorgio Armada',
+      'full-grid': 'Full Grid',
     };
     return labels[gameType] || gameType;
   };

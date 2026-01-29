@@ -2,10 +2,10 @@
 
 import { useParams, usePathname } from "next/navigation";
 import { RaceCard } from "./components/RaceCardComponent";
-import { useF1Races } from "./hooks";
+import { useF1Races, useF1UserPredictions } from "./hooks";
 import Link from "next/link";
 import { Trophy, Flag } from "tabler-icons-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export default function F1Layout({ children }: { children: React.ReactNode }) {
     const params = useParams();
@@ -14,6 +14,12 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
     const isStandingsPage = pathname === "/f1/standings";
     
     const { races, loading: racesLoading } = useF1Races();
+    const { predictions } = useF1UserPredictions(2026);
+
+    // Create a set of rounds that have predictions
+    const predictedRounds = useMemo(() => {
+        return new Set(predictions.map(p => p.round));
+    }, [predictions]);
 
     // Override body background color for F1 pages
     useEffect(() => {
@@ -65,15 +71,15 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
                         <div className="text-gray-400 text-sm py-4">Races laden...</div>
                     ) : (
                         races.map((race) => {
-                            const isDone = race.status === 'done';
                             const isSelected = currentRound === race.round;
+                            const hasPrediction = predictedRounds.has(race.round);
 
                             return (
                                 <RaceCard
                                     key={race.round}
                                     race={race}
                                     selected={isSelected}
-                                    done={isDone}
+                                    hasPrediction={hasPrediction}
                                 />
                             );
                         })

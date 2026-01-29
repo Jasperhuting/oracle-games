@@ -317,11 +317,32 @@ export async function POST(request: NextRequest) {
     };
 
     // Collect all rider nameIDs from results
+    // Handle both regular stage results and TTT (Team Time Trial) results
     const riderNameIds = new Set<string>();
+    const tttRiderPointsMap = new Map<string, { points: string; place: number }>(); // For TTT: nameId -> points
+    
     for (const result of stageResults) {
-      const nameId = result.nameID || result.shortName?.toLowerCase().replace(/\s+/g, '-');
-      if (nameId && nameId !== '-') {
-        riderNameIds.add(nameId);
+      // Check if this is a TTT result (has 'riders' array)
+      if ('riders' in result && Array.isArray(result.riders)) {
+        // TTT result - extract riders from team
+        const teamPlace = result.place || 0;
+        for (const rider of result.riders) {
+          const nameId = rider.shortName?.toLowerCase().replace(/\s+/g, '-');
+          if (nameId && nameId !== '-') {
+            riderNameIds.add(nameId);
+            // Store the rider's points and team place for later use
+            tttRiderPointsMap.set(nameId, { 
+              points: rider.points || '-', 
+              place: teamPlace 
+            });
+          }
+        }
+      } else {
+        // Regular stage result
+        const nameId = result.nameID || result.shortName?.toLowerCase().replace(/\s+/g, '-');
+        if (nameId && nameId !== '-') {
+          riderNameIds.add(nameId);
+        }
       }
     }
     // Also collect from GC if available
@@ -349,10 +370,25 @@ export async function POST(request: NextRequest) {
     for (const riderNameId of riderNameIds) {
       try {
         // Find the rider's result in stage results
-        const riderResult = stageResults.find(r =>
-          r.nameID === riderNameId ||
-          r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
-        );
+        // For TTT results, use the pre-computed tttRiderPointsMap
+        let riderResult: StageResult | undefined;
+        const tttData = tttRiderPointsMap.get(riderNameId);
+        
+        if (tttData) {
+          // TTT rider - create a synthetic StageResult from TTT data
+          riderResult = {
+            nameID: riderNameId,
+            shortName: riderNameId,
+            place: tttData.place,
+            points: tttData.points,
+          };
+        } else {
+          // Regular stage result
+          riderResult = stageResults.find(r =>
+            r.nameID === riderNameId ||
+            r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
+          ) as StageResult | undefined;
+        }
 
         // Find the rider's GC position (ClassificationRider uses 'rider' not 'nameID')
         const gcResult = generalClassification.find(r =>

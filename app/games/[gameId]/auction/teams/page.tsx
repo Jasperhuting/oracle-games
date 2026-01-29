@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Flag } from '@/components/Flag';
 import { AuctionTeamsRider as Rider, AuctionTeam as Team } from '@/lib/types/pages';
 import { useTranslation } from 'react-i18next';
+import { Tooltip } from 'react-tooltip';
 import { usePlayerTeams } from '@/contexts/PlayerTeamsContext';
 import { Game, PlayerTeam } from '@/lib/types';
 
@@ -81,28 +82,50 @@ export default function TeamsOverviewPage() {
     setExpandedTeams(newExpanded);
   };
 
-  // Group riders by cycling team with null checks
-  const cyclingTeamsMap = new Map<string, any[]>();
+  // Group riders by cycling team, then by unique rider with all owners
+  const cyclingTeamsMap = new Map<string, Map<string, any>>();
   teams?.forEach(team => {
-    if (!team) return; // Skip if team is undefined
+    if (!team) return;
     team.riders?.forEach(rider => {
-      if (!rider) return; // Skip if rider is undefined
+      if (!rider) return;
       const cyclingTeam = rider.riderTeam || 'Onbekend';
       if (!cyclingTeamsMap.has(cyclingTeam)) {
-        cyclingTeamsMap.set(cyclingTeam, []);
+        cyclingTeamsMap.set(cyclingTeam, new Map());
       }
-      cyclingTeamsMap.get(cyclingTeam)?.push({
-        ...rider,
-        playername: team.playername || 'Unknown',
-        userId: team.userId || '',
-      });
+      const ridersMap = cyclingTeamsMap.get(cyclingTeam)!;
+      const riderKey = rider.riderNameId || rider.riderName;
+
+      if (ridersMap.has(riderKey)) {
+        // Add owner to existing rider
+        const existingRider = ridersMap.get(riderKey)!;
+        existingRider.owners.push({
+          playername: team.playername || 'Unknown',
+          userId: team.userId || '',
+          pricePaid: rider.pricePaid,
+          bidAt: rider.bidAt,
+        });
+      } else {
+        // Create new rider entry with owners array
+        ridersMap.set(riderKey, {
+          ...rider,
+          owners: [{
+            playername: team.playername || 'Unknown',
+            userId: team.userId || '',
+            pricePaid: rider.pricePaid,
+            bidAt: rider.bidAt,
+          }],
+        });
+      }
     });
   });
 
   const cyclingTeams = Array.from(cyclingTeamsMap.entries())
-    .map(([teamName, riders]) => {
-      const totalBaseValue = riders.reduce((sum, r) => sum + r.baseValue, 0);
-      const totalPricePaid = riders.reduce((sum, r) => sum + r.pricePaid, 0);
+    .map(([teamName, ridersMap]) => {
+      const riders = Array.from(ridersMap.values());
+      const totalOwnerCount = riders.reduce((sum, r) => sum + r.owners.length, 0);
+      const totalBaseValue = riders.reduce((sum, r) => sum + r.baseValue * r.owners.length, 0);
+      const totalPricePaid = riders.reduce((sum, r) =>
+        sum + r.owners.reduce((ownerSum: number, o: any) => ownerSum + o.pricePaid, 0), 0);
       const totalPercentageDiff = totalBaseValue > 0
         ? Math.round(((totalPricePaid - totalBaseValue) / totalBaseValue) * 100)
         : 0;
@@ -110,7 +133,8 @@ export default function TeamsOverviewPage() {
       return {
         teamName,
         riders,
-        totalRiders: riders.length,
+        totalRiders: totalOwnerCount,
+        uniqueRiders: riders.length,
         totalBaseValue,
         totalPricePaid,
         totalPercentageDiff,
@@ -606,7 +630,7 @@ export default function TeamsOverviewPage() {
                                           {rider.riderName}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">
-                                          {rider.riderCountry}
+                                          <Flag countryCode={rider.riderCountry} />
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600 text-right">
                                           {rider.baseValue}
@@ -681,7 +705,12 @@ export default function TeamsOverviewPage() {
                           {team.teamName}
                         </h3>
                         <div className="flex gap-4 text-sm text-gray-600 mt-1">
-                          <span>{team.totalRiders} renners</span>
+                          <span>
+                            {team.uniqueRiders} renners
+                            {team.totalRiders !== team.uniqueRiders && (
+                              <span className="text-gray-400"> ({team.totalRiders}x gekozen)</span>
+                            )}
+                          </span>
                           <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
                           <span>Betaald: €{team.totalPricePaid.toLocaleString()}</span>
                           <span className={`font-medium ${
@@ -718,6 +747,30 @@ export default function TeamsOverviewPage() {
                   {/* Riders (Expanded) */}
                   {isExpanded && team.riders.length > 0 && (
                     <div className="border-t border-gray-200">
+                      <Tooltip
+                        id="owner-tooltip"
+                        className="!opacity-100 !z-50 !max-w-xs"
+                        clickable={true}
+                        delayHide={300}
+                        render={({ content }) => {
+                          // content format: "playername:userId, playername:userId, ..."
+                          const owners = content?.split('|||') || [];
+                          return (
+                            <div className="max-h-48 overflow-y-auto">
+                              {owners.map((ownerData, idx) => {
+                                const [playername, ownerId] = ownerData.split('::');
+                                const isCurrentUser = ownerId === user?.uid;
+                                return (
+                                  <div key={idx} className="py-0.5">
+                                    {isCurrentUser && <span className="text-yellow-400 mr-1">★</span>}
+                                    {playername}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }}
+                      />
                       <table className="w-full">
                         <thead className="bg-gray-50">
                           <tr>
@@ -725,7 +778,7 @@ export default function TeamsOverviewPage() {
                               Renner
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Eigenaar
+                              Eigenaar(s)
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Land
@@ -734,63 +787,64 @@ export default function TeamsOverviewPage() {
                               Waarde
                             </th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Prijs
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Bieddatum
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Verschil
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Punten
                             </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {team.riders.map((rider: any) => (
-                            <tr
-                              key={rider.riderId}
-                              className="hover:bg-gray-50"
-                            >
-                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                                {rider.riderName}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
-                                {rider.playername}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
-                                {rider.riderCountry}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
-                                {rider.baseValue}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                                {rider.pricePaid}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
-                                {rider.bidAt ? new Date(rider.bidAt).toLocaleDateString('nl-NL', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                }) : '-'}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-right">
-                                <span className={`font-medium ${
-                                  rider.percentageDiff > 0
-                                    ? 'text-red-600'
-                                    : rider.percentageDiff < 0
-                                    ? 'text-green-600'
-                                    : 'text-gray-600'
-                                }`}>
-                                  {rider.percentageDiff > 0 ? '+' : ''}{rider.percentageDiff}%
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
-                                {rider.pointsScored}
-                              </td>
-                            </tr>
-                          ))}
+                          {[...team.riders].sort((a: any, b: any) => {
+                            // Sort by points (highest first), then by value (highest first)
+                            if (b.pointsScored !== a.pointsScored) {
+                              return b.pointsScored - a.pointsScored;
+                            }
+                            return b.baseValue - a.baseValue;
+                          }).map((rider: any) => {
+                            const ownerCount = rider.owners?.length || 1;
+                            // Sort owners so current user comes first
+                            const sortedOwners = [...(rider.owners || [])].sort((a: any, b: any) => {
+                              if (a.userId === user?.uid) return -1;
+                              if (b.userId === user?.uid) return 1;
+                              return 0;
+                            });
+                            const firstOwner = sortedOwners[0] || { playername: 'Unknown', userId: '' };
+                            const currentUserIsOwner = sortedOwners.some((o: any) => o.userId === user?.uid);
+                            // Format: "playername::userId|||playername::userId" - skip first owner (already visible)
+                            const allOwnersData = sortedOwners.slice(1).map((o: any) => `${o.playername}::${o.userId}`).join('|||') || '';
+
+                            return (
+                              <tr
+                                key={rider.riderId || rider.riderNameId}
+                                className="hover:bg-gray-50"
+                              >
+                                <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                                  {currentUserIsOwner && <span className="text-yellow-500 mr-1">★</span>}
+                                  {rider.riderName}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                  {ownerCount === 1 ? (
+                                    <span>{firstOwner.playername}</span>
+                                  ) : (
+                                    <span
+                                      className="cursor-help border-b border-dashed border-gray-400"
+                                      data-tooltip-id="owner-tooltip"
+                                      data-tooltip-content={allOwnersData}
+                                    >
+                                      {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                  <Flag countryCode={rider.riderCountry} />
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                  {rider.baseValue}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                  {rider.pointsScored}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

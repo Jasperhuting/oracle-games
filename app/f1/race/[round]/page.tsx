@@ -569,6 +569,9 @@ export default function RacePage() {
                 setFastestLap(prediction.fastestLap);
                 setDnf1(prediction.dnf1);
                 setDnf2(prediction.dnf2);
+            } else if (round === 0) {
+                // Use mock data for test race (round 0)
+                setGrid(getMockPrediction(round, drivers as Driver[]));
             } else {
                 // No prediction - reset to empty
                 setGrid(Array(22).fill(null));
@@ -588,6 +591,9 @@ export default function RacePage() {
                     drivers.find(d => d.shortName === shortName) || null
                 );
                 setActualResult(loadedResult);
+            } else if (round === 0) {
+                // Use mock data for test race (round 0)
+                setActualResult(getMockResult(round, drivers as Driver[]));
             } else {
                 setActualResult(Array(22).fill(null));
             }
@@ -753,40 +759,89 @@ export default function RacePage() {
         setTimeout(() => setSaveMessage(null), 3000);
     };
 
-    // Calculate penalty points for each predicted driver
-    const calculatePenalties = () => {
+    // Calculate points using the bonus system from F1_POINTS_CONFIG
+    const calculatePoints = () => {
         if (!isRaceDone || !actualResult.some(d => d !== null)) return null;
 
-        const penalties: { driver: Driver; predictedPos: number; actualPos: number; penalty: number }[] = [];
-        let totalPenalty = 0;
+        const positionResults: { driver: Driver; predictedPos: number; actualPos: number; diff: number; points: number }[] = [];
+        let totalPoints = 0;
 
-        grid.forEach((predictedDriver, predictedIndex) => {
-            if (!predictedDriver) return;
+        // Position points
+        actualResult.forEach((actualDriver, actualIndex) => {
+            if (!actualDriver) return;
 
-            const predictedPos = predictedIndex + 1;
-            const actualIndex = actualResult.findIndex(d => d?.shortName === predictedDriver.shortName);
-            const actualPos = actualIndex !== -1 ? actualIndex + 1 : 22; // If not found, assume last place
+            const actualPos = actualIndex + 1;
+            const predictedIndex = grid.findIndex(d => d?.shortName === actualDriver.shortName);
+            const predictedPos = predictedIndex !== -1 ? predictedIndex + 1 : null;
 
-            const penalty = Math.abs(predictedPos - actualPos);
-            totalPenalty += penalty;
+            if (predictedPos === null) return;
 
-            if (penalty > 0) {
-                penalties.push({
-                    driver: predictedDriver,
-                    predictedPos,
-                    actualPos,
-                    penalty
-                });
+            const diff = Math.abs(actualPos - predictedPos);
+            let points = 0;
+
+            if (diff === 0) {
+                points = 25; // Exact match
+            } else if (diff === 1) {
+                points = 10; // Off by 1
+            } else if (diff === 2) {
+                points = 5; // Off by 2
+            } else if (actualPos <= 10 && predictedPos <= 10) {
+                points = 2; // Both in top 10 but >2 diff
             }
+
+            totalPoints += points;
+            positionResults.push({
+                driver: actualDriver,
+                predictedPos,
+                actualPos,
+                diff,
+                points
+            });
         });
 
-        // Sort by penalty descending
-        penalties.sort((a, b) => b.penalty - a.penalty);
+        // Bonus points
+        let poleBonus = 0;
+        let fastestLapBonus = 0;
+        let dnfBonus = 0;
 
-        return { penalties, totalPenalty, correctPredictions: grid.filter((d, i) => d && actualResult[i]?.shortName === d.shortName).length };
+        // Pole position bonus (10 pts)
+        if (raceResult?.polePosition && polePosition === raceResult.polePosition) {
+            poleBonus = 10;
+            totalPoints += 10;
+        }
+
+        // Fastest lap bonus (10 pts)
+        if (raceResult?.fastestLap && fastestLap === raceResult.fastestLap) {
+            fastestLapBonus = 10;
+            totalPoints += 10;
+        }
+
+        // DNF bonus (5 pts per correct)
+        const actualDnfs = raceResult?.dnfDrivers || [];
+        if (dnf1 && actualDnfs.includes(dnf1)) {
+            dnfBonus += 5;
+            totalPoints += 5;
+        }
+        if (dnf2 && actualDnfs.includes(dnf2)) {
+            dnfBonus += 5;
+            totalPoints += 5;
+        }
+
+        const correctPredictions = positionResults.filter(r => r.diff === 0).length;
+        const wrongPredictions = positionResults.filter(r => r.diff > 0).length;
+
+        return { 
+            positionResults, 
+            totalPoints, 
+            correctPredictions, 
+            wrongPredictions,
+            poleBonus,
+            fastestLapBonus,
+            dnfBonus
+        };
     };
 
-    const penaltyData = calculatePenalties();
+    const pointsData = calculatePoints();
 
     if (raceLoading || driversLoading) {
         return (
@@ -905,19 +960,120 @@ export default function RacePage() {
                     )}
 
                     {/* F1-styled Summary stats */}
-                    {penaltyData && (
-                        <div className="grid grid-cols-3 gap-2 md:gap-4">
-                            <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-green-600 rounded-lg p-3 md:p-4 text-center">
-                                <div className="text-2xl md:text-3xl font-black text-green-500">{penaltyData.correctPredictions}</div>
-                                <div className="text-xs text-gray-400 uppercase tracking-wider">Correct</div>
+                    {pointsData && (
+                        <div className="flex flex-col gap-3">
+                            {/* Main score - bonus system */}
+                            <div className="bg-gradient-to-r from-green-900/50 to-green-800/30 border border-green-600 rounded-lg p-4 md:p-6 text-center">
+                                <div className="text-4xl md:text-5xl font-black text-green-500">{pointsData.totalPoints}</div>
+                                <div className="text-sm text-gray-400 uppercase tracking-wider mt-1">Punten voor tussenstand</div>
+                                <div className="text-xs text-gray-500 mt-2 flex flex-wrap justify-center gap-2">
+                                    <span>Posities: {pointsData.totalPoints - pointsData.poleBonus - pointsData.fastestLapBonus - pointsData.dnfBonus}</span>
+                                    {pointsData.poleBonus > 0 && <span className="text-purple-400">+{pointsData.poleBonus} pole</span>}
+                                    {pointsData.fastestLapBonus > 0 && <span className="text-purple-400">+{pointsData.fastestLapBonus} snelste ronde</span>}
+                                    {pointsData.dnfBonus > 0 && <span className="text-red-400">+{pointsData.dnfBonus} DNF</span>}
+                                </div>
                             </div>
-                            <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-red-600 rounded-lg p-3 md:p-4 text-center">
-                                <div className="text-2xl md:text-3xl font-black text-red-500">{penaltyData.totalPenalty}</div>
-                                <div className="text-xs text-gray-400 uppercase tracking-wider">Strafpunten</div>
+                            {/* Secondary stats */}
+                            <div className="grid grid-cols-3 gap-2 md:gap-4">
+                                <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-green-600 rounded-lg p-3 md:p-4 text-center">
+                                    <div className="text-2xl md:text-3xl font-black text-green-500">{pointsData.correctPredictions}</div>
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider">Exact</div>
+                                </div>
+                                <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-yellow-500 rounded-lg p-3 md:p-4 text-center">
+                                    <div className="text-2xl md:text-3xl font-black text-yellow-500">{pointsData.positionResults.filter(r => r.diff > 0 && r.points > 0).length}</div>
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider">Bijna</div>
+                                </div>
+                                <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-red-600 rounded-lg p-3 md:p-4 text-center">
+                                    <div className="text-2xl md:text-3xl font-black text-red-500">{pointsData.positionResults.filter(r => r.points === 0).length}</div>
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider">Fout</div>
+                                </div>
                             </div>
-                            <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-orange-500 rounded-lg p-3 md:p-4 text-center">
-                                <div className="text-2xl md:text-3xl font-black text-orange-500">{penaltyData.penalties.length}</div>
-                                <div className="text-xs text-gray-400 uppercase tracking-wider">Fout</div>
+                        </div>
+                    )}
+
+                    {/* Official Race Results - Pole, Fastest Lap, DNFs */}
+                    {raceResult && (
+                        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700 mb-6">
+                            <div className="flex items-center justify-center gap-2 mb-4 pb-3 border-b border-gray-700">
+                                <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                                <span className="text-white font-black text-lg tracking-tight uppercase">Officiële Uitslag</span>
+                                <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {/* Pole Position */}
+                                <div className="bg-black/50 rounded-lg p-3 border border-yellow-500/30">
+                                    <div className="text-yellow-400 text-xs font-bold mb-1 uppercase tracking-wider">Pole Position</div>
+                                    <div className="flex items-center gap-2">
+                                        {(() => {
+                                            const poleDriver = drivers.find(d => d.shortName === raceResult.polePosition) as LegacyDriver | undefined;
+                                            const isCorrect = polePosition === raceResult.polePosition;
+                                            return (
+                                                <>
+                                                    {poleDriver && (
+                                                        <span style={{ backgroundColor: poleDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-8 h-8 relative flex-shrink-0">
+                                                            <img src={poleDriver.image} alt={poleDriver.lastName} className="w-10 h-auto absolute top-0 -left-0" />
+                                                        </span>
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-white font-bold text-sm truncate">{raceResult.polePosition}</div>
+                                                        {isCorrect && <div className="text-green-400 text-xs">✓ +10 pts</div>}
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* Fastest Lap */}
+                                <div className="bg-black/50 rounded-lg p-3 border border-purple-500/30">
+                                    <div className="text-purple-400 text-xs font-bold mb-1 uppercase tracking-wider italic">Fastest Lap</div>
+                                    <div className="flex items-center gap-2">
+                                        {(() => {
+                                            const flDriver = drivers.find(d => d.shortName === raceResult.fastestLap) as LegacyDriver | undefined;
+                                            const isCorrect = fastestLap === raceResult.fastestLap;
+                                            return (
+                                                <>
+                                                    {flDriver && (
+                                                        <span style={{ backgroundColor: flDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-8 h-8 relative flex-shrink-0">
+                                                            <img src={flDriver.image} alt={flDriver.lastName} className="w-10 h-auto absolute top-0 -left-0" />
+                                                        </span>
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-white font-bold text-sm truncate">{raceResult.fastestLap}</div>
+                                                        {isCorrect && <div className="text-green-400 text-xs">✓ +10 pts</div>}
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* DNFs */}
+                                <div className="bg-black/50 rounded-lg p-3 border border-red-500/30 col-span-2">
+                                    <div className="text-red-400 text-xs font-bold mb-1 uppercase tracking-wider">Did Not Finish ({raceResult.dnfDrivers?.length || 0})</div>
+                                    {raceResult.dnfDrivers && raceResult.dnfDrivers.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {raceResult.dnfDrivers.map((dnfShortName) => {
+                                                const dnfDriver = drivers.find(d => d.shortName === dnfShortName) as LegacyDriver | undefined;
+                                                const isCorrect = dnf1 === dnfShortName || dnf2 === dnfShortName;
+                                                return (
+                                                    <div key={dnfShortName} className={`flex items-center gap-1 px-2 py-1 rounded ${isCorrect ? 'bg-green-900/50 border border-green-500/50' : 'bg-red-900/30'}`}>
+                                                        {dnfDriver && (
+                                                            <span style={{ backgroundColor: dnfDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-6 h-6 relative flex-shrink-0">
+                                                                <img src={dnfDriver.image} alt={dnfDriver.lastName} className="w-8 h-auto absolute top-0 -left-0" />
+                                                            </span>
+                                                        )}
+                                                        <span className="text-white text-sm font-medium">{dnfShortName}</span>
+                                                        {isCorrect && <span className="text-green-400 text-xs">✓</span>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="text-gray-500 text-sm">Geen uitvallers</div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -999,7 +1155,7 @@ export default function RacePage() {
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Team</th>
                                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">#</th>
                                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Voorspeld</th>
-                                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Straf</th>
+                                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Punten</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -1007,11 +1163,21 @@ export default function RacePage() {
                                     if (!driver) return null;
                                     const actualPos = index + 1;
                                     const predictedPos = grid.findIndex(d => d?.shortName === driver.shortName) + 1;
-                                    const penalty = predictedPos > 0 ? Math.abs(actualPos - predictedPos) : 0;
+                                    const diff = predictedPos > 0 ? Math.abs(actualPos - predictedPos) : 0;
                                     const isCorrect = predictedPos === actualPos;
+                                    
+                                    // Calculate points for this position (bonus system)
+                                    let posPoints = 0;
+                                    if (diff === 0) posPoints = 25;
+                                    else if (diff === 1) posPoints = 10;
+                                    else if (diff === 2) posPoints = 5;
+                                    else if (actualPos <= 10 && predictedPos <= 10 && predictedPos > 0) posPoints = 2;
+                                    
+                                    // Row color based on points earned
+                                    const rowColor = isCorrect ? 'bg-green-50' : posPoints >= 10 ? 'bg-green-50/50' : posPoints >= 5 ? 'bg-yellow-50' : posPoints > 0 ? 'bg-blue-50' : '';
 
                                     return (
-                                        <tr key={driver.shortName} className={isCorrect ? 'bg-green-50' : penalty >= 5 ? 'bg-red-50' : penalty >= 3 ? 'bg-yellow-50' : ''}>
+                                        <tr key={driver.shortName} className={rowColor}>
                                             <td className="px-2 py-3 w-12">
                                                 <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${actualPos === 1 ? 'bg-yellow-400 text-yellow-800' : actualPos === 2 ? 'bg-gray-300 text-gray-700' : actualPos === 3 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                                                     {actualPos}
@@ -1053,23 +1219,9 @@ export default function RacePage() {
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {predictedPos > 0 ? (
-                                                    isCorrect ? (
-                                                        <span className="text-green-600 font-bold">✓</span>
-                                                    ) : (
-                                                        <span className={`font-bold flex items-center justify-center gap-1 ${actualPos < predictedPos ? 'text-red-600' : 'text-green-600'}`}>
-                                                            {actualPos < predictedPos ? (
-                                                                <>
-                                                                    <span>↑</span>
-                                                                    <span>+{penalty}</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <span>↓</span>
-                                                                    <span>-{penalty}</span>
-                                                                </>
-                                                            )}
-                                                        </span>
-                                                    )
+                                                    <span className={`font-bold ${posPoints >= 25 ? 'text-green-600' : posPoints >= 10 ? 'text-green-500' : posPoints >= 5 ? 'text-yellow-600' : posPoints > 0 ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                        {posPoints > 0 ? `+${posPoints}` : '0'}
+                                                    </span>
                                                 ) : (
                                                     <span className="text-gray-400">-</span>
                                                 )}

@@ -139,6 +139,7 @@ export interface F1Prediction {
 // ============================================
 export interface F1Standing {
   userId: string;  // userId from default database
+  visibleName?: string;  // Display name for test users
   season: number;
   
   // Totals

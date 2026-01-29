@@ -89,13 +89,27 @@ export async function GET(request: NextRequest) {
 
         const scraperData = await getScraperData(key);
         if (scraperData && 'stageResults' in scraperData) {
-          scraperRiders = scraperData.stageResults.map(r => ({
-            nameID: r.shortName || '',
-            name: r.name || r.firstName && r.lastName ? `${r.firstName} ${r.lastName}` : '',
-            firstName: r.firstName,
-            lastName: r.lastName,
-            shortName: r.shortName,
-          }));
+          scraperRiders = scraperData.stageResults.flatMap(r => {
+            // Handle TTT results (has 'riders' array)
+            if ('riders' in r && Array.isArray(r.riders)) {
+              return r.riders.map(rider => ({
+                nameID: rider.shortName || '',
+                name: `${rider.firstName} ${rider.lastName}`,
+                firstName: rider.firstName,
+                lastName: rider.lastName,
+                shortName: rider.shortName,
+              }));
+            }
+            // Regular stage result - cast to StageRider since we know it's not TTT
+            const stageRider = r as { shortName?: string; name?: string; firstName?: string; lastName?: string };
+            return [{
+              nameID: stageRider.shortName || '',
+              name: stageRider.name || (stageRider.firstName && stageRider.lastName ? `${stageRider.firstName} ${stageRider.lastName}` : ''),
+              firstName: stageRider.firstName,
+              lastName: stageRider.lastName,
+              shortName: stageRider.shortName,
+            }];
+          });
         }
       }
     } else if (raceSlug && year) {
@@ -112,13 +126,27 @@ export async function GET(request: NextRequest) {
 
       const scraperData = await getScraperData(key);
       if (scraperData && 'stageResults' in scraperData) {
-        scraperRiders = scraperData.stageResults.map(r => ({
-          nameID: r.shortName || '',
-          name: r.name || r.firstName && r.lastName ? `${r.firstName} ${r.lastName}` : '',
-          firstName: r.firstName,
-          lastName: r.lastName,
-          shortName: r.shortName,
-        }));
+        scraperRiders = scraperData.stageResults.flatMap(r => {
+          // Handle TTT results (has 'riders' array)
+          if ('riders' in r && Array.isArray(r.riders)) {
+            return r.riders.map(rider => ({
+              nameID: rider.shortName || '',
+              name: `${rider.firstName} ${rider.lastName}`,
+              firstName: rider.firstName,
+              lastName: rider.lastName,
+              shortName: rider.shortName,
+            }));
+          }
+          // Regular stage result
+          const stageRider = r as { shortName?: string; name?: string; firstName?: string; lastName?: string };
+          return [{
+            nameID: stageRider.shortName || '',
+            name: stageRider.name || (stageRider.firstName && stageRider.lastName ? `${stageRider.firstName} ${stageRider.lastName}` : ''),
+            firstName: stageRider.firstName,
+            lastName: stageRider.lastName,
+            shortName: stageRider.shortName,
+          }];
+        });
       }
 
       // Get all riders from all games for this year

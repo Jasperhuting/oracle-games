@@ -7,8 +7,8 @@ import {
     flexRender,
     createColumnHelper,
 } from "@tanstack/react-table";
-import { useF1Races } from "./hooks";
-import { F1Race } from "./types";
+import { useF1Races, useF1UserPredictions, useF1LegacyDrivers, useF1UserStanding, useF1RaceResults } from "./hooks";
+import { F1Race, F1Prediction, F1RaceResult, LegacyDriver } from "./types";
 import Link from "next/link";
 import { Check, Clock, Edit } from "tabler-icons-react";
 
@@ -23,18 +23,39 @@ interface RaceTableRow {
 const columnHelper = createColumnHelper<RaceTableRow>();
 
 const F1Page = () => {
-    const { races, loading } = useF1Races(2026);
+    const { races, loading: racesLoading } = useF1Races(2026);
+    const { predictions, loading: predictionsLoading } = useF1UserPredictions(2026);
+    const { standing, loading: standingLoading } = useF1UserStanding(2026);
+    const { results: raceResults, loading: resultsLoading } = useF1RaceResults(2026);
+    const { drivers } = useF1LegacyDrivers();
     const now = new Date();
 
-    // Mock data for testing - round 0
-    const mockPredictions: Record<number, string> = {
-        0: "1. VER, 2. NOR, 3. LEC",
-    };
-    const mockResults: Record<number, string> = {
-        0: "1. NOR, 2. VER, 3. HAM",
-    };
-    const mockPoints: Record<number, number> = {
-        0: 15,
+    // Debug logging
+    console.log('Predictions:', predictions);
+    console.log('Race Results:', raceResults);
+    console.log('Standing:', standing);
+
+    // Create a map of predictions by round
+    const predictionsByRound = useMemo(() => {
+        const map: Record<number, F1Prediction> = {};
+        predictions.forEach(p => {
+            map[p.round] = p;
+        });
+        return map;
+    }, [predictions]);
+
+    // Create a map of race results by round
+    const resultsByRound = useMemo(() => {
+        const map: Record<number, F1RaceResult> = {};
+        raceResults.forEach(r => {
+            map[r.round] = r;
+        });
+        return map;
+    }, [raceResults]);
+
+    // Helper to format top 3 drivers
+    const formatTop3 = (finishOrder: string[]): string => {
+        return finishOrder.slice(0, 3).map((shortName, i) => `${i + 1}. ${shortName}`).join(', ');
     };
 
     const tableData: RaceTableRow[] = useMemo(() => {
@@ -51,16 +72,19 @@ const F1Page = () => {
                 status = "upcoming";
             }
 
-            // Use mock data for round 0, otherwise null
+            const prediction = predictionsByRound[race.round];
+            const result = resultsByRound[race.round];
+            const racePoints = standing?.racePoints?.[`2026_${String(race.round).padStart(2, '0')}`] ?? null;
+
             return {
                 race,
                 status,
-                prediction: mockPredictions[race.round] ?? null,
-                actualResult: mockResults[race.round] ?? null,
-                points: mockPoints[race.round] ?? null,
+                prediction: prediction ? formatTop3(prediction.finishOrder) : null,
+                actualResult: result ? formatTop3(result.finishOrder) : null,
+                points: racePoints,
             };
         });
-    }, [races]);
+    }, [races, predictionsByRound, resultsByRound, standing]);
 
     const columns = useMemo(
         () => [
@@ -279,6 +303,8 @@ const F1Page = () => {
             </Link>
         );
     };
+
+    const loading = racesLoading || predictionsLoading || standingLoading || resultsLoading;
 
     if (loading) {
         return (

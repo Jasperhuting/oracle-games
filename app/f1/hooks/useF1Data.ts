@@ -269,6 +269,40 @@ export function useF1RaceResult(season: number, round: number) {
 }
 
 // ============================================
+// useF1RaceResults - Get all race results for a season
+// ============================================
+export function useF1RaceResults(season: number = CURRENT_SEASON) {
+  const [results, setResults] = useState<F1RaceResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const q = query(
+      collection(f1Db, F1_COLLECTIONS.RACE_RESULTS),
+      where('season', '==', season)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const resultsData = snapshot.docs.map(doc => doc.data() as F1RaceResult);
+        setResults(resultsData);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching race results:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [season]);
+
+  return { results, loading, error };
+}
+
+// ============================================
 // useF1LegacyDrivers - Get drivers in legacy format (for backward compatibility)
 // ============================================
 export function useF1LegacyDrivers(season: number = CURRENT_SEASON) {

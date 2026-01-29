@@ -20,11 +20,27 @@ export function scrapeStageResults(
   const getTTTTeamNameShort = (el: DomElement) => $(el).find('span.flag').next().attr('href')?.split('/')[1] || '';
   const getTTTSingleRiderFirstName = (el: DomElement) => $(el).find('td > a').text().trim()?.split(' ').pop() || '';
   const getTTTSingleRiderLastName = (el: DomElement) => $(el).find('td > a span.uppercase').text().trim();
+  // Get rider shortname/nameID from href
+  const getTTTRiderShortName = (el: DomElement) => {
+    const href = $(el).find('td > a').attr('href') || '';
+    const parts = href.split('/').filter(Boolean);
+    return parts.find(p => p !== 'rider') || parts[parts.length - 1] || '-';
+  };
+  // Get PCS points for TTT rider (in w7 mb_w10 column)
+  const getTTTRiderPoints = (el: DomElement) => $(el).find('td.w7').text().trim() || '-';
 
   // Check if this is a Team Time Trial (TTT)
-  if (stageTitle.includes('TTT')) {
-    const teamTimeTrial = $('#resultsCont > .resTab .ttt-results');
+  // Detect by: title contains 'TTT' or 'Team Time Trial', or page has .ttt-results element
+  const hasTTTResults = $('.ttt-results').length > 0;
+  const isTTT = stageTitle.includes('TTT') || stageTitle.toLowerCase().includes('team time trial') || hasTTTResults;
+  
+  console.log(`[TTT_SCRAPER] stageTitle: "${stageTitle}", hasTTTResults: ${hasTTTResults}, isTTT: ${isTTT}`);
+  
+  if (isTTT) {
+    const teamTimeTrial = $('.ttt-results');
     const teamTimeTrialResults: TTTTeamResult[] = [];
+
+    console.log(`[TTT_SCRAPER] Found ${teamTimeTrial.find('li:not(.hideIfMobile)').length} teams in TTT results`);
 
     teamTimeTrial.find('li:not(.hideIfMobile)').each((_, el) => {
       const team: TTTTeamResult = {
@@ -39,13 +55,23 @@ export function scrapeStageResults(
           place: getTTTPlace(el),
           firstName: getTTTSingleRiderFirstName(elRider),
           lastName: getTTTSingleRiderLastName(elRider),
+          shortName: getTTTRiderShortName(elRider),
+          points: getTTTRiderPoints(elRider),
         };
         team.riders.push(rider);
       });
       
+      if (teamTimeTrialResults.length < 3) {
+        console.log(`[TTT_SCRAPER] Team ${team.place}: ${team.team} with ${team.riders.length} riders`);
+        if (team.riders.length > 0) {
+          console.log(`[TTT_SCRAPER] First rider: ${team.riders[0].firstName} ${team.riders[0].lastName} (${team.riders[0].shortName}) - ${team.riders[0].points} pts`);
+        }
+      }
+      
       teamTimeTrialResults.push(team);
     });
 
+    console.log(`[TTT_SCRAPER] Total teams: ${teamTimeTrialResults.length}, Total riders: ${teamTimeTrialResults.reduce((sum, t) => sum + t.riders.length, 0)}`);
     stageResults.push(...teamTimeTrialResults);
   } else {
     // Regular stage results

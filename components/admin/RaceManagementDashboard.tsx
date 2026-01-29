@@ -577,7 +577,7 @@ export function RaceManagementDashboard() {
   const [data, setData] = useState<RaceStatusResponse | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
-  const [hideFullyScraped, setHideFullyScraped] = useState(false);
+  const [hideFullyScraped, setHideFullyScraped] = useState(true);
 
   // Helper function to check if a race is fully scraped
   const isFullyScraped = (race: RaceStatus): boolean => {

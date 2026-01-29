@@ -199,12 +199,19 @@ export function validateStageResult(data: StageResult): ValidationResult {
   const youth = Array.isArray(data.youthClassification) ? data.youthClassification : [];
   const teams = Array.isArray(data.teamClassification) ? data.teamClassification : [];
 
-  // Count only regular stage riders (not TTT team results)
+  // Count riders - handle TTT results by counting riders within teams
   // For tour-gc documents, stageResults is empty - use generalClassification instead
   const isTourGC = (data as any).isTourGC === true || (data as any).key?.type === 'tour-gc';
+  
+  // For TTT races, count total riders across all teams
+  const tttRiderCount = stageResults
+    .filter(r => isTTTTeamResult(r))
+    .reduce((sum, team) => sum + (team as TTTTeamResult).riders.length, 0);
+  const regularRiderCount = stageResults.filter(r => !isTTTTeamResult(r)).length;
+  
   const riderCount = isTourGC
     ? gc.length
-    : stageResults.filter(r => !isTTTTeamResult(r)).length;
+    : (tttRiderCount > 0 ? tttRiderCount : regularRiderCount);
 
   // 1. Check minimum rider count (only error for very low counts, no warning for "low" counts)
   // Note: Some races like National Championship ITTs can have as few as 20-30 riders

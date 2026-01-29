@@ -371,7 +371,7 @@ function KanbanCard({
       'worldtour-manager': 'bg-indigo-100 text-indigo-700',
       'marginal-gains': 'bg-teal-100 text-teal-700',
       'fan-flandrien': 'bg-cyan-100 text-cyan-700',
-      'giorgio-armada': 'bg-emerald-100 text-emerald-700',
+      'full-grid': 'bg-emerald-100 text-emerald-700',
     };
     return colors[category] || 'bg-gray-100 text-gray-700';
   };
@@ -389,7 +389,7 @@ function KanbanCard({
       'worldtour-manager': 'WorldTour Manager',
       'marginal-gains': 'Marginal Gains',
       'fan-flandrien': 'Fan Flandrien',
-      'giorgio-armada': 'Giorgio Armada',
+      'full-grid': 'Full Grid',
     };
     return categoryNames[category] || category;
   };
@@ -602,7 +602,7 @@ export function TodosTab() {
     'worldtour-manager',
     'marginal-gains',
     'fan-flandrien',
-    'giorgio-armada'
+    'full-grid'
   ]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -1053,7 +1053,7 @@ export function TodosTab() {
       'worldtour-manager': 'WorldTour Manager',
       'marginal-gains': 'Marginal Gains',
       'fan-flandrien': 'Fan Flandrien',
-      'giorgio-armada': 'Giorgio Armada',
+      'full-grid': 'Full Grid',
     };
     return categoryNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
   }, []);
