@@ -200,7 +200,7 @@ export interface LegacyDriver {
   team: string;
   teamColor?: string;
   teamColorAlt?: string;
-  teamShortName: string;
+  teamShortName?: string;
   carImage?: string;
   number: number;
   numberImage?: string;

@@ -10,6 +10,52 @@ import { useTranslation } from 'react-i18next';
 import { Tooltip } from 'react-tooltip';
 import { usePlayerTeams } from '@/contexts/PlayerTeamsContext';
 import { Game, PlayerTeam } from '@/lib/types';
+import { Selector } from '@/components/Selector';
+
+interface PlayerSelectorProps {
+  teams: Team[];
+  selectedUserId: string | null;
+  onSelect: (userId: string | null) => void;
+  excludeUserId?: string;
+  placeholder?: string;
+}
+
+function PlayerSelector({
+  teams,
+  selectedUserId,
+  onSelect,
+  excludeUserId,
+  placeholder = 'Selecteer een speler...',
+}: PlayerSelectorProps) {
+  const filteredTeams = teams.filter(t => !excludeUserId || t.userId !== excludeUserId);
+  const selectedTeam = selectedUserId ? teams.find(t => t.userId === selectedUserId) : null;
+
+  return (
+    <Selector<Team>
+      items={filteredTeams}
+      selectedItems={selectedTeam ? [selectedTeam] : []}
+      setSelectedItems={(items) => onSelect(items.length > 0 ? items[0].userId : null)}
+      multiSelect={false}
+      multiSelectShowSelected={false}
+      placeholder={placeholder}
+      searchFilter={(team, search) =>
+        team.playername.toLowerCase().includes(search.toLowerCase())
+      }
+      isEqual={(a, b) => a.userId === b.userId}
+      renderItem={(team) => (
+        <span className="text-sm">
+          <span className="text-gray-500 font-medium">#{team.ranking}</span> {team.playername}
+        </span>
+      )}
+      renderSelectedItem={(team) => (
+        <span className="text-sm">#{team.ranking} {team.playername}</span>
+      )}
+      getItemLabel={(team) => `#${team.ranking} - ${team.playername}`}
+      sortKey={(team) => String(team.ranking).padStart(4, '0')}
+      initialResultsLimit={100}
+    />
+  );
+}
 
 export default function TeamsOverviewPage() {
   const params = useParams();
@@ -264,7 +310,7 @@ export default function TeamsOverviewPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Teams
+                Teams - {game?.name}
               </h1>
               <p className="text-gray-600">
                 Alle gekozen teams in één overzicht
@@ -578,15 +624,20 @@ export default function TeamsOverviewPage() {
                                 }) : '-'}
                               </td>
                               <td className="px-4 py-3 text-sm text-right">
-                                <span className={`font-medium ${
-                                  rider.percentageDiff > 0
-                                    ? 'text-red-600'
-                                    : rider.percentageDiff < 0
-                                    ? 'text-green-600'
-                                    : 'text-gray-600'
-                                }`}>
-                                  {rider.percentageDiff > 0 ? '+' : ''}{rider.percentageDiff}%
-                                </span>
+                                {(() => {
+                                  const isMarginalGains = game?.gameType === 'marginal-gains';
+                                  const displayPercentage = isMarginalGains
+                                    ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
+                                    : rider.percentageDiff;
+                                  const colorClass = isMarginalGains
+                                    ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
+                                    : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
+                                  return (
+                                    <span className={`font-medium ${colorClass}`}>
+                                      {displayPercentage > 0 ? '+' : ''}{displayPercentage}%
+                                    </span>
+                                  );
+                                })()}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-600 text-right">
                                 {rider.pointsScored}
@@ -698,15 +749,20 @@ export default function TeamsOverviewPage() {
                                           }) : '-'}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-right">
-                                          <span className={`font-medium ${
-                                            rider.percentageDiff > 0
-                                              ? 'text-red-600'
-                                              : rider.percentageDiff < 0
-                                              ? 'text-green-600'
-                                              : 'text-gray-600'
-                                          }`}>
-                                            {rider.percentageDiff > 0 ? '+' : ''}{rider.percentageDiff}%
-                                          </span>
+                                          {(() => {
+                                            const isMarginalGains = game?.gameType === 'marginal-gains';
+                                            const displayPercentage = isMarginalGains
+                                              ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
+                                              : rider.percentageDiff;
+                                            const colorClass = isMarginalGains
+                                              ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
+                                              : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
+                                            return (
+                                              <span className={`font-medium ${colorClass}`}>
+                                                {displayPercentage > 0 ? '+' : ''}{displayPercentage}%
+                                              </span>
+                                            );
+                                          })()}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600 text-right">
                                           {rider.pointsScored}
@@ -1108,20 +1164,14 @@ export default function TeamsOverviewPage() {
             {/* User selector */}
             <div className="flex gap-4 items-center mb-4">
               <span className="text-sm text-gray-600">Vergelijk met:</span>
-              <select
-                value={compareUserId || ''}
-                onChange={(e) => setCompareUserId(e.target.value || null)}
-                className="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white"
-              >
-                <option value="">Selecteer een speler...</option>
-                {teams
-                  .filter(t => t.userId !== user?.uid)
-                  .map(t => (
-                    <option key={t.userId} value={t.userId}>
-                      {t.playername}
-                    </option>
-                  ))}
-              </select>
+              <PlayerSelector
+                teams={teams}
+                selectedUserId={compareUserId}
+                onSelect={setCompareUserId}
+
+                excludeUserId={user?.uid}
+                placeholder="Selecteer een speler..."
+              />
             </div>
 
             {compareUserId ? (() => {
@@ -1156,20 +1206,42 @@ export default function TeamsOverviewPage() {
 
               const compareRiders = Array.from(allRidersMap.values()).sort((a, b) => b.pointsScored - a.pointsScored);
 
-              const myTotal = myTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
-              const theirTotal = theirTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
+              const myPointsScored = myTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
+              const theirPointsScored = theirTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
               const sharedRiders = compareRiders.filter(r => r.inMyTeam && r.inTheirTeam);
               const onlyMine = compareRiders.filter(r => r.inMyTeam && !r.inTheirTeam);
               const onlyTheirs = compareRiders.filter(r => !r.inMyTeam && r.inTheirTeam);
+
+              // Marginal gains calculation
+              const isMarginalGains = game?.gameType === 'marginal-gains';
+              const myPricePaid = myTeam.totalSpent ?? 0;
+              const theirPricePaid = theirTeam.totalSpent ?? 0;
+              const myMarginalGains = myPointsScored - myPricePaid;
+              const theirMarginalGains = theirPointsScored - theirPricePaid;
+
+              // Display values based on game type
+              const myDisplayTotal = isMarginalGains ? myMarginalGains : myPointsScored;
+              const theirDisplayTotal = isMarginalGains ? theirMarginalGains : theirPointsScored;
+              const myTotalClass = isMarginalGains
+                ? myMarginalGains >= 0 ? 'text-green-700' : 'text-red-700'
+                : 'text-blue-900';
+              const theirTotalClass = isMarginalGains
+                ? theirMarginalGains >= 0 ? 'text-green-700' : 'text-red-700'
+                : 'text-purple-900';
 
               return (
                 <>
                   {/* Summary */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <div className="text-sm text-blue-600">Jouw punten</div>
-                      <div className="text-2xl font-bold text-blue-900">{myTotal}</div>
-                      <div className="text-xs text-blue-500">{myTeam.riders.length} renners</div>
+                      <div className="text-sm text-blue-600">Jij <span className="font-medium">#{myTeam.ranking}</span></div>
+                      <div className={`text-2xl font-bold ${myTotalClass}`}>
+                        {isMarginalGains && myDisplayTotal > 0 ? '+' : ''}{myDisplayTotal} punten
+                      </div>
+                      <div className="text-xs text-blue-500">
+                        {myTeam.riders.length} renners
+                        {isMarginalGains && <span className="ml-2">({myPointsScored} pts - €{myPricePaid})</span>}
+                      </div>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
                       <div className="text-sm text-gray-600">Gedeelde renners</div>
@@ -1179,9 +1251,14 @@ export default function TeamsOverviewPage() {
                       </div>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                      <div className="text-sm text-purple-600">{theirTeam.playername}</div>
-                      <div className="text-2xl font-bold text-purple-900">{theirTotal}</div>
-                      <div className="text-xs text-purple-500">{theirTeam.riders.length} renners</div>
+                      <div className="text-sm text-purple-600">{theirTeam.playername} <span className="font-medium">#{theirTeam.ranking}</span></div>
+                      <div className={`text-2xl font-bold ${theirTotalClass}`}>
+                        {isMarginalGains && theirDisplayTotal > 0 ? '+' : ''}{theirDisplayTotal} punten
+                      </div>
+                      <div className="text-xs text-purple-500">
+                        {theirTeam.riders.length} renners
+                        {isMarginalGains && <span className="ml-2">({theirPointsScored} pts - €{theirPricePaid})</span>}
+                      </div>
                     </div>
                   </div>
 
@@ -1204,6 +1281,9 @@ export default function TeamsOverviewPage() {
                           </th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Waarde
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Verschil
                           </th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Punten
@@ -1244,6 +1324,25 @@ export default function TeamsOverviewPage() {
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 text-right">
                               {rider.baseValue}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right">
+                              {(() => {
+                                // For marginal-gains: ROI = ((points - value) / value) * 100
+                                // For regular: use percentageDiff (price paid vs base value)
+                                const displayPercentage = isMarginalGains
+                                  ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
+                                  : rider.percentageDiff;
+                                // For marginal-gains: positive = good (green), negative = bad (red)
+                                // For regular: positive = overpaid (red), negative = underpaid (green)
+                                const colorClass = isMarginalGains
+                                  ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
+                                  : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
+                                return (
+                                  <span className={`font-medium ${colorClass}`}>
+                                    {displayPercentage > 0 ? '+' : ''}{displayPercentage}%
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 text-right font-medium">
                               {rider.pointsScored}

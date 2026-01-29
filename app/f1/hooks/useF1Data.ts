@@ -146,6 +146,7 @@ export function useF1DriversWithTeams(season: number = CURRENT_SEASON) {
         name: driver.teamId,
         season,
         color: '#666666',
+        shortName: driver.shortName,
         country: 'xx',
         isActive: true,
         createdAt: null as unknown as import('firebase/firestore').Timestamp,
