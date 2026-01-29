@@ -60,11 +60,13 @@ export default function SeasonLeaderboardPage() {
   }, [params]);
 
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
+  const [selectedTooltipGame, setSelectedTooltipGame] = useState<string>('');
 
   const { user } = useAuth();
   const { riders: allPlayerTeams, uniqueRiders: rankingsRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams(user?.uid);
 
   const [gamesById, setGamesById] = useState<Record<string, { name?: string; division?: string }>>({});
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let isCancelled = false;
@@ -89,12 +91,69 @@ export default function SeasonLeaderboardPage() {
       }
     }
 
+    async function loadUserNames() {
+      if (allPlayerTeams.length === 0) return;
+      
+      try {
+        // Get unique user IDs
+        const uniqueUserIds = [...new Set(allPlayerTeams.map(pt => pt.userId))];
+        
+        // Fetch user names for all unique users
+        const userNamePromises = uniqueUserIds.map(async (userId) => {
+          try {
+            const response = await fetch(`/api/getUser?userId=${userId}`);
+            if (response.status === 404) {
+              // User not found (likely deleted), use userId as fallback
+              return { userId, userName: userId };
+            }
+            if (!response.ok) return null;
+            const data = await response.json();
+            return { userId, userName: data.playername || data.displayName || userId };
+          } catch {
+            return { userId, userName: userId };
+          }
+        });
+
+        const results = await Promise.all(userNamePromises);
+        if (!isCancelled) {
+          const userNameMap: Record<string, string> = {};
+          results.forEach(result => {
+            if (result) {
+              userNameMap[result.userId] = result.userName;
+            }
+          });
+          setUserNames(userNameMap);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     loadGames();
+    loadUserNames();
 
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [allPlayerTeams]);
+
+  const allPlayerTeamsByRiderNameId = useMemo(() => {
+    const map = new Map<string, Array<{userId: string, gameId: string, userName?: string}>>();
+    
+    allPlayerTeams.forEach((pt) => {
+      if (!pt.riderNameId) return;
+
+      const existing = map.get(pt.riderNameId) ?? [];
+      existing.push({
+        userId: pt.userId,
+        gameId: pt.gameId,
+        userName: userNames[pt.userId] || pt.userId // Use fetched user name, fallback to userId
+      });
+      map.set(pt.riderNameId, existing);
+    });
+
+    return map;
+  }, [allPlayerTeams, userNames]);
 
   const myGameIdsByRiderNameId = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -136,6 +195,99 @@ export default function SeasonLeaderboardPage() {
                 {String(content || '')}
               </div>
             )}
+          />
+          <Tooltip
+            id="owners-tooltip"
+            delayShow={0}
+            className="!opacity-100 !z-50 !max-w-md !bg-white !text-gray-900 !border !border-gray-200 !shadow-lg"
+            clickable={true}
+            delayHide={1000}
+            render={({ content }) => {
+              const owners = content?.split('|||') || [];
+              
+              // Group owners by game
+              const ownersByGame = new Map<string, Array<{userName: string, isCurrentUser: boolean}>>();
+              
+              owners.forEach((ownerData) => {
+                const [userName, gameId] = ownerData.split('::');
+                const game = gamesById[gameId];
+                const gameName = game 
+                  ? (game.division ? `${game.name} - ${game.division}` : game.name || gameId)
+                  : gameId;
+                const isCurrentUser = userName === user?.uid;
+                
+                if (!ownersByGame.has(gameName)) {
+                  ownersByGame.set(gameName, []);
+                }
+                ownersByGame.get(gameName)!.push({ userName, isCurrentUser });
+              });
+              
+              const gameNames = Array.from(ownersByGame.keys());
+              const activeGame = selectedTooltipGame && ownersByGame.has(selectedTooltipGame) 
+                ? selectedTooltipGame 
+                : gameNames[0] || '';
+              
+              const activePlayers = ownersByGame.get(activeGame) || [];
+              
+              return (
+                <div className="min-w-72 max-w-lg">
+                  {/* Tabs */}
+                  <div className="flex border-b border-gray-200 overflow-x-auto whitespace-nowrap">
+                    {gameNames.map((gameName) => (
+                      <button
+                        key={gameName}
+                        onClick={() => setSelectedTooltipGame(gameName)}
+                        className={`flex-shrink-0 px-2 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+                          activeGame === gameName
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        {gameName}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="p-3 max-h-60 overflow-y-auto">
+                    {activePlayers.length > 0 ? (
+                      <div className="space-y-1">
+                        {activePlayers.map((player, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`flex items-center justify-between p-2 rounded-lg border ${
+                              player.isCurrentUser 
+                                ? 'bg-yellow-50 border-yellow-200' 
+                                : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              {player.isCurrentUser && (
+                                <span className="text-yellow-500 mr-2 text-lg">★</span>
+                              )}
+                              <span className={`text-sm font-medium ${
+                                player.isCurrentUser ? 'text-gray-900' : 'text-gray-700'
+                              }`}>
+                                {player.userName}
+                              </span>
+                            </div>
+                            {player.isCurrentUser && (
+                              <span className="text-xs text-yellow-600 font-medium bg-yellow-100 px-2 py-1 rounded-full">
+                                Jij
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-sm text-center py-4">
+                        Geen spelers in dit spel
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
           />
           {/* Header */}
           <div className="mb-6">
@@ -191,6 +343,9 @@ export default function SeasonLeaderboardPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Renner
                       </th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Spelers
+                      </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Punten
                       </th>
@@ -201,6 +356,19 @@ export default function SeasonLeaderboardPage() {
                       const isExpanded = expandedRiders.has(rider.id || 'no-id');
                       const myGameIds = Array.from(myGameIdsByRiderNameId.get(rider.riderNameId) ?? []);
                       const isMine = myGameIds.length > 0;
+                      const allOwners = allPlayerTeamsByRiderNameId.get(rider.riderNameId) || [];
+                      const totalPlayers = allOwners.length;
+
+                      // Get unique games where this rider is owned
+                      const uniqueGames = new Set(allOwners.map(owner => owner.gameId));
+                      
+                      // Create tooltip content showing all players and their games
+                      // Format: "userName::gameId|||userName::gameId" - matching auction teams format
+                      const ownersTooltip = totalPlayers > 0 
+                        ? allOwners
+                            .map(owner => `${owner.userName}::${owner.gameId}`)
+                            .join('|||')
+                        : '';
 
                       const ownedInGamesLabel = isMine
                         ? myGameIds
@@ -266,10 +434,24 @@ export default function SeasonLeaderboardPage() {
                                 </div>
                               )}
                             </td>
+                            <td className="px-4 py-4 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                {totalPlayers > 0 ? (
+                                  <span
+                                    data-tooltip-id="owners-tooltip"
+                                    data-tooltip-content={ownersTooltip}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium cursor-help"
+                                  >
+                                    <span>{totalPlayers}</span>
+                                    <span className="text-xs text-blue-600">speler{totalPlayers !== 1 ? 's' : ''}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">-</span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-4 py-4 text-right">
                               <div className="font-medium text-gray-900">{rider.pointsScored}</div>
-                            </td>
-                            <td>
                             </td>
                           </tr>
                           <tr>
