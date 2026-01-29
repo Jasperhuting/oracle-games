@@ -40,6 +40,7 @@ export const DriverSelector = ({
             }}
             isEqual={(t1, t2) => t1.firstName === t2.firstName && t1.lastName === t2.lastName}
             showSelected={showSelected}
+            sortKey={(driver) => driver.team || ''}
             renderItem={(team, index, isSelected) => (
                 <DriverRow 
                     selectedDriver={isSelected} 

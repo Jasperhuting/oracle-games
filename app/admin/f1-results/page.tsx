@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/Button';
 import { useRouter } from 'next/navigation';
 import { races2026, drivers, Driver } from '@/app/f1/data';
+import { DriverSelector } from '@/app/f1/components/DriverSelector';
 
 export default function F1ResultsAdminPage() {
     const { user, loading: authLoading } = useAuth();
@@ -188,29 +189,24 @@ export default function F1ResultsAdminPage() {
                                             <span className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full text-sm font-bold">
                                                 {index + 1}
                                             </span>
-                                            <select
-                                                value={grid[index]?.shortName ?? ''}
-                                                onChange={(e) => handleDriverSelect(index, e.target.value)}
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                                            >
-                                                <option value="">-- Selecteer coureur --</option>
-                                                {grid[index] && (
-                                                    <option value={grid[index]!.shortName}>
-                                                        {grid[index]!.firstName} {grid[index]!.lastName} ({grid[index]!.team})
-                                                    </option>
-                                                )}
-                                                {getAvailableDrivers(index).map((driver) => (
-                                                    <option key={driver.shortName} value={driver.shortName}>
-                                                        {driver.firstName} {driver.lastName} ({driver.team})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {grid[index] && (
-                                                <div
-                                                    className="w-4 h-4 rounded"
-                                                    style={{ backgroundColor: grid[index]!.teamColor || '#666' }}
+                                            <div className="flex-1">
+                                                <DriverSelector
+                                                    drivers={getAvailableDrivers(index)}
+                                                    selectedDrivers={grid[index] ? [grid[index]!] : []}
+                                                    setSelectedDrivers={(selected) => {
+                                                        if (selected.length > 0) {
+                                                            handleDriverSelect(index, selected[0].shortName);
+                                                        } else {
+                                                            setGrid(prev => {
+                                                                const newGrid = [...prev];
+                                                                newGrid[index] = null;
+                                                                return newGrid;
+                                                            });
+                                                        }
+                                                    }}
+                                                    placeholder="Selecteer coureur"
                                                 />
-                                            )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

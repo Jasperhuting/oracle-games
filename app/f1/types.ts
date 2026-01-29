@@ -24,6 +24,7 @@ export interface F1Season {
 export interface F1Team {
   id: string;
   name: string;
+  shortName: string;
   season: number;
   color: string;
   colorAlt?: string;
@@ -198,6 +199,7 @@ export interface LegacyDriver {
   team: string;
   teamColor?: string;
   teamColorAlt?: string;
+  teamShortName: string;
   carImage?: string;
   number: number;
   numberImage?: string;
@@ -214,6 +216,7 @@ export function toLegacyDriver(driver: F1Driver, team: F1Team): LegacyDriver {
     team: team.name,
     teamColor: team.color,
     teamColorAlt: team.colorAlt,
+    teamShortName: team.shortName,
     carImage: team.carImage,
     number: driver.number,
     numberImage: driver.numberImage,

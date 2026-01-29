@@ -7,64 +7,72 @@ import {
 
 /**
  * Calculate points for a prediction based on race results
+ * Uses penalty system: start with max points, subtract for position differences
+ * Lower score = better prediction
  */
 export function calculatePredictionPoints(
   prediction: F1Prediction,
   result: F1RaceResult
 ): { total: number; breakdown: F1PointsBreakdown } {
-  let positionPoints = 0;
+  let totalPenalty = 0;
+  let correctPositions = 0;
   let poleBonus = 0;
   let fastestLapBonus = 0;
   let dnfBonus = 0;
 
-  // Calculate position points
+  // Calculate penalty points (sum of position differences)
   for (let i = 0; i < prediction.finishOrder.length; i++) {
     const predictedDriver = prediction.finishOrder[i];
     const actualPosition = result.finishOrder.indexOf(predictedDriver);
 
-    if (actualPosition === -1) continue; // Driver not in results (DNF etc)
+    if (actualPosition === -1) {
+      // Driver not in results - max penalty for this position
+      totalPenalty += 21; // Max possible difference
+      continue;
+    }
 
     const positionDiff = Math.abs(i - actualPosition);
+    totalPenalty += positionDiff;
 
     if (positionDiff === 0) {
-      positionPoints += F1_POINTS_CONFIG.position.exact;
-    } else if (positionDiff === 1) {
-      positionPoints += F1_POINTS_CONFIG.position.offBy1;
-    } else if (positionDiff === 2) {
-      positionPoints += F1_POINTS_CONFIG.position.offBy2;
-    } else if (i < 10 && actualPosition < 10) {
-      // Both in top 10 but more than 2 positions off
-      positionPoints += F1_POINTS_CONFIG.position.inTop10;
+      correctPositions++;
     }
   }
 
-  // Pole position bonus
+  // Pole position bonus (reduces penalty)
   if (prediction.polePosition && prediction.polePosition === result.polePosition) {
     poleBonus = F1_POINTS_CONFIG.polePosition;
   }
 
-  // Fastest lap bonus
+  // Fastest lap bonus (reduces penalty)
   if (prediction.fastestLap && prediction.fastestLap === result.fastestLap) {
     fastestLapBonus = F1_POINTS_CONFIG.fastestLap;
   }
 
-  // DNF bonus
+  // DNF bonus (reduces penalty)
   const predictedDnfs = [prediction.dnf1, prediction.dnf2].filter(Boolean) as string[];
   for (const dnf of predictedDnfs) {
-    if (result.dnfDrivers.includes(dnf)) {
+    if (result.dnfDrivers?.includes(dnf)) {
       dnfBonus += F1_POINTS_CONFIG.dnfCorrect;
     }
   }
 
+  // Final score: penalty minus bonuses (lower is better)
+  // But we store as positive where higher = better for standings
+  // Max possible penalty is 22 * 21 = 462, so we invert
+  const maxPenalty = 462;
+  const bonuses = poleBonus + fastestLapBonus + dnfBonus;
+  const finalScore = maxPenalty - totalPenalty + bonuses;
+
   const breakdown: F1PointsBreakdown = {
-    positionPoints,
+    positionPoints: correctPositions, // Store correct count for display
     poleBonus,
     fastestLapBonus,
     dnfBonus,
   };
 
   return {
-    total: positionPoints + poleBonus + fastestLapBonus + dnfBonus,
+    total: finalScore,
     breakdown,
   };
 }

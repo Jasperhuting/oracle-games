@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { PlayerTeamsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { PlayerTeam } from '@/lib/types';
 
@@ -11,9 +12,12 @@ export function PlayerTeamsProvider({
   children,
   autoLoad = true
 }: RankingsProviderProps) {
+  const pathname = usePathname();
+  const isF1Page = pathname?.startsWith('/f1');
+  
   const [riders, setRiders] = useState<PlayerTeam[]>([]);
   const [uniqueRiders, setUniqueRiders] = useState<PlayerTeam[]>([]);
-  const [loading, setLoading] = useState(autoLoad);
+  const [loading, setLoading] = useState(autoLoad && !isF1Page);
   const [error, setError] = useState<string | null>(null);
 
   const fetchRankings = useCallback(async () => {
@@ -66,12 +70,12 @@ export function PlayerTeamsProvider({
     }
   }, []);
 
-  // Load rankings on mount if autoLoad is true
+  // Load rankings on mount if autoLoad is true and not on F1 pages
   useEffect(() => {
-    if (autoLoad) {
+    if (autoLoad && !isF1Page) {
       fetchRankings();
     }
-  }, [autoLoad, fetchRankings]);
+  }, [autoLoad, isF1Page, fetchRankings]);
 
 
 

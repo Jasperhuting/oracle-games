@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { DriverCard } from "../../components/DriverCardComponent";
 import { useState, useRef, useEffect } from "react";
-import { useF1LegacyDrivers, useF1Race } from "../../hooks";
+import { useF1LegacyDrivers, useF1Race, useF1Prediction, useF1RaceResult } from "../../hooks";
 import { LegacyDriver } from "../../types";
 import Link from "next/link";
 
@@ -37,7 +37,8 @@ const F1DriverPicker = ({
             d.firstName.toLowerCase().includes(search.toLowerCase()) ||
             d.lastName.toLowerCase().includes(search.toLowerCase()) ||
             d.shortName.toLowerCase().includes(search.toLowerCase())
-        );
+        )
+        .sort((a, b) => (a.team || '').localeCompare(b.team || ''));
 
     const selectedDriver = value ? drivers.find(d => d.shortName === value) : null;
 
@@ -122,32 +123,73 @@ const F1DriverPicker = ({
                     )}
                 </div>
             )}
-            {isOpen && !selectedDriver && !isDragOver && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
-                    {filteredDrivers.length === 0 ? (
-                        <div className="px-3 py-2 text-gray-400 text-sm">Geen resultaten</div>
-                    ) : (
-                        filteredDrivers.map((driver) => (
-                            <button
-                                key={driver.shortName}
-                                onClick={() => {
-                                    onChange(driver.shortName);
-                                    setIsOpen(false);
-                                    setSearch("");
-                                }}
-                                className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-gray-800 text-left"
-                            >
-                                <span className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0" style={{ backgroundColor: driver.teamColor }}>
-                                    <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
-                                </span>
-                                <span className="text-white text-sm">{driver.firstName}</span>
-                                <span className="text-gray-400 text-sm">{driver.lastName}</span>
-                                <span className="text-gray-500 text-xs ml-auto">{driver.team}</span>
-                            </button>
-                        ))
-                    )}
-                </div>
-            )}
+            {isOpen && !selectedDriver && !isDragOver && (() => {
+                // Separate available drivers (sorted by team)
+                const availableDrivers = filteredDrivers.filter(d => d.shortName !== value);
+                const selectedInList = value ? filteredDrivers.find(d => d.shortName === value) : null;
+                
+                return (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                        {filteredDrivers.length === 0 ? (
+                            <div className="px-3 py-2 text-gray-400 text-sm">Geen resultaten</div>
+                        ) : (
+                            <>
+                                {/* Available group */}
+                                {availableDrivers.length > 0 && (
+                                    <>
+                                        <div className="sticky top-0 bg-gray-800 px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700">
+                                            Available ({availableDrivers.length})
+                                        </div>
+                                        {availableDrivers.map((driver) => (
+                                            <button
+                                                key={driver.shortName}
+                                                onClick={() => {
+                                                    onChange(driver.shortName);
+                                                    setIsOpen(false);
+                                                    setSearch("");
+                                                }}
+                                                className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-gray-800 text-left"
+                                            >
+                                                <span className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0" style={{ backgroundColor: driver.teamColor }}>
+                                                    <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                                </span>
+                                                <span className="text-white text-sm">{driver.firstName}</span>
+                                                <span className="text-gray-400 text-sm">{driver.lastName}</span>
+                                                <span className="text-gray-500 text-xs ml-auto">{driver.team}</span>
+                                            </button>
+                                        ))}
+                                    </>
+                                )}
+                                
+                                {/* Selected group */}
+                                {selectedInList && (
+                                    <>
+                                        <div className="sticky top-0 bg-blue-900 px-2 py-1 text-xs font-semibold text-blue-300 uppercase tracking-wide border-b border-blue-700">
+                                            Selected (1)
+                                        </div>
+                                        <button
+                                            key={selectedInList.shortName}
+                                            onClick={() => {
+                                                onChange(null);
+                                                setIsOpen(false);
+                                                setSearch("");
+                                            }}
+                                            className="w-full flex items-center gap-2 px-2 py-1.5 bg-blue-900/50 hover:bg-blue-800 text-left"
+                                        >
+                                            <span className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0" style={{ backgroundColor: selectedInList.teamColor }}>
+                                                <img src={selectedInList.image} alt={selectedInList.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                            </span>
+                                            <span className="text-white text-sm">{selectedInList.firstName}</span>
+                                            <span className="text-gray-400 text-sm">{selectedInList.lastName}</span>
+                                            <span className="text-gray-500 text-xs ml-auto">{selectedInList.team}</span>
+                                        </button>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 };
@@ -161,6 +203,7 @@ interface StartingGridElementProps {
     onDragEnd: (e: React.DragEvent, position: number) => void;
     onSelect: (position: number, driver: Driver | null) => void;
     availableDrivers: Driver[];
+    allSelectedDrivers: Driver[];
     disabled?: boolean;
 }
 
@@ -236,7 +279,7 @@ const CombinedGridElement = ({ actualDriver, predictedDriver, position, predicte
     );
 };
 
-const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDragEnd, onSelect, availableDrivers, disabled }: StartingGridElementProps) => {
+const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDragEnd, onSelect, availableDrivers, allSelectedDrivers, disabled }: StartingGridElementProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -306,11 +349,13 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isPickerOpen]);
 
-    const filteredDrivers = availableDrivers.filter(d =>
-        d.firstName.toLowerCase().includes(search.toLowerCase()) ||
-        d.lastName.toLowerCase().includes(search.toLowerCase()) ||
-        d.shortName.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredDrivers = availableDrivers
+        .filter(d =>
+            d.firstName.toLowerCase().includes(search.toLowerCase()) ||
+            d.lastName.toLowerCase().includes(search.toLowerCase()) ||
+            d.shortName.toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => (a.team || '').localeCompare(b.team || ''));
 
     // Podium colors for top 3
     const getPositionStyle = () => {
@@ -365,48 +410,109 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
             </div>
 
             {/* Driver picker dropdown */}
-            {isPickerOpen && !disabled && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-hidden">
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Zoek coureur..."
-                        className="w-full px-2 py-1.5 bg-gray-800 border-b border-gray-700 text-white text-xs focus:outline-none"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="max-h-48 overflow-y-auto">
-                        {filteredDrivers.length === 0 ? (
-                            <div className="px-2 py-2 text-gray-500 text-xs">Geen coureurs gevonden</div>
-                        ) : (
-                            filteredDrivers.map((d) => (
-                                <div
-                                    key={d.shortName}
-                                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-800 cursor-pointer"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelectDriver(d);
-                                    }}
-                                >
-                                    <span
-                                        className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
-                                        style={{ backgroundColor: d.teamColor }}
-                                    >
-                                        <img
-                                            src={d.image}
-                                            alt={d.lastName}
-                                            className="w-7 h-auto absolute top-0 left-0"
-                                        />
-                                    </span>
-                                    <span className="text-white text-xs font-bold">{d.shortName}</span>
-                                    <span className="text-gray-400 text-xs truncate">{d.lastName}</span>
-                                </div>
-                            ))
-                        )}
+            {isPickerOpen && !disabled && (() => {
+                // Available drivers (already filtered to exclude all selected drivers)
+                const availableInList = filteredDrivers;
+                // All selected drivers sorted by team
+                const sortedSelectedDrivers = [...allSelectedDrivers].sort((a, b) => (a.team || '').localeCompare(b.team || ''));
+                
+                return (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-hidden">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Zoek coureur..."
+                            className="w-full px-2 py-1.5 bg-gray-800 border-b border-gray-700 text-white text-xs focus:outline-none sticky top-0 z-20"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="max-h-48 overflow-y-auto">
+                            {availableInList.length === 0 && sortedSelectedDrivers.length === 0 ? (
+                                <div className="px-2 py-2 text-gray-500 text-xs">Geen coureurs gevonden</div>
+                            ) : (
+                                <>
+                                    {/* Available group */}
+                                    {availableInList.length > 0 && (
+                                        <>
+                                            <div className="sticky top-0 bg-gray-800 px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700 z-10">
+                                                Available ({availableInList.length})
+                                            </div>
+                                            {availableInList.map((d) => (
+                                                <div
+                                                    key={d.shortName}
+                                                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-800 cursor-pointer relative"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSelectDriver(d);
+                                                    }}
+                                                >
+                                                    <span
+                                                        className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
+                                                        style={{ backgroundColor: d.teamColor }}
+                                                    >
+                                                        <img
+                                                            src={d.image}
+                                                            alt={d.lastName}
+                                                            className="w-7 h-auto absolute top-0 left-0"
+                                                        />
+                                                    </span>
+                                                    <span className="text-white text-xs font-bold font-mono">{d.shortName}</span>
+                                                    <span className="text-gray-400 text-xs whitespace-nowrap">{d.lastName}</span>
+                                                    <span className="text-gray-500 text-[10px] ml-auto truncate">{d.teamShortName}</span>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                    
+                                    {/* Selected group - show all selected drivers */}
+                                    {sortedSelectedDrivers.length > 0 && (
+                                        <>
+                                            <div className="sticky top-0 bg-blue-900 px-2 py-1 text-xs font-semibold text-blue-300 uppercase tracking-wide border-b border-blue-700 z-10">
+                                                Selected ({sortedSelectedDrivers.length})
+                                            </div>
+                                            {sortedSelectedDrivers.map((selectedDriver) => (
+                                                <div
+                                                    key={selectedDriver.shortName}
+                                                    className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer relative ${selectedDriver.shortName === driver?.shortName ? 'bg-blue-800 hover:bg-blue-700' : 'bg-blue-900/50 hover:bg-blue-800'}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // If clicking on current position's driver, deselect it
+                                                        if (selectedDriver.shortName === driver?.shortName) {
+                                                            onSelect(position, null);
+                                                        } else {
+                                                            // Swap: select this driver for current position
+                                                            handleSelectDriver(selectedDriver);
+                                                        }
+                                                        setIsPickerOpen(false);
+                                                    }}
+                                                >
+                                                    <span
+                                                        className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
+                                                        style={{ backgroundColor: selectedDriver.teamColor }}
+                                                    >
+                                                        <img
+                                                            src={selectedDriver.image}
+                                                            alt={selectedDriver.lastName}
+                                                            className="w-7 h-auto absolute top-0 left-0"
+                                                        />
+                                                    </span>
+                                                    <span className="text-white text-xs font-bold font-mono">{selectedDriver.shortName}</span>
+                                                    <span className="text-gray-400 text-xs whitespace-nowrap">{selectedDriver.lastName}</span>
+                                                    <span className="text-gray-500 text-[10px] ml-auto truncate">{selectedDriver.teamShortName}</span>
+                                                    {selectedDriver.shortName === driver?.shortName && (
+                                                        <span className="text-blue-300 text-[10px]">✓</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 };
@@ -418,8 +524,11 @@ export default function RacePage() {
     // Fetch data from Firestore
     const { race, loading: raceLoading } = useF1Race(2026, round);
     const { drivers, loading: driversLoading } = useF1LegacyDrivers();
+    const { prediction, loading: predictionLoading, saving, savePrediction, isAuthenticated } = useF1Prediction(round);
+    const { result: raceResult, loading: resultLoading } = useF1RaceResult(2026, round);
 
     const isRaceDone = race?.status === 'done';
+    const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     // Mock predictions for testing - round 0
     const getMockPrediction = (raceRound: number, driversList: Driver[]): (Driver | null)[] => {
@@ -441,27 +550,49 @@ export default function RacePage() {
 
     const [grid, setGrid] = useState<(Driver | null)[]>(Array(22).fill(null));
     const [actualResult, setActualResult] = useState<(Driver | null)[]>(Array(22).fill(null));
-    const [initialized, setInitialized] = useState(false);
-
-    // Update grid when drivers are loaded (only once)
-    useEffect(() => {
-        if (drivers.length > 0 && !initialized) {
-            const predictionOrder = ['VER', 'NOR', 'LEC', 'HAM', 'PIA', 'RUS', 'SAI', 'ALO', 'GAS', 'STR', 'HUL', 'BOR', 'OCO', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
-            const resultOrder = ['NOR', 'VER', 'HAM', 'LEC', 'RUS', 'PIA', 'ALO', 'SAI', 'GAS', 'STR', 'OCO', 'HUL', 'BOR', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
-            
-            if (round === 0) {
-                setGrid(predictionOrder.map(shortName => drivers.find(d => d.shortName === shortName) || null));
-                setActualResult(resultOrder.map(shortName => drivers.find(d => d.shortName === shortName) || null));
-            }
-            setInitialized(true);
-        }
-    }, [drivers.length, round, initialized]);
-
-    // Extra predictions
+    
+    // Extra predictions - declare before useEffects that use them
     const [fastestLap, setFastestLap] = useState<string | null>(null);
     const [polePosition, setPolePosition] = useState<string | null>(null);
     const [dnf1, setDnf1] = useState<string | null>(null);
     const [dnf2, setDnf2] = useState<string | null>(null);
+
+    // Load saved prediction when data is ready
+    useEffect(() => {
+        if (drivers.length > 0 && !predictionLoading) {
+            if (prediction) {
+                const loadedGrid = prediction.finishOrder.map(shortName => 
+                    drivers.find(d => d.shortName === shortName) || null
+                );
+                setGrid(loadedGrid);
+                setPolePosition(prediction.polePosition);
+                setFastestLap(prediction.fastestLap);
+                setDnf1(prediction.dnf1);
+                setDnf2(prediction.dnf2);
+            } else {
+                // No prediction - reset to empty
+                setGrid(Array(22).fill(null));
+                setPolePosition(null);
+                setFastestLap(null);
+                setDnf1(null);
+                setDnf2(null);
+            }
+        }
+    }, [drivers, prediction, predictionLoading, round]);
+
+    // Load race results when available
+    useEffect(() => {
+        if (drivers.length > 0 && !resultLoading) {
+            if (raceResult) {
+                const loadedResult = raceResult.finishOrder.map(shortName => 
+                    drivers.find(d => d.shortName === shortName) || null
+                );
+                setActualResult(loadedResult);
+            } else {
+                setActualResult(Array(22).fill(null));
+            }
+        }
+    }, [drivers, raceResult, resultLoading, round]);
 
     const [draggedFromGrid, setDraggedFromGrid] = useState<number | null>(null);
     const [draggingDriver, setDraggingDriver] = useState<string | null>(null);
@@ -525,8 +656,9 @@ export default function RacePage() {
         });
     };
 
-    // All drivers for grid selection (allow swapping)
-    const availableDriversForGrid = drivers;
+    // All drivers for grid selection - exclude already selected drivers
+    const selectedShortNames = grid.filter(d => d !== null).map(d => d!.shortName);
+    const availableDriversForGrid = drivers.filter(d => !selectedShortNames.includes(d.shortName));
 
     const handleDragStartFromGrid = (position: number, e: React.DragEvent) => {
         setDraggedFromGrid(position);
@@ -586,10 +718,39 @@ export default function RacePage() {
         setDragPosition(null);
     };
 
-    const handleSavePrediction = () => {
-        // TODO: Save prediction to database
-        console.log("Saving prediction:", grid);
-        alert("Voorspelling opgeslagen!");
+    const handleSavePrediction = async () => {
+        console.log('handleSavePrediction called', { isAuthenticated, gridLength: grid.length, filledCount: grid.filter(d => d !== null).length });
+        
+        if (!isAuthenticated) {
+            setSaveMessage({ type: 'error', text: 'Je moet ingelogd zijn om je voorspelling op te slaan' });
+            return;
+        }
+
+        // Check if all 22 positions are filled
+        const filledPositions = grid.filter(d => d !== null).length;
+        if (filledPositions < 22) {
+            setSaveMessage({ type: 'error', text: `Vul alle 22 posities in (${filledPositions}/22 ingevuld)` });
+            return;
+        }
+
+        const finishOrder = grid.map(d => d?.shortName || '');
+        
+        const success = await savePrediction({
+            finishOrder,
+            polePosition,
+            fastestLap,
+            dnf1,
+            dnf2,
+        });
+
+        if (success) {
+            setSaveMessage({ type: 'success', text: 'Voorspelling opgeslagen!' });
+        } else {
+            setSaveMessage({ type: 'error', text: 'Er ging iets mis bij het opslaan' });
+        }
+
+        // Clear message after 3 seconds
+        setTimeout(() => setSaveMessage(null), 3000);
     };
 
     // Calculate penalty points for each predicted driver
@@ -1128,6 +1289,7 @@ export default function RacePage() {
                                                 onDragEnd={handleGridDragEnd}
                                                 onSelect={handleSelectOnGrid}
                                                 availableDrivers={availableDriversForGrid}
+                                                allSelectedDrivers={grid.filter((d): d is Driver => d !== null)}
                                                 disabled={false}
                                             />
                                         </div>
@@ -1142,6 +1304,7 @@ export default function RacePage() {
                                                 onDragEnd={handleGridDragEnd}
                                                 onSelect={handleSelectOnGrid}
                                                 availableDrivers={availableDriversForGrid}
+                                                allSelectedDrivers={grid.filter((d): d is Driver => d !== null)}
                                                 disabled={false}
                                             />
                                         </div>
@@ -1167,20 +1330,43 @@ export default function RacePage() {
                             </p>
                         </div>
                         {!isRaceDone && (
-                            <div className="flex gap-2 md:gap-3">
-                                <button
-                                    onClick={() => setGrid(Array(22).fill(null))}
-                                    className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
-                                >
-                                    Reset
-                                </button>
-                                <button
-                                    onClick={handleSavePrediction}
-                                    className="flex-1 md:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition-colors"
-                                >
-                                    Opslaan
-                                </button>
-                            </div>
+                            <>
+                                <div className="flex gap-2 md:gap-3">
+                                    <button
+                                        onClick={() => setGrid(Array(22).fill(null))}
+                                        className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                    >
+                                        Reset
+                                    </button>
+                                    <button
+                                        onClick={handleSavePrediction}
+                                        disabled={saving || isRaceDone}
+                                        className={`flex-1 md:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
+                                            saving || isRaceDone 
+                                                ? 'bg-gray-600 cursor-not-allowed' 
+                                                : 'bg-red-600 hover:bg-red-500'
+                                        }`}
+                                    >
+                                        {saving ? 'Opslaan...' : 'Opslaan'}
+                                    </button>
+                                </div>
+                                {/* Save message feedback */}
+                                {saveMessage && (
+                                    <div className={`mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
+                                        saveMessage.type === 'success' 
+                                            ? 'bg-green-900/50 text-green-400 border border-green-700' 
+                                            : 'bg-red-900/50 text-red-400 border border-red-700'
+                                    }`}>
+                                        {saveMessage.text}
+                                    </div>
+                                )}
+                                {/* Login prompt */}
+                                {!isAuthenticated && !predictionLoading && (
+                                    <div className="mt-3 px-4 py-2 rounded-lg text-sm bg-yellow-900/50 text-yellow-400 border border-yellow-700">
+                                        Log in om je voorspelling op te slaan
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

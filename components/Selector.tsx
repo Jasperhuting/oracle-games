@@ -1,6 +1,6 @@
 'use client'
 import { useDebounce } from "@uidotdev/usehooks";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { SelectorProps } from "@/lib/types/component-props";
 
 export function Selector<T>({
@@ -17,42 +17,33 @@ export function Selector<T>({
     localStorageKey,
     initialResultsLimit = 50,
     showSelected = true,
-    getItemLabel
+    getItemLabel,
+    sortKey
 }: SelectorProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [results, setResults] = useState<T[]>([]);
     const [isFocused, setIsFocused] = useState(false);
-    const [items, setItems] = useState<T[]>(initialItems);
+    const [storedItems, setStoredItems] = useState<T[] | null>(null);
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
     
-    // Load items from localStorage or use initial items
+    // Load items from localStorage once on mount
     useEffect(() => {
         if (localStorageKey && typeof window !== 'undefined') {
-            const storedItems = JSON.parse(localStorage.getItem(localStorageKey) || '[]') as T[];
-            if (storedItems.length > 0) {
-                setItems(storedItems);
-                setResults(storedItems.slice(0, initialResultsLimit));
-            } else {
-                setItems(initialItems);
-                setResults(initialItems.slice(0, initialResultsLimit));
+            const stored = JSON.parse(localStorage.getItem(localStorageKey) || '[]') as T[];
+            if (stored.length > 0) {
+                setStoredItems(stored);
             }
-        } else if (initialItems.length > 0) {
-            setItems(initialItems);
-            setResults(initialItems.slice(0, initialResultsLimit));
         }
-    }, [localStorageKey, initialItems, initialResultsLimit]);
+    }, [localStorageKey]);
 
-    useEffect(() => {
-        const performSearch = async () => {
-            if (debouncedSearchTerm) {
-                const filteredItems = items.filter(item => searchFilter(item, debouncedSearchTerm));
-                setResults(filteredItems);
-            } else {
-                setResults(items.slice(0, initialResultsLimit));
-            }
-        };
+    // Use stored items if available, otherwise use initialItems
+    const items = storedItems || initialItems;
 
-        performSearch();
+    // Compute results based on search term
+    const results = useMemo(() => {
+        if (debouncedSearchTerm) {
+            return items.filter(item => searchFilter(item, debouncedSearchTerm));
+        }
+        return items.slice(0, initialResultsLimit);
     }, [debouncedSearchTerm, items, searchFilter, initialResultsLimit]);
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,35 +125,91 @@ export function Selector<T>({
                 </div>
             )}
 
-            {isFocused && (
-                <div className="absolute top-[40px] left-0 bg-white border border-solid border-gray-200 rounded-md w-[600px] max-w-[600px] max-h-[400px] overflow-y-scroll shadow-lg" style={{ zIndex: 9999 }}>
-                    {results.map((item, index) => {
-                        const isSelected = selectedItems.some(selected => isEqual(selected, item));
-                        return (
-                            <div 
-                                key={index} 
-                                className={`flex w-full items-center gap-2 hover:bg-gray-50 p-2 ${typeof index !== 'boolean' && index % 2 === 0 ? 'bg-gray-100' : ''}`} 
-                                onMouseDown={(e) => {
-                                    if (multiSelect) {
-                                        e.preventDefault();
-                                    }
-                                    toggleItem(item);
-                                }}
-                            >
-                                {multiSelect && (
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={() => {}}
-                                        className="w-4 h-4"
-                                    />
-                                )}
-                                {renderItem(item, index, isSelected)}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+            {isFocused && (() => {
+                // Separate available and selected items from results
+                const availableItems = results.filter(item => !selectedItems.some(selected => isEqual(selected, item)));
+                const selectedInResults = results.filter(item => selectedItems.some(selected => isEqual(selected, item)));
+                // Add selected items not in results
+                const selectedNotInResults = selectedItems.filter(item => !results.some(r => isEqual(r, item)));
+                const allSelectedItems = [...selectedInResults, ...selectedNotInResults];
+                
+                // Sort by sortKey if provided
+                const sortItems = (items: T[]) => {
+                    if (sortKey) {
+                        return [...items].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+                    }
+                    return items;
+                };
+                
+                const sortedAvailable = sortItems(availableItems);
+                const sortedSelected = sortItems(allSelectedItems);
+                
+                return (
+                    <div className="absolute top-[40px] left-0 bg-white border border-solid border-gray-200 rounded-md w-[600px] max-w-[600px] max-h-[400px] overflow-y-scroll shadow-lg" style={{ zIndex: 9999 }}>
+                        {/* Available group */}
+                        {sortedAvailable.length > 0 && (
+                            <>
+                                <div className="sticky top-0 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+                                    Available ({sortedAvailable.length})
+                                </div>
+                                {sortedAvailable.map((item, index) => (
+                                    <div 
+                                        key={`available-${index}`} 
+                                        className={`flex w-full items-center gap-2 hover:bg-gray-50 p-2 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`} 
+                                        onMouseDown={(e) => {
+                                            if (multiSelect) {
+                                                e.preventDefault();
+                                            }
+                                            toggleItem(item);
+                                        }}
+                                    >
+                                        {multiSelect && (
+                                            <input
+                                                type="checkbox"
+                                                checked={false}
+                                                onChange={() => {}}
+                                                className="w-4 h-4"
+                                            />
+                                        )}
+                                        {renderItem(item, index, false)}
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                        
+                        {/* Selected group */}
+                        {sortedSelected.length > 0 && (
+                            <>
+                                <div className="sticky top-0 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b border-blue-200">
+                                    Selected ({sortedSelected.length})
+                                </div>
+                                {sortedSelected.map((item, index) => (
+                                    <div 
+                                        key={`selected-${index}`} 
+                                        className={`flex w-full items-center gap-2 hover:bg-blue-100 p-2 bg-blue-50`} 
+                                        onMouseDown={(e) => {
+                                            if (multiSelect) {
+                                                e.preventDefault();
+                                            }
+                                            toggleItem(item);
+                                        }}
+                                    >
+                                        {multiSelect && (
+                                            <input
+                                                type="checkbox"
+                                                checked={true}
+                                                onChange={() => {}}
+                                                className="w-4 h-4"
+                                            />
+                                        )}
+                                        {renderItem(item, index, true)}
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 }

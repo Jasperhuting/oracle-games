@@ -10,7 +10,7 @@ export const DriverCard = ({ driver, small }: { driver: Driver, small?: boolean 
                         className="absolute inset-0 transition-opacity duration-300 group-hover:opacity-75 bg-gray-600"
                     />
                     <div className="relative z-10 flex flex-row md:flex-col">
-                        <span className="block text-xs lg:hidden text-white font-lato font-black">{driver.shortName}</span>
+                        <span className="block text-xs lg:hidden text-white font-lato font-black tabular-nums">{driver.shortName}</span>
                         <span className="text-md lg:text-3xl xl:text-2xl text-white font-lato font-black hidden lg:block">
                             {driver.firstName}
                         </span>

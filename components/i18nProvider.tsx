@@ -21,6 +21,16 @@ export default function I18nProvider({
     let isMounted = true;
     let unsubscribe: (() => void) | undefined;
     let timeoutId: NodeJS.Timeout | undefined;
+    let translationsLoaded = false;
+
+    // Start timeout IMMEDIATELY - this ensures we never hang forever
+    // even if Firestore connection itself is blocked
+    timeoutId = setTimeout(() => {
+      if (isMounted && !translationsLoaded) {
+        console.warn('Translations not loaded within 5 seconds, proceeding without translations');
+        setReady(true);
+      }
+    }, 5000);
 
     const initialize = async () => {
       try {
@@ -28,25 +38,19 @@ export default function I18nProvider({
         await initI18n(locale, {});
 
         // Listen for translation updates - use the imported i18n instance
-        let translationsLoaded = false;
         unsubscribe = listenTranslations(locale, (translations) => {
           i18n.addResourceBundle(locale, 'translation', translations, true, true);
           if (!translationsLoaded && isMounted) {
             translationsLoaded = true;
+            if (timeoutId) clearTimeout(timeoutId);
             setReady(true);
           }
         });
-
-        // Fallback in case translations take too long
-        timeoutId = setTimeout(() => {
-          if (isMounted && !translationsLoaded) {
-            console.warn('Translations not loaded within 3 seconds, proceeding anyway');
-            setReady(true);
-          }
-        }, 3000);
       } catch (error) {
         console.error('Error initializing i18n:', error);
-        if (isMounted) {
+        if (isMounted && !translationsLoaded) {
+          translationsLoaded = true;
+          if (timeoutId) clearTimeout(timeoutId);
           setReady(true);
         }
       }

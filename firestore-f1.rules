@@ -21,21 +21,7 @@ service cloud.firestore {
     // Check if user is an admin (you can customize this)
     function isAdmin() {
       return isAuthenticated() && 
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Check if a race prediction deadline has passed
-    function isPredictionLocked(raceId) {
-      let race = get(/databases/$(database)/documents/races/$(raceId));
-      return race.data.status == 'done' || 
-             (race.data.predictionDeadline != null && 
-              request.time > race.data.predictionDeadline);
-    }
-    
-    // Check if user is member of a subLeague
-    function isSubLeagueMember(subLeagueId) {
-      let subLeague = get(/databases/$(database)/documents/subLeagues/$(subLeagueId));
-      return request.auth.uid in subLeague.data.memberIds;
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
     // ============================================
@@ -134,25 +120,12 @@ service cloud.firestore {
     // Predictions Collection
     // ============================================
     match /predictions/{predictionId} {
-      // Users can read their own predictions
-      // After race is done, all predictions are public
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isPredictionLocked(resource.data.raceId)
-      );
+      // Authenticated users can read predictions
+      allow read: if isAuthenticated();
       
-      // Users can create their own predictions before deadline
-      allow create: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid &&
-        !isPredictionLocked(request.resource.data.raceId) &&
-        request.resource.data.finishOrder.size() == 22;
-      
-      // Users can update their own predictions before deadline
-      allow update: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.userId == request.auth.uid &&
-        !resource.data.isLocked &&
-        !isPredictionLocked(resource.data.raceId);
+      // Authenticated users can create/update their own predictions
+      allow create, update: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
       
       // No one can delete predictions
       allow delete: if false;

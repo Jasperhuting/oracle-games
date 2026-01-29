@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   collection, 
   query, 
@@ -169,16 +169,19 @@ export function useF1Races(season: number = CURRENT_SEASON) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // Query without orderBy to avoid needing composite index
+    // Sort client-side instead
     const q = query(
       collection(f1Db, F1_COLLECTIONS.RACES),
-      where('season', '==', season),
-      orderBy('round', 'asc')
+      where('season', '==', season)
     );
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const racesData = snapshot.docs.map(doc => doc.data() as F1Race);
+        const racesData = snapshot.docs
+          .map(doc => doc.data() as F1Race)
+          .sort((a, b) => a.round - b.round);
         setRaces(racesData);
         setLoading(false);
       },
@@ -272,22 +275,24 @@ export function useF1LegacyDrivers(season: number = CURRENT_SEASON) {
   const { drivers, loading: driversLoading, error: driversError } = useF1Drivers(season);
   const { teams, loading: teamsLoading, error: teamsError } = useF1Teams(season);
 
-  const legacyDrivers: LegacyDriver[] = drivers.map(driver => {
-    const team = teams.find(t => t.id === driver.teamId);
-    if (!team) {
-      return {
-        firstName: driver.firstName,
-        lastName: driver.lastName,
-        shortName: driver.shortName,
-        team: driver.teamId,
-        number: driver.number,
-        country: driver.country,
-        image: driver.image,
-        numberImage: driver.numberImage,
-      };
-    }
-    return toLegacyDriver(driver, team);
-  });
+  const legacyDrivers = useMemo(() => {
+    return drivers.map(driver => {
+      const team = teams.find(t => t.id === driver.teamId);
+      if (!team) {
+        return {
+          firstName: driver.firstName,
+          lastName: driver.lastName,
+          shortName: driver.shortName,
+          team: driver.teamId,
+          number: driver.number,
+          country: driver.country,
+          image: driver.image,
+          numberImage: driver.numberImage,
+        };
+      }
+      return toLegacyDriver(driver, team);
+    });
+  }, [drivers, teams]);
 
   return {
     drivers: legacyDrivers,

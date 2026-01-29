@@ -8,8 +8,8 @@ import {
   F1_COLLECTIONS, 
   createRaceDocId,
   createStandingDocId,
-} from '../../types';
-import { calculatePredictionPoints } from '../../lib/points';
+} from '@/app/f1/types';
+import { calculatePredictionPoints } from '@/app/f1/lib/points';
 import { cookies } from 'next/headers';
 
 const f1Db = getServerFirebaseF1();

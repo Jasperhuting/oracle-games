@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     useReactTable,
     getCoreRowModel,
@@ -9,9 +9,11 @@ import {
     createColumnHelper,
     SortingState,
 } from "@tanstack/react-table";
-import { useState } from "react";
 import Link from "next/link";
 import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World } from "tabler-icons-react";
+import { useF1Standings, useF1SubLeagues } from "../hooks";
+import { useUserNames } from "../hooks/useUserNames";
+import { F1Standing, F1SubLeague } from "../types";
 
 interface Player {
     id: string;
@@ -24,35 +26,16 @@ interface Player {
     lastRacePoints: number | null;
 }
 
-interface Subpoule {
-    id: string;
-    name: string;
-    code: string;
-    memberIds: string[];
-    createdBy: string;
-}
-
-// Mock data - later te vervangen met echte data uit Firestore
-const mockPlayers: Player[] = [
-    { id: "1", name: "Max Verstansen", totalPoints: 156, correctPredictions: 12, racesParticipated: 5, bestFinish: 1, lastRacePoints: 28 },
-    { id: "2", name: "Jasper H.", totalPoints: 142, correctPredictions: 10, racesParticipated: 5, bestFinish: 1, lastRacePoints: 32 },
-    { id: "3", name: "Lewis Fan", totalPoints: 128, correctPredictions: 8, racesParticipated: 5, bestFinish: 2, lastRacePoints: 18 },
-    { id: "4", name: "Ferrari Lover", totalPoints: 115, correctPredictions: 7, racesParticipated: 4, bestFinish: 2, lastRacePoints: 22 },
-    { id: "5", name: "McLaren Mike", totalPoints: 98, correctPredictions: 6, racesParticipated: 5, bestFinish: 3, lastRacePoints: 15 },
-    { id: "6", name: "Aston Martin Anna", totalPoints: 87, correctPredictions: 5, racesParticipated: 5, bestFinish: 4, lastRacePoints: 12 },
-    { id: "7", name: "Red Bull Rick", totalPoints: 76, correctPredictions: 4, racesParticipated: 4, bestFinish: 5, lastRacePoints: 8 },
-    { id: "8", name: "Mercedes Mark", totalPoints: 65, correctPredictions: 3, racesParticipated: 3, bestFinish: 6, lastRacePoints: null },
-];
-
-// Mock subpoules - later te vervangen met echte data uit Firestore
-const mockSubpoules: Subpoule[] = [
-    { id: "sp1", name: "Vrienden", code: "VRD2026", memberIds: ["1", "2", "5", "7"], createdBy: "2" },
-    { id: "sp2", name: "Kantoor", code: "KNT2026", memberIds: ["2", "3", "4", "6", "8"], createdBy: "2" },
-];
-
 const columnHelper = createColumnHelper<Player>();
 
 const StandingsPage = () => {
+    const { standings, loading: standingsLoading } = useF1Standings(2026);
+    const { subLeagues, loading: subLeaguesLoading } = useF1SubLeagues();
+    
+    // Get user IDs from standings to fetch display names
+    const userIds = useMemo(() => standings.map(s => s.userId), [standings]);
+    const { names: userNames, loading: namesLoading } = useUserNames(userIds);
+    
     const [sorting, setSorting] = useState<SortingState>([
         { id: "totalPoints", desc: true }
     ]);
@@ -62,14 +45,29 @@ const StandingsPage = () => {
     const [newPouleName, setNewPouleName] = useState("");
     const [joinCode, setJoinCode] = useState("");
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Convert standings to Player format
+    const players: Player[] = useMemo(() => {
+        return standings.map(s => ({
+            id: s.userId,
+            name: userNames[s.userId] || s.userId.substring(0, 8) + '...',
+            totalPoints: s.totalPoints,
+            correctPredictions: s.correctPredictions,
+            racesParticipated: s.racesParticipated,
+            bestFinish: s.bestFinish,
+            lastRacePoints: s.lastRacePoints,
+        }));
+    }, [standings, userNames]);
 
     // Filter players based on selected subpoule
     const filteredPlayers = useMemo(() => {
-        if (!selectedSubpoule) return mockPlayers;
-        const subpoule = mockSubpoules.find(sp => sp.id === selectedSubpoule);
-        if (!subpoule) return mockPlayers;
-        return mockPlayers.filter(p => subpoule.memberIds.includes(p.id));
-    }, [selectedSubpoule]);
+        if (!selectedSubpoule) return players;
+        const subpoule = subLeagues.find(sp => sp.id === selectedSubpoule);
+        if (!subpoule) return players;
+        return players.filter(p => subpoule.memberIds.includes(p.id));
+    }, [selectedSubpoule, players, subLeagues]);
 
     // Sort filtered players by points
     const sortedPlayers = useMemo(() => {
@@ -157,20 +155,62 @@ const StandingsPage = () => {
         getSortedRowModel: getSortedRowModel(),
     });
 
-    const handleCreatePoule = () => {
+    const handleCreatePoule = async () => {
         if (!newPouleName.trim()) return;
-        // TODO: Create subpoule in Firestore
-        console.log("Creating poule:", newPouleName);
-        setNewPouleName("");
-        setShowCreateModal(false);
+        setActionLoading(true);
+        setActionMessage(null);
+
+        try {
+            const response = await fetch('/api/f1/subleagues', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newPouleName.trim() }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setActionMessage({ type: 'success', text: `Poule "${newPouleName}" aangemaakt! Code: ${data.data.code}` });
+                setNewPouleName("");
+                setShowCreateModal(false);
+            } else {
+                setActionMessage({ type: 'error', text: data.error || 'Kon poule niet aanmaken' });
+            }
+        } catch {
+            setActionMessage({ type: 'error', text: 'Netwerkfout bij aanmaken' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 5000);
+        }
     };
 
-    const handleJoinPoule = () => {
+    const handleJoinPoule = async () => {
         if (!joinCode.trim()) return;
-        // TODO: Join subpoule via code in Firestore
-        console.log("Joining poule with code:", joinCode);
-        setJoinCode("");
-        setShowJoinModal(false);
+        setActionLoading(true);
+        setActionMessage(null);
+
+        try {
+            const response = await fetch('/api/f1/subleagues', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setActionMessage({ type: 'success', text: `Je bent toegevoegd aan "${data.data.name}"!` });
+                setJoinCode("");
+                setShowJoinModal(false);
+            } else {
+                setActionMessage({ type: 'error', text: data.error || 'Kon niet deelnemen aan poule' });
+            }
+        } catch {
+            setActionMessage({ type: 'error', text: 'Netwerkfout bij deelnemen' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 5000);
+        }
     };
 
     const handleCopyCode = (code: string) => {
@@ -229,8 +269,27 @@ const StandingsPage = () => {
         );
     };
 
+    if (standingsLoading || subLeaguesLoading || namesLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="text-gray-400">Laden...</div>
+            </div>
+        );
+    }
+
     return (
         <>
+            {/* Action message */}
+            {actionMessage && (
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${
+                    actionMessage.type === 'success'
+                        ? 'bg-green-900/50 text-green-400 border border-green-700'
+                        : 'bg-red-900/50 text-red-400 border border-red-700'
+                }`}>
+                    {actionMessage.text}
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex items-center justify-between">
@@ -274,10 +333,10 @@ const StandingsPage = () => {
                         <World size={16} />
                         Algemeen
                     </button>
-                    {mockSubpoules.map((subpoule) => (
+                    {subLeagues.map((subpoule) => (
                         <button
                             key={subpoule.id}
-                            onClick={() => setSelectedSubpoule(subpoule.id)}
+                            onClick={() => setSelectedSubpoule(subpoule.id || null)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
                                 selectedSubpoule === subpoule.id
                                     ? "bg-red-600 text-white"
@@ -298,7 +357,7 @@ const StandingsPage = () => {
                             <Users size={20} className="text-gray-400" />
                             <div>
                                 <span className="text-white font-medium">
-                                    {mockSubpoules.find(sp => sp.id === selectedSubpoule)?.name}
+                                    {subLeagues.find(sp => sp.id === selectedSubpoule)?.name}
                                 </span>
                                 <span className="text-gray-500 text-sm ml-2">
                                     {sortedPlayers.length} deelnemers
@@ -308,13 +367,13 @@ const StandingsPage = () => {
                         <div className="flex items-center gap-2">
                             <span className="text-gray-500 text-sm">Code:</span>
                             <code className="bg-gray-900 px-2 py-1 rounded text-sm text-gray-300">
-                                {mockSubpoules.find(sp => sp.id === selectedSubpoule)?.code}
+                                {subLeagues.find(sp => sp.id === selectedSubpoule)?.code}
                             </code>
                             <button
-                                onClick={() => handleCopyCode(mockSubpoules.find(sp => sp.id === selectedSubpoule)?.code || "")}
+                                onClick={() => handleCopyCode(subLeagues.find(sp => sp.id === selectedSubpoule)?.code || "")}
                                 className="p-1.5 hover:bg-gray-700 rounded transition-colors"
                             >
-                                {copiedCode === mockSubpoules.find(sp => sp.id === selectedSubpoule)?.code ? (
+                                {copiedCode === subLeagues.find(sp => sp.id === selectedSubpoule)?.code ? (
                                     <Check size={16} className="text-green-500" />
                                 ) : (
                                     <Copy size={16} className="text-gray-400" />

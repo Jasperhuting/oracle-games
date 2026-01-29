@@ -49,6 +49,7 @@ export interface SelectorProps<T> {
   initialResultsLimit?: number;
   showSelected?: boolean;
   getItemLabel?: (item: T) => string;
+  sortKey?: (item: T) => string;
 }
 
 export interface RowProps<T> {

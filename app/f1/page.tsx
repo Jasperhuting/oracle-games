@@ -7,12 +7,13 @@ import {
     flexRender,
     createColumnHelper,
 } from "@tanstack/react-table";
-import { races2026, Race } from "./data";
+import { useF1Races } from "./hooks";
+import { F1Race } from "./types";
 import Link from "next/link";
 import { Check, Clock, Edit } from "tabler-icons-react";
 
 interface RaceTableRow {
-    race: Race;
+    race: F1Race;
     status: "done" | "upcoming" | "open";
     prediction: string | null;
     actualResult: string | null;
@@ -22,6 +23,7 @@ interface RaceTableRow {
 const columnHelper = createColumnHelper<RaceTableRow>();
 
 const F1Page = () => {
+    const { races, loading } = useF1Races(2026);
     const now = new Date();
 
     // Mock data for testing - round 0
@@ -36,12 +38,12 @@ const F1Page = () => {
     };
 
     const tableData: RaceTableRow[] = useMemo(() => {
-        return races2026.map((race) => {
+        return races.map((race) => {
             const raceEndDate = new Date(race.endDate);
             const raceStartDate = new Date(race.startDate);
 
             let status: "done" | "upcoming" | "open";
-            if (raceEndDate < now) {
+            if (race.status === "done") {
                 status = "done";
             } else if (raceStartDate <= now && raceEndDate >= now) {
                 status = "open";
@@ -58,7 +60,7 @@ const F1Page = () => {
                 points: mockPoints[race.round] ?? null,
             };
         });
-    }, []);
+    }, [races]);
 
     const columns = useMemo(
         () => [
@@ -278,6 +280,14 @@ const F1Page = () => {
         );
     };
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="text-gray-400">Laden...</div>
+            </div>
+        );
+    }
+
     return (
         <>
             <h1 className="text-2xl text-white md:text-3xl font-bold mb-4 md:mb-6">F1 2026 Voorspellingen</h1>
@@ -290,11 +300,11 @@ const F1Page = () => {
                 </div>
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 md:p-4">
                     <div className="text-xs md:text-sm text-gray-400">Races</div>
-                    <div className="text-xl md:text-3xl font-bold text-white">{completedRaces}/{races2026.length}</div>
+                    <div className="text-xl md:text-3xl font-bold text-white">{completedRaces}/{races.length}</div>
                 </div>
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 md:p-4">
                     <div className="text-xs md:text-sm text-gray-400">Ingevuld</div>
-                    <div className="text-xl md:text-3xl font-bold text-white">{predictedRaces}/{races2026.length}</div>
+                    <div className="text-xl md:text-3xl font-bold text-white">{predictedRaces}/{races.length}</div>
                 </div>
             </div>
 
