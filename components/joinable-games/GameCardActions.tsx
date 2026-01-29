@@ -33,8 +33,11 @@ export const GameCardActions = ({
     router.push(path);
   };
 
-  const navigateToTeams = (targetGame: JoinableGame) => {
-    router.push(`/games/${targetGame.id}/auction/teams`);
+  const navigateToDashboard = (targetGame: JoinableGame, tab?: string) => {
+    const url = tab 
+      ? `/games/${targetGame.id}/dashboard?tab=${tab}`
+      : `/games/${targetGame.id}/dashboard`;
+    router.push(url);
   };
 
   return (
@@ -70,10 +73,10 @@ export const GameCardActions = ({
 
       {/* Game Navigation Buttons - Selection based games */}
       {isJoined && !isWaitingForDivision && joinedGame && isSelectionBasedGame(game.gameType) && (
-        joinedGame.status === 'active' ? (
+        joinedGame.status === 'active' || joinedGame.status === 'finished' ? (
           <Button
-            text={t('games.team')}
-            onClick={() => navigateToTeams(joinedGame)}
+            text={t('games.dashboard', 'Dashboard')}
+            onClick={() => navigateToDashboard(joinedGame)}
             className="px-4 py-2 bg-primary hover:bg-primary/80 whitespace-nowrap"
           />
         ) : (
@@ -98,23 +101,13 @@ export const GameCardActions = ({
         />
       )}
 
-      {/* View Results Button - Only for joined games that are active or finished */}
-      {isJoined && !isWaitingForDivision && joinedGame && (joinedGame.status === 'active' || joinedGame.status === 'finished') && (
+      {/* Dashboard Button - For non-selection based games that are active or finished */}
+      {isJoined && !isWaitingForDivision && joinedGame && !isSelectionBasedGame(game.gameType) && game.gameType !== 'slipstream' && (joinedGame.status === 'active' || joinedGame.status === 'finished') && (
         <Button
-          text={t('games.viewResults', 'Resultaten')}
-          onClick={() => router.push(`/games/${joinedGame.id}/results`)}
+          text={t('games.dashboard', 'Dashboard')}
+          onClick={() => navigateToDashboard(joinedGame)}
           className="px-4 py-2 whitespace-nowrap"
           variant="success"
-        />
-      )}
-
-      {/* Standings Button - For joined games that are bidding, active, or finished */}
-      {isJoined && !isWaitingForDivision && joinedGame && (joinedGame.status === 'bidding' || joinedGame.status === 'active' || joinedGame.status === 'finished') && (
-        <Button
-          text={t('games.standings', 'Tussenstand')}
-          onClick={() => router.push(`/games/${joinedGame.id}/standings`)}
-          className="px-4 py-2 whitespace-nowrap"
-          variant="secondary"
         />
       )}
 
