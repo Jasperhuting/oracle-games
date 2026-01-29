@@ -27,6 +27,7 @@ export default function TeamsOverviewPage() {
   const [allViewSortBy, setAllViewSortBy] = useState<'points' | 'value' | 'owners' | 'team'>('points');
   const [allViewSortDirection, setAllViewSortDirection] = useState<'asc' | 'desc'>('desc');
   const [compareUserId, setCompareUserId] = useState<string | null>(null);
+  const [allViewSearch, setAllViewSearch] = useState('');
 
   const [gameRiders, setGameRiders] = useState<PlayerTeam[]>([]);
   const [game, setGame] = useState<Game | null>(null);
@@ -145,9 +146,16 @@ export default function TeamsOverviewPage() {
     })
     .sort((a, b) => b.totalRiders - a.totalRiders);
 
-  // All riders flattened from cycling teams, with dynamic sorting
+  // All riders flattened from cycling teams, with filtering and dynamic sorting
   const allRidersList = cyclingTeams
     .flatMap(team => team.riders)
+    .filter((rider: any) => {
+      if (!allViewSearch.trim()) return true;
+      const searchLower = allViewSearch.toLowerCase().trim();
+      const riderName = (rider.riderName || '').toLowerCase();
+      const riderTeam = (rider.riderTeam || '').toLowerCase();
+      return riderName.includes(searchLower) || riderTeam.includes(searchLower);
+    })
     .sort((a: any, b: any) => {
       let comparison = 0;
       switch (allViewSortBy) {
@@ -403,7 +411,7 @@ export default function TeamsOverviewPage() {
           )}
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">Totaal Teams</div>
               <div className="text-2xl font-bold text-gray-900">
@@ -420,12 +428,6 @@ export default function TeamsOverviewPage() {
               <div className="text-sm text-gray-600">Totaal Uitgegeven</div>
               <div className="text-2xl font-bold text-gray-900">
                 €{(teams?.reduce((sum, t) => sum + (t?.totalSpent || 0), 0) || 0).toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <div className="text-sm text-gray-600">Complete Teams</div>
-              <div className="text-2xl font-bold text-gray-900">
-                {teams?.filter(t => t?.rosterComplete).length || 0}
               </div>
             </div>
           </div>
@@ -976,6 +978,22 @@ export default function TeamsOverviewPage() {
                   </>
                 )}
               </button>
+              <input
+                type="text"
+                placeholder="Filter op renner of team..."
+                value={allViewSearch}
+                onChange={(e) => setAllViewSearch(e.target.value)}
+                className="ml-4 px-3 py-1.5 rounded-lg text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {allViewSearch && (
+                <button
+                  onClick={() => setAllViewSearch('')}
+                  className="px-2 py-1.5 text-gray-400 hover:text-gray-600"
+                  title="Wis zoekterm"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <Tooltip
@@ -1061,7 +1079,7 @@ export default function TeamsOverviewPage() {
                               {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
                             </span>
                           )}
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-green-600">
                             ({teams.length > 0 ? Math.round((ownerCount / teams.length) * 100) : 0}%)
                           </span>
                         </div>
