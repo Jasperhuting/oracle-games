@@ -35,9 +35,10 @@ const columnHelper = createColumnHelper<Standing>();
 export function StandingsTab({ gameId, standings, gameType, loading, error }: StandingsTabProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const columns = useMemo(
+  const allColumns = useMemo(
     () => [
       columnHelper.accessor('ranking', {
+        id: 'ranking',
         header: '#',
         cell: (info) => {
           const ranking = info.getValue();
@@ -60,6 +61,7 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
         size: 60,
       }),
       columnHelper.accessor('playername', {
+        id: 'playername',
         header: 'Speler',
         cell: (info) => (
           <Link
@@ -142,15 +144,45 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
         }
       ),
       columnHelper.accessor('totalPoints', {
+        id: 'totalPoints',
         header: 'Punten',
         cell: (info) => (
           <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
         ),
         size: 100,
       }),
+      // Average points per rider - only for worldtour-manager
+      columnHelper.accessor(
+        (row) => {
+          const riders = row.riders ?? [];
+          if (riders.length === 0) return 0;
+          const totalPoints = riders.reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0);
+          return Math.round(totalPoints / riders.length);
+        },
+        {
+          id: 'avgPointsPerRider',
+          header: 'Gem./renner',
+          cell: (info) => (
+            <span className="font-medium text-gray-700">{info.getValue().toLocaleString()}</span>
+          ),
+          size: 110,
+        }
+      ),
     ],
     [gameId, gameType]
   );
+
+  // Filter columns based on game type
+  const columns = useMemo(() => {
+    if (gameType === 'worldtour-manager') {
+      // For worldtour-manager: hide achievedPoints and percentage, show avgPointsPerRider
+      return allColumns.filter(
+        (col) => col.id !== 'achievedPoints' && col.id !== 'percentage'
+      );
+    }
+    // For other games: hide avgPointsPerRider
+    return allColumns.filter((col) => col.id !== 'avgPointsPerRider');
+  }, [allColumns, gameType]);
 
   const table = useReactTable({
     data: standings,
@@ -207,12 +239,12 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
                     <th
                       key={header.id}
                       className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 ${
-                        header.column.id === 'totalPoints' || header.column.id === 'percentage' || header.column.id === 'achievedPoints' ? 'text-right' : ''
+                        ['totalPoints', 'percentage', 'achievedPoints', 'avgPointsPerRider'].includes(header.column.id) ? 'text-right' : ''
                       }`}
                       style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                       onClick={header.column.getToggleSortingHandler()}
                     >
-                      <div className={`flex items-center gap-1 whitespace-nowrap ${header.column.id === 'totalPoints' || header.column.id === 'percentage' || header.column.id === 'achievedPoints' ? 'justify-end' : ''}`}>
+                      <div className={`flex items-center gap-1 whitespace-nowrap ${['totalPoints', 'percentage', 'achievedPoints', 'avgPointsPerRider'].includes(header.column.id) ? 'justify-end' : ''}`}>
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
@@ -235,7 +267,7 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
                     <td
                       key={cell.id}
                       className={`px-4 py-3 ${
-                        cell.column.id === 'totalPoints' || cell.column.id === 'percentage' || cell.column.id === 'achievedPoints' ? 'text-right' : ''
+                        ['totalPoints', 'percentage', 'achievedPoints', 'avgPointsPerRider'].includes(cell.column.id) ? 'text-right' : ''
                       }`}
                     >
                       {flexRender(
