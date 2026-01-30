@@ -59,10 +59,12 @@ export async function POST(request: NextRequest) {
         // Initialize empty pointsBreakdown if no racePoints data to migrate
         if (!data.racePoints || Object.keys(data.racePoints).length === 0) {
           // Still set empty pointsBreakdown and totalPoints for consistency
+          const currentPoints = data.pointsScored || data.totalPoints || 0;
           if (!dryRun) {
             await doc.ref.update({
               pointsBreakdown: [],
-              totalPoints: data.pointsScored || 0,
+              totalPoints: currentPoints,
+              pointsScored: currentPoints, // Keep both in sync
             });
           }
 
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
               gameId: data.gameId,
               riderName: data.riderName,
               oldPointsScored: data.pointsScored || 0,
-              newTotalPoints: data.pointsScored || 0,
+              newTotalPoints: currentPoints,
               breakdownCount: 0,
               type: 'initialized_empty',
             });
@@ -152,6 +154,7 @@ export async function POST(request: NextRequest) {
           await doc.ref.update({
             pointsBreakdown,
             totalPoints,
+            pointsScored: totalPoints, // Sync pointsScored for backward compatibility
           });
         }
 

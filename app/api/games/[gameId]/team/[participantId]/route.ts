@@ -49,8 +49,8 @@ export async function GET(
     for (const doc of teamSnapshot.docs) {
       const data = doc.data();
 
-      // Use new totalPoints field with fallback to legacy pointsScored
-      const riderPoints = data.totalPoints ?? data.pointsScored ?? 0;
+      // Use pointsScored as the source of truth
+      const riderPoints = data.pointsScored ?? 0;
 
       riders.push({
         id: doc.id,
@@ -59,29 +59,22 @@ export async function GET(
         team: data.riderTeam,
         country: data.riderCountry,
         rank: data.riderRank || 0,
-        // LEGACY: pointsScored (kept for backwards compatibility)
         pointsScored: riderPoints,
         points: riderPoints,
-        // NEW: totalPoints as source of truth
-        totalPoints: riderPoints,
-        // LEGACY: racePoints (kept for backwards compatibility)
-        racePoints: (data.racePoints && typeof data.racePoints === 'object' && !Array.isArray(data.racePoints)) ? data.racePoints : undefined,
-        // NEW: pointsBreakdown array
         pointsBreakdown: data.pointsBreakdown || [],
         jerseyImage: data.jerseyImage,
         pricePaid: data.pricePaid,
         acquisitionType: data.acquisitionType,
         draftRound: data.draftRound,
         draftPick: data.draftPick,
-        stagesParticipated: data.stagesParticipated || 0,
       });
     }
 
-    // Sort riders by totalPoints (highest to lowest)
-    riders.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+    // Sort riders by pointsScored (highest to lowest)
+    riders.sort((a, b) => (b.pointsScored || 0) - (a.pointsScored || 0));
 
-    // Calculate team statistics from totalPoints (source of truth from playerTeams)
-    const baseTotalPoints = riders.reduce((sum, rider) => sum + (rider.totalPoints || 0), 0);
+    // Calculate team statistics from pointsScored
+    const baseTotalPoints = riders.reduce((sum, rider) => sum + (rider.pointsScored || 0), 0);
     const spentBudget = participantData?.spentBudget || 0;
     const totalPoints = isMarginalGains ? (-spentBudget) + baseTotalPoints : baseTotalPoints;
 

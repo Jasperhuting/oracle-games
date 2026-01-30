@@ -355,45 +355,52 @@ export interface PlayerTeam {
   jerseyImage?: string;
   riderValue?: number;              // For Full Grid (1-10)
 
-  // Performance - LEGACY (will be deprecated in Phase 4)
-  pointsScored: number;
-  stagesParticipated: number;
-
-  // Race-specific performance tracking - LEGACY (will be deprecated in Phase 4)
-  // @deprecated Use pointsBreakdown instead
-  racePoints?: Record<string, {    // Key: raceSlug (e.g., "tour-de-france_2025")
-    totalPoints: number;            // Total points for this race
-    stagePoints: Record<string, {   // Key: stage number (e.g., "1", "2")
-      stageResult?: number;         // Points from stage result
-      gcPoints?: number;            // Points from GC
-      pointsClass?: number;         // Points from points classification
-      mountainsClass?: number;      // Points from mountains classification
-      youthClass?: number;          // Points from youth classification
-      mountainPoints?: number;      // Points from mountain points during stage
-      sprintPoints?: number;        // Points from sprint points during stage
-      combativityBonus?: number;    // Combativity bonus
-      teamPoints?: number;          // Team classification points
-      total: number;                // Total points for this stage
-    }>;
-  }>;
-
   // ============================================================================
-  // NEW FIELDS (Phase 1: Dual-write - these are the source of truth going forward)
+  // POINTS FIELDS
   // ============================================================================
 
   /**
    * Total points for this rider in this game.
    * This is the sum of all pointsBreakdown[].total
-   * Will replace pointsScored in Phase 4.
    */
-  totalPoints?: number;
+  pointsScored: number;
 
   /**
    * Array of all points-scoring events for this rider.
-   * This is the SINGLE SOURCE OF TRUTH for points.
+   * This is the SINGLE SOURCE OF TRUTH for points detail.
    * Each event contains the race, stage, breakdown, and total.
+   *
+   * To get stagesParticipated, use: pointsBreakdown?.length ?? 0
    */
   pointsBreakdown?: PointsEvent[];
+
+  // ============================================================================
+  // DEPRECATED FIELDS - Do not use in new code, will be removed from database
+  // ============================================================================
+
+  /** @deprecated Use pointsScored instead */
+  totalPoints?: number;
+
+  /** @deprecated Use pointsBreakdown?.length instead */
+  stagesParticipated?: number;
+
+  /** @deprecated Use pointsBreakdown instead */
+  racePoints?: Record<string, {
+    totalPoints: number;
+    stagePoints: Record<string, {
+      stageResult?: number;
+      gcPoints?: number;
+      pointsClass?: number;
+      mountainsClass?: number;
+      youthClass?: number;
+      mountainPoints?: number;
+      sprintPoints?: number;
+      combativityBonus?: number;
+      teamPoints?: number;
+      total: number;
+      stagePosition?: number;
+    }>;
+  }>;
 
   // For Carry Me Home (track which stages this rider was used)
   usedInStages?: string[];          // Stage IDs

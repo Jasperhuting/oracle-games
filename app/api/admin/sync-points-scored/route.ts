@@ -2,10 +2,10 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Sync pointsScored with totalPoints for all playerTeams
+ * Sync pointsScored from pointsBreakdown for all playerTeams
  *
- * This endpoint should be called AFTER all scrapes are complete to sync
- * the legacy pointsScored field with the new totalPoints (calculated from pointsBreakdown).
+ * This endpoint recalculates pointsScored from the pointsBreakdown array
+ * (source of truth) and updates the document if there's a mismatch.
  *
  * Usage:
  *   POST /api/admin/sync-points-scored
@@ -54,11 +54,16 @@ export async function POST(request: NextRequest) {
       try {
         const data = doc.data();
         const currentPointsScored = data.pointsScored || 0;
-        const totalPoints = data.totalPoints || 0;
-        const pointsBreakdown = data.pointsBreakdown || [];
+        const pointsBreakdown = Array.isArray(data.pointsBreakdown) ? data.pointsBreakdown : [];
+
+        // Calculate correct points from pointsBreakdown (source of truth)
+        const calculatedPoints = pointsBreakdown.reduce(
+          (sum: number, event: { total?: number }) => sum + (event.total || 0),
+          0
+        );
 
         // Check if already in sync
-        if (currentPointsScored === totalPoints) {
+        if (currentPointsScored === calculatedPoints) {
           results.alreadyInSync++;
           continue;
         }
@@ -69,14 +74,14 @@ export async function POST(request: NextRequest) {
           riderName: data.riderName || 'Unknown',
           gameId: data.gameId || 'Unknown',
           oldPointsScored: currentPointsScored,
-          newPointsScored: totalPoints,
-          totalPoints: totalPoints,
+          newPointsScored: calculatedPoints,
+          totalPoints: calculatedPoints,
           pointsBreakdownCount: pointsBreakdown.length,
         });
 
         if (!dryRun) {
           await doc.ref.update({
-            pointsScored: totalPoints,
+            pointsScored: calculatedPoints,
           });
           results.updated++;
         } else {
@@ -95,8 +100,8 @@ export async function POST(request: NextRequest) {
       success: true,
       dryRun,
       message: dryRun
-        ? `DRY RUN: Would sync pointsScored for ${results.updated} playerTeams`
-        : `Synced pointsScored for ${results.updated} playerTeams`,
+        ? `DRY RUN: Would sync pointsScored from pointsBreakdown for ${results.updated} playerTeams`
+        : `Synced pointsScored from pointsBreakdown for ${results.updated} playerTeams`,
       results: {
         total: results.total,
         updated: results.updated,

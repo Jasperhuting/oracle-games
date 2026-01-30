@@ -528,23 +528,11 @@ export async function POST(request: NextRequest) {
 
           // Update PlayerTeam if rider scored any points
           if (riderTotalPoints > 0) {
-            const currentStages = teamData.stagesParticipated || 0;
+            // Build pointsBreakdown entry
+            const existingBreakdown: PointsEvent[] = Array.isArray(teamData.pointsBreakdown)
+              ? teamData.pointsBreakdown
+              : [];
 
-            // LEGACY format (will be deprecated)
-            const racePoints = teamData.racePoints || {};
-            const currentRaceData = racePoints[raceName] || { totalPoints: 0, stagePoints: {} };
-            stagePointsBreakdown.total = riderTotalPoints;
-            currentRaceData.stagePoints[stage.toString()] = stagePointsBreakdown;
-
-            let raceTotalPoints = 0;
-            for (const stageDataEntry of Object.values(currentRaceData.stagePoints || {})) {
-              raceTotalPoints += (stageDataEntry as any).total || 0;
-            }
-            currentRaceData.totalPoints = raceTotalPoints;
-            racePoints[raceName] = currentRaceData;
-
-            // NEW format (source of truth)
-            const existingBreakdown: PointsEvent[] = teamData.pointsBreakdown || [];
             const newPointsEvent: PointsEvent = {
               raceSlug: raceName,
               stage: stage.toString(),
@@ -567,28 +555,22 @@ export async function POST(request: NextRequest) {
             );
             updatedBreakdown.push(newPointsEvent);
 
-            // Calculate new totalPoints from pointsBreakdown (source of truth)
-            const calculatedTotalPoints = updatedBreakdown.reduce(
+            // Calculate pointsScored from pointsBreakdown (source of truth)
+            const calculatedPoints = updatedBreakdown.reduce(
               (sum, event) => sum + (event.total || 0),
               0
             );
 
-            // Update PlayerTeam
+            // Update PlayerTeam with only the essential fields
             await teamDoc.ref.update({
-              // LEGACY fields (kept for backward compatibility)
-              stagesParticipated: currentStages + 1,
-              racePoints: racePoints,
-              pointsScored: calculatedTotalPoints, // Sync with totalPoints for backward compatibility
-
-              // NEW fields (source of truth)
+              pointsScored: calculatedPoints,
               pointsBreakdown: updatedBreakdown,
-              totalPoints: calculatedTotalPoints,
             });
 
             results.playerTeamsUpdated++;
             results.pointsAwarded += riderTotalPoints;
 
-            console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Updated: ${riderTotalPoints} pts (new total: ${calculatedTotalPoints})`);
+            console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Updated: ${riderTotalPoints} pts (new total: ${calculatedPoints})`);
           }
         }
       } catch (error) {

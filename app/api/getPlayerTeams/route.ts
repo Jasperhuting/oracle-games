@@ -48,8 +48,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
           }
         }
 
-        // Use new totalPoints field with fallback to legacy pointsScored
-        const riderPoints = data.totalPoints ?? data.pointsScored ?? 0;
+        // Use pointsScored as the source of truth
+        const riderPoints = data.pointsScored ?? 0;
 
         return {
           id: doc.id,
@@ -66,14 +66,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
           riderCountry: data.riderCountry,
           jerseyImage: data.jerseyImage,
           riderValue: data.riderValue,
-          // LEGACY field (kept for backwards compatibility)
           pointsScored: riderPoints,
-          // NEW: totalPoints as source of truth
-          totalPoints: riderPoints,
-          stagesParticipated: data.stagesParticipated,
-          // LEGACY: racePoints (kept for backwards compatibility)
-          racePoints: data.racePoints,
-          // NEW: pointsBreakdown array
           pointsBreakdown: data.pointsBreakdown || [],
           team: teamData, // Replace reference with actual team data
         };
