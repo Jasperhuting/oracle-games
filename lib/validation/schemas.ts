@@ -78,6 +78,7 @@ export const placeBidSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   riderName: z.string().optional(),
   riderTeam: z.string().optional(),
+  riderCountry: z.string().optional(),
   jerseyImage: z.string().url().optional().or(z.literal('')),
 });
 

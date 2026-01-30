@@ -253,13 +253,12 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      {rider.jerseyImage && (
+                      
                         <img
-                          src={rider.jerseyImage}
+                          src={`${rider.jerseyImage ? `https://www.procyclingstats.com/${rider.jerseyImage}` : '/jersey-transparent.png'}`}
                           alt={rider.team}
                           className="w-10 h-10 object-contain"
                         />
-                      )}
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                           {rider.name}

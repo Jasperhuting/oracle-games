@@ -39,7 +39,7 @@ export async function POST(
     userId = validatedData.userId;
     riderNameId = validatedData.riderNameId;
     amount = validatedData.amount;
-    const { riderName, riderTeam, jerseyImage } = validatedData;
+    const { riderName, riderTeam, riderCountry, jerseyImage } = validatedData;
 
     if (!userId || !riderNameId || amount === undefined) {
       return NextResponse.json(
@@ -333,6 +333,7 @@ export async function POST(
       status: 'active' as BidStatus,
       riderName: riderName || '',
       riderTeam: riderTeam || '',
+      riderCountry: riderCountry || '',
       jerseyImage: jerseyImage || null,
     };
 
