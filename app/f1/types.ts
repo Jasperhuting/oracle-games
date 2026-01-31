@@ -120,12 +120,14 @@ export function createParticipantDocId(userId: string, season: number): string {
 export interface F1SubLeague {
   id?: string;  // Document ID
   name: string;
-  code: string;  // Unique join code
+  code: string;  // Unique join code (for private leagues)
+  description?: string;  // Optional description for public leagues
   season: number;
   gameId?: string;  // Reference to game in default database
   createdBy: string;  // userId from default database
   memberIds: string[];
-  isPublic: boolean;
+  pendingMemberIds: string[];  // Users who requested to join
+  isPublic: boolean;  // If true, visible in public list; if false, only joinable with code
   maxMembers: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;

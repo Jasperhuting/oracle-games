@@ -375,8 +375,31 @@ export const JoinableGamesTab = () => {
     return group.baseName.toLowerCase().includes('test');
   };
 
+  // Categorize games by sport type
+  const CYCLING_GAME_TYPES = [
+    'auctioneer', 'slipstream', 'last-man-standing', 'poisoned-cup',
+    'nations-cup', 'rising-stars', 'country-roads', 'worldtour-manager',
+    'fan-flandrien', 'full-grid', 'marginal-gains'
+  ];
+  const F1_GAME_TYPES = ['f1-prediction'];
+  const SOCCER_GAME_TYPES: string[] = []; // Toekomstige uitbreiding
+
+  const getCategoryForGroup = (group: JoinableGameGroup): 'cycling' | 'f1' | 'soccer' | 'other' => {
+    const gameType = group.games[0]?.gameType;
+    if (CYCLING_GAME_TYPES.includes(gameType)) return 'cycling';
+    if (F1_GAME_TYPES.includes(gameType)) return 'f1';
+    if (SOCCER_GAME_TYPES.includes(gameType)) return 'soccer';
+    return 'other';
+  };
+
   const regularGameGroups = gameGroups.filter(group => !isTestGame(group));
   const testGameGroups = gameGroups.filter(group => isTestGame(group));
+
+  // Group regular games by sport category
+  const cyclingGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'cycling');
+  const f1Games = regularGameGroups.filter(g => getCategoryForGroup(g) === 'f1');
+  const soccerGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'soccer');
+  const otherGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'other');
 
   // Calendar helper functions
   const MONTHS_NL = [
@@ -582,7 +605,6 @@ export const JoinableGamesTab = () => {
                       </div>
                       <div className="space-y-0.5">
                         {dayGames.slice(0, 2).map(group => {
-                          const game = group.games[0];
                           const isJoined = group.games.some(g => myGames.has(g.id));
                           return (
                             <div
@@ -623,30 +645,133 @@ export const JoinableGamesTab = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Regular Games */}
-          {regularGameGroups.map((group) => (
-            <GameCard
-              key={group.isMultiDivision ? group.baseName : group.games[0].id}
-              group={group}
-              myGames={myGames}
-              myParticipants={myParticipants}
-              isAdmin={isAdmin}
-              availableRules={availableRules}
-              joining={joining}
-              leaving={leaving}
-              onJoin={handleJoinGame}
-              onLeave={confirmLeaveGame}
-              onShowRules={handleShowRules}
-              isRegistrationOpen={isRegistrationOpen}
-              canJoin={canJoin}
-              canLeave={canLeave}
-              isSelectionBasedGame={isSelectionBasedGame}
-              getStatusLabel={getStatusLabel}
-              getStatusBadgeColor={getStatusBadgeColor}
-              formatDate={formatDate}
-              formatDateTime={formatDateTime}
-            />
-          ))}
+          {/* Cycling Games */}
+          {cyclingGames.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                🚴 Wielrennen
+              </h3>
+              {cyclingGames.map((group) => (
+                <GameCard
+                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
+                  group={group}
+                  myGames={myGames}
+                  myParticipants={myParticipants}
+                  isAdmin={isAdmin}
+                  availableRules={availableRules}
+                  joining={joining}
+                  leaving={leaving}
+                  onJoin={handleJoinGame}
+                  onLeave={confirmLeaveGame}
+                  onShowRules={handleShowRules}
+                  isRegistrationOpen={isRegistrationOpen}
+                  canJoin={canJoin}
+                  canLeave={canLeave}
+                  isSelectionBasedGame={isSelectionBasedGame}
+                  getStatusLabel={getStatusLabel}
+                  getStatusBadgeColor={getStatusBadgeColor}
+                  formatDate={formatDate}
+                  formatDateTime={formatDateTime}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* F1 Games */}
+          {f1Games.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                🏎️ Formule 1
+              </h3>
+              {f1Games.map((group) => (
+                <GameCard
+                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
+                  group={group}
+                  myGames={myGames}
+                  myParticipants={myParticipants}
+                  isAdmin={isAdmin}
+                  availableRules={availableRules}
+                  joining={joining}
+                  leaving={leaving}
+                  onJoin={handleJoinGame}
+                  onLeave={confirmLeaveGame}
+                  onShowRules={handleShowRules}
+                  isRegistrationOpen={isRegistrationOpen}
+                  canJoin={canJoin}
+                  canLeave={canLeave}
+                  isSelectionBasedGame={isSelectionBasedGame}
+                  getStatusLabel={getStatusLabel}
+                  getStatusBadgeColor={getStatusBadgeColor}
+                  formatDate={formatDate}
+                  formatDateTime={formatDateTime}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Soccer Games (toekomst) */}
+          {soccerGames.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                ⚽ Voetbal
+              </h3>
+              {soccerGames.map((group) => (
+                <GameCard
+                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
+                  group={group}
+                  myGames={myGames}
+                  myParticipants={myParticipants}
+                  isAdmin={isAdmin}
+                  availableRules={availableRules}
+                  joining={joining}
+                  leaving={leaving}
+                  onJoin={handleJoinGame}
+                  onLeave={confirmLeaveGame}
+                  onShowRules={handleShowRules}
+                  isRegistrationOpen={isRegistrationOpen}
+                  canJoin={canJoin}
+                  canLeave={canLeave}
+                  isSelectionBasedGame={isSelectionBasedGame}
+                  getStatusLabel={getStatusLabel}
+                  getStatusBadgeColor={getStatusBadgeColor}
+                  formatDate={formatDate}
+                  formatDateTime={formatDateTime}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Other Games (uncategorized) */}
+          {otherGames.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">
+                Overige
+              </h3>
+              {otherGames.map((group) => (
+                <GameCard
+                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
+                  group={group}
+                  myGames={myGames}
+                  myParticipants={myParticipants}
+                  isAdmin={isAdmin}
+                  availableRules={availableRules}
+                  joining={joining}
+                  leaving={leaving}
+                  onJoin={handleJoinGame}
+                  onLeave={confirmLeaveGame}
+                  onShowRules={handleShowRules}
+                  isRegistrationOpen={isRegistrationOpen}
+                  canJoin={canJoin}
+                  canLeave={canLeave}
+                  isSelectionBasedGame={isSelectionBasedGame}
+                  getStatusLabel={getStatusLabel}
+                  getStatusBadgeColor={getStatusBadgeColor}
+                  formatDate={formatDate}
+                  formatDateTime={formatDateTime}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Test Games Section */}
           {(isAdmin || impersonationStatus?.isImpersonating) && testGameGroups.length > 0 && (

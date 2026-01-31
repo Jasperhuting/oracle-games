@@ -62,11 +62,6 @@ const F1Page = () => {
         }
     };
 
-    // Debug logging
-    console.log('Predictions:', predictions);
-    console.log('Race Results:', raceResults);
-    console.log('Standing:', standing);
-
     // Create a map of predictions by round
     const predictionsByRound = useMemo(() => {
         const map: Record<number, F1Prediction> = {};

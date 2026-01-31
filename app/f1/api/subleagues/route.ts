@@ -33,18 +33,12 @@ function generateCode(): string {
 
 // GET /api/f1/subleagues - Get user's subLeagues
 // GET /api/f1/subleagues?code=XXX - Find subLeague by code
+// GET /api/f1/subleagues?public=true - Get all public subLeagues
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserFromSession();
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
+    const isPublic = searchParams.get('public') === 'true';
 
     const subLeaguesRef = f1Db.collection(F1_COLLECTIONS.SUB_LEAGUES);
 
@@ -63,8 +57,22 @@ export async function GET(request: NextRequest) {
       const subLeague = { id: doc.id, ...doc.data() } as F1SubLeague;
 
       return NextResponse.json({ success: true, data: subLeague });
+    } else if (isPublic) {
+      // Get all public subLeagues
+      const snapshot = await subLeaguesRef.where('isPublic', '==', true).get();
+      const subLeagues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as F1SubLeague));
+
+      return NextResponse.json({ success: true, data: subLeagues });
     } else {
-      // Get user's subLeagues
+      // Get user's subLeagues (requires auth)
+      const userId = await getUserFromSession();
+      if (!userId) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+
       const snapshot = await subLeaguesRef.where('memberIds', 'array-contains', userId).get();
       const subLeagues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as F1SubLeague));
 
@@ -91,7 +99,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, season } = body as { name: string; season?: number };
+    const { name, season, isPublic, description } = body as {
+      name: string;
+      season?: number;
+      isPublic?: boolean;
+      description?: string;
+    };
 
     if (!name || name.trim().length < 2) {
       return NextResponse.json(
@@ -116,10 +129,12 @@ export async function POST(request: NextRequest) {
     const subLeague: Omit<F1SubLeague, 'id'> = {
       name: name.trim(),
       code,
+      description: description?.trim(),
       season: season || new Date().getFullYear(),
       createdBy: userId,
       memberIds: [userId],
-      isPublic: false,
+      pendingMemberIds: [],
+      isPublic: Boolean(isPublic),
       maxMembers: 50,
       createdAt: now as unknown as import('firebase/firestore').Timestamp,
       updatedAt: now as unknown as import('firebase/firestore').Timestamp,

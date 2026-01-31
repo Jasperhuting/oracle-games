@@ -46,7 +46,10 @@ function generateCode(): string {
   return code;
 }
 
-// GET /api/f1/subleagues - Get user's sub-leagues
+// GET /api/f1/subleagues - Get sub-leagues
+// ?my=true - Get user's sub-leagues (default)
+// ?public=true - Get all public sub-leagues
+// ?all=true - Get all sub-leagues user has access to (member + public)
 export async function GET(request: NextRequest) {
   try {
     const userId = await getCurrentUserId(request);
@@ -57,15 +60,66 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const snapshot = await f1Db
-      .collection(F1_COLLECTIONS.SUB_LEAGUES)
-      .where('memberIds', 'array-contains', userId)
-      .get();
+    const { searchParams } = new URL(request.url);
+    const showPublic = searchParams.get('public') === 'true';
+    const showAll = searchParams.get('all') === 'true';
 
-    const subLeagues = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as F1SubLeague[];
+    let subLeagues: F1SubLeague[] = [];
+
+    if (showPublic) {
+      // Get all public sub-leagues
+      const publicSnapshot = await f1Db
+        .collection(F1_COLLECTIONS.SUB_LEAGUES)
+        .where('isPublic', '==', true)
+        .where('season', '==', 2026)
+        .get();
+
+      subLeagues = publicSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as F1SubLeague[];
+    } else if (showAll) {
+      // Get user's sub-leagues AND public sub-leagues
+      const [memberSnapshot, publicSnapshot] = await Promise.all([
+        f1Db
+          .collection(F1_COLLECTIONS.SUB_LEAGUES)
+          .where('memberIds', 'array-contains', userId)
+          .get(),
+        f1Db
+          .collection(F1_COLLECTIONS.SUB_LEAGUES)
+          .where('isPublic', '==', true)
+          .where('season', '==', 2026)
+          .get(),
+      ]);
+
+      const memberLeagues = memberSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as F1SubLeague[];
+
+      const publicLeagues = publicSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as F1SubLeague[];
+
+      // Merge and dedupe
+      const leagueMap = new Map<string, F1SubLeague>();
+      [...memberLeagues, ...publicLeagues].forEach(league => {
+        if (league.id) leagueMap.set(league.id, league);
+      });
+      subLeagues = Array.from(leagueMap.values());
+    } else {
+      // Default: Get only user's sub-leagues
+      const snapshot = await f1Db
+        .collection(F1_COLLECTIONS.SUB_LEAGUES)
+        .where('memberIds', 'array-contains', userId)
+        .get();
+
+      subLeagues = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as F1SubLeague[];
+    }
 
     return NextResponse.json({ success: true, data: subLeagues });
   } catch (error) {
@@ -89,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name } = body;
+    const { name, isPublic = false, description } = body;
 
     if (!name || name.trim().length === 0) {
       return NextResponse.json(
@@ -115,10 +169,12 @@ export async function POST(request: NextRequest) {
     const subLeagueData: Omit<F1SubLeague, 'id'> = {
       name: name.trim(),
       code,
+      description: description?.trim() || '',
       createdBy: userId,
       memberIds: [userId],
+      pendingMemberIds: [],
       season: 2026,
-      isPublic: false,
+      isPublic: Boolean(isPublic),
       maxMembers: 50,
       createdAt: now as unknown as import('firebase/firestore').Timestamp,
       updatedAt: now as unknown as import('firebase/firestore').Timestamp,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
     useReactTable,
     getCoreRowModel,
@@ -10,7 +11,7 @@ import {
     SortingState,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World, Eye } from "tabler-icons-react";
+import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World, Eye, Search, Settings, UserPlus, UserMinus, Lock, LockOpen } from "tabler-icons-react";
 import { useF1Standings, useF1SubLeagues, useF1LegacyDrivers, useF1RaceResult, useF1Participants } from "../hooks";
 import { useUserNames } from "../hooks/useUserNames";
 import { F1Standing, F1SubLeague, F1Prediction, LegacyDriver, F1Participant } from "../types";
@@ -31,6 +32,9 @@ interface Player {
 const columnHelper = createColumnHelper<Player>();
 
 const StandingsPage = () => {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
     const { standings, loading: standingsLoading } = useF1Standings(2026);
     const { participants, loading: participantsLoading } = useF1Participants(2026);
     const { subLeagues, loading: subLeaguesLoading } = useF1SubLeagues();
@@ -38,25 +42,106 @@ const StandingsPage = () => {
     // Get user IDs from participants (not just standings) to fetch display names
     const userIds = useMemo(() => participants.map(p => p.userId), [participants]);
     const { names: userNames, loading: namesLoading } = useUserNames(userIds);
-    
+
     const [sorting, setSorting] = useState<SortingState>([
         { id: "totalPoints", desc: true }
     ]);
-    const [selectedSubpoule, setSelectedSubpoule] = useState<string | null>(null);
+
+    // Get subpoule from URL, default to null (algemeen)
+    const subpouleFromUrl = searchParams.get('poule');
+    const [selectedSubpoule, setSelectedSubpoule] = useState<string | null>(subpouleFromUrl);
+
+    // Sync state with URL when URL changes (e.g., browser back/forward)
+    useEffect(() => {
+        setSelectedSubpoule(subpouleFromUrl);
+    }, [subpouleFromUrl]);
+
+    // Update URL when subpoule changes
+    const handleSubpouleChange = (subpouleId: string | null) => {
+        setSelectedSubpoule(subpouleId);
+        if (subpouleId) {
+            router.push(`/f1/standings?poule=${subpouleId}`, { scroll: false });
+        } else {
+            router.push('/f1/standings', { scroll: false });
+        }
+    };
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
+    const [showBrowseModal, setShowBrowseModal] = useState(false);
+    const [showManageModal, setShowManageModal] = useState(false);
     const [newPouleName, setNewPouleName] = useState("");
+    const [newPouleIsPublic, setNewPouleIsPublic] = useState(false);
+    const [newPouleDescription, setNewPouleDescription] = useState("");
     const [joinCode, setJoinCode] = useState("");
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+    const [publicSubLeagues, setPublicSubLeagues] = useState<F1SubLeague[]>([]);
+    const [pendingUserNames, setPendingUserNames] = useState<Record<string, string>>({});
     const [playerPrediction, setPlayerPrediction] = useState<F1Prediction | null>(null);
     const [predictionLoading, setPredictionLoading] = useState(false);
-    
+    const [browseLoading, setBrowseLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [requestingJoin, setRequestingJoin] = useState<string | null>(null);
+    const [managingSubLeague, setManagingSubLeague] = useState<F1SubLeague | null>(null);
+
+    // Get current user
+    const { user } = useAuth();
+
     // Fetch drivers and race result for prediction modal
     const { drivers } = useF1LegacyDrivers();
     const { result: raceResult } = useF1RaceResult(2026, 1);
+
+    // Calculate total pending requests for user's subleagues (for badge)
+    const totalPendingRequests = useMemo(() => {
+        if (!user) return 0;
+        return subLeagues
+            .filter(sl => sl.createdBy === user.uid)
+            .reduce((sum, sl) => sum + (sl.pendingMemberIds?.length || 0), 0);
+    }, [subLeagues, user]);
+
+    // Fetch public subleagues when browse modal opens
+    useEffect(() => {
+        if (showBrowseModal) {
+            setBrowseLoading(true);
+            (async () => {
+                try {
+                    const idToken = await auth.currentUser?.getIdToken();
+                    const headers: HeadersInit = {};
+                    if (idToken) {
+                        headers['Authorization'] = `Bearer ${idToken}`;
+                    }
+                    const res = await fetch('/api/f1/subleagues?public=true', { headers });
+                    const data = await res.json();
+                    if (data.success) {
+                        setPublicSubLeagues(data.data);
+                    } else {
+                        console.error('Failed to fetch public subleagues:', data.error);
+                    }
+                } catch (error) {
+                    console.error('Error fetching public subleagues:', error);
+                } finally {
+                    setBrowseLoading(false);
+                }
+            })();
+        }
+    }, [showBrowseModal]);
+
+    // Fetch pending user names when managing a subleague
+    useEffect(() => {
+        if (managingSubLeague && managingSubLeague.pendingMemberIds?.length > 0) {
+            const pendingIds = managingSubLeague.pendingMemberIds;
+            fetch(`/api/users/names?ids=${pendingIds.join(',')}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setPendingUserNames(data.data);
+                    }
+                })
+                .catch(console.error);
+        }
+    }, [managingSubLeague]);
 
     // Convert participants to Player format, merging with standings data
     // This ensures ALL participants appear, even those with 0 points
@@ -188,11 +273,15 @@ const StandingsPage = () => {
 
             const response = await fetch('/api/f1/subleagues', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${idToken}`,
                 },
-                body: JSON.stringify({ name: newPouleName.trim() }),
+                body: JSON.stringify({
+                    name: newPouleName.trim(),
+                    isPublic: newPouleIsPublic,
+                    description: newPouleDescription.trim() || undefined,
+                }),
             });
 
             const data = await response.json();
@@ -200,6 +289,8 @@ const StandingsPage = () => {
             if (data.success) {
                 setActionMessage({ type: 'success', text: `Poule "${newPouleName}" aangemaakt! Code: ${data.data.code}` });
                 setNewPouleName("");
+                setNewPouleIsPublic(false);
+                setNewPouleDescription("");
                 setShowCreateModal(false);
             } else {
                 setActionMessage({ type: 'error', text: data.error || 'Kon poule niet aanmaken' });
@@ -256,6 +347,136 @@ const StandingsPage = () => {
         navigator.clipboard.writeText(code);
         setCopiedCode(code);
         setTimeout(() => setCopiedCode(null), 2000);
+    };
+
+    // Handle request to join a public subleague
+    const handleRequestJoin = async (subLeagueId: string) => {
+        setRequestingJoin(subLeagueId);
+        setActionMessage(null);
+
+        try {
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
+                setRequestingJoin(null);
+                return;
+            }
+
+            const response = await fetch(`/api/f1/subleagues/${subLeagueId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ action: 'request' }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setActionMessage({ type: 'success', text: data.message });
+                // Refresh public subleagues list
+                const refreshRes = await fetch('/api/f1/subleagues?public=true');
+                const refreshData = await refreshRes.json();
+                if (refreshData.success) {
+                    setPublicSubLeagues(refreshData.data);
+                }
+            } else {
+                setActionMessage({ type: 'error', text: data.error || 'Kon verzoek niet versturen' });
+            }
+        } catch {
+            setActionMessage({ type: 'error', text: 'Netwerkfout' });
+        } finally {
+            setRequestingJoin(null);
+            setTimeout(() => setActionMessage(null), 5000);
+        }
+    };
+
+    // Handle cancel join request
+    const handleCancelRequest = async (subLeagueId: string) => {
+        setRequestingJoin(subLeagueId);
+        setActionMessage(null);
+
+        try {
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
+                setRequestingJoin(null);
+                return;
+            }
+
+            const response = await fetch(`/api/f1/subleagues/${subLeagueId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ action: 'cancel' }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setActionMessage({ type: 'success', text: data.message });
+                // Refresh public subleagues list
+                const refreshRes = await fetch('/api/f1/subleagues?public=true');
+                const refreshData = await refreshRes.json();
+                if (refreshData.success) {
+                    setPublicSubLeagues(refreshData.data);
+                }
+            } else {
+                setActionMessage({ type: 'error', text: data.error || 'Kon verzoek niet annuleren' });
+            }
+        } catch {
+            setActionMessage({ type: 'error', text: 'Netwerkfout' });
+        } finally {
+            setRequestingJoin(null);
+            setTimeout(() => setActionMessage(null), 5000);
+        }
+    };
+
+    // Handle approve/reject pending member
+    const handleMemberAction = async (action: 'approve' | 'reject', targetUserId: string) => {
+        if (!managingSubLeague) return;
+        setActionLoading(true);
+        setActionMessage(null);
+
+        try {
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
+                setActionLoading(false);
+                return;
+            }
+
+            const response = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ action, targetUserId }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setActionMessage({ type: 'success', text: data.message });
+                // Refresh the managing subleague data
+                const refreshRes = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`);
+                const refreshData = await refreshRes.json();
+                if (refreshData.success) {
+                    setManagingSubLeague(refreshData.data);
+                }
+            } else {
+                setActionMessage({ type: 'error', text: data.error || 'Actie mislukt' });
+            }
+        } catch {
+            setActionMessage({ type: 'error', text: 'Netwerkfout' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 5000);
+        }
     };
 
     // Fetch prediction when player is selected
@@ -368,18 +589,30 @@ const StandingsPage = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <button
+                            onClick={() => setShowBrowseModal(true)}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                            <Search size={16} />
+                            <span className="hidden sm:inline">Zoeken</span>
+                        </button>
+                        <button
                             onClick={() => setShowJoinModal(true)}
                             className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg text-sm font-medium transition-colors"
                         >
                             <Users size={16} />
-                            <span className="hidden sm:inline">Deelnemen</span>
+                            <span className="hidden sm:inline">Code</span>
                         </button>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors relative"
                         >
                             <Plus size={16} />
-                            <span className="hidden sm:inline">Nieuwe poule</span>
+                            <span className="hidden sm:inline">Nieuw</span>
+                            {totalPendingRequests > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-yellow-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
+                                    {totalPendingRequests}
+                                </span>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -387,7 +620,7 @@ const StandingsPage = () => {
                 {/* Subpoule selector */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
                     <button
-                        onClick={() => setSelectedSubpoule(null)}
+                        onClick={() => handleSubpouleChange(null)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
                             selectedSubpoule === null
                                 ? "bg-red-600 text-white"
@@ -397,55 +630,88 @@ const StandingsPage = () => {
                         <World size={16} />
                         Algemeen
                     </button>
-                    {subLeagues.map((subpoule) => (
-                        <button
-                            key={subpoule.id}
-                            onClick={() => setSelectedSubpoule(subpoule.id || null)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
-                                selectedSubpoule === subpoule.id
-                                    ? "bg-red-600 text-white"
-                                    : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-                            }`}
-                        >
-                            <Users size={16} />
-                            {subpoule.name}
-                            <span className="text-xs opacity-70">({subpoule.memberIds.length})</span>
-                        </button>
-                    ))}
+                    {subLeagues.map((subpoule) => {
+                        const isAdmin = user?.uid === subpoule.createdBy;
+                        const pendingCount = subpoule.pendingMemberIds?.length || 0;
+                        return (
+                            <button
+                                key={subpoule.id}
+                                onClick={() => handleSubpouleChange(subpoule.id || null)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors relative ${
+                                    selectedSubpoule === subpoule.id
+                                        ? "bg-red-600 text-white"
+                                        : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                                }`}
+                            >
+                                {subpoule.isPublic ? <LockOpen size={16} /> : <Lock size={16} />}
+                                {subpoule.name}
+                                <span className="text-xs opacity-70">({subpoule.memberIds.length})</span>
+                                {isAdmin && pendingCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-yellow-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
+                                        {pendingCount}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Selected subpoule info */}
-                {selectedSubpoule && (
-                    <div className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Users size={20} className="text-gray-400" />
-                            <div>
-                                <span className="text-white font-medium">
-                                    {subLeagues.find(sp => sp.id === selectedSubpoule)?.name}
-                                </span>
-                                <span className="text-gray-500 text-sm ml-2">
-                                    {sortedPlayers.length} deelnemers
-                                </span>
+                {selectedSubpoule && (() => {
+                    const selectedLeague = subLeagues.find(sp => sp.id === selectedSubpoule);
+                    const isAdmin = user?.uid === selectedLeague?.createdBy;
+                    const pendingCount = selectedLeague?.pendingMemberIds?.length || 0;
+                    return (
+                        <div className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                {selectedLeague?.isPublic ? <LockOpen size={20} className="text-green-400" /> : <Lock size={20} className="text-gray-400" />}
+                                <div>
+                                    <span className="text-white font-medium">
+                                        {selectedLeague?.name}
+                                    </span>
+                                    {isAdmin && (
+                                        <span className="ml-2 px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-medium rounded">
+                                            Admin
+                                        </span>
+                                    )}
+                                    <span className="text-gray-500 text-sm ml-2">
+                                        {sortedPlayers.length} deelnemers
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => setManagingSubLeague(selectedLeague || null)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg text-sm font-medium transition-colors relative"
+                                    >
+                                        <Settings size={14} />
+                                        Beheer
+                                        {pendingCount > 0 && (
+                                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-yellow-500 text-black text-xs font-bold rounded-full flex items-center justify-center">
+                                                {pendingCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                )}
+                                <span className="text-gray-500 text-sm">Code:</span>
+                                <code className="bg-gray-900 px-2 py-1 rounded text-sm text-gray-300">
+                                    {selectedLeague?.code}
+                                </code>
+                                <button
+                                    onClick={() => handleCopyCode(selectedLeague?.code || "")}
+                                    className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                                >
+                                    {copiedCode === selectedLeague?.code ? (
+                                        <Check size={16} className="text-green-500" />
+                                    ) : (
+                                        <Copy size={16} className="text-gray-400" />
+                                    )}
+                                </button>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-gray-500 text-sm">Code:</span>
-                            <code className="bg-gray-900 px-2 py-1 rounded text-sm text-gray-300">
-                                {subLeagues.find(sp => sp.id === selectedSubpoule)?.code}
-                            </code>
-                            <button
-                                onClick={() => handleCopyCode(subLeagues.find(sp => sp.id === selectedSubpoule)?.code || "")}
-                                className="p-1.5 hover:bg-gray-700 rounded transition-colors"
-                            >
-                                {copiedCode === subLeagues.find(sp => sp.id === selectedSubpoule)?.code ? (
-                                    <Check size={16} className="text-green-500" />
-                                ) : (
-                                    <Copy size={16} className="text-gray-400" />
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
 
             {/* Top 3 Podium - Desktop */}
@@ -559,9 +825,6 @@ const StandingsPage = () => {
                                 <X size={24} />
                             </button>
                         </div>
-                        <p className="text-gray-400 text-sm mb-4">
-                            Maak een privé poule aan en nodig je vrienden uit met een unieke code.
-                        </p>
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-300 mb-2">Naam van de poule</label>
                             <input
@@ -572,19 +835,77 @@ const StandingsPage = () => {
                                 className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                             />
                         </div>
+
+                        {/* Public/Private toggle */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Zichtbaarheid</label>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setNewPouleIsPublic(false)}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                                        !newPouleIsPublic
+                                            ? 'bg-red-600 border-red-600 text-white'
+                                            : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
+                                    }`}
+                                >
+                                    <Lock size={16} />
+                                    Privé
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setNewPouleIsPublic(true)}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                                        newPouleIsPublic
+                                            ? 'bg-green-600 border-green-600 text-white'
+                                            : 'bg-gray-900 border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
+                                    }`}
+                                >
+                                    <LockOpen size={16} />
+                                    Publiek
+                                </button>
+                            </div>
+                            <p className="text-gray-500 text-xs mt-2">
+                                {newPouleIsPublic
+                                    ? 'Iedereen kan je poule vinden en een verzoek sturen om deel te nemen.'
+                                    : 'Alleen met de unieke code kunnen anderen deelnemen.'}
+                            </p>
+                        </div>
+
+                        {/* Description (only for public) */}
+                        {newPouleIsPublic && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Beschrijving (optioneel)</label>
+                                <textarea
+                                    value={newPouleDescription}
+                                    onChange={(e) => setNewPouleDescription(e.target.value)}
+                                    placeholder="Beschrijf je poule zodat anderen weten waar het over gaat..."
+                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    rows={3}
+                                    maxLength={200}
+                                />
+                                <p className="text-gray-500 text-xs mt-1 text-right">{newPouleDescription.length}/200</p>
+                            </div>
+                        )}
+
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setShowCreateModal(false)}
+                                onClick={() => {
+                                    setShowCreateModal(false);
+                                    setNewPouleName("");
+                                    setNewPouleIsPublic(false);
+                                    setNewPouleDescription("");
+                                }}
                                 className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                             >
                                 Annuleren
                             </button>
                             <button
                                 onClick={handleCreatePoule}
-                                disabled={!newPouleName.trim()}
+                                disabled={!newPouleName.trim() || actionLoading}
                                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
                             >
-                                Aanmaken
+                                {actionLoading ? 'Bezig...' : 'Aanmaken'}
                             </button>
                         </div>
                     </div>
@@ -806,8 +1127,318 @@ const StandingsPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Browse Public Poules Modal */}
+            {showBrowseModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg border border-gray-700 my-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Search size={20} />
+                                Publieke Poules
+                            </h2>
+                            <button
+                                onClick={() => setShowBrowseModal(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Search input */}
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Zoek op naam..."
+                                className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                        </div>
+
+                        {/* Subleagues list */}
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {browseLoading ? (
+                                <div className="text-center py-8 text-gray-400">Laden...</div>
+                            ) : publicSubLeagues.filter(sl =>
+                                sl.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                sl.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                            ).length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    {searchQuery ? 'Geen poules gevonden' : 'Nog geen publieke poules beschikbaar'}
+                                </div>
+                            ) : (
+                                publicSubLeagues
+                                    .filter(sl =>
+                                        sl.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        sl.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                                    )
+                                    .map((sl) => {
+                                        const isMember = sl.memberIds.includes(user?.uid || '');
+                                        const isPending = sl.pendingMemberIds?.includes(user?.uid || '');
+                                        const isCreator = sl.createdBy === user?.uid;
+                                        const isFull = sl.memberIds.length >= sl.maxMembers;
+
+                                        return (
+                                            <div key={sl.id} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <h3 className="font-semibold text-white truncate">{sl.name}</h3>
+                                                            {isCreator && (
+                                                                <span className="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-medium rounded">
+                                                                    Admin
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {sl.description && (
+                                                            <p className="text-gray-400 text-sm mb-2 line-clamp-2">{sl.description}</p>
+                                                        )}
+                                                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                                                            <span className="flex items-center gap-1">
+                                                                <Users size={12} />
+                                                                {sl.memberIds.length}/{sl.maxMembers}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-shrink-0">
+                                                        {isMember ? (
+                                                            <span className="px-3 py-1.5 bg-green-900/30 text-green-400 text-sm font-medium rounded-lg">
+                                                                Lid ✓
+                                                            </span>
+                                                        ) : isPending ? (
+                                                            <button
+                                                                onClick={() => handleCancelRequest(sl.id || '')}
+                                                                disabled={requestingJoin === sl.id}
+                                                                className="px-3 py-1.5 bg-yellow-900/30 text-yellow-400 text-sm font-medium rounded-lg hover:bg-yellow-900/50 transition-colors disabled:opacity-50"
+                                                            >
+                                                                {requestingJoin === sl.id ? '...' : 'Wachten ⏳'}
+                                                            </button>
+                                                        ) : isFull ? (
+                                                            <span className="px-3 py-1.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg">
+                                                                Vol
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleRequestJoin(sl.id || '')}
+                                                                disabled={requestingJoin === sl.id}
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                                                            >
+                                                                <UserPlus size={14} />
+                                                                {requestingJoin === sl.id ? '...' : 'Aanvragen'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => setShowBrowseModal(false)}
+                            className="w-full mt-4 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                        >
+                            Sluiten
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Admin Manage Modal */}
+            {managingSubLeague && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg border border-gray-700 my-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Settings size={20} />
+                                Beheer: {managingSubLeague.name}
+                            </h2>
+                            <button
+                                onClick={() => setManagingSubLeague(null)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Poule info */}
+                        <div className="bg-gray-900 rounded-lg p-4 mb-4 border border-gray-700">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-gray-400 text-sm">Type:</span>
+                                <span className={`flex items-center gap-1.5 text-sm font-medium ${managingSubLeague.isPublic ? 'text-green-400' : 'text-gray-400'}`}>
+                                    {managingSubLeague.isPublic ? <LockOpen size={14} /> : <Lock size={14} />}
+                                    {managingSubLeague.isPublic ? 'Publiek' : 'Privé'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-gray-400 text-sm">Leden:</span>
+                                <span className="text-white text-sm font-medium">{managingSubLeague.memberIds.length}/{managingSubLeague.maxMembers}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-gray-400 text-sm">Code:</span>
+                                <div className="flex items-center gap-2">
+                                    <code className="bg-gray-800 px-2 py-1 rounded text-sm text-gray-300">{managingSubLeague.code}</code>
+                                    <button
+                                        onClick={() => handleCopyCode(managingSubLeague.code)}
+                                        className="p-1 hover:bg-gray-700 rounded transition-colors"
+                                    >
+                                        {copiedCode === managingSubLeague.code ? (
+                                            <Check size={14} className="text-green-500" />
+                                        ) : (
+                                            <Copy size={14} className="text-gray-400" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pending requests */}
+                        <div className="mb-4">
+                            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                                <UserPlus size={16} className="text-yellow-400" />
+                                Openstaande verzoeken
+                                {(managingSubLeague.pendingMemberIds?.length || 0) > 0 && (
+                                    <span className="px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded-full">
+                                        {managingSubLeague.pendingMemberIds?.length}
+                                    </span>
+                                )}
+                            </h3>
+                            {(managingSubLeague.pendingMemberIds?.length || 0) === 0 ? (
+                                <div className="text-gray-500 text-sm py-4 text-center bg-gray-900 rounded-lg">
+                                    Geen openstaande verzoeken
+                                </div>
+                            ) : (
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {managingSubLeague.pendingMemberIds?.map((userId) => (
+                                        <div key={userId} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3 border border-gray-700">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
+                                                    {(pendingUserNames[userId] || userId.substring(0, 1)).charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="text-white font-medium">
+                                                    {pendingUserNames[userId] || userId.substring(0, 8) + '...'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleMemberAction('approve', userId)}
+                                                    disabled={actionLoading}
+                                                    className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                                    title="Accepteren"
+                                                >
+                                                    <Check size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleMemberAction('reject', userId)}
+                                                    disabled={actionLoading}
+                                                    className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                                                    title="Afwijzen"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Current members */}
+                        <div className="mb-4">
+                            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                                <Users size={16} className="text-gray-400" />
+                                Huidige leden ({managingSubLeague.memberIds.length})
+                            </h3>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {managingSubLeague.memberIds.map((memberId) => {
+                                    const memberPlayer = players.find(p => p.id === memberId);
+                                    const isCreator = memberId === managingSubLeague.createdBy;
+                                    return (
+                                        <div key={memberId} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3 border border-gray-700">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
+                                                    {(memberPlayer?.name || memberId.substring(0, 1)).charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="text-white font-medium">
+                                                    {memberPlayer?.name || memberId.substring(0, 8) + '...'}
+                                                </span>
+                                                {isCreator && (
+                                                    <span className="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-medium rounded">
+                                                        Admin
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {!isCreator && (
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!confirm(`Weet je zeker dat je ${memberPlayer?.name || 'deze gebruiker'} wilt verwijderen?`)) return;
+                                                        setActionLoading(true);
+                                                        try {
+                                                            const idToken = await auth.currentUser?.getIdToken();
+                                                            const response = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json',
+                                                                    'Authorization': `Bearer ${idToken}`,
+                                                                },
+                                                                body: JSON.stringify({ action: 'remove', targetUserId: memberId }),
+                                                            });
+                                                            const data = await response.json();
+                                                            if (data.success) {
+                                                                setActionMessage({ type: 'success', text: data.message });
+                                                                // Refresh the managing subleague data
+                                                                const refreshRes = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`);
+                                                                const refreshData = await refreshRes.json();
+                                                                if (refreshData.success) {
+                                                                    setManagingSubLeague(refreshData.data);
+                                                                }
+                                                            } else {
+                                                                setActionMessage({ type: 'error', text: data.error });
+                                                            }
+                                                        } catch {
+                                                            setActionMessage({ type: 'error', text: 'Netwerkfout' });
+                                                        } finally {
+                                                            setActionLoading(false);
+                                                            setTimeout(() => setActionMessage(null), 5000);
+                                                        }
+                                                    }}
+                                                    disabled={actionLoading}
+                                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                                                    title="Verwijderen"
+                                                >
+                                                    <UserMinus size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setManagingSubLeague(null)}
+                            className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                        >
+                            Sluiten
+                        </button>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
 
-export default StandingsPage;
+// Wrap in Suspense for useSearchParams
+export default function StandingsPageWrapper() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+                <div className="text-gray-400">Laden...</div>
+            </div>
+        }>
+            <StandingsPage />
+        </Suspense>
+    );
+}
