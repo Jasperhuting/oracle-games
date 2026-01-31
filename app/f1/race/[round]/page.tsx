@@ -97,8 +97,8 @@ const F1DriverPicker = ({
                     <span className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0" style={{ backgroundColor: selectedDriver.teamColor }}>
                         <img src={selectedDriver.image} alt={selectedDriver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                     </span>
-                    <span className="text-white text-sm font-bold">{selectedDriver.shortName}</span>
-                    <span className="text-gray-400 text-xs truncate">{selectedDriver.lastName}</span>
+                    <span className="text-white text-sm font-bold flex-shrink-0">{selectedDriver.shortName}</span>
+                    <span className="text-gray-400 text-xs truncate min-w-0">{selectedDriver.lastName}</span>
                     <button
                         onClick={() => onChange(null)}
                         className="ml-auto text-gray-400 hover:text-white flex-shrink-0"
@@ -1241,12 +1241,12 @@ export default function RacePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Pole Position - P1 style */}
                         <div className="bg-black rounded-lg overflow-visible">
-                            <div className="flex items-stretch">
-                                <div className="bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600 w-16 flex flex-col items-center justify-center rounded-l-lg relative">
+                            <div className="flex items-stretch min-h-[76px]">
+                                <div className="bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-600 w-16 flex-shrink-0 flex flex-col items-center justify-center rounded-l-lg relative">
                                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9ImJsYWNrIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJibGFjayIgZmlsbC1vcGFjaXR5PSIwLjEiLz48L3N2Zz4=')] opacity-30 rounded-l-lg"></div>
                                     <span className="text-3xl font-black text-black drop-shadow-sm relative z-10">P1</span>
                                 </div>
-                                <div className="flex-1 p-3 overflow-visible">
+                                <div className="flex-1 min-w-0 p-3 overflow-visible">
                                     <div className="text-yellow-400 text-xs font-bold mb-2 uppercase tracking-wider">Pole Position</div>
                                     <F1DriverPicker
                                         drivers={drivers}
@@ -1261,7 +1261,7 @@ export default function RacePage() {
 
                         {/* Fastest Lap - Purple style */}
                         <div className="bg-black rounded-lg overflow-visible">
-                            <div className="flex items-stretch">
+                            <div className="flex items-stretch min-h-[76px]">
                                 <div className="bg-purple-600 w-16 flex items-center justify-center rounded-l-lg">
                                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="10" strokeWidth="2" />
@@ -1283,7 +1283,7 @@ export default function RacePage() {
 
                         {/* DNF 1 - Red style */}
                         <div className="bg-red-900 rounded-lg overflow-visible">
-                            <div className="flex items-stretch">
+                            <div className="flex items-stretch min-h-[76px]">
                                 <div className="bg-red-600 w-16 flex items-center justify-center rounded-l-lg">
                                     <span className="text-2xl font-black text-white tracking-tighter">DNF</span>
                                 </div>
@@ -1303,7 +1303,7 @@ export default function RacePage() {
 
                         {/* DNF 2 - Red style */}
                         <div className="bg-red-900 rounded-lg overflow-visible">
-                            <div className="flex items-stretch">
+                            <div className="flex items-stretch min-h-[76px]">
                                 <div className="bg-red-600 w-16 flex items-center justify-center rounded-l-lg">
                                     <span className="text-2xl font-black text-white tracking-tighter">DNF</span>
                                 </div>

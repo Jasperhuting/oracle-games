@@ -132,6 +132,17 @@ service cloud.firestore {
     }
     
     // ============================================
+    // Participants Collection
+    // ============================================
+    match /participants/{participantId} {
+      // Authenticated users can read their own participant status
+      allow read: if isAuthenticated();
+
+      // Only server/admin can write (registration handled via API)
+      allow write: if isAdmin();
+    }
+
+    // ============================================
     // Standings Collection
     // ============================================
     match /standings/{standingId} {

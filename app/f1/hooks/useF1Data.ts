@@ -11,17 +11,19 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { f1Db } from '@/lib/firebase/client';
-import { 
-  F1Season, 
-  F1Team, 
-  F1Driver, 
-  F1Race, 
+import {
+  F1Season,
+  F1Team,
+  F1Driver,
+  F1Race,
   F1RaceResult,
+  F1Participant,
   F1_COLLECTIONS,
   F1DriverWithTeam,
   LegacyDriver,
   toLegacyDriver,
   createRaceDocId,
+  createParticipantDocId,
 } from '../types';
 
 const CURRENT_SEASON = 2026;
@@ -334,4 +336,83 @@ export function useF1LegacyDrivers(season: number = CURRENT_SEASON) {
     loading: driversLoading || teamsLoading,
     error: driversError || teamsError,
   };
+}
+
+// ============================================
+// useF1Participants - Get ALL participants for a season
+// ============================================
+export function useF1Participants(season: number = CURRENT_SEASON) {
+  const [participants, setParticipants] = useState<F1Participant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const q = query(
+      collection(f1Db, F1_COLLECTIONS.PARTICIPANTS),
+      where('season', '==', season),
+      where('status', '==', 'active')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const participantsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as F1Participant));
+        setParticipants(participantsData);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching participants:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [season]);
+
+  return { participants, loading, error };
+}
+
+// ============================================
+// useF1Participant - Check if user is registered for F1 season
+// ============================================
+export function useF1Participant(userId: string | null, season: number = CURRENT_SEASON) {
+  const [participant, setParticipant] = useState<F1Participant | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!userId) {
+      setParticipant(null);
+      setLoading(false);
+      return;
+    }
+
+    const docId = createParticipantDocId(userId, season);
+    const docRef = doc(f1Db, F1_COLLECTIONS.PARTICIPANTS, docId);
+
+    const unsubscribe = onSnapshot(
+      docRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setParticipant({ id: snapshot.id, ...snapshot.data() } as F1Participant);
+        } else {
+          setParticipant(null);
+        }
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching participant:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [userId, season]);
+
+  return { participant, isParticipant: !!participant, loading, error };
 }

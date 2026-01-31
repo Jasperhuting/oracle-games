@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerFirebase } from '@/lib/firebase/server';
+import { getServerFirebase, getServerFirebaseF1 } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { GameParticipant, ClientGameParticipant } from '@/lib/types';
 import type { JoinGameRequest, JoinGameResponse, LeaveGameResponse, ApiErrorResponse } from '@/lib/types';
 import { joinGameSchema, validateRequest } from '@/lib/validation';
 import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
+import { F1_COLLECTIONS, createParticipantDocId } from '@/app/f1/types';
 
 export async function POST(
   request: NextRequest,
@@ -205,6 +206,36 @@ export async function POST(
       });
     }
 
+    // For F1-prediction games, also create a participant in the F1 database
+    if (gameData?.gameType === 'f1-prediction') {
+      try {
+        const f1Db = getServerFirebaseF1();
+        const season = gameData?.year || new Date().getFullYear();
+        const f1ParticipantDocId = createParticipantDocId(userId, season);
+
+        // Check if participant already exists in F1 database
+        const existingF1Participant = await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(f1ParticipantDocId).get();
+
+        if (!existingF1Participant.exists) {
+          // Create F1 participant
+          await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(f1ParticipantDocId).set({
+            userId,
+            gameId,
+            season,
+            displayName: userData?.playername || userData?.name || 'Anonymous',
+            joinedAt: now,
+            status: 'active',
+          });
+          console.log(`[JOIN_GAME] Created F1 participant ${f1ParticipantDocId} for user ${userId}`);
+        } else {
+          console.log(`[JOIN_GAME] F1 participant ${f1ParticipantDocId} already exists for user ${userId}`);
+        }
+      } catch (f1Error) {
+        // Log but don't fail the game join if F1 participant creation fails
+        console.error('[JOIN_GAME] Error creating F1 participant:', f1Error);
+      }
+    }
+
     // Log the activity
     await db.collection('activityLogs').add({
       action: 'GAME_JOINED',
@@ -388,6 +419,24 @@ export async function DELETE(
       await db.collection('games').doc(gameId).update({
         playerCount: Math.max(0, (gameData?.playerCount || 1) - 1),
       });
+    }
+
+    // For F1-prediction games, also delete the participant from the F1 database
+    if (gameData?.gameType === 'f1-prediction') {
+      try {
+        const f1Db = getServerFirebaseF1();
+        const season = gameData?.year || new Date().getFullYear();
+        const f1ParticipantDocId = createParticipantDocId(userId, season);
+
+        const f1ParticipantDoc = await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(f1ParticipantDocId).get();
+        if (f1ParticipantDoc.exists) {
+          await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(f1ParticipantDocId).delete();
+          console.log(`[LEAVE_GAME] Deleted F1 participant ${f1ParticipantDocId} for user ${userId}`);
+        }
+      } catch (f1Error) {
+        // Log but don't fail the game leave if F1 participant deletion fails
+        console.error('[LEAVE_GAME] Error deleting F1 participant:', f1Error);
+      }
     }
 
     console.log(`[LEAVE_GAME] User ${userId} successfully left game ${gameId}:`, deletionStats);

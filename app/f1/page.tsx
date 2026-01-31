@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     useReactTable,
     getCoreRowModel,
     flexRender,
     createColumnHelper,
 } from "@tanstack/react-table";
-import { useF1Races, useF1UserPredictions, useF1LegacyDrivers, useF1UserStanding, useF1RaceResults } from "./hooks";
+import { useF1Races, useF1UserPredictions, useF1LegacyDrivers, useF1UserStanding, useF1RaceResults, useF1Participant } from "./hooks";
 import { F1Race, F1Prediction, F1RaceResult, LegacyDriver } from "./types";
 import Link from "next/link";
-import { Check, Clock, Edit } from "tabler-icons-react";
+import { Check, Clock, Edit, UserPlus } from "tabler-icons-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface RaceTableRow {
     race: F1Race;
@@ -23,12 +24,43 @@ interface RaceTableRow {
 const columnHelper = createColumnHelper<RaceTableRow>();
 
 const F1Page = () => {
+    const { user, loading: authLoading } = useAuth();
     const { races, loading: racesLoading } = useF1Races(2026);
     const { predictions, loading: predictionsLoading } = useF1UserPredictions(2026);
     const { standing, loading: standingLoading } = useF1UserStanding(2026);
     const { results: raceResults, loading: resultsLoading } = useF1RaceResults(2026);
     const { drivers } = useF1LegacyDrivers();
+    const { isParticipant, loading: participantLoading } = useF1Participant(user?.uid || null, 2026);
+    const [isJoining, setIsJoining] = useState(false);
     const now = new Date();
+
+    const handleJoinF1 = async () => {
+        if (!user) return;
+        setIsJoining(true);
+        try {
+            // Get the ID token for authentication
+            const idToken = await user.getIdToken();
+
+            const response = await fetch('/api/f1/join', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ season: 2026 }),
+            });
+            const data = await response.json();
+            if (!data.success) {
+                alert(data.error || 'Er ging iets mis bij het aanmelden');
+            }
+            // The useF1Participant hook will automatically update via onSnapshot
+        } catch (error) {
+            console.error('Error joining F1:', error);
+            alert('Er ging iets mis bij het aanmelden');
+        } finally {
+            setIsJoining(false);
+        }
+    };
 
     // Debug logging
     console.log('Predictions:', predictions);
@@ -150,6 +182,8 @@ const F1Page = () => {
 
                     if (prediction) {
                         return <span className="text-sm text-gray-300">{prediction}</span>;
+                    } else if (!isParticipant) {
+                        return <span className="text-gray-500 text-sm">Meld je eerst aan</span>;
                     } else if (status === "upcoming") {
                         return (
                             <Link
@@ -220,7 +254,7 @@ const F1Page = () => {
                 ),
             }),
         ],
-        []
+        [isParticipant]
     );
 
     const table = useReactTable({
@@ -285,14 +319,19 @@ const F1Page = () => {
                             )}
                         </div>
                     </div>
-                    {row.status === "upcoming" && !row.prediction && (
+                    {!isParticipant && !row.prediction && row.status !== "done" && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                            <span className="text-gray-500 text-sm">Meld je eerst aan</span>
+                        </div>
+                    )}
+                    {isParticipant && row.status === "upcoming" && !row.prediction && (
                         <div className="mt-3 pt-3 border-t border-gray-700">
                             <span className="inline-flex items-center gap-1 text-blue-400 text-sm">
                                 <Edit size={14} /> Voorspelling invullen
                             </span>
                         </div>
                     )}
-                    {row.status === "open" && !row.prediction && (
+                    {isParticipant && row.status === "open" && !row.prediction && (
                         <div className="mt-3 pt-3 border-t border-gray-700">
                             <span className="inline-flex items-center gap-1 text-orange-400 text-sm font-medium">
                                 <Edit size={14} /> Nog invullen!
@@ -304,7 +343,7 @@ const F1Page = () => {
         );
     };
 
-    const loading = racesLoading || predictionsLoading || standingLoading || resultsLoading;
+    const loading = authLoading || racesLoading || predictionsLoading || standingLoading || resultsLoading || participantLoading;
 
     if (loading) {
         return (
@@ -317,6 +356,45 @@ const F1Page = () => {
     return (
         <>
             <h1 className="text-2xl text-white md:text-3xl font-bold mb-4 md:mb-6">F1 2026 Voorspellingen</h1>
+
+            {/* Registration Banner */}
+            {!isParticipant && user && (
+                <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg border border-red-500 p-4 mb-4 md:mb-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <UserPlus size={20} /> Meld je aan voor F1 2026
+                            </h2>
+                            <p className="text-red-100 text-sm mt-1">
+                                Je moet je eerst aanmelden voordat je voorspellingen kunt invullen.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleJoinF1}
+                            disabled={isJoining}
+                            className="bg-white text-red-600 font-semibold px-6 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isJoining ? 'Bezig...' : 'Nu aanmelden'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {!user && (
+                <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 mb-4 md:mb-6">
+                    <p className="text-gray-300 text-center">
+                        <Link href="/login" className="text-blue-400 hover:text-blue-300 underline">Log in</Link> om je aan te melden en voorspellingen in te vullen.
+                    </p>
+                </div>
+            )}
+
+            {isParticipant && (
+                <div className="bg-green-900/30 rounded-lg border border-green-700 p-3 mb-4 md:mb-6">
+                    <p className="text-green-400 text-sm flex items-center gap-2">
+                        <Check size={16} /> Je bent aangemeld voor F1 2026. Veel succes met je voorspellingen!
+                    </p>
+                </div>
+            )}
 
             {/* Stats cards - optimized for mobile */}
             <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">

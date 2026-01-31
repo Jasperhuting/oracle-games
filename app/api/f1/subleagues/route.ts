@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerFirebaseF1, getServerAuth } from '@/lib/firebase/server';
-import { F1SubLeague, F1_COLLECTIONS } from '@/app/f1/types';
+import { getServerFirebase, getServerFirebaseF1, getServerAuth } from '@/lib/firebase/server';
+import { F1SubLeague, F1Participant, F1_COLLECTIONS, createParticipantDocId } from '@/app/f1/types';
 import { cookies } from 'next/headers';
 
+const db = getServerFirebase();
 const f1Db = getServerFirebaseF1();
 
 // Helper to get current user ID from session cookie or Authorization header
@@ -125,11 +126,37 @@ export async function POST(request: NextRequest) {
 
     const docRef = await f1Db.collection(F1_COLLECTIONS.SUB_LEAGUES).add(subLeagueData);
 
+    // Automatically register creator as participant if not already
+    const participantDocId = createParticipantDocId(userId, 2026);
+    const participantDoc = await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(participantDocId).get();
+
+    let becameParticipant = false;
+    if (!participantDoc.exists) {
+      // Get user info from default database
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userData = userDoc.data();
+      const userDisplayName = userData?.name || userData?.displayName || 'Anonymous';
+
+      // Create participant
+      const participantData: Omit<F1Participant, 'id'> = {
+        userId,
+        gameId: `f1-prediction-2026`,
+        season: 2026,
+        displayName: userDisplayName,
+        joinedAt: now as unknown as import('firebase/firestore').Timestamp,
+        status: 'active',
+      };
+
+      await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(participantDocId).set(participantData);
+      becameParticipant = true;
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         id: docRef.id,
         ...subLeagueData,
+        becameParticipant,
       },
     });
   } catch (error) {
@@ -192,11 +219,38 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
     });
 
+    // Automatically register user as participant if not already
+    const participantDocId = createParticipantDocId(userId, subLeague.season);
+    const participantDoc = await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(participantDocId).get();
+
+    let becameParticipant = false;
+    if (!participantDoc.exists) {
+      // Get user info from default database
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userData = userDoc.data();
+      const userDisplayName = userData?.name || userData?.displayName || 'Anonymous';
+
+      // Create participant
+      const now = new Date();
+      const participantData: Omit<F1Participant, 'id'> = {
+        userId,
+        gameId: subLeague.gameId || `f1-prediction-${subLeague.season}`,
+        season: subLeague.season,
+        displayName: userDisplayName,
+        joinedAt: now as unknown as import('firebase/firestore').Timestamp,
+        status: 'active',
+      };
+
+      await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(participantDocId).set(participantData);
+      becameParticipant = true;
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         id: doc.id,
         name: subLeague.name,
+        becameParticipant,
       },
     });
   } catch (error) {

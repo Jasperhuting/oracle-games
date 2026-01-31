@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebaseF1, getServerAuth } from '@/lib/firebase/server';
-import { F1Prediction, F1_COLLECTIONS, createPredictionDocId, createRaceDocId } from '../../types';
+import { F1Prediction, F1ActivityLog, F1_COLLECTIONS, createPredictionDocId, createRaceDocId, createParticipantDocId } from '../../types';
 import { cookies } from 'next/headers';
 
 const f1Db = getServerFirebaseF1();
@@ -143,6 +143,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user is a registered participant for this season
+    const participantDocId = createParticipantDocId(userId, prediction.season);
+    const participantDoc = await f1Db.collection(F1_COLLECTIONS.PARTICIPANTS).doc(participantDocId).get();
+
+    if (!participantDoc.exists) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Je moet je eerst aanmelden voor F1 ' + prediction.season + ' voordat je kunt voorspellen',
+          requiresRegistration: true
+        },
+        { status: 403 }
+      );
+    }
+
     // Check if race is still open for predictions
     const raceId = createRaceDocId(prediction.season, prediction.round);
     const raceDoc = await f1Db.collection(F1_COLLECTIONS.RACES).doc(raceId).get();
@@ -193,6 +208,43 @@ export async function POST(request: NextRequest) {
     };
 
     await docRef.set(predictionData, { merge: true });
+
+    // Log activity for debugging
+    try {
+      const isUpdate = existingDoc.exists;
+      const existingData = existingDoc.exists ? existingDoc.data() as F1Prediction : null;
+
+      const activityLog: Omit<F1ActivityLog, 'id'> = {
+        userId,
+        season: prediction.season,
+        activityType: isUpdate ? 'prediction_updated' : 'prediction_saved',
+        timestamp: now as unknown as import('firebase/firestore').Timestamp,
+        round: prediction.round,
+        raceId,
+        prediction: {
+          finishOrder: prediction.finishOrder,
+          polePosition: prediction.polePosition,
+          fastestLap: prediction.fastestLap,
+          dnf1: prediction.dnf1,
+          dnf2: prediction.dnf2,
+        },
+        isUpdate,
+        ...(isUpdate && existingData ? {
+          previousPrediction: {
+            finishOrder: existingData.finishOrder,
+            polePosition: existingData.polePosition,
+            fastestLap: existingData.fastestLap,
+            dnf1: existingData.dnf1,
+            dnf2: existingData.dnf2,
+          },
+        } : {}),
+      };
+
+      await f1Db.collection(F1_COLLECTIONS.ACTIVITY_LOGS).add(activityLog);
+    } catch (logError) {
+      // Don't fail the prediction save if logging fails
+      console.error('Error logging prediction activity:', logError);
+    }
 
     return NextResponse.json({ success: true, data: { id: docId } });
   } catch (error) {

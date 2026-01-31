@@ -42,6 +42,10 @@ interface GameFormData {
   // Marginal Gains config
   mgTeamSize?: number;
   mgCurrentYear?: number;
+
+  // F1 Prediction config
+  f1Season?: number;
+  f1RegistrationDeadline?: string;
 }
 
 interface Race {
@@ -268,6 +272,15 @@ export const CreateGameTab = () => {
           }) : undefined,
           auctionStatus: auctionPeriods.length > 0 ? 'pending' : undefined,
         };
+      } else if (data.gameType === 'f1-prediction') {
+        config = {
+          season: Number(data.year) || 2026,
+          registrationOpen: true,
+          registrationDeadline: data.f1RegistrationDeadline
+            ? new Date(data.f1RegistrationDeadline + ':00Z').toISOString()
+            : undefined,
+          maxParticipants: data.maxPlayers ? Number(data.maxPlayers) : undefined,
+        };
       }
       // Add more game type configs here as needed
 
@@ -331,6 +344,7 @@ export const CreateGameTab = () => {
     { value: 'marginal-gains', label: 'Marginal Gains - Season improvement' },
     { value: 'fan-flandrien', label: 'Fan Flandrien - Predict top 15' },
     { value: 'full-grid', label: 'Full Grid - Budget riders' },
+    { value: 'f1-prediction', label: 'F1 Prediction - Voorspel F1 races' },
   ];
 
   return (
@@ -1057,6 +1071,45 @@ export const CreateGameTab = () => {
                 <strong>Na het aanmaken:</strong> Ga naar Admin &rarr; Games Management &rarr; klik op &quot;View&quot; bij de game
                 om wedstrijden toe te voegen aan de kalender. Je kunt de standaard 2026 Classics kalender importeren
                 of individuele wedstrijden toevoegen.
+              </p>
+            </div>
+          )}
+
+          {/* F1 Prediction Specific Fields */}
+          {selectedGameType === 'f1-prediction' && (
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">F1 Prediction Configuration</h3>
+
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                <p className="text-sm text-red-800">
+                  <strong>Game Concept:</strong> Voorspel de uitslag van elk F1 race weekend.
+                  Scoor punten door de juiste posities te voorspellen.
+                  <br /><br />
+                  <strong>Database:</strong> Deze game wordt aangemaakt in de default database,
+                  maar alle voorspellingen en uitslagen worden opgeslagen in de F1 database (oracle-games-f1).
+                  Spelers moeten zich eerst aanmelden via een subleague of direct bij de game.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Registratie Deadline (optioneel)
+                </label>
+                <input
+                  type="datetime-local"
+                  {...register('f1RegistrationDeadline')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Na deze datum kunnen nieuwe spelers zich niet meer aanmelden.
+                  Laat leeg voor geen deadline.
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                <strong>Na het aanmaken:</strong> Spelers kunnen zich aanmelden via de F1 pagina.
+                Ze moeten geregistreerd zijn voordat ze voorspellingen kunnen invullen.
+                Subleagues kunnen gebruikt worden om vrienden uit te nodigen.
               </p>
             </div>
           )}

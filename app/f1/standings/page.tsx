@@ -11,9 +11,9 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World, Eye } from "tabler-icons-react";
-import { useF1Standings, useF1SubLeagues, useF1LegacyDrivers, useF1RaceResult } from "../hooks";
+import { useF1Standings, useF1SubLeagues, useF1LegacyDrivers, useF1RaceResult, useF1Participants } from "../hooks";
 import { useUserNames } from "../hooks/useUserNames";
-import { F1Standing, F1SubLeague, F1Prediction, LegacyDriver } from "../types";
+import { F1Standing, F1SubLeague, F1Prediction, LegacyDriver, F1Participant } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase/client";
 
@@ -32,10 +32,11 @@ const columnHelper = createColumnHelper<Player>();
 
 const StandingsPage = () => {
     const { standings, loading: standingsLoading } = useF1Standings(2026);
+    const { participants, loading: participantsLoading } = useF1Participants(2026);
     const { subLeagues, loading: subLeaguesLoading } = useF1SubLeagues();
-    
-    // Get user IDs from standings to fetch display names
-    const userIds = useMemo(() => standings.map(s => s.userId), [standings]);
+
+    // Get user IDs from participants (not just standings) to fetch display names
+    const userIds = useMemo(() => participants.map(p => p.userId), [participants]);
     const { names: userNames, loading: namesLoading } = useUserNames(userIds);
     
     const [sorting, setSorting] = useState<SortingState>([
@@ -57,18 +58,25 @@ const StandingsPage = () => {
     const { drivers } = useF1LegacyDrivers();
     const { result: raceResult } = useF1RaceResult(2026, 1);
 
-    // Convert standings to Player format
+    // Convert participants to Player format, merging with standings data
+    // This ensures ALL participants appear, even those with 0 points
     const players: Player[] = useMemo(() => {
-        return standings.map(s => ({
-            id: s.userId,
-            name: s.visibleName || userNames[s.userId] || s.userId.substring(0, 8) + '...',
-            totalPoints: s.totalPoints,
-            correctPredictions: s.correctPredictions,
-            racesParticipated: s.racesParticipated,
-            bestFinish: s.bestFinish,
-            lastRacePoints: s.lastRacePoints,
-        }));
-    }, [standings, userNames]);
+        // Create a map of standings by userId for quick lookup
+        const standingsMap = new Map(standings.map(s => [s.userId, s]));
+
+        return participants.map(p => {
+            const standing = standingsMap.get(p.userId);
+            return {
+                id: p.userId,
+                name: standing?.visibleName || p.displayName || userNames[p.userId] || p.userId.substring(0, 8) + '...',
+                totalPoints: standing?.totalPoints ?? 0,
+                correctPredictions: standing?.correctPredictions ?? 0,
+                racesParticipated: standing?.racesParticipated ?? 0,
+                bestFinish: standing?.bestFinish ?? null,
+                lastRacePoints: standing?.lastRacePoints ?? null,
+            };
+        });
+    }, [participants, standings, userNames]);
 
     // Filter players based on selected subpoule
     const filteredPlayers = useMemo(() => {
@@ -325,7 +333,7 @@ const StandingsPage = () => {
         );
     };
 
-    if (standingsLoading || subLeaguesLoading || namesLoading) {
+    if (standingsLoading || participantsLoading || subLeaguesLoading || namesLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <div className="text-gray-400">Laden...</div>

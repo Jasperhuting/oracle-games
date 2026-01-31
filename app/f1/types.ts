@@ -96,6 +96,25 @@ export interface F1RaceResult {
 }
 
 // ============================================
+// Participant (Game Registration)
+// ============================================
+export interface F1Participant {
+  id?: string;  // Document ID (format: "userId_season" e.g., "abc123_2026")
+  userId: string;  // userId from default database
+  gameId: string;  // Reference to game in default database
+  season: number;
+  displayName: string;  // User's display name
+  joinedAt: Timestamp;
+  status: 'active' | 'inactive';
+  // SubLeague memberships are tracked in F1SubLeague.memberIds
+}
+
+// Helper function for participant document ID
+export function createParticipantDocId(userId: string, season: number): string {
+  return `${userId}_${season}`;
+}
+
+// ============================================
 // SubLeague (Poule)
 // ============================================
 export interface F1SubLeague {
@@ -173,6 +192,40 @@ export interface F1PointsHistory {
   points: number;
   breakdown: F1PointsBreakdown;
   calculatedAt: Timestamp;
+}
+
+// ============================================
+// Activity Log (for debugging)
+// ============================================
+export type F1ActivityType = 'prediction_saved' | 'prediction_updated' | 'participant_joined' | 'participant_left';
+
+export interface F1ActivityLog {
+  id?: string;
+  userId: string;
+  season: number;
+  activityType: F1ActivityType;
+  timestamp: Timestamp;
+
+  // For prediction activities
+  round?: number;
+  raceId?: string;
+  prediction?: {
+    finishOrder: string[];
+    polePosition: string | null;
+    fastestLap: string | null;
+    dnf1: string | null;
+    dnf2: string | null;
+  };
+
+  // Metadata
+  isUpdate?: boolean;  // true if updating existing prediction
+  previousPrediction?: {
+    finishOrder: string[];
+    polePosition: string | null;
+    fastestLap: string | null;
+    dnf1: string | null;
+    dnf2: string | null;
+  };
 }
 
 // ============================================
@@ -286,6 +339,8 @@ export const F1_COLLECTIONS = {
   PREDICTIONS: 'predictions',
   STANDINGS: 'standings',
   POINTS_HISTORY: 'pointsHistory',  // Subcollection
+  PARTICIPANTS: 'participants',  // Game participants
+  ACTIVITY_LOGS: 'activityLogs',  // Activity logs for debugging
 } as const;
 
 // ============================================

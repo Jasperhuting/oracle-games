@@ -1,5 +1,5 @@
 // F1 Data Hooks
-export { 
+export {
   useF1Season,
   useF1Teams,
   useF1Drivers,
@@ -9,6 +9,8 @@ export {
   useF1Race,
   useF1RaceResult,
   useF1RaceResults,
+  useF1Participant,
+  useF1Participants,
 } from './useF1Data';
 
 // F1 Prediction Hooks

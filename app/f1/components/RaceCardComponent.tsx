@@ -20,8 +20,11 @@ export const RaceCard = ({ race, selected, hasPrediction }: RaceCardProps) => {
         } else if (isRaceDone && !hasPrediction) {
             // Done + not filled = red accent (missed)
             return 'bg-gray-800 border-l-4 border-red-500';
+        } else if (hasPrediction) {
+            // Not done but has prediction = green accent (completed)
+            return 'bg-gray-800 border-l-4 border-green-500';
         } else if (isUpcoming) {
-            // Upcoming = neutral
+            // Upcoming without prediction = neutral
             return 'bg-gray-800 border-l-4 border-gray-600';
         }
         // Open for predictions
@@ -32,6 +35,7 @@ export const RaceCard = ({ race, selected, hasPrediction }: RaceCardProps) => {
     const getRoundBadgeStyle = () => {
         if (isRaceDone && hasPrediction) return 'bg-green-600';
         if (isRaceDone && !hasPrediction) return 'bg-red-600';
+        if (hasPrediction) return 'bg-green-600'; // Predicted upcoming race
         if (isUpcoming) return 'bg-gray-600';
         return 'bg-yellow-600';
     };
@@ -54,13 +58,13 @@ export const RaceCard = ({ race, selected, hasPrediction }: RaceCardProps) => {
             
             {/* Status indicator */}
             <span className="absolute right-2 top-2">
-                {isRaceDone && hasPrediction && (
+                {hasPrediction && (
                     <Check size={16} className="text-green-400" />
                 )}
                 {isRaceDone && !hasPrediction && (
                     <AlertCircle size={16} className="text-red-400" />
                 )}
-                {!isRaceDone && !isUpcoming && (
+                {!isRaceDone && !isUpcoming && !hasPrediction && (
                     <Clock size={16} className="text-yellow-400" />
                 )}
             </span>

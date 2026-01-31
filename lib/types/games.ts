@@ -16,6 +16,7 @@ export const GAME_TYPES = [
   'fan-flandrien',
   'full-grid',
   'marginal-gains',
+  'f1-prediction',
 ] as const;
 
 export type GameType = typeof GAME_TYPES[number];
@@ -186,6 +187,13 @@ export interface MarginalGainsConfig {
   // Current points come from seasonPoints_{currentYear} (points earned during current season)
 }
 
+export interface F1PredictionConfig {
+  season: number;                   // e.g., 2026
+  registrationOpen: boolean;        // Whether registration is open
+  registrationDeadline?: Timestamp; // Optional deadline for registration
+  maxParticipants?: number;         // Optional max number of participants
+}
+
 export type GameConfig =
   | AuctioneerConfig
   | SlipstreamConfig
@@ -197,7 +205,8 @@ export type GameConfig =
   | WorldTourManagerConfig
   | FanFlandrienConfig
   | FullGridConfig
-  | MarginalGainsConfig;
+  | MarginalGainsConfig
+  | F1PredictionConfig;
 
 // ============================================================================
 // GAME DOCUMENT
@@ -728,6 +737,10 @@ export function isMarginalGains(game: Game): game is Game & { config: MarginalGa
 
 export function isWorldTourManager(game: Game): game is Game & { config: WorldTourManagerConfig } {
   return game.gameType === 'worldtour-manager';
+}
+
+export function isF1Prediction(game: Game): game is Game & { config: F1PredictionConfig } {
+  return game.gameType === 'f1-prediction';
 }
 
 // Client-side version of AuctionPeriod with string timestamps
