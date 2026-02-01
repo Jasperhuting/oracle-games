@@ -40,7 +40,7 @@ export default function StatsPage() {
                         </p>
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                             <p className="text-blue-800">
-                                Binnenkun kun je hier gedetailleerde statistieken bekijken van je deelnames aan de Oracle Games spellen.
+                                Binnenkort kun je hier gedetailleerde statistieken bekijken van je deelnames aan de Oracle Games spellen.
                             </p>
                         </div>
                         <Link 

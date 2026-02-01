@@ -40,29 +40,8 @@ export default function ForumPage() {
                         </p>
                         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                             <p className="text-orange-800">
-                                Binnenkun kun je hier discussiëren met andere Oracle Games spelers en strategieën delen.
+                                Binnenkort kun je hier discussiëren met andere Oracle Games spelers en strategieën delen.
                             </p>
-                        </div>
-                        <div className="space-y-2 text-left bg-gray-50 rounded-lg p-4">
-                            <h3 className="font-semibold text-gray-900 mb-2">Wat kun je verwachten:</h3>
-                            <ul className="space-y-2 text-gray-600">
-                                <li className="flex items-center">
-                                    <span className="text-green-500 mr-2">✓</span>
-                                    Discussies over races en strategieën
-                                </li>
-                                <li className="flex items-center">
-                                    <span className="text-green-500 mr-2">✓</span>
-                                    Tips en tricks van ervaren spelers
-                                </li>
-                                <li className="flex items-center">
-                                    <span className="text-green-500 mr-2">✓</span>
-                                    Aankondigingen en updates
-                                </li>
-                                <li className="flex items-center">
-                                    <span className="text-green-500 mr-2">✓</span>
-                                    Community evenementen en competities
-                                </li>
-                            </ul>
                         </div>
                         <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <p className="text-yellow-800 text-sm">
