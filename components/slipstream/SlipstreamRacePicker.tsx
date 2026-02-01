@@ -61,6 +61,8 @@ export function SlipstreamRacePicker({
 
   const needsPickCount = races.filter(r => r.status === 'upcoming' && !r.deadlinePassed && !r.userPick).length;
   const pickedCount = races.filter(r => r.userPick).length;
+  const finishedCount = races.filter(r => r.status === 'finished').length;
+  const totalRaces = races.length;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -117,7 +119,7 @@ export function SlipstreamRacePicker({
         </button>
       </div>
 
-      <div className="text-xs text-gray-500 flex gap-3">
+      <div className="text-xs text-gray-500 flex flex-wrap gap-3">
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-green-500"></span>
           {pickedCount} picked
@@ -126,9 +128,16 @@ export function SlipstreamRacePicker({
           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
           {needsPickCount} need pick
         </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-gray-500"></span>
+          {finishedCount} finished
+        </span>
+        <span className="text-gray-600 font-medium">
+          {finishedCount}/{totalRaces} races completed
+        </span>
       </div>
 
-      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+      <div className="space-y-2 max-h-[300px] overflow-y-auto overflow-x-hidden">
         {filteredRaces.length === 0 ? (
           <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
             {filter === 'needs_pick' ? 'All races have picks! 🎉' : 'No races found'}
@@ -143,7 +152,7 @@ export function SlipstreamRacePicker({
               <button
                 key={race.raceSlug}
                 onClick={() => onSelectRace(race.raceSlug)}
-                className={`w-full p-3 rounded-lg border text-left transition-all ${
+                className={`w-full p-2 rounded-lg border text-left transition-all min-w-0 ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                     : hasPick
@@ -154,38 +163,38 @@ export function SlipstreamRacePicker({
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-3">
-                    <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                    <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
                       hasPick 
                         ? 'bg-green-500 text-white' 
                         : canPick 
                         ? 'bg-orange-100 border-2 border-orange-300' 
                         : 'bg-gray-200'
                     }`}>
-                      {hasPick && <Check className="w-3 h-3" />}
+                      {hasPick && <Check className="w-2.5 h-2.5" />}
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900">{race.raceName}</div>
-                      <div className="text-sm text-gray-500">{formatDate(race.raceDate)}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-gray-900 text-sm truncate">{race.raceName}</div>
+                      <div className="text-xs text-gray-500">{formatDate(race.raceDate)}</div>
                       {hasPick ? (
-                        <div className="mt-1 text-sm text-green-700 font-medium">
+                        <div className="mt-1 text-xs text-green-700 font-medium">
                           ✓ {race.userPick?.riderName}
                         </div>
                       ) : canPick ? (
-                        <div className="mt-1 text-sm text-orange-600 flex items-center gap-1">
+                        <div className="mt-1 text-xs text-orange-600 flex items-center gap-1">
                           <AlertCircle className="w-3 h-3" />
                           No pick yet
                         </div>
                       ) : null}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     {race.status === 'finished' ? (
                       <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Finished</span>
                     ) : race.deadlinePassed || race.status === 'locked' ? (
                       <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Locked</span>
                     ) : (
-                      <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">{race.timeUntilDeadlineFormatted}</span>
+                      <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded text-nowrap">{race.timeUntilDeadlineFormatted}</span>
                     )}
                     {race.userPick?.locked && race.userPick?.timeLostFormatted && (
                       <div className="flex items-center gap-1 text-xs">

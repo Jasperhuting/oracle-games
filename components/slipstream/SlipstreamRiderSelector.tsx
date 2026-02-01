@@ -3,8 +3,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { PlayerRow } from '@/components/PlayerRow';
 import { Selector } from '@/components/Selector';
+import { TeamSelector } from '@/components/TeamSelector';
 import { normalizeString } from '@/lib/utils/stringUtils';
 import { Rider } from '@/lib/scraper/types';
+import { Team } from '@/lib/scraper/types';
 
 interface SlipstreamRiderSelectorProps {
   riders: Rider[];
@@ -24,6 +26,7 @@ export function SlipstreamRiderSelector({
   const [selectedItems, setSelectedItems] = useState<Rider[]>(
     selectedRider ? [selectedRider] : []
   );
+  const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
 
   // Sync internal state with prop when selectedRider changes
   useEffect(() => {
@@ -35,15 +38,102 @@ export function SlipstreamRiderSelector({
   }, [selectedRider]);
 
   const availableRiders = useMemo(() => {
-    return riders.filter(rider => {
+    console.log('Debug - availableRiders filtering started');
+    console.log('Debug - selectedTeams:', selectedTeams.map(t => ({ name: t.name, slug: t.slug })));
+    
+    const filtered = riders.filter(rider => {
       const riderId = rider.id || (rider as { nameID?: string }).nameID || '';
-      return !usedRiderIds.includes(riderId);
+      const isUsed = usedRiderIds.includes(riderId);
+      
+      console.log(`Debug - rider ${rider.name}: isUsed=${isUsed}`);
+      
+      if (isUsed) return false;
+      
+      if (selectedTeams.length > 0) {
+        let riderTeamId = '';
+        
+        // Try different team data structures for filtering
+        if (rider.team && typeof rider.team === 'object' && 'slug' in rider.team) {
+          riderTeamId = (rider.team as any).slug;
+        } else if (rider.team && typeof rider.team === 'object' && 'name' in rider.team) {
+          riderTeamId = (rider.team as any).name.toLowerCase().replace(/\s+/g, '-');
+        } else if (rider.team && typeof rider.team === 'string') {
+          riderTeamId = rider.team.toLowerCase().replace(/\s+/g, '-');
+        } else if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
+          riderTeamId = (rider as any).teamName.toLowerCase().replace(/\s+/g, '-');
+        }
+        
+        console.log(`Debug - rider ${rider.name}: riderTeamId="${riderTeamId}"`);
+        
+        const matches = selectedTeams.some(team => {
+          const teamSlug = team.slug || team.name?.toLowerCase().replace(/\s+/g, '-');
+          console.log(`Debug - comparing "${riderTeamId}" with "${teamSlug}"`);
+          return teamSlug === riderTeamId;
+        });
+        
+        console.log(`Debug - rider ${rider.name}: matches=${matches}`);
+        return matches;
+      }
+      
+      return true;
     });
-  }, [riders, usedRiderIds]);
+    
+    console.log(`Debug - availableRiders result: ${filtered.length} riders`);
+    return filtered;
+  }, [riders, usedRiderIds, selectedTeams]);
+
+  // Calculate rider counts per team for TeamSelector
+  const teamRiderCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    
+    console.log('Debug - riders data sample:', riders.slice(0, 2));
+    
+    riders.forEach(rider => {
+      const riderId = rider.id || (rider as { nameID?: string }).nameID || '';
+      const isUsed = usedRiderIds.includes(riderId);
+      
+      if (!isUsed && rider.team) {
+        let teamId = '';
+        let teamName = '';
+        
+        // Try different team data structures
+        if (rider.team && typeof rider.team === 'object' && 'slug' in rider.team) {
+          teamId = (rider.team as any).slug;
+          teamName = (rider.team as any).name;
+        } else if (rider.team && typeof rider.team === 'object' && 'name' in rider.team) {
+          teamName = (rider.team as any).name;
+          teamId = teamName.toLowerCase().replace(/\s+/g, '-');
+        } else if (rider.team && typeof rider.team === 'string') {
+          teamName = rider.team;
+          teamId = teamName.toLowerCase().replace(/\s+/g, '-');
+        } else if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
+          teamName = (rider as any).teamName;
+          teamId = teamName.toLowerCase().replace(/\s+/g, '-');
+        }
+        
+        console.log(`Debug - rider ${rider.name}: teamName="${teamName}", teamId="${teamId}"`);
+        
+        if (teamId) {
+          counts.set(teamId, (counts.get(teamId) || 0) + 1);
+        }
+      }
+    });
+    
+    console.log('Debug - final teamRiderCounts:', Array.from(counts.entries()));
+    return counts;
+  }, [riders, usedRiderIds, selectedTeams]);
 
   const handleSelect = (items: Rider[]) => {
     setSelectedItems(items);
     onSelect(items[0] || null);
+  };
+
+  const handleTeamFilterChange = (teams: Team[]) => {
+    console.log('Debug - handleTeamFilterChange called with:', teams.map(t => ({ name: t.name, slug: t.slug })));
+    setSelectedTeams(teams);
+    // Clear rider selection when team filter changes
+    setSelectedItems([]);
+    onSelect(null);
   };
 
   if (disabled) {
@@ -65,6 +155,20 @@ export function SlipstreamRiderSelector({
         <span className="text-sm text-gray-600">
           {availableRiders.length} riders available ({usedRiderIds.length} already used)
         </span>
+      </div>
+
+      {/* Team Filter */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">Filter by Team</label>
+        <TeamSelector
+          selectedTeams={selectedTeams}
+          setSelectedTeams={handleTeamFilterChange}
+          multiSelect={false}
+          showSelected={false}
+          placeholder="Filter on teams..."
+          showRiderCounts={true}
+          teamRiderCounts={teamRiderCounts}
+        />
       </div>
       
       <Selector<Rider>

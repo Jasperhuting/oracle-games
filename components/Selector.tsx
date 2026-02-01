@@ -87,10 +87,10 @@ export function Selector<T>({
     };
 
     return (
-        <div className="relative flex flex-row items-center gap-2">
+        <div className="relative">
             <div className="flex items-center gap-2">
                 <input
-                    className={`h-[40px] max-w-[400px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'}`}
+                    className={`h-[40px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'}`}
                     type="text"
                     placeholder={getPlaceholder()}
                     value={getDisplayValue()}
@@ -98,7 +98,7 @@ export function Selector<T>({
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                 />
-                {selectedItems.length > 0 && multiSelect && (
+                {selectedItems.length > 0 && (
                     <button
                         onClick={clearAll}
                         className="h-[40px] px-3 bg-red-500 cursor-pointer text-white rounded hover:bg-red-600 whitespace-nowrap"
@@ -109,7 +109,7 @@ export function Selector<T>({
                 )}
             </div>
             {multiSelectShowSelected && selectedItems.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2 max-h-[200px] overflow-y-auto min-w-[600px]">
+                <div className="flex flex-wrap gap-2 mt-2 max-h-[200px] overflow-y-auto">
                     {selectedItems.map((item, index) => (
                         <div key={index} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
                             {renderSelectedItem(item, index, () => toggleItem(item))}
@@ -145,68 +145,74 @@ export function Selector<T>({
                 const sortedSelected = sortItems(allSelectedItems);
                 
                 return (
-                    <div className="absolute top-[40px] left-0 bg-white border border-solid border-gray-200 rounded-md w-[600px] max-w-[600px] max-h-[400px] overflow-y-scroll shadow-lg" style={{ zIndex: 9999 }}>
-                        {/* Available group */}
-                        {sortedAvailable.length > 0 && (
-                            <>
-                                <div className="sticky top-0 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
-                                    Available ({sortedAvailable.length})
-                                </div>
-                                {sortedAvailable.map((item, index) => (
-                                    <div 
-                                        key={`available-${index}`} 
-                                        className={`flex w-full items-center gap-2 hover:bg-gray-50 p-2 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`} 
-                                        onMouseDown={(e) => {
-                                            if (multiSelect) {
-                                                e.preventDefault();
-                                            }
-                                            toggleItem(item);
-                                        }}
-                                    >
-                                        {multiSelect && (
-                                            <input
-                                                type="checkbox"
-                                                checked={false}
-                                                onChange={() => {}}
-                                                className="w-4 h-4"
-                                            />
-                                        )}
-                                        {renderItem(item, index, false)}
+                    <div className="absolute top-[44px] left-0 right-0 bg-white border border-solid border-gray-200 rounded-md shadow-lg z-50">
+                        <div className="max-h-[400px] overflow-x-hidden overflow-y-auto">
+                            {/* Available group */}
+                            {sortedAvailable.length > 0 && (
+                                <>
+                                    <div className="sticky top-0 bg-gray-100 px-3 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 z-[60] relative">
+                                        Available ({sortedAvailable.length})
                                     </div>
-                                ))}
-                            </>
-                        )}
-                        
-                        {/* Selected group */}
-                        {sortedSelected.length > 0 && (
-                            <>
-                                <div className="sticky top-0 bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b border-blue-200">
-                                    Selected ({sortedSelected.length})
-                                </div>
-                                {sortedSelected.map((item, index) => (
-                                    <div 
-                                        key={`selected-${index}`} 
-                                        className={`flex w-full items-center gap-2 hover:bg-blue-100 p-2 bg-blue-50`} 
-                                        onMouseDown={(e) => {
-                                            if (multiSelect) {
-                                                e.preventDefault();
-                                            }
-                                            toggleItem(item);
-                                        }}
-                                    >
-                                        {multiSelect && (
-                                            <input
-                                                type="checkbox"
-                                                checked={true}
-                                                onChange={() => {}}
-                                                className="w-4 h-4"
-                                            />
-                                        )}
-                                        {renderItem(item, index, true)}
+                                    {sortedAvailable.map((item, index) => (
+                                        <div 
+                                            key={`available-${index}`} 
+                                            className={`flex w-full items-center gap-2 hover:bg-gray-50 p-2 pl-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`} 
+                                            onMouseDown={(e) => {
+                                                if (multiSelect) {
+                                                    e.preventDefault();
+                                                }
+                                                toggleItem(item);
+                                            }}
+                                        >
+                                            {multiSelect && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={false}
+                                                    onChange={() => {}}
+                                                    className="w-4 h-4 ml-2"
+                                                />
+                                            )}
+                                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                                {renderItem(item, index, false)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                            
+                            {/* Selected group */}
+                            {sortedSelected.length > 0 && (
+                                <>
+                                    <div className="sticky top-0 bg-blue-100 px-3 py-4 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b-2 border-blue-200 z-[60] relative">
+                                        Selected ({sortedSelected.length})
                                     </div>
-                                ))}
-                            </>
-                        )}
+                                    {sortedSelected.map((item, index) => (
+                                        <div 
+                                            key={`selected-${index}`} 
+                                            className={`flex w-full items-center gap-2 hover:bg-blue-100 p-2 pl-3 bg-blue-50`} 
+                                            onMouseDown={(e) => {
+                                                if (multiSelect) {
+                                                    e.preventDefault();
+                                                }
+                                                toggleItem(item);
+                                            }}
+                                        >
+                                            {multiSelect && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={true}
+                                                    onChange={() => {}}
+                                                    className="w-4 h-4 ml-2"
+                                                />
+                                            )}
+                                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                                {renderItem(item, index, true)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
                     </div>
                 );
             })()}
