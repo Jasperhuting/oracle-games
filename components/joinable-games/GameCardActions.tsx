@@ -27,6 +27,11 @@ export const GameCardActions = ({
   const router = useRouter();
 
   const navigateToGame = (targetGame: JoinableGame) => {
+    // F1 games have their own dedicated page
+    if (targetGame.gameType === 'f1-prediction') {
+      router.push('/f1');
+      return;
+    }
     const path = isSelectionBasedGame(targetGame.gameType)
       ? `/games/${targetGame.id}/auction`
       : `/games/${targetGame.id}/team`;
