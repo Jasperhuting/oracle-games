@@ -17,6 +17,7 @@ import {
 export const JoinableGamesTab = () => {
   const { user, impersonationStatus, loading: authLoading } = useAuth();
   const [games, setGames] = useState<JoinableGame[]>([]);
+  const [gameGroups, setGameGroups] = useState<JoinableGameGroup[]>([]);
   const [myGames, setMyGames] = useState<Set<string>>(new Set());
   const [myParticipants, setMyParticipants] = useState<Map<string, JoinableGameParticipant>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ export const JoinableGamesTab = () => {
 
   const { t } = useTranslation();
 
-  const loadGames = (async () => {
+  const loadGames = async () => {
     setLoading(true);
     setParticipationsLoaded(false);
     setError(null);
@@ -59,6 +60,10 @@ export const JoinableGamesTab = () => {
       const data = await response.json();
       setGames(data.games || []);
 
+      // Group games and calculate participant counts
+      const groupedGames = await groupGames(data.games || []);
+      setGameGroups(groupedGames);
+
       // Load user's participations and admin status if logged in
       if (user) {
         // Check if user is admin
@@ -68,21 +73,54 @@ export const JoinableGamesTab = () => {
           setIsAdmin(userData.userType === 'admin');
         }
 
+        // Load regular game participants
         const participantsResponse = await fetch(`/api/gameParticipants?userId=${user.uid}`);
         if (participantsResponse.ok) {
           const participantsData = await participantsResponse.json();
           const participants: JoinableGameParticipant[] = participantsData.participants || [];
 
+          // Also load F1 participants for the F1 game
+          const f1ParticipantsResponse = await fetch('/api/f1/participants?season=2026');
+          let f1Participants: JoinableGameParticipant[] = [];
+          if (f1ParticipantsResponse.ok) {
+            const f1Data = await f1ParticipantsResponse.json();
+            if (f1Data.success && f1Data.participants) {
+              // Convert F1 participants to JoinableGameParticipant format
+              f1Participants = f1Data.participants
+                .filter((p: any) => p.userId === user.uid) // Only get current user's F1 participation
+                .map((p: any) => ({
+                  id: p.userId,
+                  gameId: p.gameId,
+                  userId: p.userId,
+                  playerName: p.displayName,
+                  joinedAt: p.joinedAt,
+                  status: p.status,
+                  budget: 0,
+                  spentBudget: 0,
+                  rosterSize: 0,
+                  rosterComplete: false,
+                  totalPoints: 0,
+                  divisionAssigned: true,
+                  assignedDivision: 'Main',
+                  team: [],
+                  leagueIds: [],
+                }));
+            }
+          }
+
+          // Combine regular participants with F1 participants
+          const allParticipants = [...participants, ...f1Participants];
+
           // For pending multi-division participants, extract the actual gameId
           const gameIds = new Set(
-            participants.map((p: JoinableGameParticipant) => {
+            allParticipants.map((p: JoinableGameParticipant) => {
               // Remove "-pending" suffix if present
               return p.gameId.replace(/-pending$/, '');
             })
           );
 
           const participantMap = new Map(
-            participants.map((p: JoinableGameParticipant) => {
+            allParticipants.map((p: JoinableGameParticipant) => {
               const actualGameId = p.gameId.replace(/-pending$/, '');
               return [actualGameId, p];
             })
@@ -104,7 +142,7 @@ export const JoinableGamesTab = () => {
     } finally {
       setLoading(false);
     }
-  });
+  };
 
   useEffect(() => {
     // Don't load games until auth is ready
@@ -330,9 +368,10 @@ export const JoinableGamesTab = () => {
   };
 
   // Group games by base name (removing division suffix)
-  const groupGames = (games: JoinableGame[]): JoinableGameGroup[] => {
+  const groupGames = async (games: JoinableGame[]): Promise<JoinableGameGroup[]> => {
     const groups = new Map<string, JoinableGameGroup>();
 
+    // First, create groups and calculate regular participant counts
     games.forEach(game => {
       // Remove " - Division X" from the name to get the base name
       const baseName = game.name.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
@@ -360,6 +399,27 @@ export const JoinableGamesTab = () => {
       }
     });
 
+    // For F1 games, update the participant count from F1 database
+    const f1Game = games.find(g => g.gameType === 'f1-prediction');
+    if (f1Game) {
+      try {
+        const f1Response = await fetch('/api/f1/participants?season=2026');
+        if (f1Response.ok) {
+          const f1Data = await f1Response.json();
+          if (f1Data.success && f1Data.participants) {
+            // Find the F1 game group by checking game type instead of name
+            groups.forEach(group => {
+              if (group.games.some(g => g.gameType === 'f1-prediction')) {
+                group.totalPlayers = f1Data.participants.length;
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching F1 participants for game count:', error);
+      }
+    }
+
     // Sort games within each group by division level
     groups.forEach(group => {
       group.games.sort((a, b) => (a.divisionLevel || 999) - (b.divisionLevel || 999));
@@ -367,8 +427,6 @@ export const JoinableGamesTab = () => {
 
     return Array.from(groups.values());
   };
-
-  const gameGroups = groupGames(games);
 
   // Separate test games from regular games
   const isTestGame = (group: JoinableGameGroup) => {

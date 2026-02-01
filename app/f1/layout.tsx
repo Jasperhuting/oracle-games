@@ -16,9 +16,19 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
     const { races, loading: racesLoading } = useF1Races();
     const { predictions } = useF1UserPredictions(2026);
 
-    // Create a set of rounds that have predictions
-    const predictedRounds = useMemo(() => {
-        return new Set(predictions.map(p => p.round));
+    // Create a map of prediction status by round
+    const predictionStatusByRound = useMemo(() => {
+        const statusMap: Record<number, 'none' | 'partial' | 'complete'> = {};
+        predictions.forEach(p => {
+            if (p.finishOrder.length === 0) {
+                statusMap[p.round] = 'none';
+            } else if (p.finishOrder.length === 10) {
+                statusMap[p.round] = 'complete';
+            } else {
+                statusMap[p.round] = 'partial';
+            }
+        });
+        return statusMap;
     }, [predictions]);
 
     // Override body background color for F1 pages
@@ -72,14 +82,14 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
                     ) : (
                         races.map((race) => {
                             const isSelected = currentRound === race.round;
-                            const hasPrediction = predictedRounds.has(race.round);
+                            const predictionStatus = predictionStatusByRound[race.round] || 'none';
 
                             return (
                                 <RaceCard
                                     key={race.round}
                                     race={race}
                                     selected={isSelected}
-                                    hasPrediction={hasPrediction}
+                                    predictionStatus={predictionStatus}
                                 />
                             );
                         })

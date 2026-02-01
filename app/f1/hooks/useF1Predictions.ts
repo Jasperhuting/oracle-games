@@ -85,7 +85,7 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
         raceId,
         season,
         round,
-        finishOrder: data.finishOrder,
+        finishOrder: data.finishOrder.slice(0, 10), // Ensure only 10 positions are saved
         polePosition: data.polePosition,
         fastestLap: data.fastestLap,
         dnf1: data.dnf1,

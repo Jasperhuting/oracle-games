@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerFirebase } from '@/lib/firebase/server';
+import { getServerFirebase, getServerFirebaseF1 } from '@/lib/firebase/server';
 import type { GamesListResponse, ApiErrorResponse, ClientGame } from '@/lib/types';
 
 export async function GET(request: NextRequest): Promise<NextResponse<GamesListResponse | ApiErrorResponse>> {
@@ -59,6 +59,40 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
 
     // Limit results
     games = games.slice(0, limit);
+
+    // For F1 games, update playerCount from F1 database
+    const f1Games = games.filter(g => g.gameType === 'f1-prediction');
+    if (f1Games.length > 0) {
+      try {
+        const f1Db = getServerFirebaseF1();
+        const f1Season = f1Games[0]?.year || 2026;
+        
+        // Get F1 participants count
+        const f1ParticipantsSnapshot = await f1Db
+          .collection('participants')
+          .where('season', '==', f1Season)
+          .where('status', '==', 'active')
+          .get();
+        
+        const f1ParticipantCount = f1ParticipantsSnapshot.size;
+        
+        // Update playerCount for all F1 games
+        games = games.map(game => {
+          if (game.gameType === 'f1-prediction') {
+            return {
+              ...game,
+              playerCount: f1ParticipantCount,
+            };
+          }
+          return game;
+        });
+        
+        console.log(`Updated F1 games playerCount to ${f1ParticipantCount} (from F1 database)`);
+      } catch (f1Error) {
+        console.error('Error fetching F1 participants for games list:', f1Error);
+        // Continue with default playerCount if F1 fetch fails
+      }
+    }
 
     // Detect divisions for games with multiple divisions
     // Group games by exact name match

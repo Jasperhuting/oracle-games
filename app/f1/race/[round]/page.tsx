@@ -533,23 +533,23 @@ export default function RacePage() {
     // Mock predictions for testing - round 0
     const getMockPrediction = (raceRound: number, driversList: Driver[]): (Driver | null)[] => {
         if (raceRound === 0 && driversList.length > 0) {
-            const predictionOrder = ['VER', 'NOR', 'LEC', 'HAM', 'PIA', 'RUS', 'SAI', 'ALO', 'GAS', 'STR', 'HUL', 'BOR', 'OCO', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
+            const predictionOrder = ['VER', 'NOR', 'LEC', 'HAM', 'PIA', 'RUS', 'SAI', 'ALO', 'GAS', 'STR'];
             return predictionOrder.map(shortName => driversList.find(d => d.shortName === shortName) || null);
         }
-        return Array(22).fill(null);
+        return Array(10).fill(null);
     };
 
     // Mock actual results for testing - round 0
     const getMockResult = (raceRound: number, driversList: Driver[]): (Driver | null)[] => {
         if (raceRound === 0 && driversList.length > 0) {
-            const resultOrder = ['NOR', 'VER', 'HAM', 'LEC', 'RUS', 'PIA', 'ALO', 'SAI', 'GAS', 'STR', 'OCO', 'HUL', 'BOR', 'BEA', 'ANT', 'LAW', 'LIN', 'HAD', 'COL', 'PER', 'BOT', 'ALB'];
+            const resultOrder = ['NOR', 'VER', 'HAM', 'LEC', 'RUS', 'PIA', 'ALO', 'SAI', 'GAS', 'STR'];
             return resultOrder.map(shortName => driversList.find(d => d.shortName === shortName) || null);
         }
-        return Array(22).fill(null);
+        return Array(10).fill(null);
     };
 
-    const [grid, setGrid] = useState<(Driver | null)[]>(Array(22).fill(null));
-    const [actualResult, setActualResult] = useState<(Driver | null)[]>(Array(22).fill(null));
+    const [grid, setGrid] = useState<(Driver | null)[]>(Array(10).fill(null));
+    const [actualResult, setActualResult] = useState<(Driver | null)[]>(Array(10).fill(null));
     
     // Extra predictions - declare before useEffects that use them
     const [fastestLap, setFastestLap] = useState<string | null>(null);
@@ -564,7 +564,8 @@ export default function RacePage() {
                 const loadedGrid = prediction.finishOrder.map(shortName => 
                     drivers.find(d => d.shortName === shortName) || null
                 );
-                setGrid(loadedGrid);
+                // Keep only the first 10 positions for existing predictions
+                setGrid(loadedGrid.slice(0, 10));
                 setPolePosition(prediction.polePosition);
                 setFastestLap(prediction.fastestLap);
                 setDnf1(prediction.dnf1);
@@ -574,7 +575,7 @@ export default function RacePage() {
                 setGrid(getMockPrediction(round, drivers as Driver[]));
             } else {
                 // No prediction - reset to empty
-                setGrid(Array(22).fill(null));
+                setGrid(Array(10).fill(null));
                 setPolePosition(null);
                 setFastestLap(null);
                 setDnf1(null);
@@ -590,12 +591,13 @@ export default function RacePage() {
                 const loadedResult = raceResult.finishOrder.map(shortName => 
                     drivers.find(d => d.shortName === shortName) || null
                 );
-                setActualResult(loadedResult);
+                // Keep only the first 10 positions for display
+                setActualResult(loadedResult.slice(0, 10));
             } else if (round === 0) {
                 // Use mock data for test race (round 0)
                 setActualResult(getMockResult(round, drivers as Driver[]));
             } else {
-                setActualResult(Array(22).fill(null));
+                setActualResult(Array(10).fill(null));
             }
         }
     }, [drivers, raceResult, resultLoading, round]);
@@ -653,7 +655,8 @@ export default function RacePage() {
                 const existingIndex = newGrid.findIndex(d => d?.shortName === selectedDriver.shortName);
                 if (existingIndex !== -1 && existingIndex !== position - 1) {
                     // Swap: put the current driver at the old position
-                    newGrid[existingIndex] = newGrid[position - 1];
+                    const currentDriver = newGrid[position - 1];
+                    newGrid[existingIndex] = currentDriver;
                 }
             }
             
@@ -663,8 +666,12 @@ export default function RacePage() {
     };
 
     // All drivers for grid selection - exclude already selected drivers
-    const selectedShortNames = grid.filter(d => d !== null).map(d => d!.shortName);
-    const availableDriversForGrid = drivers.filter(d => !selectedShortNames.includes(d.shortName));
+    const selectedShortNames = grid.filter((d): d is Driver => d !== null && d !== undefined).map(d => d.shortName);
+    const availableDriversForGrid = drivers.filter(d => !selectedShortNames.includes(d.shortName))
+        .sort((a, b) => (a.team || '').localeCompare(b.team || ''));
+
+    // Sort drivers by team for display
+    const sortedDrivers = [...drivers].sort((a, b) => (a.team || '').localeCompare(b.team || ''));
 
     const handleDragStartFromGrid = (position: number, e: React.DragEvent) => {
         setDraggedFromGrid(position);
@@ -732,14 +739,14 @@ export default function RacePage() {
             return;
         }
 
-        // Check if all 22 positions are filled
+        // Allow partial predictions - no minimum requirement
         const filledPositions = grid.filter(d => d !== null).length;
-        if (filledPositions < 22) {
-            setSaveMessage({ type: 'error', text: `Vul alle 22 posities in (${filledPositions}/22 ingevuld)` });
+        if (filledPositions > 10) {
+            setSaveMessage({ type: 'error', text: `Maximum 10 posities toegestaan (${filledPositions}/10 ingevuld)` });
             return;
         }
 
-        const finishOrder = grid.map(d => d?.shortName || '');
+        const finishOrder = grid.slice(0, 10).map(d => d?.shortName || '').filter(name => name !== '');
         
         const success = await savePrediction({
             finishOrder,
@@ -1092,9 +1099,9 @@ export default function RacePage() {
 
                         {/* Grid positions - 2 column F1-style staggered layout */}
                         <div className="flex flex-col gap-0.5">
-                            {Array.from({ length: 11 }, (_, rowIndex) => {
-                                const leftPosition = rowIndex * 2 + 1;
-                                const rightPosition = rowIndex * 2 + 2;
+                            {Array.from({ length: 5 }, (_, rowIndex) => {
+                                const leftPosition = rowIndex * 2 + 1; // 1, 3, 5, 7, 9
+                                const rightPosition = rowIndex * 2 + 2; // 2, 4, 6, 8, 10
                                 const leftActualDriver = actualResult[leftPosition - 1];
                                 const rightActualDriver = actualResult[rightPosition - 1];
                                 const leftPredictedDriver = grid[leftPosition - 1];
@@ -1381,7 +1388,7 @@ export default function RacePage() {
                             </div>
                         </div>
 
-                        {drivers.map((driver) => {
+                        {sortedDrivers.map((driver) => {
                             const gridIndex = grid.findIndex((gridDriver) => gridDriver?.shortName === driver.shortName);
                             const gridPosition = gridIndex !== -1 ? gridIndex + 1 : undefined;
                             const isOnGrid = gridPosition !== undefined;
@@ -1393,7 +1400,7 @@ export default function RacePage() {
                                         draggable={!isOnGrid}
                                         onDragStart={(e) => handleDragStartFromCard(e, driver)}
                                         onDragEnd={handleDragEnd}
-                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-none h-full ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
+                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-none h-full group ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
                                     >
                                         <div className="pointer-events-none h-full">
                                             <DriverCard driver={driver} />
@@ -1425,9 +1432,9 @@ export default function RacePage() {
 
                         {/* Grid positions - 2 column F1-style staggered layout */}
                         <div className="flex flex-col gap-0.5">
-                            {Array.from({ length: 11 }, (_, rowIndex) => {
-                                const leftPosition = rowIndex * 2 + 1; // 1, 3, 5, 7, ...
-                                const rightPosition = rowIndex * 2 + 2; // 2, 4, 6, 8, ...
+                            {Array.from({ length: 5 }, (_, rowIndex) => {
+                                const leftPosition = rowIndex * 2 + 1; // 1, 3, 5, 7, 9
+                                const rightPosition = rowIndex * 2 + 2; // 2, 4, 6, 8, 10
                                 return (
                                     <div key={rowIndex} className="flex gap-1">
                                         {/* Left side - odd positions */}
@@ -1485,7 +1492,7 @@ export default function RacePage() {
                             <>
                                 <div className="flex gap-2 md:gap-3">
                                     <button
-                                        onClick={() => setGrid(Array(22).fill(null))}
+                                        onClick={() => setGrid(Array(10).fill(null))}
                                         className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
                                     >
                                         Reset

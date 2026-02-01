@@ -185,10 +185,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate prediction has 22 drivers
-    if (!prediction.finishOrder || prediction.finishOrder.length !== 22) {
+    // Validate prediction has up to 10 drivers (allow partial predictions)
+    if (!prediction.finishOrder || prediction.finishOrder.length > 10) {
       return NextResponse.json(
-        { success: false, error: 'Prediction must have exactly 22 drivers' },
+        { success: false, error: 'Prediction can have maximum 10 drivers' },
         { status: 400 }
       );
     }

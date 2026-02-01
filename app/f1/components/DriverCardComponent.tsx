@@ -19,7 +19,9 @@ export const DriverCard = ({ driver, small }: { driver: Driver, small?: boolean 
                         <span className="text-md lg:text-lg xl:text-base text-white absolute md:top-4 md:bottom-0 top-2 right-2 md:right-0 font-lato font-black hidden md:block">{driver.numberImage ? <img className="z-0 w-[25px] h-[25px] md:w-[15px] md:h-[15px] lg:h-[25px] lg:w-[25px]" src={driver.numberImage} alt={driver.lastName} /> : <span className="text-xl md:text-xl lg:text-3xl font-sans">{driver.number}</span>}</span>
                         <span className="text-md lg:text-lg xl:text-base text-white hidden lg:block"><Flag countryCode={driver.country} /></span>
                     </div>
-                    <img className={`absolute hidden lg:block top-0 z-[5] ${small ? 'w-1/5 right-20' : ' w-2/5 sm:w-3/5 right-5 lg:w-3/5 xl:w-4/5'}`} src={driver.image} alt={driver.firstName} />
+                    <div className={`absolute hidden lg:block top-0 z-[5] ${small ? 'w-1/5 right-20' : ' w-2/5 sm:w-3/5 right-5 lg:w-3/5 xl:w-4/5'} group-hover:scale-105 group-hover:-translate-x-1 group-hover:-translate-y-1 transition-transform duration-500 ease-out`}>
+                        <img className="w-full h-auto" src={driver.image} alt={driver.firstName} />
+                    </div>
                 </div>
     </>
 

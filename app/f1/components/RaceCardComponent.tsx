@@ -1,28 +1,34 @@
-import { Check, AlertCircle, Clock } from "tabler-icons-react"
+import { Check, AlertCircle, Clock, Minus } from "tabler-icons-react"
 import { F1Race } from "../types"
 import Link from "next/link"
 
 interface RaceCardProps {
     race: F1Race;
     selected?: boolean;
-    hasPrediction?: boolean;
+    predictionStatus?: 'none' | 'partial' | 'complete';
 }
 
-export const RaceCard = ({ race, selected, hasPrediction }: RaceCardProps) => {
+export const RaceCard = ({ race, selected, predictionStatus = 'none' }: RaceCardProps) => {
     const isRaceDone = race.status === 'done';
     const isUpcoming = race.status === 'upcoming';
     
     // Determine card styling based on status
     const getCardStyle = () => {
-        if (isRaceDone && hasPrediction) {
-            // Done + filled in = green accent
+        if (isRaceDone && predictionStatus === 'complete') {
+            // Done + complete = green accent
             return 'bg-gray-800 border-l-4 border-green-500';
-        } else if (isRaceDone && !hasPrediction) {
-            // Done + not filled = red accent (missed)
+        } else if (isRaceDone && predictionStatus === 'partial') {
+            // Done + partial = yellow accent (partially completed)
+            return 'bg-gray-800 border-l-4 border-yellow-500';
+        } else if (isRaceDone && predictionStatus === 'none') {
+            // Done + none = red accent (missed)
             return 'bg-gray-800 border-l-4 border-red-500';
-        } else if (hasPrediction) {
-            // Not done but has prediction = green accent (completed)
+        } else if (predictionStatus === 'complete') {
+            // Not done but complete = green accent (completed)
             return 'bg-gray-800 border-l-4 border-green-500';
+        } else if (predictionStatus === 'partial') {
+            // Not done but partial = yellow accent (partially completed)
+            return 'bg-gray-800 border-l-4 border-yellow-500';
         } else if (isUpcoming) {
             // Upcoming without prediction = neutral
             return 'bg-gray-800 border-l-4 border-gray-600';
@@ -33,9 +39,11 @@ export const RaceCard = ({ race, selected, hasPrediction }: RaceCardProps) => {
 
     // Round number badge color
     const getRoundBadgeStyle = () => {
-        if (isRaceDone && hasPrediction) return 'bg-green-600';
-        if (isRaceDone && !hasPrediction) return 'bg-red-600';
-        if (hasPrediction) return 'bg-green-600'; // Predicted upcoming race
+        if (isRaceDone && predictionStatus === 'complete') return 'bg-green-600';
+        if (isRaceDone && predictionStatus === 'partial') return 'bg-yellow-600';
+        if (isRaceDone && predictionStatus === 'none') return 'bg-red-600';
+        if (predictionStatus === 'complete') return 'bg-green-600'; // Complete upcoming race
+        if (predictionStatus === 'partial') return 'bg-yellow-600'; // Partial upcoming race
         if (isUpcoming) return 'bg-gray-600';
         return 'bg-yellow-600';
     };
@@ -58,13 +66,16 @@ export const RaceCard = ({ race, selected, hasPrediction }: RaceCardProps) => {
             
             {/* Status indicator */}
             <span className="absolute right-2 top-2">
-                {hasPrediction && (
+                {predictionStatus === 'complete' && (
                     <Check size={16} className="text-green-400" />
                 )}
-                {isRaceDone && !hasPrediction && (
+                {predictionStatus === 'partial' && (
+                    <Minus size={16} className="text-yellow-400" />
+                )}
+                {isRaceDone && predictionStatus === 'none' && (
                     <AlertCircle size={16} className="text-red-400" />
                 )}
-                {!isRaceDone && !isUpcoming && !hasPrediction && (
+                {!isRaceDone && !isUpcoming && predictionStatus === 'none' && (
                     <Clock size={16} className="text-yellow-400" />
                 )}
             </span>

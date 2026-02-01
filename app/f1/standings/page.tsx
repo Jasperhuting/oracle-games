@@ -21,7 +21,7 @@ import { auth } from "@/lib/firebase/client";
 interface Player {
     id: string;
     name: string;
-    avatar?: string;
+    avatarUrl?: string;
     totalPoints: number;
     correctPredictions: number;
     racesParticipated: number;
@@ -41,7 +41,7 @@ const StandingsPage = () => {
 
     // Get user IDs from participants (not just standings) to fetch display names
     const userIds = useMemo(() => participants.map(p => p.userId), [participants]);
-    const { names: userNames, loading: namesLoading } = useUserNames(userIds);
+    const { names: userNames, avatars: userAvatars, loading: namesLoading } = useUserNames(userIds);
 
     const [sorting, setSorting] = useState<SortingState>([
         { id: "totalPoints", desc: true }
@@ -154,6 +154,7 @@ const StandingsPage = () => {
             return {
                 id: p.userId,
                 name: standing?.visibleName || p.displayName || userNames[p.userId] || p.userId.substring(0, 8) + '...',
+                avatarUrl: userAvatars[p.userId],
                 totalPoints: standing?.totalPoints ?? 0,
                 correctPredictions: standing?.correctPredictions ?? 0,
                 racesParticipated: standing?.racesParticipated ?? 0,
@@ -161,7 +162,7 @@ const StandingsPage = () => {
                 lastRacePoints: standing?.lastRacePoints ?? null,
             };
         });
-    }, [participants, standings, userNames]);
+    }, [participants, standings, userNames, userAvatars]);
 
     // Filter players based on selected subpoule
     const filteredPlayers = useMemo(() => {
@@ -181,6 +182,7 @@ const StandingsPage = () => {
             columnHelper.display({
                 id: "position",
                 header: "#",
+                size: 40, // Same width as avatar column (40px)
                 cell: (info) => {
                     const position = info.row.index + 1;
                     const getPositionStyle = () => {
@@ -196,16 +198,36 @@ const StandingsPage = () => {
                     );
                 },
             }),
+            columnHelper.accessor("avatarUrl", {
+                header: "",
+                size: 40, // Slightly larger to accommodate 10x10 avatar
+                cell: (info) => {
+                    const avatarUrl = info.getValue();
+                    if (avatarUrl) {
+                        return (
+                            <div className="w-10 h-10 rounded-full overflow-hidden">
+                                <img
+                                    src={avatarUrl}
+                                    alt="Avatar"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        );
+                    }
+                    return (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
+                            {info.row.original.name.charAt(0).toUpperCase()}
+                        </div>
+                    );
+                }
+            }),
             columnHelper.accessor("name", {
                 header: "Speler",
-                cell: (info) => (
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
-                            {info.getValue().charAt(0).toUpperCase()}
-                        </div>
-                        <span className="font-semibold text-white">{info.getValue()}</span>
-                    </div>
-                ),
+                cell: (info) => {
+    return (
+        <span className="font-semibold text-white">{info.getValue()}</span>
+    );
+},
             }),
             columnHelper.accessor("totalPoints", {
                 header: "Punten",
@@ -524,9 +546,19 @@ const StandingsPage = () => {
                         <span className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-sm ${getPositionStyle()}`}>
                             {position}
                         </span>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
-                            {player.name.charAt(0).toUpperCase()}
-                        </div>
+                        {player.avatarUrl ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden">
+                                <img
+                                    src={player.avatarUrl}
+                                    alt="Avatar"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
+                                {player.name.charAt(0).toUpperCase()}
+                            </div>
+                        )}
                         <div>
                             <div className="font-semibold text-white">{player.name}</div>
                             <div className="text-xs text-gray-400">{player.racesParticipated} races</div>
@@ -776,7 +808,12 @@ const StandingsPage = () => {
                                 {headerGroup.headers.map((header) => (
                                     <th
                                         key={header.id}
-                                        className="px-4 py-3 text-left text-sm font-semibold text-gray-400 cursor-pointer hover:text-white transition-colors"
+                                        className={`py-3 text-left text-sm font-semibold text-gray-400 cursor-pointer hover:text-white transition-colors ${
+                                            header.id === 'position' ? 'pr-0 pl-2' : 
+                                            header.id === 'avatarUrl' ? 'pr-0 pl-0' : 
+                                            header.id === 'name' ? 'pr-2 pl-0' : 
+                                            'px-4'
+                                        }`}
                                         onClick={header.column.getToggleSortingHandler()}
                                     >
                                         <div className="flex items-center gap-1">
@@ -802,7 +839,12 @@ const StandingsPage = () => {
                                 onClick={() => handleViewPrediction(row.original)}
                             >
                                 {row.getVisibleCells().map((cell) => (
-                                    <td key={cell.id} className="px-4 py-3">
+                                    <td key={cell.id} className={`py-3 ${
+                                        cell.column.id === 'position' ? 'pr-0 pl-2' : 
+                                        cell.column.id === 'avatarUrl' ? 'pr-0 pl-0' : 
+                                        cell.column.id === 'name' ? 'pr-2 pl-0' : 
+                                        'px-4'
+                                    }`}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>
                                 ))}
@@ -1002,7 +1044,7 @@ const StandingsPage = () => {
                                                 const isCorrect = raceResult?.polePosition === playerPrediction.polePosition;
                                                 return driver ? (
                                                     <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
@@ -1020,7 +1062,7 @@ const StandingsPage = () => {
                                                 const isCorrect = raceResult?.fastestLap === playerPrediction.fastestLap;
                                                 return driver ? (
                                                     <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
@@ -1042,7 +1084,7 @@ const StandingsPage = () => {
                                                 const isCorrect = raceResult?.dnfDrivers?.includes(playerPrediction.dnf1 || '');
                                                 return driver ? (
                                                     <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
@@ -1060,7 +1102,7 @@ const StandingsPage = () => {
                                                 const isCorrect = raceResult?.dnfDrivers?.includes(playerPrediction.dnf2 || '');
                                                 return driver ? (
                                                     <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
@@ -1074,9 +1116,9 @@ const StandingsPage = () => {
 
                                 {/* Finish order - compact grid */}
                                 <div>
-                                    <div className="text-sm text-gray-400 mb-2">Voorspelde volgorde</div>
+                                    <div className="text-sm text-gray-400 mb-2">Voorspelde volgorde (Top 10)</div>
                                     <div className="grid grid-cols-2 gap-1 max-h-80 overflow-y-auto">
-                                        {playerPrediction.finishOrder.map((shortName, index) => {
+                                        {playerPrediction.finishOrder.slice(0, 10).map((shortName, index) => {
                                             const driver = drivers.find(d => d.shortName === shortName);
                                             const actualPos = raceResult?.finishOrder.indexOf(shortName);
                                             const predictedPos = index + 1;
@@ -1097,7 +1139,7 @@ const StandingsPage = () => {
                                                     </span>
                                                     {driver && (
                                                         <>
-                                                            <span className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
+                                                            <span className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0 transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
                                                                 <img src={driver.image} alt={driver.lastName} className="w-7 h-auto absolute top-0 left-0" />
                                                             </span>
                                                             <span className="text-xs text-white font-medium">{driver.shortName}</span>

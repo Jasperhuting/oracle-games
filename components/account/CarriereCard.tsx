@@ -147,7 +147,6 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 <span className="font-medium">Leeftijd:</span> {age} jaar
               </p>
             )}
-            <p className="text-sm text-gray-500">Profiel bijgewerkt</p>
           </div>
         </div>
       </div>
@@ -221,30 +220,42 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
       {/* Action Links */}
       <div className="p-6 bg-gray-50 border-t border-gray-200">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Link
             href="/account/settings"
-            className="text-sm text-gray-700 hover:text-blue-600 hover:bg-white border border-gray-300 rounded-lg px-4 py-2 text-center transition-all duration-200 font-medium"
+            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-blue-300 hover:shadow-lg transition-all duration-300"
           >
-            ⚙️ Voorkeuren
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
+              <span className="text-xl">⚙️</span>
+            </div>
+            <div className="text-sm font-semibold text-gray-700 group-hover:text-blue-600">Voorkeuren</div>
           </Link>
           <Link
             href="/account/stats"
-            className="text-sm text-gray-700 hover:text-blue-600 hover:bg-white border border-gray-300 rounded-lg px-4 py-2 text-center transition-all duration-200 font-medium"
+            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-green-300 hover:shadow-lg transition-all duration-300"
           >
-            📊 Statistiek
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 transition-colors">
+              <span className="text-xl">📊</span>
+            </div>
+            <div className="text-sm font-semibold text-gray-700 group-hover:text-green-600">Statistiek</div>
           </Link>
           <Link
             href="/account/history"
-            className="text-sm text-gray-700 hover:text-blue-600 hover:bg-white border border-gray-300 rounded-lg px-4 py-2 text-center transition-all duration-200 font-medium"
+            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-purple-300 hover:shadow-lg transition-all duration-300"
           >
-            📜 Geschiedenis
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors">
+              <span className="text-xl">📜</span>
+            </div>
+            <div className="text-sm font-semibold text-gray-700 group-hover:text-purple-600">Geschiedenis</div>
           </Link>
           <Link
             href="/forum"
-            className="text-sm text-gray-700 hover:text-blue-600 hover:bg-white border border-gray-300 rounded-lg px-4 py-2 text-center transition-all duration-200 font-medium"
+            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-orange-300 hover:shadow-lg transition-all duration-300"
           >
-            💬 Forum
+            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-200 transition-colors">
+              <span className="text-xl">💬</span>
+            </div>
+            <div className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Forum</div>
           </Link>
         </div>
       </div>
