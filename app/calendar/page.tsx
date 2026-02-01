@@ -137,7 +137,7 @@ function RaceCard({
   // Remove duplicates based on game ID
   const uniqueGamesMap = new Map<string, CalendarGame>();
   filteredGames.forEach(game => {
-    if (!uniqueGamesMap.has(game.name)) {
+if (!uniqueGamesMap.has(game.name)) {
       uniqueGamesMap.set(game.name, game);
     }
   });

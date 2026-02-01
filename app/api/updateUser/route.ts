@@ -5,7 +5,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications, updates } = body;
+    const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications, avatarUrl, updates } = body;
 
     // If updates object is provided (for admin preferences), handle it separately
     if (updates && userId) {
@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
     if (preferredLanguage !== undefined) updateData.preferredLanguage = preferredLanguage;
     if (emailNotifications !== undefined) updateData.emailNotifications = emailNotifications;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
 
     // Get old user data for comparison
     const oldUserData = userDoc.data();
@@ -184,6 +185,9 @@ export async function POST(request: NextRequest) {
     }
     if (emailNotifications !== undefined && oldUserData?.emailNotifications !== emailNotifications) {
       changes.emailNotifications = { old: oldUserData?.emailNotifications ?? null, new: emailNotifications };
+    }
+    if (avatarUrl !== undefined && oldUserData?.avatarUrl !== avatarUrl) {
+      changes.avatarUrl = { old: oldUserData?.avatarUrl ?? null, new: avatarUrl };
     }
 
     // Only log if there were actual changes

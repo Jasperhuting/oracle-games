@@ -68,6 +68,7 @@ export default function SeasonLeaderboardPage() {
 
   const [gamesById, setGamesById] = useState<Record<string, { name?: string; division?: string }>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [userNamesLoading, setUserNamesLoading] = useState(true);
   const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
@@ -94,7 +95,10 @@ export default function SeasonLeaderboardPage() {
     }
 
     async function loadUserNames() {
-      if (allPlayerTeams.length === 0) return;
+      if (allPlayerTeams.length === 0) {
+        setUserNamesLoading(false);
+        return;
+      }
       
       try {
         // Get unique user IDs
@@ -125,9 +129,12 @@ export default function SeasonLeaderboardPage() {
             }
           });
           setUserNames(userNameMap);
+          setUserNamesLoading(false);
         }
       } catch {
-        // ignore
+        if (!isCancelled) {
+          setUserNamesLoading(false);
+        }
       }
     }
 
@@ -223,17 +230,19 @@ export default function SeasonLeaderboardPage() {
               const ownersByGame = new Map<string, Array<{userName: string, isCurrentUser: boolean}>>();
               
               owners.forEach((ownerData) => {
-                const [userName, gameId] = ownerData.split('::');
+                const [rawUserName, gameId] = ownerData.split('::');
                 const game = gamesById[gameId];
                 const gameName = game 
                   ? (game.division ? `${game.name} - ${game.division}` : game.name || gameId)
                   : gameId;
-                const isCurrentUser = userName === user?.uid;
+                // Use the userNames mapping to get the actual display name, or show loading
+                const displayUserName = userNamesLoading ? 'Loading...' : (userNames[rawUserName] || rawUserName);
+                const isCurrentUser = rawUserName === user?.uid;
                 
                 if (!ownersByGame.has(gameName)) {
                   ownersByGame.set(gameName, []);
                 }
-                ownersByGame.get(gameName)!.push({ userName, isCurrentUser });
+                ownersByGame.get(gameName)!.push({ userName: displayUserName, isCurrentUser });
               });
               
               const gameNames = Array.from(ownersByGame.keys());

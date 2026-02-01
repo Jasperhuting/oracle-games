@@ -33,6 +33,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
       firstName: userData?.firstName,
       lastName: userData?.lastName,
       dateOfBirth: userData?.dateOfBirth,
+      avatarUrl: userData?.avatarUrl,
       createdAt: userData?.createdAt,
       updatedAt: userData?.updatedAt,
       userType: userData?.userType,

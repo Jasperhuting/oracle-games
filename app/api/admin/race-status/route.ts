@@ -10,6 +10,7 @@ export interface StageStatus {
   hasValidationErrors: boolean;
   validationWarnings: number;
   docId: string;
+  stageDate: string | null; // Date when the stage was actually raced
 }
 
 export interface RaceStatus {
@@ -194,6 +195,8 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'tour-of-singapore': 5,
   'tour-of-indonesia': 6,
   'tour-of-philippines': 5,
+  'etoile-de-besseges': 5,
+  'vuelta-a-la-comunidad-valenciana': 5,
 };
 
 // Races that typically have a prologue
@@ -230,6 +233,7 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'trofeo-binissalem-andratx', // women's race
   'race-torquay', // race is cancelled
   'grand-prix-de-oriente', // women's race
+  'pionera-race-we',
 ]);
 
 /**
@@ -331,6 +335,9 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'deia-trophy',
   'trofeo-pollenca-port-d-andratx',
   'trofeo-ses-salines-felanitx',
+  'gp-d-ouverture',
+  'great-ocean-road-race',
+  'trofeo-palma',
 
   // 1.2 races (Non-professional)
   'alanya-cup',
@@ -531,6 +538,28 @@ export async function GET(request: NextRequest) {
       return 'in-progress';
     };
 
+    // Get stage dates for all races
+    const stageDatesMap = new Map<string, Map<number | string, string>>();
+    const racesWithStagesSnapshot = await db.collection('races').get();
+    
+    for (const raceDoc of racesWithStagesSnapshot.docs) {
+      const raceSlug = raceDoc.id;
+      const stagesSnapshot = await raceDoc.ref.collection('stages').get();
+      const stageMap = new Map<number | string, string>();
+      
+      stagesSnapshot.forEach((stageDoc) => {
+        const stageData = stageDoc.data();
+        const stageNum = stageData.stage;
+        const scrapedAt = stageData.scrapedAt?.toDate();
+        
+        if (scrapedAt) {
+          stageMap.set(stageNum, scrapedAt.toISOString());
+        }
+      });
+      
+      stageDatesMap.set(raceSlug, stageMap);
+    }
+
     // Build race status list
     const races: RaceStatus[] = [];
     let totalStagesScraped = 0;
@@ -639,6 +668,10 @@ export async function GET(request: NextRequest) {
           stageNumber = doc.key.stage ?? 0;
         }
 
+        // Get stage date from the stage dates map
+        const raceStageDates = stageDatesMap.get(raceSlug);
+        const stageDate = raceStageDates?.get(stageNumber) || null;
+
         stages.push({
           stageNumber,
           status: isFailed ? 'failed' : 'scraped',
@@ -647,6 +680,7 @@ export async function GET(request: NextRequest) {
           hasValidationErrors: validation ? !validation.valid : false,
           validationWarnings: validation?.warningCount ?? 0,
           docId: doc.id,
+          stageDate,
         });
       });
 
@@ -669,6 +703,10 @@ export async function GET(request: NextRequest) {
         // Single-day race: check if 'result' is scraped
         const hasResult = stages.some(s => s.stageNumber === 'result');
         if (!hasResult && stages.length === 0) {
+          // For single-day race, try to get stage date from stage dates map
+          const raceStageDates = stageDatesMap.get(raceSlug);
+          const stageDate = raceStageDates?.get('result') || null;
+
           stages.push({
             stageNumber: 'result',
             status: 'pending',
@@ -677,6 +715,7 @@ export async function GET(request: NextRequest) {
             hasValidationErrors: false,
             validationWarnings: 0,
             docId: '',
+            stageDate,
           });
         }
       } else {
@@ -691,6 +730,10 @@ export async function GET(request: NextRequest) {
         // Add pending prologue if the race has one but it's not scraped
         // We detect this from the race config or if other races of same type typically have prologues
         if (hasPrologue && !hasPrologueScraped) {
+          // Get prologue stage date from stage dates map
+          const raceStageDates = stageDatesMap.get(raceSlug);
+          const stageDate = raceStageDates?.get('prologue') || raceStageDates?.get(0) || null;
+
           stages.push({
             stageNumber: 'prologue',
             status: 'pending',
@@ -699,12 +742,17 @@ export async function GET(request: NextRequest) {
             hasValidationErrors: false,
             validationWarnings: 0,
             docId: '',
+            stageDate,
           });
         }
 
         // Add pending numbered stages (1 to numberedStages, not including prologue)
         for (let i = 1; i <= numberedStages; i++) {
           if (!scrapedStageNumbers.has(i)) {
+            // Get stage date from stage dates map
+            const raceStageDates = stageDatesMap.get(raceSlug);
+            const stageDate = raceStageDates?.get(i) || null;
+
             stages.push({
               stageNumber: i,
               status: 'pending',
@@ -713,6 +761,7 @@ export async function GET(request: NextRequest) {
               hasValidationErrors: false,
               validationWarnings: 0,
               docId: '',
+              stageDate,
             });
           }
         }
@@ -720,6 +769,10 @@ export async function GET(request: NextRequest) {
         // Add pending General Classification if not already scraped
         const hasGCScraped = stages.some(s => s.stageNumber === 'gc');
         if (!hasGCScraped) {
+          // GC doesn't have a specific stage date, it's usually after the last stage
+          const raceStageDates = stageDatesMap.get(raceSlug);
+          const stageDate = raceStageDates?.get('gc') || null;
+
           stages.push({
             stageNumber: 'gc',
             status: 'pending',
@@ -728,6 +781,7 @@ export async function GET(request: NextRequest) {
             hasValidationErrors: false,
             validationWarnings: 0,
             docId: '',
+            stageDate,
           });
         }
       }
@@ -804,6 +858,10 @@ export async function GET(request: NextRequest) {
       const stages: StageStatus[] = [];
 
       if (isSingleDay) {
+        // Get stage date from stage dates map
+        const raceStageDates = stageDatesMap.get(raceSlug);
+        const stageDate = raceStageDates?.get('result') || null;
+
         stages.push({
           stageNumber: 'result',
           status: 'pending',
@@ -812,10 +870,15 @@ export async function GET(request: NextRequest) {
           hasValidationErrors: false,
           validationWarnings: 0,
           docId: '',
+          stageDate,
         });
       } else {
         // Add prologue if race has one
         if (hasPrologue) {
+          // Get prologue stage date from stage dates map
+          const raceStageDates = stageDatesMap.get(raceSlug);
+          const stageDate = raceStageDates?.get('prologue') || raceStageDates?.get(0) || null;
+
           stages.push({
             stageNumber: 'prologue',
             status: 'pending',
@@ -824,11 +887,16 @@ export async function GET(request: NextRequest) {
             hasValidationErrors: false,
             validationWarnings: 0,
             docId: '',
+            stageDate,
           });
         }
 
         // Add numbered stages
         for (let i = 1; i <= numberedStages; i++) {
+          // Get stage date from stage dates map
+          const raceStageDates = stageDatesMap.get(raceSlug);
+          const stageDate = raceStageDates?.get(i) || null;
+
           stages.push({
             stageNumber: i,
             status: 'pending',
@@ -837,10 +905,15 @@ export async function GET(request: NextRequest) {
             hasValidationErrors: false,
             validationWarnings: 0,
             docId: '',
+            stageDate,
           });
         }
 
         // Add pending General Classification for multi-stage races
+        // GC doesn't have a specific stage date, it's usually after the last stage
+        const raceStageDates = stageDatesMap.get(raceSlug);
+        const stageDate = raceStageDates?.get('gc') || null;
+
         stages.push({
           stageNumber: 'gc',
           status: 'pending',
@@ -849,6 +922,7 @@ export async function GET(request: NextRequest) {
           hasValidationErrors: false,
           validationWarnings: 0,
           docId: '',
+          stageDate,
         });
       }
 

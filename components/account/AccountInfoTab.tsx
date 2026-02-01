@@ -9,6 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { listenTranslations } from "@/lib/i18n/firestore";
+import { AvatarUpload } from "./AvatarUpload";
 
 interface AccountInfoTabProps {
   userId: string;
@@ -29,6 +30,7 @@ interface AccountFormData {
 
 export const AccountInfoTab = ({ userId, email, displayName, userData, setUserData }: AccountInfoTabProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -37,6 +39,42 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
   const isBirthdayToday = dateOfBirth && new Date(dateOfBirth).getMonth() === today.getMonth() && new Date(dateOfBirth).getDate() === today.getDate();
 
   const { t } = useTranslation();
+
+  const handleAvatarUpload = async (avatarUrl: string) => {
+    setIsUploadingAvatar(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch('/api/updateUser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          playername: userData?.playername || displayName,
+          avatarUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kon avatar niet bijwerken');
+      }
+
+      setSuccess('Avatar succesvol bijgewerkt!');
+      setUserData({
+        ...userData,
+        avatarUrl,
+      });
+    } catch (error: unknown) {
+      console.error('Avatar upload error:', error);
+      setError(error instanceof Error ? error.message : 'Er is iets misgegaan bij het uploaden');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<AccountFormData>({
     defaultValues: {
@@ -113,6 +151,18 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
       {isBirthdayToday && <img src="/happy-birthday.png" alt="Happy Birthday" className="absolute right-0 top-0 w-full max-w-[100px] md:max-w-[200px] h-auto mb-4 object-contain" />}
 
       <div className="space-y-4">
+        {/* Avatar Upload */}
+        <div className="flex flex-col items-center pb-4 border-b border-gray-200">
+          <AvatarUpload
+            currentAvatarUrl={userData?.avatarUrl}
+            onUploadSuccess={handleAvatarUpload}
+            size={100}
+          />
+          {isUploadingAvatar && (
+            <p className="text-sm text-gray-500 mt-2">Avatar wordt opgeslagen...</p>
+          )}
+        </div>
+
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t('account.emailAddress')}

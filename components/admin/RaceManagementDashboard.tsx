@@ -13,6 +13,7 @@ interface StageStatus {
   hasValidationErrors: boolean;
   validationWarnings: number;
   docId: string;
+  stageDate: string | null; // Date when the stage was actually raced
 }
 
 interface RaceStatus {
@@ -257,6 +258,14 @@ function StageRow({
                       : stage.stageNumber}
           </span>
         </td>
+        <td className="px-4 py-2 text-sm text-gray-600">
+          {stage.stageDate
+            ? new Date(stage.stageDate).toLocaleDateString('nl-NL', {
+                day: 'numeric',
+                month: 'short',
+              })
+            : '-'}
+        </td>
         <td className="px-4 py-2">
           <StatusBadge status={stage.status} />
         </td>
@@ -306,7 +315,7 @@ function StageRow({
       </tr>
       {detailsOpen && details && (
         <tr className="bg-gray-50">
-          <td colSpan={6} className="px-4 py-4">
+          <td colSpan={7} className="px-4 py-4">
             <div className="space-y-4">
               {/* Classifications */}
               <div className="flex gap-4 text-sm">
@@ -544,6 +553,7 @@ function RaceCard({
             <thead>
               <tr className="text-left text-gray-500 text-sm border-b">
                 <th className="px-4 py-2">{race.isSingleDay ? 'Result' : 'Stage'}</th>
+                <th className="px-4 py-2">Date</th>
                 <th className="px-4 py-2">Status</th>
                 <th className="px-4 py-2">Riders</th>
                 <th className="px-4 py-2">Validation</th>

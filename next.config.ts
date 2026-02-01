@@ -28,6 +28,21 @@ const nextConfig: NextConfig = {
         hostname: 'storage.livescore.com',
         pathname: '/images/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload-widget.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdnjs.cloudflare.com',
+        pathname: '/**',
+      },
     ],
     // Limit image sizes to reduce optimization costs
     deviceSizes: [640, 750, 828, 1080, 1200],

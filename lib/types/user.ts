@@ -12,6 +12,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
+  avatarUrl?: string;
   userType: string;
   authMethod?: string;
   lastLoginMethod?: string;
