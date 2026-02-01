@@ -21,7 +21,7 @@ export const TeamSelector = ({
     showSelected?: boolean,
     placeholder?: string,
     showRiderCounts?: boolean,
-    teamRiderCounts?: Map<string, number>
+    teamRiderCounts?: Map<string, { count: number; teamImage?: string }>
 }) => {
     // Create teams from teamRiderCounts instead of API
     const teams = useMemo(() => {
@@ -29,15 +29,16 @@ export const TeamSelector = ({
             return [];
         }
         
-        const teamList: Team[] = Array.from(teamRiderCounts.entries()).map(([teamId, count]) => ({
-            id: teamId,
-            name: teamId.replace(/-2026$/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            slug: teamId,
-            country: '',
-            teamImage: undefined
-        }));
+        const teamList: Team[] = Array.from(teamRiderCounts.entries()).map(([teamId, data]) => {
+            return {
+                id: teamId,
+                name: teamId.replace(/-2026$/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                slug: teamId,
+                country: '',
+                teamImage: data.teamImage
+            };
+        });
         
-        console.log('Debug - teams created from teamRiderCounts:', teamList.slice(0, 3));
         return teamList;
     }, [teamRiderCounts, showRiderCounts]);
     
@@ -52,12 +53,10 @@ export const TeamSelector = ({
             placeholder={placeholder || (multiSelect ? "Filter on teams..." : "Filter on team...")}
             getItemLabel={(team) => {
                 const baseLabel = team.name?.replace(/\s*\d{4}$/, '') || '';
-                console.log(`Debug - getItemLabel called: showRiderCounts=${showRiderCounts}, teamRiderCounts.size=${teamRiderCounts.size}`);
                 if (showRiderCounts && teamRiderCounts) {
                     const teamId = team.slug || team.name?.toLowerCase().replace(/\s+/g, '-');
-                    let count = teamRiderCounts.get(teamId) || 0;
+                    const count = teamRiderCounts.get(teamId)?.count || 0;
                     
-                    console.log(`Debug - getItemLabel: team="${baseLabel}", teamId="${teamId}", count=${count}`);
                     return `${baseLabel} (${count})`;
                 }
                 return baseLabel;
@@ -68,8 +67,7 @@ export const TeamSelector = ({
             }}
             isEqual={(t1, t2) => t1.id === t2.id}
             renderItem={(team, index, isSelected) => {
-                const count = teamRiderCounts?.get(team.slug || team.id) || 0;
-                console.log(`Debug - renderItem: team="${team.name}", teamId="${team.id}", count=${count}, showRiderCount=${showRiderCounts}`);
+                const count = teamRiderCounts?.get(team.slug || team.id)?.count || 0;
                 return (
                     <TeamRow 
                         selectedTeam={isSelected} 

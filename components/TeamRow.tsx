@@ -20,11 +20,11 @@ export const TeamRow = ({
             isSelected={selectedTeam}
         >
             {team?.teamImage && (
-                <span className="w-[20px] h-[20px] flex-shrink-0">
+                <span className="w-[30px] h-[30px] flex-shrink-0">
                     <img 
-                        src={`https://www.procyclingstats.com/${team?.teamImage}`} 
+                        src={`https://www.procyclingstats.com/${team.teamImage}`} 
                         alt={team?.name} 
-                        style={{ width: '30px', height: '30px' }} 
+                        className="w-full h-full object-contain"
                     />
                 </span>
             )}

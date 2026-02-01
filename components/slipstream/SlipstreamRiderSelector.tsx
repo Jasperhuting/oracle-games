@@ -38,14 +38,9 @@ export function SlipstreamRiderSelector({
   }, [selectedRider]);
 
   const availableRiders = useMemo(() => {
-    console.log('Debug - availableRiders filtering started');
-    console.log('Debug - selectedTeams:', selectedTeams.map(t => ({ name: t.name, slug: t.slug })));
-    
     const filtered = riders.filter(rider => {
       const riderId = rider.id || (rider as { nameID?: string }).nameID || '';
       const isUsed = usedRiderIds.includes(riderId);
-      
-      console.log(`Debug - rider ${rider.name}: isUsed=${isUsed}`);
       
       if (isUsed) return false;
       
@@ -63,30 +58,23 @@ export function SlipstreamRiderSelector({
           riderTeamId = (rider as any).teamName.toLowerCase().replace(/\s+/g, '-');
         }
         
-        console.log(`Debug - rider ${rider.name}: riderTeamId="${riderTeamId}"`);
-        
         const matches = selectedTeams.some(team => {
           const teamSlug = team.slug || team.name?.toLowerCase().replace(/\s+/g, '-');
-          console.log(`Debug - comparing "${riderTeamId}" with "${teamSlug}"`);
           return teamSlug === riderTeamId;
         });
         
-        console.log(`Debug - rider ${rider.name}: matches=${matches}`);
         return matches;
       }
       
       return true;
     });
     
-    console.log(`Debug - availableRiders result: ${filtered.length} riders`);
     return filtered;
   }, [riders, usedRiderIds, selectedTeams]);
 
   // Calculate rider counts per team for TeamSelector
   const teamRiderCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    
-    console.log('Debug - riders data sample:', riders.slice(0, 2));
+    const counts = new Map<string, { count: number; teamImage?: string }>();
     
     riders.forEach(rider => {
       const riderId = rider.id || (rider as { nameID?: string }).nameID || '';
@@ -95,33 +83,42 @@ export function SlipstreamRiderSelector({
       if (!isUsed && rider.team) {
         let teamId = '';
         let teamName = '';
+        let teamImage = '';
         
         // Try different team data structures
         if (rider.team && typeof rider.team === 'object' && 'slug' in rider.team) {
           teamId = (rider.team as any).slug;
           teamName = (rider.team as any).name;
+          teamImage = (rider.team as any).teamImage || (rider.team as any).jerseyImageTeam || '';
         } else if (rider.team && typeof rider.team === 'object' && 'name' in rider.team) {
           teamName = (rider.team as any).name;
           teamId = teamName.toLowerCase().replace(/\s+/g, '-');
+          teamImage = (rider.team as any).teamImage || (rider.team as any).jerseyImageTeam || '';
         } else if (rider.team && typeof rider.team === 'string') {
           teamName = rider.team;
           teamId = teamName.toLowerCase().replace(/\s+/g, '-');
         } else if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
           teamName = (rider as any).teamName;
           teamId = teamName.toLowerCase().replace(/\s+/g, '-');
+          console.log(`Debug - rider ${rider.name}: teamName="${teamName}", teamId="${teamId}"`);
         }
         
-        console.log(`Debug - rider ${rider.name}: teamName="${teamName}", teamId="${teamId}"`);
-        
         if (teamId) {
-          counts.set(teamId, (counts.get(teamId) || 0) + 1);
+          const existing = counts.get(teamId);
+          if (existing) {
+            existing.count++;
+          } else {
+            counts.set(teamId, {
+              count: 1,
+              teamImage: teamImage
+            });
+          }
         }
       }
     });
     
-    console.log('Debug - final teamRiderCounts:', Array.from(counts.entries()));
     return counts;
-  }, [riders, usedRiderIds, selectedTeams]);
+  }, [riders, usedRiderIds]);
 
   const handleSelect = (items: Rider[]) => {
     setSelectedItems(items);
@@ -129,7 +126,6 @@ export function SlipstreamRiderSelector({
   };
 
   const handleTeamFilterChange = (teams: Team[]) => {
-    console.log('Debug - handleTeamFilterChange called with:', teams.map(t => ({ name: t.name, slug: t.slug })));
     setSelectedTeams(teams);
     // Clear rider selection when team filter changes
     setSelectedItems([]);
