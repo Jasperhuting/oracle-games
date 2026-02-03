@@ -34,17 +34,20 @@ export async function GET(
     }
 
     let raceSlug: string | null = null;
+    const gameType = gameData?.gameType;
 
-    // For season games without a race reference, we don't need a raceSlug
-    if (raceType !== 'season' && !raceRef) {
+    // For season games or full-grid games without a race reference, we don't need a raceSlug
+    // Full Grid games work like season games - they use eligibleRiders/eligibleTeams from the game document
+    if (raceType !== 'season' && gameType !== 'full-grid' && !raceRef) {
       return NextResponse.json(
         { error: 'Game does not have a race reference' },
         { status: 400 }
       );
     }
 
-    // Get race document to find the slug (only if raceRef exists)
-    if (raceRef) {
+    // Get race document to find the slug (only if raceRef exists and not a full-grid game)
+    // Full-grid games use eligibleRiders/eligibleTeams from the game document, not from a race
+    if (raceRef && gameType !== 'full-grid') {
       const raceDoc = await raceRef.get();
       if (!raceDoc.exists) {
         return NextResponse.json(
@@ -79,7 +82,15 @@ export async function GET(
     }));
 
     // Fetch available riders from rankings_{year} (limit to top 1000 to avoid quota issues)
-    const allRidersSnapshot = await db.collection(`rankings_${year}`)
+    // Fallback to rankings_2026 if the specified year doesn't exist
+    let rankingsCollection = `rankings_${year}`;
+    
+    // Check if we should use 2026 data for 2025 games (temporary fix for missing 2025 data)
+    if (year === 2025) {
+      rankingsCollection = 'rankings_2026';
+    }
+    
+    const allRidersSnapshot = await db.collection(rankingsCollection)
       .orderBy('rank')
       .limit(3000)
       .get();
@@ -139,8 +150,8 @@ export async function GET(
     const currentRiderIds = new Set<string>();
     const currentTeamIds = new Set<string>();
 
-    if (raceType === 'season') {
-      // For season games, load from eligibleRiders and eligibleTeams in the game document
+    if (raceType === 'season' || gameType === 'full-grid') {
+      // For season games and full-grid games, load from eligibleRiders and eligibleTeams in the game document
       const eligibleRiders = gameData?.eligibleRiders || [];
       const eligibleTeams = gameData?.eligibleTeams || [];
 
@@ -241,9 +252,10 @@ export async function PATCH(
     }
 
     let raceSlug: string | null = null;
+    const gameType = gameData?.gameType;
 
-    // For season games, we don't need a race reference
-    if (raceType === 'season') {
+    // For season games and full-grid games, we don't need a race reference
+    if (raceType === 'season' || gameType === 'full-grid') {
       // For multi-division season games, update ALL divisions
       const divisionCount = gameData?.divisionCount || 1;
       const isMultiDivision = divisionCount > 1;
@@ -256,10 +268,10 @@ export async function PATCH(
         const baseName = gameName.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
 
         // Find all games with the same base name, year, and type
+        // For full-grid games, we query by gameType instead of raceType
         const relatedGamesSnapshot = await db.collection('games')
           .where('year', '==', gameData?.year)
           .where('gameType', '==', gameData?.gameType)
-          .where('raceType', '==', 'season')
           .get();
 
         // Filter to only games with matching base name
@@ -291,13 +303,13 @@ export async function PATCH(
       // Log the activity
       const adminData = adminDoc.data();
       await db.collection('activityLogs').add({
-        action: 'SEASON_LINEUP_UPDATED',
+        action: gameType === 'full-grid' ? 'FULL_GRID_LINEUP_UPDATED' : 'SEASON_LINEUP_UPDATED',
         userId: adminUserId,
         userEmail: adminData?.email,
         userName: adminData?.playername || adminData?.email,
         details: {
           gameId,
-          gameType: 'season',
+          gameType: gameType || 'season',
           totalRiders: riderIds?.length || 0,
           totalTeams: teamIds?.length || 0,
           gamesUpdated: updatedGameIds.length,
@@ -372,8 +384,13 @@ export async function PATCH(
 
     // Add new riders
     for (const riderId of ridersToAdd) {
-      // Fetch rider from rankings_{year}
-      const riderDoc = await db.collection(`rankings_${year}`).doc(riderId).get();
+      // Fetch rider from rankings_{year} (with fallback to 2026 for 2025 games)
+      let rankingsCollection = `rankings_${year}`;
+      if (year === 2025) {
+        rankingsCollection = 'rankings_2026';
+      }
+      
+      const riderDoc = await db.collection(rankingsCollection).doc(riderId).get();
       if (riderDoc.exists) {
         const riderData = riderDoc.data();
         await db.collection(raceSlug).doc(riderId).set({

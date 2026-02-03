@@ -73,11 +73,42 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game type supports bidding/selection
-    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager' && gameData?.gameType !== 'marginal-gains') {
+    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager' && gameData?.gameType !== 'marginal-gains' && gameData?.gameType !== 'full-grid') {
       return NextResponse.json(
         { error: 'Game does not support bidding' },
         { status: 400 }
       );
+    }
+
+    // Full Grid specific validations
+    if (gameData?.gameType === 'full-grid') {
+      const config = gameData.config || {};
+
+      // Check if selection is still open
+      if (config.selectionStatus === 'closed') {
+        return NextResponse.json(
+          { error: 'Selection is closed for this game' },
+          { status: 400 }
+        );
+      }
+
+      // Check if rider has a value set (admin must set values first)
+      const riderValues = config.riderValues || {};
+      if (riderValues[riderNameId] === undefined || riderValues[riderNameId] === 0) {
+        return NextResponse.json(
+          { error: 'This rider is not available for selection (no value set by admin)' },
+          { status: 400 }
+        );
+      }
+
+      // Validate that the amount matches the rider's value
+      const expectedValue = riderValues[riderNameId];
+      if (amount !== expectedValue) {
+        return NextResponse.json(
+          { error: `Invalid amount. Rider value is ${expectedValue} points.` },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if game status is 'bidding' (strict validation - game.status is the single source of truth)
@@ -248,6 +279,46 @@ export async function POST(
         { error: `Maximum number of riders reached (${uniqueRiderIds.size}/${maxRiders}). Cancel a bid before placing a new one.` },
         { status: 400 }
       );
+    }
+
+    // Full Grid: Check team constraint (1 rider per team)
+    if (gameData?.gameType === 'full-grid' && riderTeam && !isUpdatingOwnBid) {
+      // Check if user already has an active or won bid for a rider from the same team
+      const existingTeamBid = allBidsSnapshot.docs.find(doc => {
+        const data = doc.data();
+        return data.riderTeam === riderTeam && data.riderNameId !== riderNameId;
+      });
+
+      if (existingTeamBid) {
+        const existingRiderName = existingTeamBid.data().riderName || 'Unknown';
+
+        // Log team constraint validation failure
+        await db.collection('activityLogs').add({
+          action: 'BID_VALIDATION_FAILED',
+          userId,
+          userEmail: userData?.email,
+          userName: userData?.playername || userData?.email,
+          details: {
+            gameId,
+            gameName: gameData?.name,
+            riderNameId,
+            riderName,
+            riderTeam,
+            amount,
+            validationType: 'TEAM_CONSTRAINT',
+            errorMessage: `Already have a rider from team ${riderTeam}: ${existingRiderName}`,
+            existingRiderName,
+          },
+          timestamp: Timestamp.now(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+
+        return NextResponse.json(
+          { error: `Je hebt al een renner van ${riderTeam} geselecteerd (${existingRiderName}). Verwijder eerst die selectie.` },
+          { status: 400 }
+        );
+      }
     }
 
     // Calculate total active bids from the filtered list

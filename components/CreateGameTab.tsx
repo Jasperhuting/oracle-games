@@ -46,6 +46,10 @@ interface GameFormData {
   // F1 Prediction config
   f1Season?: number;
   f1RegistrationDeadline?: string;
+
+  // Full Grid config
+  fgBudget?: number;
+  fgMaxRiders?: number;
 }
 
 interface Race {
@@ -280,6 +284,41 @@ export const CreateGameTab = () => {
             ? new Date(data.f1RegistrationDeadline + ':00Z').toISOString()
             : undefined,
           maxParticipants: data.maxPlayers ? Number(data.maxPlayers) : undefined,
+        };
+      } else if (data.gameType === 'full-grid') {
+        // Validate auction periods for Full Grid
+        if (auctionPeriods.length === 0) {
+          setError('Please add at least one selection period');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const invalidPeriod = auctionPeriods.find(p => !p.name || !p.startDate || !p.endDate);
+        if (invalidPeriod) {
+          setError('All selection periods must have a name, start date, and end date');
+          setIsSubmitting(false);
+          return;
+        }
+
+        config = {
+          budget: Number(data.fgBudget) || 70,
+          maxRiders: Number(data.fgMaxRiders) || 22,
+          riderValues: {}, // Will be populated later via admin interface
+          selectionStatus: 'open',
+          auctionPeriods: auctionPeriods.map(period => {
+            const startDate = new Date(period.startDate + ':00Z');
+            const endDate = new Date(period.endDate + ':00Z');
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00Z') : undefined;
+
+            return {
+              name: period.name,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              finalizeDate: finalizeDate?.toISOString(),
+              status: 'pending',
+            };
+          }),
+          auctionStatus: 'pending',
         };
       }
       // Add more game type configs here as needed
@@ -1114,7 +1153,151 @@ export const CreateGameTab = () => {
             </div>
           )}
 
-          {/* TODO: Add config fields for other game types */}
+          {/* Full Grid Specific Fields */}
+          {selectedGameType === 'full-grid' && (
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700">Full Grid Configuration</h3>
+
+              <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+                <p className="text-sm text-green-800">
+                  <strong>Spelconcept:</strong> Stel jij het sterkste team samen voor de klassiekers?
+                  Selecteer 22 renners binnen een budget van 70 punten.
+                  <br /><br />
+                  <strong>Regels:</strong> Uit elke ploeg mag je slechts 1 renner kiezen.
+                  De admin stelt de waarde van elke renner in via de game management pagina.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Budget per Speler"
+                    placeholder="E.g. 70"
+                    defaultValue="70"
+                    {...register('fgBudget', {
+                      min: {
+                        value: 1,
+                        message: 'Budget must be at least 1'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Totaal aantal punten dat spelers mogen besteden
+                  </p>
+                </div>
+                <div>
+                  <TextInput
+                    type="number"
+                    label="Max Renners per Team"
+                    placeholder="E.g. 22"
+                    defaultValue="22"
+                    {...register('fgMaxRiders', {
+                      min: {
+                        value: 1,
+                        message: 'At least 1 rider required'
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Aantal renners dat geselecteerd moet worden (1 per ploeg)
+                  </p>
+                </div>
+              </div>
+
+              {/* Selection Periods */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Selectie Periodes *
+                  </label>
+                  <Button
+                    type="button"
+                    text="+ Add Period"
+                    onClick={addAuctionPeriod}
+                    className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700"
+                  />
+                </div>
+
+                {auctionPeriods.length === 0 && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    Geen selectie periodes toegevoegd. Klik op &quot;+ Add Period&quot; om er een toe te voegen.
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {auctionPeriods.map((period, index) => (
+                    <div key={index} className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm font-medium text-gray-700">Periode {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAuctionPeriod(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Verwijderen
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Periode naam (e.g., Selectie Voorjaar)"
+                            value={period.name}
+                            onChange={(e) => updateAuctionPeriod(index, 'name', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Start Datum & Tijd</label>
+                            <input
+                              type="datetime-local"
+                              value={period.startDate}
+                              onChange={(e) => updateAuctionPeriod(index, 'startDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Eind Datum & Tijd</label>
+                            <input
+                              type="datetime-local"
+                              value={period.endDate}
+                              onChange={(e) => updateAuctionPeriod(index, 'endDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Finalisatie Datum & Tijd (optioneel)
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={period.finalizeDate || ''}
+                              onChange={(e) => updateAuctionPeriod(index, 'finalizeDate', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              {period.finalizeDate
+                                ? 'Selecties worden automatisch gefinaliseerd op dit moment'
+                                : 'Laat leeg voor handmatige finalisatie'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                <strong>Na het aanmaken:</strong> Ga naar Admin &rarr; Games Management &rarr; klik op &quot;View&quot; bij de game
+                om renner waarden in te stellen. Je kunt handmatig de waarde per renner invoeren.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">

@@ -5,6 +5,7 @@ import { Button } from "./Button";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/utils";
 import { SlipstreamRaceManager } from "./slipstream/SlipstreamRaceManager";
+import { FullGridRiderManager } from "./FullGridRiderManager";
 
 interface Game {
   id: string;
@@ -297,7 +298,34 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                       </div>
                     )}
 
-                    {game.gameType !== 'auctioneer' && game.gameType !== 'slipstream' && (
+                    {game.gameType === 'full-grid' && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Budget per Speler</label>
+                            <p className="text-gray-900">{game.config?.budget || 70} punten</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Max Renners</label>
+                            <p className="text-gray-900">{game.config?.maxRiders || 22}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Selectie Status</label>
+                            <p className={`font-medium ${game.config?.selectionStatus === 'open' ? 'text-green-600' : 'text-red-600'}`}>
+                              {game.config?.selectionStatus === 'open' ? 'Open' : 'Gesloten'}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">Renners met Waarde</label>
+                            <p className="text-gray-900">
+                              {Object.keys(game.config?.riderValues || {}).filter(k => game.config?.riderValues?.[k] > 0).length} van {game.eligibleRiders?.length || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {game.gameType !== 'auctioneer' && game.gameType !== 'slipstream' && game.gameType !== 'full-grid' && (
                       <pre className="text-sm text-gray-700 whitespace-pre-wrap">
                         {JSON.stringify(game.config, null, 2)}
                       </pre>
@@ -319,6 +347,19 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                       onRacesChange={loadSlipstreamRaces}
                     />
                   )}
+                </div>
+              )}
+
+              {/* Full Grid Rider Value Management */}
+              {game.gameType === 'full-grid' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-700">Renner Waarden Beheer</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Stel hieronder de waarde in voor elke renner. Zorg dat je eerst de race lineup hebt ingesteld.
+                  </p>
+                  <FullGridRiderManager
+                    gameId={gameId}
+                  />
                 </div>
               )}
             </div>

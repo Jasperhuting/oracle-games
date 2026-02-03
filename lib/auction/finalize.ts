@@ -1,5 +1,5 @@
 import { getServerFirebase } from '@/lib/firebase/server';
-import { AuctioneerConfig, AuctionPeriod, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
+import { AuctioneerConfig, AuctionPeriod, FullGridConfig, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export interface FinalizeAuctionOptions {
@@ -60,13 +60,14 @@ export async function finalizeAuction(
     }
 
     // Determine if this is a selection-based game (where multiple users can select the same rider)
-    const isSelectionBased = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains';
+    const isSelectionBased = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains' || gameData?.gameType === 'full-grid';
 
     // If game has auction periods and a specific period is specified, validate it
     const auctionPeriods =
       gameData?.gameType === 'auctioneer' ? (gameData.config as AuctioneerConfig)?.auctionPeriods :
         gameData?.gameType === 'worldtour-manager' ? (gameData.config as WorldTourManagerConfig)?.auctionPeriods :
           gameData?.gameType === 'marginal-gains' ? (gameData.config as MarginalGainsConfig)?.auctionPeriods :
+            gameData?.gameType === 'full-grid' ? (gameData.config as FullGridConfig)?.auctionPeriods :
             undefined;
 
     if (auctionPeriods && auctionPeriods.length > 0 && auctionPeriodName) {

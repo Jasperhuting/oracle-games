@@ -173,9 +173,12 @@ export interface FanFlandrienConfig {
 }
 
 export interface FullGridConfig {
-  budget: number;
-  teamsInRace: number;              // Number of teams participating
-  riderValues: Record<string, number>; // nameId -> value (1-10)
+  budget: number;                      // Total budget (e.g., 70)
+  maxRiders: number;                   // Maximum riders to select (e.g., 22)
+  riderValues: Record<string, number>; // nameId -> value (points cost)
+  selectionStatus: 'open' | 'closed';  // Track if selection is open
+  auctionPeriods?: AuctionPeriod[];    // Selection periods with deadlines
+  auctionStatus?: AuctionStatus;       // Overall selection status
 }
 
 export interface MarginalGainsConfig {
@@ -741,6 +744,10 @@ export function isWorldTourManager(game: Game): game is Game & { config: WorldTo
 
 export function isF1Prediction(game: Game): game is Game & { config: F1PredictionConfig } {
   return game.gameType === 'f1-prediction';
+}
+
+export function isFullGrid(game: Game): game is Game & { config: FullGridConfig } {
+  return game.gameType === 'full-grid';
 }
 
 // Client-side version of AuctionPeriod with string timestamps
