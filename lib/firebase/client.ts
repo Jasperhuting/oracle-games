@@ -30,6 +30,13 @@ const f1Db = getFirestore(app, 'oracle-games-f1');
 // Track if emulators have been connected
 let emulatorsConnected = false;
 
+function shouldUseFirebaseEmulators() {
+  return (
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true'
+  );
+}
+
 // Connect to emulators - must be called on client side only
 function connectToEmulatorsIfNeeded() {
   // Only run on client side
@@ -40,8 +47,7 @@ function connectToEmulatorsIfNeeded() {
 
   // Check if we should use emulators - only if explicitly enabled via env var
   const useEmulators =
-    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' &&
-    process.env.NODE_ENV === 'development' &&
+    shouldUseFirebaseEmulators() &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
   if (useEmulators) {

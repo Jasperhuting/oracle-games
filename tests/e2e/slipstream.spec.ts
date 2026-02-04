@@ -198,9 +198,14 @@ test.describe('Slipstream Game', () => {
       await expect(statsHeader).toBeVisible({ timeout: 10000 });
 
       // Should see stat cards
-      await expect(authenticatedPage.getByText('Time Lost')).toBeVisible();
-      await expect(authenticatedPage.getByText('Green Points')).toBeVisible();
-      await expect(authenticatedPage.getByText('Picks Made')).toBeVisible();
+      const statsSection = authenticatedPage
+        .locator('div')
+        .filter({ has: authenticatedPage.getByRole('heading', { name: 'Your Stats' }) })
+        .first();
+
+      await expect(statsSection.getByText('Time Lost').first()).toBeVisible();
+      await expect(statsSection.getByText('Green Points').first()).toBeVisible();
+      await expect(statsSection.getByText('Picks Made').first()).toBeVisible();
     });
   });
 
@@ -329,10 +334,11 @@ test.describe('Slipstream Game', () => {
   test.describe('Back Navigation', () => {
     test('should have back button that navigates to games list', async ({ authenticatedPage }) => {
       await authenticatedPage.goto(`/games/${TEST_GAME_ID}/slipstream`);
+      await waitForSlipstreamReady(authenticatedPage);
 
       // Find and click the Back button
       const backButton = authenticatedPage.getByRole('link', { name: 'Back' });
-      await expect(backButton).toBeVisible();
+      await expect(backButton).toBeVisible({ timeout: 10000 });
 
       await backButton.click();
 

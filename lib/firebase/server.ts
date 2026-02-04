@@ -10,6 +10,14 @@ import { getAuth as getAdminAuth } from "firebase-admin/auth";
 // Track if emulators have been configured
 let emulatorsConfigured = false;
 
+function shouldUseFirebaseEmulators() {
+  return (
+    process.env.USE_FIREBASE_EMULATORS === "true" ||
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true" ||
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true"
+  );
+}
+
 function initializeFirebaseAdmin() {
   if (getAdminApps().length > 0) {
     return getAdminApp();
@@ -19,11 +27,11 @@ function initializeFirebaseAdmin() {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-  // In development, allow initialization without credentials for emulator use
-  if (process.env.NODE_ENV === 'development' && (!projectId || !clientEmail || !privateKey)) {
-    console.log('🔧 Initializing Firebase Admin for emulator use (no credentials needed)');
+  // Allow initialization without service-account credentials when emulator mode is enabled
+  if (shouldUseFirebaseEmulators() && (!projectId || !clientEmail || !privateKey)) {
+    console.log("🔧 Initializing Firebase Admin for emulator use (no credentials needed)");
     return initializeAdminApp({
-      projectId: 'oracle-games-b6af6', // Default project ID for emulators
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "oracle-games-b6af6",
     });
   }
 
@@ -48,14 +56,14 @@ function initializeFirebaseAdmin() {
 function configureEmulatorsIfNeeded() {
   if (emulatorsConfigured) return;
 
-  // Only use emulators in development AND if explicitly enabled via env var
-  if (process.env.NODE_ENV === 'development' && process.env.USE_FIREBASE_EMULATORS === 'true') {
+  // Use emulators whenever explicitly enabled via env vars
+  if (shouldUseFirebaseEmulators()) {
     // Set emulator environment variables for Firebase Admin SDK
-    process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
-    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+    process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
 
     emulatorsConfigured = true;
-    console.log('🔧 Server-side Firebase configured to use emulators');
+    console.log("🔧 Server-side Firebase configured to use emulators");
   }
 }
 
