@@ -69,6 +69,8 @@ export const PlayerCard = (
     const isSold = player?.isSold;
     const soldTo = player?.soldTo;
     const isSoldFor = player?.pricePaid;
+    const pointsValueRaw = player?.effectiveMinBid ?? player?.points ?? 1;
+    const displayPointsValue = pointsValueRaw === 0 ? 1 : pointsValueRaw;
 
     // Build the full URL - handle different formats
     const jerseyUrl = jerseyImage 
@@ -146,7 +148,7 @@ export const PlayerCard = (
                         {showPointsInsteadOfPrice ? 'Points:' : 'Price:'}
                     </span>
                     <span className={`${player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""} line-through`}>
-                        {showPointsInsteadOfPrice ? player.points === 0 ? 1 : player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
+                        {showPointsInsteadOfPrice ? displayPointsValue : formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {!showPointsInsteadOfPrice && player.effectiveMinBid && player.effectiveMinBid < player.points && (
                             <span className="text-xs text-gray-500 line-through ml-1">
                                 {player.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(player.points)}
@@ -160,7 +162,7 @@ export const PlayerCard = (
                         {showPointsInsteadOfPrice ? 'Points:' : 'Price:'}
                     </span>
                     <span className={player.effectiveMinBid && player.effectiveMinBid < player.points ? "text-green-600 font-semibold" : ""}>
-                        {showPointsInsteadOfPrice ? player.points === 0 ? 1 : player.points : formatCurrencyWhole(player.effectiveMinBid || player.points)}
+                        {showPointsInsteadOfPrice ? displayPointsValue : formatCurrencyWhole(player.effectiveMinBid || player.points)}
                         {!showPointsInsteadOfPrice && player.effectiveMinBid && player.effectiveMinBid < player.points ? (
                             <span className="text-xs text-gray-500 line-through ml-1">
                                 {formatCurrencyWhole(player.points)}

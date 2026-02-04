@@ -48,6 +48,7 @@ export interface SelectorProps<T> {
   localStorageKey?: string;
   initialResultsLimit?: number;
   showSelected?: boolean;
+  showCheckboxes?: boolean;
   getItemLabel?: (item: T) => string;
   sortKey?: (item: T) => string;
 }

@@ -39,6 +39,7 @@ export const BiddingCardView = ({
   const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const canAdjustBid = game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && game?.gameType !== 'full-grid';
 
   const sortedBids = useMemo(() => {
     const filtered = myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost');
@@ -108,7 +109,7 @@ export const BiddingCardView = ({
             backgroundSize: '1.5em 1.5em'
           }}
         >
-          <option value="price">{game?.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
+          <option value="price">{game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid' ? 'Points' : 'Prijs'}</option>
           <option value="rank">{t('global.rank')}</option>
           <option value="name">{t('global.name')}</option>
           <option value="age">{t('global.age')}</option>
@@ -143,12 +144,12 @@ export const BiddingCardView = ({
               selected={false}
               isNeoProf={qualifiesAsNeoProf(rider, game?.config)}
               showNeoProfBadge={game?.gameType === 'worldtour-manager'}
-              showPointsInsteadOfPrice={game?.gameType === 'marginal-gains'}
+              showPointsInsteadOfPrice={game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid'}
               buttonContainer={
                 <>
                   {rider && canCancel && (
                     <div className="flex flex-col gap-2 w-full">
-                      {adjustingBid === rider.myBidId ? (
+                      {canAdjustBid && adjustingBid === rider.myBidId ? (
                         <>
                           <CurrencyInput
                             id={`adjust-bid-${rider.myBidId}`}
@@ -187,7 +188,7 @@ export const BiddingCardView = ({
                         </>
                       ) : (
                         <>
-                          {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && (
+                          {canAdjustBid && (
                             <Button
                               type="button"
                               text={t('games.auctions.adjustBid')}

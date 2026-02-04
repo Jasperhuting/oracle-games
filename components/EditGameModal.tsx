@@ -69,6 +69,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
   const [auctionPeriods, setAuctionPeriods] = useState<AuctionPeriodInput[]>([]);
   const [countingRaces, setCountingRaces] = useState<CountingRaceInput[]>([]);
   const [countingClassifications, setCountingClassifications] = useState<string[]>([]);
+  const [existingRiderValues, setExistingRiderValues] = useState<Record<string, number>>({});
   const [availableRaces, setAvailableRaces] = useState<Race[]>([]);
   const [loadingRaces, setLoadingRaces] = useState(false);
 
@@ -114,8 +115,13 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           maxRiders: game.config?.maxRiders,
         });
 
-        // Load auction periods if auctioneer game
-        if (game.gameType === 'auctioneer' && game.config?.auctionPeriods) {
+        // Preserve existing riderValues for full-grid
+        if (game.gameType === 'full-grid' && game.config?.riderValues) {
+          setExistingRiderValues(game.config.riderValues);
+        }
+
+        // Load auction periods if auctioneer or full-grid game
+        if ((game.gameType === 'auctioneer' || game.gameType === 'full-grid') && game.config?.auctionPeriods) {
           setAuctionPeriods(game.config.auctionPeriods.map((p: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             // Convert UTC dates to local time for datetime-local input
             const formatDateForInput = (dateString: string) => {
@@ -299,6 +305,31 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                         auctionPeriods.every(p => p.status === 'closed') ? 'closed' : 'pending',
           countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
           countingClassifications: countingClassifications.length > 0 ? countingClassifications : undefined,
+        };
+      }
+
+      // Handle full-grid config
+      if (gameType === 'full-grid') {
+        updates.config = {
+          budget: Number(data.budget) || 80,
+          maxRiders: Number(data.maxRiders) || 22,
+          riderValues: existingRiderValues,
+          selectionStatus: 'open',
+          auctionPeriods: auctionPeriods.map(period => {
+            const startDate = new Date(period.startDate + ':00');
+            const endDate = new Date(period.endDate + ':00');
+            const finalizeDate = period.finalizeDate ? new Date(period.finalizeDate + ':00') : undefined;
+
+            return {
+              name: period.name,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              finalizeDate: finalizeDate?.toISOString(),
+              status: period.status,
+            };
+          }),
+          auctionStatus: auctionPeriods.some(p => p.status === 'active') ? 'active' :
+                        auctionPeriods.every(p => p.status === 'closed') ? 'closed' : 'pending',
         };
       }
 
@@ -798,6 +829,136 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                           >
                             ×
                           </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Grid Specific Fields */}
+              {gameType === 'full-grid' && (
+                <div className="border-t pt-4 space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-700">Full Grid Configuration</h3>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <TextInput
+                        type="number"
+                        label="Budget (punten)"
+                        placeholder="E.g. 80"
+                        {...register('budget', {
+                          min: {
+                            value: 1,
+                            message: 'Budget must be at least 1'
+                          }
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <TextInput
+                        type="number"
+                        label="Max Riders"
+                        placeholder="E.g. 22"
+                        {...register('maxRiders', {
+                          min: {
+                            value: 1,
+                            message: 'At least 1 rider required'
+                          }
+                        })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Selection Periods */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Selection Periods
+                      </label>
+                      <Button
+                        type="button"
+                        text="+ Add Period"
+                        onClick={addAuctionPeriod}
+                        className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700"
+                      />
+                    </div>
+
+                    {auctionPeriods.length === 0 && (
+                      <p className="text-sm text-gray-500 mb-2">
+                        No selection periods added.
+                      </p>
+                    )}
+
+                    <div className="space-y-3">
+                      {auctionPeriods.map((period, index) => (
+                        <div key={index} className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-sm font-medium text-gray-700">Period {index + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeAuctionPeriod(index)}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              placeholder="Period name"
+                              value={period.name}
+                              onChange={(e) => updateAuctionPeriod(index, 'name', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Start Date & Time</label>
+                                <input
+                                  type="datetime-local"
+                                  value={period.startDate}
+                                  onChange={(e) => updateAuctionPeriod(index, 'startDate', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">End Date & Time</label>
+                                <input
+                                  type="datetime-local"
+                                  value={period.endDate}
+                                  onChange={(e) => updateAuctionPeriod(index, 'endDate', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Finalize Date (optional)</label>
+                                <input
+                                  type="datetime-local"
+                                  value={period.finalizeDate || ''}
+                                  onChange={(e) => updateAuctionPeriod(index, 'finalizeDate', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                              </div>
+                              {!period.finalizeDate && (
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">Status</label>
+                                  <select
+                                    value={period.status}
+                                    onChange={(e) => updateAuctionPeriod(index, 'status', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                  >
+                                    {AUCTION_STATUS_OPTIONS.map((option) => (
+                                      <option key={option.value} value={option.value}>
+                                        {option.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

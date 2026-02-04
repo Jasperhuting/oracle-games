@@ -17,6 +17,7 @@ export function Selector<T>({
     localStorageKey,
     initialResultsLimit = 50,
     showSelected = true,
+    showCheckboxes = true,
     getItemLabel,
     sortKey
 }: SelectorProps<T>) {
@@ -71,6 +72,9 @@ export function Selector<T>({
     // Generate display value for input
     const getDisplayValue = () => {
         if (isFocused) {
+            return searchTerm;
+        }
+        if (!showSelected) {
             return searchTerm;
         }
         if (selectedItems.length > 0 && getItemLabel) {
@@ -164,7 +168,7 @@ export function Selector<T>({
                                                 toggleItem(item);
                                             }}
                                         >
-                                            {multiSelect && (
+                                            {multiSelect && showCheckboxes && (
                                                 <input
                                                     type="checkbox"
                                                     checked={false}
@@ -181,7 +185,7 @@ export function Selector<T>({
                             )}
                             
                             {/* Selected group */}
-                            {sortedSelected.length > 0 && (
+                            {showSelected && sortedSelected.length > 0 && (
                                 <>
                                     <div className="sticky top-0 bg-blue-100 px-3 py-4 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b-2 border-blue-200 z-[60] relative">
                                         Selected ({sortedSelected.length})
@@ -197,7 +201,7 @@ export function Selector<T>({
                                                 toggleItem(item);
                                             }}
                                         >
-                                            {multiSelect && (
+                                            {multiSelect && showCheckboxes && (
                                                 <input
                                                     type="checkbox"
                                                     checked={true}

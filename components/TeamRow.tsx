@@ -13,16 +13,22 @@ export const TeamRow = ({
     showRiderCount?: boolean,
     riderCount?: number
 }) => {
+    const teamImageSrc = team?.teamImage
+        ? (team.teamImage.startsWith('http')
+            ? team.teamImage
+            : `https://www.procyclingstats.com/${team.teamImage}`)
+        : null;
+
     return (
         <Row
             item={team}
             onSelect={selectTeam}
             isSelected={selectedTeam}
         >
-            {team?.teamImage && (
+            {teamImageSrc && (
                 <span className="w-[30px] h-[30px] flex-shrink-0">
                     <img 
-                        src={`https://www.procyclingstats.com/${team.teamImage}`} 
+                        src={teamImageSrc}
                         alt={team?.name} 
                         className="w-full h-full object-contain"
                     />

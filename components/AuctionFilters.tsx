@@ -6,8 +6,10 @@ import { Button } from "./Button";
 import { Star, Users } from "tabler-icons-react";
 import { Toggle } from "./Toggle";
 import { Collapsible } from "./Collapsible";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Divider } from "./Divider";
+import { TeamSelector } from "./TeamSelector";
+import { Team } from "@/lib/scraper/types";
 
 export const AuctionFilters = ({
     searchTerm,
@@ -28,6 +30,10 @@ export const AuctionFilters = ({
     hideSoldPlayers,
     setHideSoldPlayers,
     sortedAndFilteredRiders,
+    availableTeams,
+    selectedTeamFilter,
+    setSelectedTeamFilter,
+    teamsWithSelection,
 
 }: {
     searchTerm: string,
@@ -48,10 +54,39 @@ export const AuctionFilters = ({
     hideSoldPlayers: boolean,
     setHideSoldPlayers: (hideSoldPlayers: boolean) => void
     sortedAndFilteredRiders: RiderWithBid[]
+    availableTeams?: { name: string; count: number; teamImage?: string }[],
+    selectedTeamFilter?: string[],
+    setSelectedTeamFilter?: (teams: string[]) => void,
+    teamsWithSelection?: Set<string>,
 }) => {
 
     const isMarginalGains = game?.gameType === 'marginal-gains';
     const { t } = useTranslation();
+    const toTeamSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+    const teamSelectorTeams = useMemo<Team[]>(() => {
+        if (!availableTeams) return [];
+        return availableTeams.map((team) => ({
+            id: toTeamSlug(team.name),
+            slug: toTeamSlug(team.name),
+            name: team.name,
+            country: '',
+            teamImage: team.teamImage
+        }));
+    }, [availableTeams]);
+
+    const teamRiderCounts = useMemo(() => {
+        const teamCounts = new Map<string, { count: number }>();
+        availableTeams?.forEach((team) => {
+            teamCounts.set(toTeamSlug(team.name), { count: team.count });
+        });
+        return teamCounts;
+    }, [availableTeams]);
+
+    const selectedTeam = useMemo<Team[]>(() => {
+        if (!selectedTeamFilter || selectedTeamFilter.length === 0) return [];
+        return teamSelectorTeams.filter((team) => selectedTeamFilter.includes(team.name || ''));
+    }, [selectedTeamFilter, teamSelectorTeams]);
 
     // Lokale state voor price inputs
     const [priceMinInput, setPriceMinInput] = useState(priceRange[0].toString());
@@ -148,6 +183,25 @@ export const AuctionFilters = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
             </span>
+            {availableTeams && availableTeams.length > 0 && setSelectedTeamFilter && (
+                <span className="flex flex-col flex-1">
+                    <label htmlFor="team-filter" className="text-sm font-bold text-gray-700">Team</label>
+                    <TeamSelector
+                        selectedTeams={selectedTeam}
+                        setSelectedTeams={(teams: Team[]) => {
+                            const allowedTeams = teams.filter((team) => !teamsWithSelection?.has(team.name || ''));
+                            setSelectedTeamFilter(allowedTeams.map((team) => team.name).filter(Boolean) as string[]);
+                        }}
+                        availableTeams={teamSelectorTeams}
+                        multiSelect={true}
+                        multiSelectShowSelected={false}
+                        showSelected={true}
+                        showRiderCounts={true}
+                        teamRiderCounts={teamRiderCounts}
+                        placeholder={`Alle teams (${availableTeams.reduce((sum, t) => sum + t.count, 0)})`}
+                    />
+                </span>
+            )}
             <span className="flex flex-col flex-1 justify-center">
                 <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
                     {game?.gameType === 'marginal-gains' ? t('global.points') : t('games.auctions.priceRangeLabel')}
@@ -219,7 +273,7 @@ export const AuctionFilters = ({
                 </span>
             )}
              {game.gameType !== 'marginal-gains' ? 
-             !game.bidding ? (
+             !game.bidding && game.gameType !== 'full-grid' ? (
             <span>
                   <Button  onClick={() => setshowOnlyFillers(!showOnlyFillers)}>
                     <span className={`flex flex-row gap-2 items-center whitespace-nowrap`}>

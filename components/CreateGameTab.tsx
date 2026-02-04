@@ -301,7 +301,7 @@ export const CreateGameTab = () => {
         }
 
         config = {
-          budget: Number(data.fgBudget) || 70,
+          budget: Number(data.fgBudget) || 80,
           maxRiders: Number(data.fgMaxRiders) || 22,
           riderValues: {}, // Will be populated later via admin interface
           selectionStatus: 'open',

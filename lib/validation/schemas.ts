@@ -79,7 +79,7 @@ export const placeBidSchema = z.object({
   riderName: z.string().optional(),
   riderTeam: z.string().optional(),
   riderCountry: z.string().optional(),
-  jerseyImage: z.string().url().optional().or(z.literal('')),
+  jerseyImage: z.string().optional(),
 });
 
 export const cancelBidSchema = z.object({
@@ -97,7 +97,7 @@ export const addRiderToTeamSchema = z.object({
   riderName: z.string().min(1, 'Rider name is required'),
   riderTeam: z.string().min(1, 'Rider team is required'),
   riderCountry: z.string().min(1, 'Rider country is required'),
-  jerseyImage: z.string().url().optional().or(z.literal('')),
+  jerseyImage: z.string().optional(),
   acquisitionType: acquisitionTypeSchema,
   pricePaid: z.number().nonnegative().optional(),
   draftRound: z.number().int().positive().optional(),

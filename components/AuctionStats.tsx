@@ -1,5 +1,5 @@
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency"
-import { Bid, GameType, GameConfig, LastManStandingConfig, PoisonedCupConfig, RisingStarsConfig, MarginalGainsConfig, AuctioneerConfig, WorldTourManagerConfig, GiorgioArmadaConfig } from "@/lib/types"
+import { Bid, GameType, GameConfig } from "@/lib/types"
 import { useTranslation } from "react-i18next";
 import { Collapsible } from "./Collapsible";
 
@@ -12,21 +12,20 @@ interface AuctionStatsGame {
 export const AuctionStats = ({ game, myBids, auctionClosed, getTotalMyBids, getRemainingBudget }: { game: AuctionStatsGame, myBids: Bid[], auctionClosed: boolean, getTotalMyBids: () => number, getRemainingBudget: () => number }) => {
 
     const { t } = useTranslation();
+    const isFullGrid = game.gameType === 'full-grid';
+    const isSelectionBasedGame = game.gameType === 'worldtour-manager' || game.gameType === 'full-grid';
 
-    // Helper to check if config has budget property
-    const hasBudget = (config: any): config is (AuctioneerConfig | LastManStandingConfig | PoisonedCupConfig | WorldTourManagerConfig | GiorgioArmadaConfig) => {
-      return 'budget' in config;
+    // Format value as points (plain number) for full-grid, or as currency for other games
+    const formatValue = (amount: number) => {
+      if (isFullGrid) return `${amount} pt`;
+      return formatCurrencyWhole(amount);
     };
 
-    // Helper to check if config has maxRiders property
-    const hasMaxRiders = (config: any): config is (AuctioneerConfig | WorldTourManagerConfig) => {
-      return 'maxRiders' in config;
-    };
-
-    // Helper to check if config has teamSize property
-    const hasTeamSize = (config: any): config is (LastManStandingConfig | PoisonedCupConfig | RisingStarsConfig | MarginalGainsConfig) => {
-      return 'teamSize' in config;
-    };
+    // Config accessors using any cast to avoid union type issues
+    const cfg = game.config as any;
+    const hasBudget = cfg && 'budget' in cfg;
+    const hasMaxRiders = cfg && 'maxRiders' in cfg;
+    const hasTeamSize = cfg && 'teamSize' in cfg;
 
     // For marginal-gains, only show rider count stats (no budget)
     if (game.gameType === 'marginal-gains') {
@@ -44,11 +43,11 @@ export const AuctionStats = ({ game, myBids, auctionClosed, getTotalMyBids, getR
                 </span>
               </div>
 
-               {hasTeamSize(game.config) && game.config.teamSize && (
+               {hasTeamSize && cfg.teamSize && (
                 <div>
                   <span className="text-sm font-medium text-gray-700">{t('games.auctions.teamSize')}:</span>
                   <span className="ml-2 font-bold text-primary">
-                    {game.config.teamSize}
+                    {cfg.teamSize}
                   </span>
                 </div>
               )}
@@ -65,34 +64,34 @@ export const AuctionStats = ({ game, myBids, auctionClosed, getTotalMyBids, getR
 
     return <Collapsible title="Budget Stats" defaultOpen={true} className="border border-gray-200 rounded-md p-2">
             <div className="flex items-between justify-between flex-col divide-y divide-gray-200 w-full">
-              {hasBudget(game.config) && (
+              {hasBudget && (
                 <div>
                   <span className="text-sm font-medium text-gray-700">{t('games.auctions.totalBudget')}:</span>
                   <span className="ml-2 font-bold text-gray-900">
-                    {formatCurrencyWhole(game.config.budget || 0)}
+                    {formatValue(Number(cfg.budget) || 0)}
                   </span>
                 </div>
               )}
               <div>
                 <span className="text-sm font-medium text-gray-700">
-                  {auctionClosed ? 'Total Spent:' : game.gameType === 'worldtour-manager' ? 'Selected Riders Total:' : 'Active Bids Total:'}
+                  {auctionClosed ? 'Total Spent:' : isSelectionBasedGame ? 'Selected Riders Total:' : 'Active Bids Total:'}
                 </span>
                 <span className="ml-2 font-bold text-blue-600">
-                  {formatCurrencyWhole(getTotalMyBids())}
+                  {formatValue(getTotalMyBids())}
                 </span>
               </div>
-              {hasBudget(game.config) && (
+              {hasBudget && (
                 <div>
                   <span className="text-sm font-medium text-gray-700">{t('games.auctions.remainingBudget')}:</span>
                   <span className={`ml-2 font-bold ${getRemainingBudget() < 0 ? 'text-red-600' : 'text-green-600'
                     }`}>
-                    {formatCurrencyWhole(getRemainingBudget())}
+                    {formatValue(getRemainingBudget())}
                   </span>
                 </div>
               )}
               <div>
                 <span className="text-sm font-medium text-gray-700">
-                  {auctionClosed ? 'Riders Won:' : game.gameType === 'worldtour-manager' ? 'Selected Riders:' : 'My Active Bids:'}
+                  {auctionClosed ? 'Riders Won:' : isSelectionBasedGame ? 'Selected Riders:' : 'My Active Bids:'}
                 </span>
                 <span className="ml-2 font-bold text-primary">
                   {auctionClosed
@@ -101,19 +100,19 @@ export const AuctionStats = ({ game, myBids, auctionClosed, getTotalMyBids, getR
                   }
                 </span>
               </div>
-              {hasMaxRiders(game.config) && game.config.maxRiders && (
+              {hasMaxRiders && cfg.maxRiders && (
                 <div>
                   <span className="text-sm font-medium text-gray-700">{t('games.auctions.maxRiders')}:</span>
                   <span className="ml-2 font-bold text-gray-900">
-                    {game.config.maxRiders}
+                    {cfg.maxRiders}
                   </span>
                 </div>
               )}
-              {hasTeamSize(game.config) && game.config.teamSize && (
+              {hasTeamSize && cfg.teamSize && (
                 <div>
                   <span className="text-sm font-medium text-gray-700">{t('games.auctions.teamSize')}:</span>
                   <span className="ml-2 font-bold text-gray-900">
-                    {game.config.teamSize}
+                    {cfg.teamSize}
                   </span>
                 </div>
               )}

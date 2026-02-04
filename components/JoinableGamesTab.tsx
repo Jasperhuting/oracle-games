@@ -277,12 +277,12 @@ export const JoinableGamesTab = () => {
 
   // Helper to check if a game type uses selection-based bidding
   const isSelectionBasedGame = (gameType: string) => {
-    return gameType === 'auction' || gameType === 'auctioneer' || gameType === 'worldtour-manager' || gameType === 'marginal-gains';
+    return gameType === 'auction' || gameType === 'auctioneer' || gameType === 'worldtour-manager' || gameType === 'marginal-gains' || gameType === 'full-grid';
   };
 
   const getStatusLabel = (game: JoinableGame) => {
     // WorldTour Manager and Marginal Gains use "selecteren" instead of "bidding"
-    if (game.status === 'bidding' && (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains')) {
+    if (game.status === 'bidding' && (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' || game.gameType === 'full-grid')) {
       return 'selecteren';
     }
 

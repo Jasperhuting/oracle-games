@@ -7,6 +7,7 @@ import { Selector } from "./Selector";
 export const TeamSelector = ({
     setSelectedTeams,
     selectedTeams,
+    availableTeams,
     multiSelect = false,
     multiSelectShowSelected = true,
     showSelected = true,
@@ -16,6 +17,7 @@ export const TeamSelector = ({
 }: {
     setSelectedTeams: (teams: Team[]) => void,
     selectedTeams: Team[],
+    availableTeams?: Team[],
     multiSelect?: boolean,
     multiSelectShowSelected?: boolean,
     showSelected?: boolean,
@@ -25,6 +27,10 @@ export const TeamSelector = ({
 }) => {
     // Create teams from teamRiderCounts instead of API
     const teams = useMemo(() => {
+        if (availableTeams && availableTeams.length > 0) {
+            return availableTeams;
+        }
+
         if (!showRiderCounts || teamRiderCounts.size === 0) {
             return [];
         }
@@ -40,7 +46,7 @@ export const TeamSelector = ({
         });
         
         return teamList;
-    }, [teamRiderCounts, showRiderCounts]);
+    }, [availableTeams, teamRiderCounts, showRiderCounts]);
     
     return (
         <Selector<Team>
@@ -48,8 +54,9 @@ export const TeamSelector = ({
             selectedItems={selectedTeams}
             setSelectedItems={setSelectedTeams}
             multiSelect={multiSelect}
-            multiSelectShowSelected={false}
+            multiSelectShowSelected={multiSelect ? false : multiSelectShowSelected}
             showSelected={showSelected}
+            showCheckboxes={false}
             placeholder={placeholder || (multiSelect ? "Filter on teams..." : "Filter on team...")}
             getItemLabel={(team) => {
                 const baseLabel = team.name?.replace(/\s*\d{4}$/, '') || '';

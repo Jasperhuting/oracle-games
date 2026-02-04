@@ -59,6 +59,7 @@ export const BiddingListViewWorldTourSmall = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [scrollItemCount, setScrollItemCount] = useState(10);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const canAdjustBid = game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && game?.gameType !== 'full-grid';
 
   // Load preferences from database on mount
   useEffect(() => {
@@ -131,7 +132,7 @@ export const BiddingListViewWorldTourSmall = ({
 
       switch (sortBy) {
         case 'price':
-          comparison = (riderB.myBid || 0) - (riderA.myBid || 0);
+          comparison = (b.amount || 0) - (a.amount || 0);
           break;
         case 'name':
           comparison = (riderA.name || '').localeCompare(riderB.name || '');
@@ -209,7 +210,7 @@ export const BiddingListViewWorldTourSmall = ({
 
     <div className="bg-gray-100 border border-gray-200 p-4 rounded-t-none -mt-[1px] rounded-md mb-4 items-center justify-start flex-wrap gap-4 py-4">
       {myBids.length === 0 && <div className="col-span-full text-center text-gray-500">
-        {game?.gameType === 'worldtour-manager' ? t('messages.noRidersSelectedYet') : t('messages.noBidsPlacedYet')}
+        {game?.gameType === 'worldtour-manager' || game?.gameType === 'full-grid' ? t('messages.noRidersSelectedYet') : t('messages.noBidsPlacedYet')}
       </div>}
       {myBids.length > 0 && (
         <div className="mb-3 flex items-center gap-3">
@@ -225,7 +226,7 @@ export const BiddingListViewWorldTourSmall = ({
               backgroundSize: '1.5em 1.5em'
             }}
           >
-            <option value="price">{game.gameType === 'marginal-gains' ? 'Points' : 'Prijs'}</option>
+            <option value="price">{game.gameType === 'marginal-gains' || game.gameType === 'full-grid' ? 'Points' : 'Prijs'}</option>
             <option value="rank">{t('global.rank')}</option>
             <option value="name">{t('global.name')}</option>
             <option value="age">{t('global.age')}</option>
@@ -302,7 +303,7 @@ export const BiddingListViewWorldTourSmall = ({
           )}
         </div>
       )}
-      {myBids.length > 0 && game.gameType !== 'worldtour-manager' && (
+      {myBids.length > 0 && game.gameType !== 'worldtour-manager' && game.gameType !== 'full-grid' && (
         <div className="flex flex-row w-full p-2">
           <span className="font-bold basis-[90px]">{t('global.price')}</span>
           <span className="font-bold basis-[90px]">{t('global.bid')}</span>
@@ -346,17 +347,19 @@ export const BiddingListViewWorldTourSmall = ({
 
               <div className="flex gap-2 items-center justify-between mt-1">
                 <span className="font-medium whitespace-nowrap text-sm">
-                  {game.gameType === 'marginal-gains' ? `${rider.myBid} ${rider.myBid === 1 ? 'point' : 'points'}` : rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}
+                  {(game.gameType === 'marginal-gains' || game.gameType === 'full-grid')
+                    ? `${myBidRider.amount} ${myBidRider.amount === 1 ? 'point' : 'points'}`
+                    : myBidRider.amount === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(myBidRider.amount || 1)}
                 </span>
                 {canCancel && (
                   <>
-                    {adjustingBid === rider.myBidId ? (
+                    {canAdjustBid && adjustingBid === rider.myBidId ? (
                       <div className="flex gap-2 items-center flex-1">
                         <CurrencyInput
                           id={`adjust-bid-list-${rider.myBidId}`}
                           name="adjust-bid"
                           className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder={`${rider.myBid || 0}`}
+                          placeholder={`${myBidRider.amount || 0}`}
                           decimalsLimit={0}
                           disabled={placingBid === riderNameId}
                           defaultValue={bidAmountsRef.current[riderNameId] || ''}

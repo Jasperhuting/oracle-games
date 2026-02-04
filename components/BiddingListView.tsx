@@ -40,6 +40,7 @@ export const BiddingListView = ({
   const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const canAdjustBid = game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && game?.gameType !== 'full-grid';
 
   const sortedBids = useMemo(() => {
     const filtered = myBids.filter((bid) => bid.status !== 'won' && bid.status !== 'lost');
@@ -54,7 +55,7 @@ export const BiddingListView = ({
 
       switch (sortBy) {
         case 'price':
-          comparison = (riderB.myBid || 0) - (riderA.myBid || 0);
+          comparison = (b.amount || 0) - (a.amount || 0);
           break;
         case 'name':
           comparison = (riderA.name || '').localeCompare(riderB.name || '');
@@ -153,19 +154,19 @@ export const BiddingListView = ({
               <div key={myBidRider.id} className="bg-white px-2">
                 <div className="flex flex-row w-full py-1">
                   <span className="basis-[90px] flex items-center">{rider.points === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.effectiveMinBid || rider.points || 1)}</span>
-                  <span className="basis-[90px] flex items-center">{rider.myBid === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(rider.myBid || 1)}</span>
+                  <span className="basis-[90px] flex items-center">{myBidRider.amount === 0 ? formatCurrencyWhole(1) : formatCurrencyWhole(myBidRider.amount || 1)}</span>
                   <span className="flex-1 flex items-center">{rider.name}</span>
                   <span className="basis-[300px] flex items-center">{rider.team?.name || t('global.unknown')}</span>
                   <span className="basis-[200px] flex items-center gap-2">
                     {canCancel && (
                       <>
-                        {adjustingBid === rider.myBidId ? (
+                        {canAdjustBid && adjustingBid === rider.myBidId ? (
                           <div className="flex gap-2 items-center w-full">
                             <CurrencyInput
                               id={`adjust-bid-list-${rider.myBidId}`}
                               name="adjust-bid"
                               className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
-                              placeholder={`${rider.myBid || 0}`}
+                              placeholder={`${myBidRider.amount || 0}`}
                               decimalsLimit={0}
                               disabled={placingBid === riderNameId}
                               defaultValue={bidAmountsRef.current[riderNameId] || ''}
@@ -196,7 +197,7 @@ export const BiddingListView = ({
                           </div>
                         ) : (
                           <>
-                            {game?.gameType !== 'worldtour-manager' && (
+                            {canAdjustBid && (
                               <Button
                                 type="button"
                                 text={t('global.adjust')}
