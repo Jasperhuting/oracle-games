@@ -58,7 +58,7 @@ export default function SlipstreamPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const gameId = params?.gameId as string;
 
   // Get filter from URL, default to 'needs_pick'
@@ -79,7 +79,7 @@ export default function SlipstreamPage() {
   const [selectedRaceSlug, setSelectedRaceSlug] = useState<string | null>(null);
   const [selectedRider, setSelectedRider] = useState<Rider | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -96,7 +96,11 @@ export default function SlipstreamPage() {
   const canMakePick = selectedRace && !selectedRace.deadlinePassed && selectedRace.status === 'upcoming';
 
   const fetchData = useCallback(async () => {
-    if (!gameId || !user) return;
+    if (!gameId) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -120,7 +124,7 @@ export default function SlipstreamPage() {
         setGameName(gameData.game?.name || '');
         
         // Try to get riders from game config first, otherwise fetch from rankings
-        let riders = gameData.game?.eligibleRiders || [];
+        const riders = gameData.game?.eligibleRiders || [];
         
         if (riders.length === 0) {
           // Fetch riders from rankings
@@ -179,8 +183,9 @@ export default function SlipstreamPage() {
   }, [gameId, user]);
 
   useEffect(() => {
+    if (authLoading) return;
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, authLoading]);
 
   // Auto-select first upcoming race when calendar loads
   useEffect(() => {
@@ -259,7 +264,7 @@ export default function SlipstreamPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-lg text-gray-600">Loading...</div>

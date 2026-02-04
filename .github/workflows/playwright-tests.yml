@@ -45,44 +45,13 @@ jobs:
           NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          NEXT_PUBLIC_BASE_URL=http://localhost:3210
+          NEXT_PUBLIC_BASE_URL=http://localhost:3310
           EOF
 
-      - name: Start Firebase Emulators in background
-        run: |
-          firebase emulators:start --only auth,firestore --import=./emulator-data &
-          echo "Waiting for emulators to start..."
-          npx wait-on http://127.0.0.1:4000 -t 60000
-
-      - name: Sanity check Auth Emulator login
-        run: |
-          echo "Checking login for user@test.com against Auth Emulator..."
-          API_KEY="${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}"
-          if [ -z "$API_KEY" ]; then
-            echo "Missing secret NEXT_PUBLIC_FIREBASE_API_KEY"
-            exit 1
-          fi
-          RESPONSE=$(curl -sS -X POST \
-            "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}" \
-            -H "Content-Type: application/json" \
-            -d '{"email":"user@test.com","password":"user123","returnSecureToken":true}')
-
-          echo "$RESPONSE" | grep -q '"idToken"' || (echo "Auth Emulator sanity check failed: $RESPONSE" && exit 1)
-          echo "Auth Emulator sanity check passed."
-
-      - name: Seed test data
-        run: npm run seed:test-data
-
-      - name: Start Next.js server in background
-        run: |
-          npm run dev:emulator > next-dev.log 2>&1 &
-          echo "Waiting for Next.js to start..."
-          npx wait-on http://localhost:3210 -t 120000 || (echo "Next.js failed to start. Logs:" && cat next-dev.log && exit 1)
+      - name: Run Playwright tests
+        run: npm run test:e2e:full:testdb
         env:
           NODE_ENV: test
-
-      - name: Run Playwright tests
-        run: npm run test:e2e
 
       - name: Upload Playwright report on failure
         uses: actions/upload-artifact@v4
@@ -108,6 +77,5 @@ jobs:
           name: logs
           path: |
             firebase-debug.log
-            next-dev.log
             *.log
           if-no-files-found: ignore
