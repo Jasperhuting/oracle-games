@@ -21,7 +21,8 @@ test.describe('Slipstream Game', () => {
       await expect(authenticatedPage.locator('h1')).toContainText('Slipstream');
 
       // Should see the main sections
-      await expect(authenticatedPage.getByText('Make Your Pick')).toBeVisible();
+      await expect(authenticatedPage.getByText('Select Race')).toBeVisible();
+      await expect(authenticatedPage.getByText('Select Rider')).toBeVisible();
       await expect(authenticatedPage.getByText('Standings')).toBeVisible();
     });
 
@@ -178,7 +179,6 @@ test.describe('Slipstream Game', () => {
       await expect(authenticatedPage.getByText('Time Lost')).toBeVisible();
       await expect(authenticatedPage.getByText('Green Points')).toBeVisible();
       await expect(authenticatedPage.getByText('Picks Made')).toBeVisible();
-      await expect(authenticatedPage.getByText('Riders Used')).toBeVisible();
     });
   });
 

@@ -59,17 +59,21 @@ async function seedTestData() {
     // 6. Seed player teams
     await seedPlayerTeams();
 
-    // 7. Seed messages
+    // 7. Seed slipstream picks
+    await seedSlipstreamPicks();
+
+    // 8. Seed messages
     await seedMessages();
 
     console.log('\n✅ Test data seeding completed successfully!');
     console.log('\n📋 Summary:');
     console.log('   - 3 test users created');
-    console.log('   - 3 test games created');
-    console.log('   - 3 participants created');
+    console.log('   - 4 test games created');
+    console.log('   - 5 participants created');
     console.log('   - 3 sample riders added');
     console.log('   - 4 test bids created');
     console.log('   - 2 player teams created');
+    console.log('   - 1 slipstream pick created');
     console.log('   - 3 test messages created');
     console.log('\n🚀 Ready for E2E tests!');
 
@@ -121,6 +125,7 @@ async function seedUsers() {
 
 async function seedGames() {
   console.log('🎮 Seeding test games...');
+  const now = Date.now();
 
   const games = [
     {
@@ -194,6 +199,58 @@ async function seedGames() {
         maxRiders: 6,
         auctionStatus: 'pending'
       }
+    },
+    {
+      id: 'FdiMp3zTTgDpsPCSo0yl',
+      name: 'Test Slipstream 2026',
+      gameType: 'slipstream',
+      raceType: 'season',
+      year: 2026,
+      createdBy: USERS.admin,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      status: 'active',
+      playerCount: 3,
+      maxPlayers: 30,
+      eligibleRiders: ['tadej-pogacar', 'jonas-vingegaard', 'remco-evenepoel'],
+      config: {
+        allowReuse: false,
+        penaltyMinutes: 1,
+        pickDeadlineMinutes: 60,
+        greenJerseyPoints: {
+          1: 10, 2: 9, 3: 8, 4: 7, 5: 6,
+          6: 5, 7: 4, 8: 3, 9: 2, 10: 1
+        },
+        countingRaces: [
+          {
+            raceId: 'uae-tour-2026-result',
+            raceSlug: 'uae-tour-2026',
+            raceName: 'UAE Tour 2026',
+            raceDate: Timestamp.fromDate(new Date(now + 1000 * 60 * 60 * 24 * 2)),
+            pickDeadline: Timestamp.fromDate(new Date(now + 1000 * 60 * 60 * 24 * 2 - 1000 * 60 * 60)),
+            status: 'upcoming',
+            order: 1
+          },
+          {
+            raceId: 'paris-nice-2026-result',
+            raceSlug: 'paris-nice-2026',
+            raceName: 'Paris-Nice 2026',
+            raceDate: Timestamp.fromDate(new Date(now + 1000 * 60 * 60 * 24 * 5)),
+            pickDeadline: Timestamp.fromDate(new Date(now + 1000 * 60 * 60 * 24 * 5 - 1000 * 60 * 60)),
+            status: 'upcoming',
+            order: 2
+          },
+          {
+            raceId: 'omloop-2026-result',
+            raceSlug: 'omloop-2026',
+            raceName: 'Omloop 2026',
+            raceDate: Timestamp.fromDate(new Date(now - 1000 * 60 * 60 * 24 * 7)),
+            pickDeadline: Timestamp.fromDate(new Date(now - 1000 * 60 * 60 * 24 * 7 - 1000 * 60 * 60)),
+            status: 'finished',
+            order: 3
+          }
+        ]
+      }
     }
   ];
 
@@ -254,12 +311,86 @@ async function seedParticipants() {
       totalPoints: 0,
       ranking: 1,
       leagueIds: []
+    },
+    {
+      id: 'participant-user-slipstream',
+      gameId: 'FdiMp3zTTgDpsPCSo0yl',
+      userId: USERS.user,
+      playername: 'Test User',
+      userEmail: 'user@test.com',
+      joinedAt: Timestamp.now(),
+      status: 'active',
+      budget: 0,
+      spentBudget: 0,
+      rosterSize: 0,
+      rosterComplete: false,
+      totalPoints: 0,
+      ranking: 2,
+      leagueIds: [],
+      slipstreamData: {
+        totalTimeLostSeconds: 45,
+        totalGreenJerseyPoints: 8,
+        usedRiders: ['jonas-vingegaard'],
+        picksCount: 1,
+        missedPicksCount: 0,
+        yellowJerseyRanking: 2,
+        greenJerseyRanking: 2
+      }
+    },
+    {
+      id: 'participant-admin-slipstream',
+      gameId: 'FdiMp3zTTgDpsPCSo0yl',
+      userId: USERS.admin,
+      playername: 'Test Admin',
+      userEmail: 'admin@test.com',
+      joinedAt: Timestamp.now(),
+      status: 'active',
+      budget: 0,
+      spentBudget: 0,
+      rosterSize: 0,
+      rosterComplete: false,
+      totalPoints: 0,
+      ranking: 1,
+      leagueIds: [],
+      slipstreamData: {
+        totalTimeLostSeconds: 30,
+        totalGreenJerseyPoints: 10,
+        usedRiders: ['tadej-pogacar'],
+        picksCount: 1,
+        missedPicksCount: 0,
+        yellowJerseyRanking: 1,
+        greenJerseyRanking: 1
+      }
     }
   ];
 
   for (const participant of participants) {
     await setDoc(doc(db, 'gameParticipants', participant.id), participant);
     console.log(`   ✓ Created participant: ${participant.playername} in ${participant.gameId}`);
+  }
+}
+
+async function seedSlipstreamPicks() {
+  console.log('📝 Seeding slipstream picks...');
+
+  const picks = [
+    {
+      id: 'pick-user-paris-nice',
+      gameId: 'FdiMp3zTTgDpsPCSo0yl',
+      userId: USERS.user,
+      playername: 'Test User',
+      raceSlug: 'paris-nice-2026',
+      stageNumber: 'result',
+      riderId: 'jonas-vingegaard',
+      riderName: 'Jonas Vingegaard',
+      pickedAt: Timestamp.now(),
+      locked: false
+    }
+  ];
+
+  for (const pick of picks) {
+    await setDoc(doc(db, 'stagePicks', pick.id), pick);
+    console.log(`   ✓ Created slipstream pick: ${pick.playername} → ${pick.riderName}`);
   }
 }
 
