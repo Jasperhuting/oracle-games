@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import { Tabs } from '@/components/Tabs';
 import { MyTeamTab } from '@/components/game-dashboard/MyTeamTab';
 import { StandingsTab } from '@/components/game-dashboard/StandingsTab';
 import { AllTeamsTab } from '@/components/game-dashboard/AllTeamsTab';
+import { SimpleAllTeamsTab } from '@/components/game-dashboard/SimpleAllTeamsTab';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
 import { Game, GameParticipant } from '@/lib/types/games';
 
@@ -106,6 +107,36 @@ export default function GameDashboardPage() {
   const [allTeamsLoading, setAllTeamsLoading] = useState(true);
   const [allTeamsError, setAllTeamsError] = useState<string | null>(null);
 
+  const riderSelectionStats = useMemo(() => {
+    const totalTeams = allTeams.length;
+    if (totalTeams === 0) return {};
+
+    const riderCounts = new Map<string, number>();
+    allTeams.forEach((team) => {
+      team.riders.forEach((rider) => {
+        const riderKey = rider.riderNameId || rider.riderId;
+        riderCounts.set(riderKey, (riderCounts.get(riderKey) || 0) + 1);
+      });
+    });
+
+    const stats: Record<string, { selectedBy: number; totalTeams: number; percentage: number }> = {};
+    riderCounts.forEach((selectedBy, riderKey) => {
+      stats[riderKey] = {
+        selectedBy,
+        totalTeams,
+        percentage: Math.round((selectedBy / totalTeams) * 100),
+      };
+    });
+
+    return stats;
+  }, [allTeams]);
+
+  const myStandingRanking = useMemo(() => {
+    if (!participant) return undefined;
+    const standing = standings.find((entry) => entry.participantId === participant.id);
+    return standing?.ranking ?? participant.ranking;
+  }, [participant, standings]);
+
   // Load game data
   useEffect(() => {
     if (authLoading) return;
@@ -200,9 +231,9 @@ export default function GameDashboardPage() {
           throw new Error('Kon tussenstand niet laden');
         }
         const data = await response.json();
-        const teams = data.teams || [];
+        const teams: AllTeamsTeam[] = data.teams || [];
 
-        const mappedStandings: Standing[] = teams.map((team: any) => ({
+        const mappedStandings: Standing[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
           totalPoints: team.totalPoints ?? 0,
@@ -285,6 +316,8 @@ export default function GameDashboardPage() {
           game={game}
           participant={participant}
           riders={myRiders}
+          displayRanking={myStandingRanking}
+          riderSelectionStats={riderSelectionStats}
           loading={myTeamLoading}
           error={myTeamError}
         />
@@ -306,6 +339,18 @@ export default function GameDashboardPage() {
     {
       id: 'alle-teams',
       label: 'Alle Teams',
+      content: (
+        <SimpleAllTeamsTab
+          teams={allTeams}
+          currentUserId={user?.uid}
+          loading={allTeamsLoading}
+          error={allTeamsError}
+        />
+      ),
+    },
+    {
+      id: 'statistiek',
+      label: 'Statistiek',
       content: (
         <AllTeamsTab
           game={game}
@@ -331,7 +376,7 @@ export default function GameDashboardPage() {
                 {game?.name || 'Game Dashboard'}
               </h1>
               <p className="text-gray-600">
-                Bekijk je team, de stand en alle teams
+                Bekijk je team, het klassement, alle teams en statistieken
               </p>
             </div>
             <div className="flex gap-2">

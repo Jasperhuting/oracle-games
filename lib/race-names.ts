@@ -7,14 +7,14 @@ export async function getRaceNamesClient(year?: number): Promise<Map<string, str
     const response = await fetch(`/api/calendar/races?year=${targetYear}`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch race names');
+      return new Map<string, string>();
     }
     
     const data = await response.json();
     const raceNamesMap = new Map<string, string>();
     
     if (data.races && Array.isArray(data.races)) {
-      data.races.forEach((race: any) => {
+      data.races.forEach((race: { slug?: string; name?: string }) => {
         if (race.slug && race.name) {
           raceNamesMap.set(race.slug, race.name);
         }
@@ -22,8 +22,7 @@ export async function getRaceNamesClient(year?: number): Promise<Map<string, str
     }
     
     return raceNamesMap;
-  } catch (error) {
-    console.error('Error fetching race names client-side:', error);
+  } catch {
     return new Map<string, string>();
   }
 }

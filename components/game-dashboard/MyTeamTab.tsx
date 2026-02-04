@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
@@ -43,11 +44,21 @@ interface MyTeamTabProps {
   game: Game | null;
   participant: GameParticipant | null;
   riders: TeamRider[];
+  displayRanking?: number;
+  riderSelectionStats?: Record<string, { selectedBy: number; totalTeams: number; percentage: number }>;
   loading: boolean;
   error: string | null;
 }
 
-export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamTabProps) {
+export function MyTeamTab({
+  game,
+  participant,
+  riders,
+  displayRanking,
+  riderSelectionStats,
+  loading,
+  error,
+}: MyTeamTabProps) {
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortOption>('points');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -171,7 +182,7 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600">Ranking</div>
           <div className="text-2xl font-bold text-gray-900">
-            #{participant?.ranking || '-'}
+            #{displayRanking || participant?.ranking || '-'}
           </div>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -240,6 +251,7 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
             const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
             const riderRoi = getRiderRoi(rider);
             const roiColorClass = riderRoi > 0 ? 'text-green-600' : riderRoi < 0 ? 'text-red-600' : 'text-gray-600';
+            const riderPopularity = riderSelectionStats?.[rider.nameId] || riderSelectionStats?.[rider.id];
 
             return (
               <div
@@ -254,10 +266,13 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       
-                        <img
+                        <Image
                           src={`${rider.jerseyImage ? `https://www.procyclingstats.com/${rider.jerseyImage}` : '/jersey-transparent.png'}`}
                           alt={rider.team}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 object-contain"
+                          unoptimized
                         />
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -279,6 +294,11 @@ export function MyTeamTab({ game, participant, riders, loading, error }: MyTeamT
                                rider.acquisitionType === 'draft' ? 'Draft' : 
                                rider.acquisitionType === 'selection' ? 'Selectie' : 
                                rider.acquisitionType}
+                            </span>
+                          )}
+                          {riderPopularity && (
+                            <span className="text-blue-600">
+                              Gekozen door {riderPopularity.percentage}% ({riderPopularity.selectedBy}/{riderPopularity.totalTeams})
                             </span>
                           )}
                         </div>

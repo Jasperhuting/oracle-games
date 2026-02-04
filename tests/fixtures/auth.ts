@@ -4,7 +4,7 @@
  * These fixtures provide authenticated page contexts for tests.
  * Based on the Cypress custom commands we had before.
  */
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, Browser, StorageState } from '@playwright/test';
 
 // Test users (matching auth_export/accounts.json)
 export const TEST_USERS = {
@@ -31,6 +31,25 @@ type AuthFixtures = {
   authenticatedAsAdmin: any;
 };
 
+let userStorageState: StorageState | null = null;
+let user2StorageState: StorageState | null = null;
+let adminStorageState: StorageState | null = null;
+
+async function getAuthenticatedStorageState(
+  browser: Browser,
+  user: { email: string; password: string },
+  cachedState: StorageState | null
+): Promise<StorageState> {
+  if (cachedState) return cachedState;
+
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await loginAs(page, user);
+  const state = await context.storageState();
+  await context.close();
+  return state;
+}
+
 /**
  * Extended test with authentication fixtures
  *
@@ -44,21 +63,30 @@ type AuthFixtures = {
  */
 export const test = base.extend<AuthFixtures>({
   // Default authenticated page (user@test.com)
-  authenticatedPage: async ({ page }: any, use: any) => {
-    await loginAs(page, TEST_USERS.user);
+  authenticatedPage: async ({ browser }: any, use: any) => {
+    userStorageState = await getAuthenticatedStorageState(browser, TEST_USERS.user, userStorageState);
+    const context = await browser.newContext({ storageState: userStorageState });
+    const page = await context.newPage();
     await use(page);
+    await context.close();
   },
 
   // Authenticated as user2@test.com
-  authenticatedAsUser2: async ({ page }: any, use: any) => {
-    await loginAs(page, TEST_USERS.user2);
+  authenticatedAsUser2: async ({ browser }: any, use: any) => {
+    user2StorageState = await getAuthenticatedStorageState(browser, TEST_USERS.user2, user2StorageState);
+    const context = await browser.newContext({ storageState: user2StorageState });
+    const page = await context.newPage();
     await use(page);
+    await context.close();
   },
 
   // Authenticated as admin@test.com
-  authenticatedAsAdmin: async ({ page }: any, use: any) => {
-    await loginAs(page, TEST_USERS.admin);
+  authenticatedAsAdmin: async ({ browser }: any, use: any) => {
+    adminStorageState = await getAuthenticatedStorageState(browser, TEST_USERS.admin, adminStorageState);
+    const context = await browser.newContext({ storageState: adminStorageState });
+    const page = await context.newPage();
     await use(page);
+    await context.close();
   },
 });
 

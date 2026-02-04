@@ -96,7 +96,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'players' | 'cycling-teams' | 'all' | 'compare'>('players');
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
-  const [allViewSortBy, setAllViewSortBy] = useState<'points' | 'value' | 'owners' | 'team'>('points');
+  const [allViewSortBy, setAllViewSortBy] = useState<'points' | 'value' | 'roi' | 'owners' | 'team'>('points');
   const [allViewSortDirection, setAllViewSortDirection] = useState<'asc' | 'desc'>('desc');
   const [compareUserId, setCompareUserId] = useState<string | null>(null);
   const [allViewSearch, setAllViewSearch] = useState('');
@@ -188,6 +188,14 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
         case 'value':
           comparison = a.baseValue - b.baseValue;
           break;
+        case 'roi': {
+          const aBaseValue = a.baseValue || 0;
+          const bBaseValue = b.baseValue || 0;
+          const aRoi = aBaseValue > 0 ? ((a.pointsScored - aBaseValue) / aBaseValue) * 100 : -Infinity;
+          const bRoi = bBaseValue > 0 ? ((b.pointsScored - bBaseValue) / bBaseValue) * 100 : -Infinity;
+          comparison = aRoi - bRoi;
+          break;
+        }
         case 'owners':
           comparison = (a.owners?.length || 1) - (b.owners?.length || 1);
           break;
@@ -773,6 +781,14 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
               Waarde
             </button>
             <button
+              onClick={() => setAllViewSortBy('roi')}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                allViewSortBy === 'roi' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
+              }`}
+            >
+              ROI
+            </button>
+            <button
               onClick={() => setAllViewSortBy('owners')}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 allViewSortBy === 'owners' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
@@ -857,6 +873,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eigenaar(s)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROI</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                 </tr>
               </thead>
@@ -899,6 +916,21 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600"><Flag countryCode={rider.riderCountry} /></td>
                       <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>
+                      <td className="px-4 py-3 text-sm text-right">
+                        {(() => {
+                          const baseValue = rider.baseValue || 0;
+                          if (baseValue <= 0) {
+                            return <span className="text-gray-400">-</span>;
+                          }
+                          const roi = ((rider.pointsScored - baseValue) / baseValue) * 100;
+                          const roiClass = roi > 0 ? 'text-green-600' : roi < 0 ? 'text-red-600' : 'text-gray-600';
+                          return (
+                            <span className={`font-medium ${roiClass}`}>
+                              {roi > 0 ? '+' : ''}{Math.round(roi)}%
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>
                     </tr>
                   );
