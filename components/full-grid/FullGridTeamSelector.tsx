@@ -5,8 +5,10 @@ import { Check } from 'tabler-icons-react';
 interface Team {
   name: string;
   slug: string;
-  jerseyImage?: string;
+  teamImage?: string;
   riderCount: number;
+  teamClass?: string;
+  isProTeam?: boolean;
 }
 
 interface FullGridTeamSelectorProps {
@@ -14,6 +16,9 @@ interface FullGridTeamSelectorProps {
   selectedTeam: string | null;
   teamsWithSelection: Set<string>;
   onSelectTeam: (teamName: string) => void;
+  proTeamsSelectedCount?: number;
+  proTeamsLimit?: number;
+  selectedRiderByTeam?: Record<string, string>;
 }
 
 export function FullGridTeamSelector({
@@ -21,6 +26,9 @@ export function FullGridTeamSelector({
   selectedTeam,
   teamsWithSelection,
   onSelectTeam,
+  proTeamsSelectedCount,
+  proTeamsLimit,
+  selectedRiderByTeam,
 }: FullGridTeamSelectorProps) {
   const completedCount = teamsWithSelection.size;
   const totalCount = teams.length;
@@ -32,13 +40,17 @@ export function FullGridTeamSelector({
         <p className="text-sm text-gray-500">
           {completedCount} van {totalCount} ploegen geselecteerd
         </p>
+        {typeof proTeamsSelectedCount === 'number' && typeof proTeamsLimit === 'number' && (
+          <p className="text-xs text-gray-500 mt-1">
+            ProTeams: {proTeamsSelectedCount} / {proTeamsLimit}
+          </p>
+        )}
       </div>
 
       <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
         {teams.map((team) => {
           const isSelected = selectedTeam === team.name;
           const hasSelection = teamsWithSelection.has(team.name);
-
           return (
             <button
               key={team.slug}
@@ -53,14 +65,18 @@ export function FullGridTeamSelector({
             >
               {/* Team jersey */}
               <div className="w-8 h-8 flex-shrink-0">
-                {team.jerseyImage ? (
+                {team.teamImage ? (
                   <img
-                    src={team.jerseyImage}
+                    src={`https://www.procyclingstats.com/${team.teamImage}`}
                     alt={team.name}
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-200 rounded" />
+                  <img
+                    src="/jersey-transparent.png"
+                    alt={team.name}
+                    className="w-full h-full object-contain"
+                  />
                 )}
               </div>
 
@@ -71,7 +87,22 @@ export function FullGridTeamSelector({
                 </div>
                 <div className="text-xs text-gray-500">
                   {team.riderCount} renners
+                  {team.teamClass && team.teamClass !== 'PRT' && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wide text-gray-400">
+                      {team.teamClass}
+                    </span>
+                  )}
+                  {team.isProTeam && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700">
+                      PRT
+                    </span>
+                  )}
                 </div>
+                {hasSelection && selectedRiderByTeam?.[team.name] && (
+                  <div className="text-xs text-green-700 truncate">
+                    Gekozen: {selectedRiderByTeam[team.name]}
+                  </div>
+                )}
               </div>
 
               {/* Selection indicator */}

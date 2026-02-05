@@ -16,6 +16,10 @@ import { BiddingListView } from "./BiddingListView";
 import { BiddingListViewWorldTour } from "./BiddingListViewWorldTour";
 import Countdown from 'react-countdown';
 import { BiddingListViewWorldTourSmall } from "./BiddingListViewWorldTour-small";
+import { FullGridTeamSelector } from "@/components/full-grid/FullGridTeamSelector";
+import { FullGridRiderList } from "@/components/full-grid/FullGridRiderList";
+import { FullGridMyTeam } from "@/components/full-grid/FullGridMyTeam";
+import { AuctionStats } from "./AuctionStats";
 
 
 export const Bidding = ({
@@ -37,6 +41,7 @@ export const Bidding = ({
   bidAmountsRef,
   userId,
   teamsWithSelection,
+  inlineError,
 }: {
   auctionClosed: boolean,
   game: GameData,
@@ -60,11 +65,14 @@ export const Bidding = ({
   placingBid: string | null,
   userId?: string,
   teamsWithSelection?: Set<string>,
+  inlineError?: string | null,
 }) => {
 
   const { t } = useTranslation();
 
   const isSelectionBasedGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid';
+  const isFullGrid = game?.gameType === 'full-grid';
+  const showInlineError = isFullGrid ? inlineError : null;
 
   const Completionist = () => <span className="bg-primary text-white px-2 py-1 rounded w-full flex items-center justify-center">{t('bidding.theBiddingHasEnded')}</span>;
 
@@ -82,11 +90,22 @@ export const Bidding = ({
     }
   };
 
-  console.log(game);
-
-
   const [myTeamView, setMyTeamView] = useState('card');
   const [myTeamBidsView, setMyTeamBidsView] = useState('list');
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+
+  const isProTourTeamClass = (teamClass?: string) => {
+    if (!teamClass) return false;
+    const normalized = teamClass.trim().toLowerCase();
+    return (
+      normalized === 'prt' ||
+      normalized === 'proteam' ||
+      normalized === 'pro team' ||
+      normalized === 'protour' ||
+      normalized === 'pro tour' ||
+      normalized === 'pro'
+    );
+  };
 
   // Sorting state for riders list
   type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';
@@ -137,6 +156,132 @@ export const Bidding = ({
       return ridersSortDirection === 'asc' ? comparison : -comparison;
     });
   }, [sortedAndFilteredRiders, ridersSortBy, ridersSortDirection, game?.config]);
+
+  const fullGridRiders = useMemo(() => {
+    if (!isFullGrid) return [];
+
+    return availableRiders
+      .filter(rider => !rider.retired)
+      .filter(rider => (rider.effectiveMinBid || rider.points || 0) > 0)
+      .map(rider => {
+        return ({
+        riderNameId: rider.nameID || rider.id || '',
+        riderName: rider.name,
+        riderTeam: rider.team?.name || '',
+        teamSlug: (rider.team as any)?.slug || (rider.team as any)?.id || (rider.team as any)?.teamNameID || rider.team?.name || '', // eslint-disable-line @typescript-eslint/no-explicit-any
+        jerseyImage: rider.team?.jerseyImageTeam || '',
+        value: rider.effectiveMinBid || rider.points || 0,
+        country: rider.country,
+        teamClass: (rider.team as any)?.class || (rider.team as any)?.teamClass, // eslint-disable-line @typescript-eslint/no-explicit-any
+        isProTeam: isProTourTeamClass((rider.team as any)?.class || (rider.team as any)?.teamClass), // eslint-disable-line @typescript-eslint/no-explicit-any
+      })});
+  }, [availableRiders, isFullGrid, isProTourTeamClass]);
+
+  const fullGridTeams = useMemo(() => {
+    if (!isFullGrid) return [];
+    const teamMap = new Map<string, { name: string; slug: string; teamImage?: string; riderCount: number; teamClass?: string; isProTeam?: boolean }>();
+    fullGridRiders.forEach(rider => {
+
+      if (!rider.riderTeam) return;
+      if (!teamMap.has(rider.riderTeam)) {
+        teamMap.set(rider.riderTeam, {
+          name: rider.riderTeam,
+          slug: rider.teamSlug || rider.riderTeam,
+          teamImage: rider.jerseyImage,
+          riderCount: 0,
+          teamClass: rider.teamClass,
+          isProTeam: isProTourTeamClass(rider.teamClass),
+        });
+      }
+      teamMap.get(rider.riderTeam)!.riderCount++;
+    });
+    return Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [fullGridRiders, isFullGrid]);
+
+  const fullGridTeamRiders = useMemo(() => {
+    if (!isFullGrid || !selectedTeam) return [];
+    return fullGridRiders
+      .filter(rider => rider.riderTeam === selectedTeam)
+      .sort((a, b) => b.value - a.value);
+  }, [fullGridRiders, selectedTeam, isFullGrid]);
+
+  const fullGridRiderLookup = useMemo(() => {
+    const map = new Map<string, RiderWithBid>();
+    availableRiders.forEach(rider => {
+      const riderNameId = rider.nameID || rider.id || '';
+      if (riderNameId) {
+        map.set(riderNameId, rider);
+      }
+    });
+    return map;
+  }, [availableRiders]);
+
+  const fullGridMyTeam = useMemo(() => {
+    if (!isFullGrid) return [];
+    const activeBids = myBids.filter(b => b.status === 'active' || b.status === 'won');
+    return activeBids.map(bid => {
+      const rider = availableRiders.find(r => (r.nameID || r.id) === bid.riderNameId);
+      return {
+        riderNameId: bid.riderNameId,
+        riderName: bid.riderName || rider?.name || '',
+        riderTeam: bid.riderTeam || rider?.team?.name || '',
+        jerseyImage: rider?.team?.jerseyImageTeam || '',
+        value: bid.amount || rider?.effectiveMinBid || rider?.points || 0,
+        teamClass: (rider?.team as any)?.class || (rider?.team as any)?.teamClass, // eslint-disable-line @typescript-eslint/no-explicit-any
+        isProTeam: isProTourTeamClass((rider?.team as any)?.class || (rider?.team as any)?.teamClass), // eslint-disable-line @typescript-eslint/no-explicit-any
+      };
+    });
+  }, [availableRiders, myBids, isFullGrid]);
+
+  const fullGridBudgetStats = useMemo(() => {
+    const budget = Number(game?.config?.budget) || 0;
+    const uniqueRiders = new Set(fullGridMyTeam.map(r => r.riderNameId));
+    const spent = fullGridMyTeam.reduce((sum, r) => sum + (Number(r.value) || 0), 0);
+    const maxRiders = Number(game?.config?.maxRiders || game?.config?.teamSize || 0);
+    return {
+      total: budget,
+      spent,
+      remaining: budget - spent,
+      riderCount: uniqueRiders.size,
+      maxRiders: maxRiders || fullGridTeams.length,
+    };
+  }, [fullGridMyTeam, fullGridTeams.length, game?.config]);
+
+  const proTeamsSelectedCount = useMemo(() => {
+    const uniqueTeams = new Set(
+      fullGridMyTeam
+        .filter(rider => isProTourTeamClass(rider.teamClass))
+        .map(rider => rider.riderTeam)
+    );
+    return uniqueTeams.size;
+  }, [fullGridMyTeam]);
+
+  const fullGridSelectedRiderByTeam = useMemo(() => {
+    const map: Record<string, string> = {};
+    fullGridMyTeam.forEach(rider => {
+      if (rider.riderTeam && !map[rider.riderTeam]) {
+        map[rider.riderTeam] = rider.riderName;
+      }
+    });
+    return map;
+  }, [fullGridMyTeam]);
+
+  const handleFullGridRemove = (riderNameId: string) => {
+    const bid = myBids.find(b => (b.status === 'active' || b.status === 'won') && b.riderNameId === riderNameId);
+    if (bid) {
+      handleCancelBidClick(bid.id || '', bid.riderName || '');
+    }
+  };
+
+  const fullGridSaving = !!placingBid || !!cancellingBid;
+
+  React.useEffect(() => {
+    if (!isFullGrid) return;
+    if (!selectedTeam && fullGridTeams.length > 0) {
+      const unselectedTeam = fullGridTeams.find(t => !teamsWithSelection?.has(t.name));
+      setSelectedTeam(unselectedTeam?.name || fullGridTeams[0].name);
+    }
+  }, [isFullGrid, selectedTeam, fullGridTeams, teamsWithSelection]);
 
   const currentPeriod = game?.config?.auctionPeriods?.find((period: AuctionPeriod) => {
     const now = Date.now();
@@ -208,56 +353,169 @@ export const Bidding = ({
         </div>
 
 
-        {myTeamBidsView === 'card' ? (
-          <BiddingCardView
-            myBids={myBids}
-            game={game}
-            cancellingBid={cancellingBid}
-            handleCancelBidClick={handleCancelBidClick}
-            availableRiders={availableRiders}
-            adjustingBid={adjustingBid}
-            placingBid={placingBid}
-            bidAmountsRef={bidAmountsRef}
-            handlePlaceBid={handlePlaceBid}
-            setAdjustingBid={setAdjustingBid}
-          />
-        ) : (isSelectionBasedGame ?
-          <BiddingListViewWorldTourSmall
-            myBids={myBids}
-            game={game}
-            cancellingBid={cancellingBid}
-            handleCancelBidClick={handleCancelBidClick}
-            availableRiders={availableRiders}
-            adjustingBid={adjustingBid}
-            placingBid={placingBid}
-            bidAmountsRef={bidAmountsRef}
-            handlePlaceBid={handlePlaceBid}
-            setAdjustingBid={setAdjustingBid}
-            userId={userId} /> :
-          <BiddingListView myBids={myBids}
-            game={game}
-            cancellingBid={cancellingBid}
-            handleCancelBidClick={handleCancelBidClick}
-            availableRiders={availableRiders}
-            adjustingBid={adjustingBid}
-            placingBid={placingBid}
-            bidAmountsRef={bidAmountsRef}
-            handlePlaceBid={handlePlaceBid}
-            setAdjustingBid={setAdjustingBid} />)}
+        {isFullGrid ? (
+          <div className="bg-white border border-gray-200 rounded-b-md p-4">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+              <div className="xl:col-span-2">
+                <FullGridMyTeam
+                  myTeam={fullGridMyTeam}
+                  budgetStats={fullGridBudgetStats}
+                  canEdit={!auctionClosed}
+                  onRemoveRider={handleFullGridRemove}
+                  saving={fullGridSaving}
+                />
+              </div>
+              <div className="w-full xl:col-span-1 max-w-sm self-start flex flex-col gap-4">
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Budget Stats</h3>
+                  <div className="flex flex-col divide-y divide-gray-200 text-sm">
+                    <div className="py-2 flex items-center justify-between">
+                      <span className="text-gray-600">Totale budget</span>
+                      <span className="font-semibold text-gray-900">
+                        {fullGridBudgetStats.total} pt
+                      </span>
+                    </div>
+                    <div className="py-2 flex items-center justify-between">
+                      <span className="text-gray-600">Geselecteerd totaal</span>
+                      <span className="font-semibold text-blue-600">
+                        {fullGridBudgetStats.spent} pt
+                      </span>
+                    </div>
+                    <div className="py-2 flex items-center justify-between">
+                      <span className="text-gray-600">Resterend</span>
+                      <span className={`font-semibold ${fullGridBudgetStats.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {fullGridBudgetStats.remaining} pt
+                      </span>
+                    </div>
+                    <div className="py-2 flex items-center justify-between">
+                      <span className="text-gray-600">Geselecteerde renners</span>
+                      <span className="font-semibold text-primary">
+                        {fullGridBudgetStats.riderCount}
+                      </span>
+                    </div>
+                    {fullGridBudgetStats.maxRiders > 0 && (
+                      <div className="py-2 flex items-center justify-between">
+                        <span className="text-gray-600">Max renners</span>
+                        <span className="font-semibold text-gray-900">
+                          {fullGridBudgetStats.maxRiders}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      <img
+                        src="/berc-bike-logo.jpg"
+                        alt="Bercbike"
+                        className="h-10 w-10 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs uppercase tracking-wide text-gray-400">Sponsor</p>
+                      <p className="text-sm font-semibold text-gray-900">Bercbike</p>
+                      <p className="text-xs text-gray-500">Trots partner van Full-Grid</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-md bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-100 p-3">
+                    <p className="text-xs text-gray-600">
+                      Dit spel wordt mogelijk gemaakt door Bercbike. Bedankt voor de support.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          myTeamBidsView === 'card' ? (
+            <BiddingCardView
+              myBids={myBids}
+              game={game}
+              cancellingBid={cancellingBid}
+              handleCancelBidClick={handleCancelBidClick}
+              availableRiders={availableRiders}
+              adjustingBid={adjustingBid}
+              placingBid={placingBid}
+              bidAmountsRef={bidAmountsRef}
+              handlePlaceBid={handlePlaceBid}
+              setAdjustingBid={setAdjustingBid}
+            />
+          ) : (isSelectionBasedGame ?
+            <BiddingListViewWorldTourSmall
+              myBids={myBids}
+              game={game}
+              cancellingBid={cancellingBid}
+              handleCancelBidClick={handleCancelBidClick}
+              availableRiders={availableRiders}
+              adjustingBid={adjustingBid}
+              placingBid={placingBid}
+              bidAmountsRef={bidAmountsRef}
+              handlePlaceBid={handlePlaceBid}
+              setAdjustingBid={setAdjustingBid}
+              userId={userId} /> :
+            <BiddingListView myBids={myBids}
+              game={game}
+              cancellingBid={cancellingBid}
+              handleCancelBidClick={handleCancelBidClick}
+              availableRiders={availableRiders}
+              adjustingBid={adjustingBid}
+              placingBid={placingBid}
+              bidAmountsRef={bidAmountsRef}
+              handlePlaceBid={handlePlaceBid}
+              setAdjustingBid={setAdjustingBid} />)
+        )}
 
 
       </div>
     )}
 
     {/* Riders List */}
-    <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
-      <div className="flex flex-col gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
-        <div className="col-span-1">{t('global.riders')}</div>
-        <span className="flex flex-row gap-2 justify-between items-center flex-wrap">
-          <span className="flex flex-row gap-2">
-            <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />{t('global.cardView')}</span></Button>
-            <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />{t('global.listView')}</span></Button>
-          </span>
+    {isFullGrid ? (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-12 mt-6">
+        <div className="grid grid-cols-1 xl:grid-cols-8 gap-6">
+          <div className="xl:col-span-3">
+            <FullGridTeamSelector
+              teams={fullGridTeams}
+              selectedTeam={selectedTeam}
+              teamsWithSelection={teamsWithSelection || new Set<string>()}
+              onSelectTeam={setSelectedTeam}
+              proTeamsSelectedCount={proTeamsSelectedCount}
+              proTeamsLimit={4}
+              selectedRiderByTeam={fullGridSelectedRiderByTeam}
+            />
+          </div>
+
+          <div className="xl:col-span-5">
+            <FullGridRiderList
+              riders={fullGridTeamRiders}
+              selectedTeam={selectedTeam}
+              isRiderSelected={(riderNameId) => fullGridMyTeam.some(r => r.riderNameId === riderNameId)}
+              teamHasSelection={selectedTeam ? (teamsWithSelection?.has(selectedTeam) || false) : false}
+              canSelect={!auctionClosed}
+              budgetRemaining={fullGridBudgetStats.remaining}
+              onSelectRider={(rider) => {
+                const fullRider = fullGridRiderLookup.get(rider.riderNameId);
+                if (fullRider) {
+                  handlePlaceBid(fullRider);
+                }
+              }}
+              onDeselectRider={(rider) => handleFullGridRemove(rider.riderNameId)}
+              saving={fullGridSaving}
+              inlineError={showInlineError}
+            />
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-12">
+        <div className="flex flex-col gap-4 p-3 bg-white font-semibold text-sm border-b border-gray-200 sticky top-0">
+          <div className="col-span-1">{t('global.riders')}</div>
+          <span className="flex flex-row gap-2 justify-between items-center flex-wrap">
+            <span className="flex flex-row gap-2">
+              <Button ghost={myTeamView === 'list'} onClick={() => setMyTeamView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />{t('global.cardView')}</span></Button>
+              <Button ghost={myTeamView === 'card'} onClick={() => setMyTeamView('list')}><span className={`flex flex-row gap-2 items-center`}><List />{t('global.listView')}</span></Button>
+            </span>
           <span className="flex flex-row gap-2 items-center">
             <label className="text-sm font-medium">{t('global.sortingBy')}</label>
             <select
@@ -479,6 +737,7 @@ export const Bidding = ({
         </div>
       </div>
     </div>
+    )}
 
     <ScrollToTop />
 

@@ -13,6 +13,7 @@ export interface Rider {
   team?: {
     name: string;
     id: string;
+    jerseyImageTeam?: string;
   }
   teamId?: string;         // Team document reference ID
   jerseyImage?: string;    // URL to rider's jersey/photo

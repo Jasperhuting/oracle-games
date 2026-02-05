@@ -1,6 +1,7 @@
 'use client';
 
-import { Trash } from 'tabler-icons-react';
+import { Trash, ChevronLeft, ChevronRight } from 'tabler-icons-react';
+import { useMemo, useState } from 'react';
 
 interface MyTeamRider {
   riderNameId: string;
@@ -8,6 +9,8 @@ interface MyTeamRider {
   riderTeam: string;
   jerseyImage?: string;
   value: number;
+  teamClass?: string;
+  isProTeam?: boolean;
 }
 
 interface BudgetStats {
@@ -26,6 +29,11 @@ interface FullGridMyTeamProps {
   saving: boolean;
 }
 
+type DisplayMode = 'all' | 'scroll' | 'pagination';
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
+const SCROLL_ITEM_COUNT_OPTIONS = [5, 10, 15, 20, 25, 30];
+const ITEM_HEIGHT = 56;
+
 export function FullGridMyTeam({
   myTeam,
   budgetStats,
@@ -33,8 +41,21 @@ export function FullGridMyTeam({
   onRemoveRider,
   saving,
 }: FullGridMyTeamProps) {
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('scroll');
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [scrollItemCount, setScrollItemCount] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Group by team
   const sortedTeam = [...myTeam].sort((a, b) => a.riderTeam.localeCompare(b.riderTeam));
+  const totalPages = Math.max(1, Math.ceil(sortedTeam.length / itemsPerPage));
+  const paginatedTeam = displayMode === 'pagination'
+    ? sortedTeam.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : sortedTeam;
+
+  const listMaxHeight = displayMode === 'scroll'
+    ? `${scrollItemCount * ITEM_HEIGHT}px`
+    : undefined;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -43,6 +64,78 @@ export function FullGridMyTeam({
         <p className="text-sm text-gray-500">
           {budgetStats.riderCount} van {budgetStats.maxRiders} renners
         </p>
+      </div>
+
+      {/* Display controls */}
+      <div className="px-4 py-2 bg-white border-b border-gray-200 flex flex-wrap items-center gap-3 text-xs">
+        <label className="text-gray-600">Weergave</label>
+        <select
+          value={displayMode}
+          onChange={(e) => {
+            setDisplayMode(e.target.value as DisplayMode);
+            setCurrentPage(1);
+          }}
+          className="pl-2 pr-6 py-1 text-xs border border-gray-300 rounded-md bg-white"
+        >
+          <option value="all">Alles</option>
+          <option value="scroll">Scroll</option>
+          <option value="pagination">Pagina’s</option>
+        </select>
+
+        {displayMode === 'pagination' && (
+          <>
+            <label className="text-gray-600">Per pagina</label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="pl-2 pr-6 py-1 text-xs border border-gray-300 rounded-md bg-white"
+            >
+              {ITEMS_PER_PAGE_OPTIONS.map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {displayMode === 'scroll' && (
+          <>
+            <label className="text-gray-600">Items</label>
+            <select
+              value={scrollItemCount}
+              onChange={(e) => setScrollItemCount(Number(e.target.value))}
+              className="pl-2 pr-6 py-1 text-xs border border-gray-300 rounded-md bg-white"
+            >
+              {SCROLL_ITEM_COUNT_OPTIONS.map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {displayMode === 'pagination' && totalPages > 1 && (
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1 border border-gray-300 rounded disabled:opacity-50"
+              title="Vorige pagina"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="text-gray-600">{currentPage} / {totalPages}</span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1 border border-gray-300 rounded disabled:opacity-50"
+              title="Volgende pagina"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Budget overview */}
@@ -55,10 +148,12 @@ export function FullGridMyTeam({
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className={`h-full transition-all duration-300 ${
+            className={`h-full transition-transform duration-300 origin-left ${
               budgetStats.remaining < 0 ? 'bg-red-500' : 'bg-primary'
             }`}
-            style={{ width: `${Math.min((budgetStats.spent / budgetStats.total) * 100, 100)}%` }}
+            style={{
+              transform: `scaleX(${Math.min(budgetStats.total > 0 ? budgetStats.spent / budgetStats.total : 0, 1)})`,
+            }}
           />
         </div>
         <div className="flex items-center justify-between mt-1">
@@ -72,8 +167,15 @@ export function FullGridMyTeam({
       </div>
 
       {/* Team list */}
-      <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
-        {sortedTeam.map((rider) => (
+      <div
+        className="divide-y divide-gray-100 overflow-y-auto"
+        style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
+      >
+        {paginatedTeam.map((rider) => {
+
+          console.log('paginatedTeam', rider)
+          
+          return (
           <div
             key={rider.riderNameId}
             className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
@@ -82,12 +184,16 @@ export function FullGridMyTeam({
             <div className="w-6 h-6 flex-shrink-0">
               {rider.jerseyImage ? (
                 <img
-                  src={rider.jerseyImage}
+                  src={`https://www.procyclingstats.com/${rider.jerseyImage}`}
                   alt={rider.riderTeam}
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <div className="w-full h-full bg-gray-200 rounded" />
+                <img
+                  src="/jersey-transparent.png"
+                  alt={rider.riderTeam}
+                  className="w-full h-full object-contain"
+                />
               )}
             </div>
 
@@ -96,8 +202,18 @@ export function FullGridMyTeam({
               <div className="font-medium text-gray-900 text-sm truncate">
                 {rider.riderName}
               </div>
-              <div className="text-xs text-gray-500 truncate">
-                {rider.riderTeam}
+              <div className="text-xs text-gray-500 truncate flex items-center gap-2">
+                <span>{rider.riderTeam}</span>
+                {rider.teamClass && rider.teamClass !== 'PRT' && (
+                  <span className="uppercase tracking-wide text-[10px] text-gray-400">
+                    {rider.teamClass}
+                  </span>
+                )}
+                {rider.isProTeam && (
+                  <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700">
+                    PRT
+                  </span>
+                )}
               </div>
             </div>
 
@@ -118,7 +234,7 @@ export function FullGridMyTeam({
               </button>
             )}
           </div>
-        ))}
+        )})}
       </div>
 
       {myTeam.length === 0 && (

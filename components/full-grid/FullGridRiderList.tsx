@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Plus } from 'tabler-icons-react';
+import { Check, Plus, Trash } from 'tabler-icons-react';
 import { Button } from '@/components/Button';
 
 interface RiderData {
@@ -11,6 +11,8 @@ interface RiderData {
   jerseyImage?: string;
   value: number;
   country?: string;
+  teamClass?: string;
+  isProTeam?: boolean;
 }
 
 interface FullGridRiderListProps {
@@ -21,7 +23,9 @@ interface FullGridRiderListProps {
   canSelect: boolean;
   budgetRemaining: number;
   onSelectRider: (rider: RiderData) => void;
+  onDeselectRider?: (rider: RiderData) => void;
   saving: boolean;
+  inlineError?: string | null;
 }
 
 export function FullGridRiderList({
@@ -32,7 +36,9 @@ export function FullGridRiderList({
   canSelect,
   budgetRemaining,
   onSelectRider,
+  onDeselectRider,
   saving,
+  inlineError,
 }: FullGridRiderListProps) {
   if (!selectedTeam) {
     return (
@@ -52,6 +58,11 @@ export function FullGridRiderList({
             <span className="text-green-600 ml-2">(al een selectie)</span>
           )}
         </p>
+        {inlineError && (
+          <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+            {inlineError}
+          </div>
+        )}
       </div>
 
       <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
@@ -71,14 +82,41 @@ export function FullGridRiderList({
                   : 'hover:bg-gray-50'
               }`}
             >
+              {/* Jersey */}
+              <div className="w-8 h-8 flex-shrink-0">
+                {rider.jerseyImage ? (
+                  <img
+                    src={`https://www.procyclingstats.com/${rider.jerseyImage}`}
+                    alt={rider.riderTeam}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <img
+                    src="/jersey-transparent.png"
+                    alt={rider.riderTeam}
+                    className="w-full h-full object-contain"
+                  />
+                )}
+              </div>
+
               {/* Rider info */}
               <div className="flex-1 min-w-0">
                 <div className={`font-medium ${isSelected ? 'text-green-800' : 'text-gray-900'}`}>
                   {rider.riderName}
                 </div>
-                {rider.country && (
-                  <div className="text-xs text-gray-500">{rider.country}</div>
-                )}
+                <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
+                  {rider.country && <span>{rider.country}</span>}
+                  {rider.teamClass && (
+                    <span className="uppercase tracking-wide text-[10px] text-gray-400">
+                      {rider.teamClass}
+                    </span>
+                  )}
+                  {rider.isProTeam && (
+                    <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700">
+                      PRT
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Value badge */}
@@ -94,9 +132,24 @@ export function FullGridRiderList({
 
               {/* Action button */}
               {isSelected ? (
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <Check size={20} className="text-white" />
-                </div>
+                onDeselectRider ? (
+                  <button
+                    onClick={() => onDeselectRider(rider)}
+                    disabled={saving}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      saving
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-red-500 text-white hover:bg-red-600'
+                    }`}
+                    title="Verwijderen"
+                  >
+                    <Trash size={18} />
+                  </button>
+                ) : (
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <Check size={20} className="text-white" />
+                  </div>
+                )
               ) : (
                 <button
                   onClick={() => onSelectRider(rider)}

@@ -77,7 +77,6 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
 
         // Load eligible riders from context
         if (rankingsRiders.length === 0) {
-          console.log('kom je hier?', rankingsRiders)
           await refetchRankings();
         }
 
@@ -87,8 +86,6 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
           const eligibleSet = new Set(gameData.game.eligibleRiders);
           riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
         }
-
-        console.log('riders', riders)
 
         setAvailableRiders(riders);
 

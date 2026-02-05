@@ -17,6 +17,8 @@ interface RiderData {
   jerseyImage?: string;
   value: number;
   country?: string;
+  teamClass?: string;
+  isProTeam?: boolean;
 }
 
 interface MyTeamRider {
@@ -25,6 +27,7 @@ interface MyTeamRider {
   riderTeam: string;
   jerseyImage?: string;
   value: number;
+  teamClass?: string;
 }
 
 interface GameConfig {
@@ -51,17 +54,35 @@ export default function FullGridPage() {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [isParticipant, setIsParticipant] = useState(false);
 
+  const isProTourTeamClass = useCallback((teamClass?: string) => {
+    if (!teamClass) return false;
+    const normalized = teamClass.trim().toLowerCase();
+    return (
+      normalized === 'prt' ||
+      normalized === 'proteam' ||
+      normalized === 'pro team' ||
+      normalized === 'protour' ||
+      normalized === 'pro tour' ||
+      normalized === 'pro'
+    );
+  }, []);
+
+  const proTeamLimit = 4;
+
   // Get unique teams with counts
   const teams = useMemo(() => {
-    const teamMap = new Map<string, { name: string; slug: string; jerseyImage?: string; riderCount: number }>();
+    const teamMap = new Map<string, { name: string; slug: string; teamImage?: string; riderCount: number; teamClass?: string; isProTeam?: boolean }>();
 
     riders.forEach(rider => {
+
       if (!rider.riderTeam) return;
       if (!teamMap.has(rider.riderTeam)) {
         teamMap.set(rider.riderTeam, {
           name: rider.riderTeam,
           slug: rider.teamSlug,
-          jerseyImage: rider.jerseyImage,
+          teamImage: rider.jerseyImage,
+          teamClass: rider.teamClass,
+          isProTeam: isProTourTeamClass(rider.teamClass),
           riderCount: 0,
         });
       }
@@ -69,7 +90,7 @@ export default function FullGridPage() {
     });
 
     return Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [riders]);
+  }, [riders, isProTourTeamClass]);
 
   // Get teams that already have a selected rider
   const teamsWithSelection = useMemo(() => {
@@ -79,8 +100,11 @@ export default function FullGridPage() {
   // Get riders for selected team
   const teamRiders = useMemo(() => {
     if (!selectedTeam) return [];
-    return riders.filter(r => r.riderTeam === selectedTeam).sort((a, b) => b.value - a.value);
-  }, [riders, selectedTeam]);
+    return riders
+      .filter(r => r.riderTeam === selectedTeam)
+      .map(r => ({ ...r, isProTeam: isProTourTeamClass(r.teamClass) }))
+      .sort((a, b) => b.value - a.value);
+  }, [riders, selectedTeam, isProTourTeamClass]);
 
   // Calculate budget stats
   const budgetStats = useMemo(() => {
@@ -93,6 +117,25 @@ export default function FullGridPage() {
       maxRiders: gameConfig.maxRiders,
     };
   }, [myTeam, gameConfig]);
+
+  const proTeamsSelectedCount = useMemo(() => {
+    const uniqueTeams = new Set(
+      myTeam
+        .filter(rider => isProTourTeamClass(rider.teamClass))
+        .map(rider => rider.riderTeam)
+    );
+    return uniqueTeams.size;
+  }, [myTeam, isProTourTeamClass]);
+
+  const selectedRiderByTeam = useMemo(() => {
+    const map: Record<string, string> = {};
+    myTeam.forEach(rider => {
+      if (rider.riderTeam && !map[rider.riderTeam]) {
+        map[rider.riderTeam] = rider.riderName;
+      }
+    });
+    return map;
+  }, [myTeam]);
 
   // Check if rider is in my team
   const isRiderSelected = useCallback((riderNameId: string) => {
@@ -149,6 +192,8 @@ export default function FullGridPage() {
               (b: { status: string }) => b.status === 'active' || b.status === 'won'
             );
 
+            console.log('activeBids', activeBids)
+
             // Map bids to team riders
             const team: MyTeamRider[] = activeBids.map((bid: {
               riderNameId: string;
@@ -156,13 +201,19 @@ export default function FullGridPage() {
               riderTeam: string;
               jerseyImage?: string;
               amount: number;
-            }) => ({
+            }) => {
+
+              console.log('bid', bid);
+              
+              return ({
               riderNameId: bid.riderNameId,
               riderName: bid.riderName,
               riderTeam: bid.riderTeam,
               jerseyImage: bid.jerseyImage,
               value: bid.amount,
-            }));
+              teamClass: riders.find(r => r.riderNameId === bid.riderNameId)?.teamClass,
+              isProTeam: isProTourTeamClass(riders.find(r => r.riderNameId === bid.riderNameId)?.teamClass),
+            })});
 
             setMyTeam(team);
           }
@@ -183,6 +234,9 @@ export default function FullGridPage() {
 
   // Select a rider
   const selectRider = async (rider: RiderData) => {
+
+    console.log('selectRider', rider);
+
     if (!user || !gameId) return;
 
     // Validation
@@ -206,6 +260,13 @@ export default function FullGridPage() {
       return;
     }
 
+    if (isProTourTeamClass(rider.teamClass) && !teamsWithSelection.has(rider.riderTeam)) {
+      if (proTeamsSelectedCount >= proTeamLimit) {
+        setError(`Je mag maximaal ${proTeamLimit} ProTeams selecteren.`);
+        return;
+      }
+    }
+
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -217,12 +278,13 @@ export default function FullGridPage() {
         body: JSON.stringify({
           userId: user.uid,
           riderNameId: rider.riderNameId,
-          riderName: rider.riderName,
-          riderTeam: rider.riderTeam,
-          jerseyImage: rider.jerseyImage,
-          amount: rider.value,
-        }),
-      });
+        riderName: rider.riderName,
+        riderTeam: rider.riderTeam,
+        jerseyImage: rider.jerseyImage,
+        amount: rider.value,
+        teamClass: rider.teamClass,
+      }),
+    });
 
       const data = await response.json();
 
@@ -237,6 +299,7 @@ export default function FullGridPage() {
         riderTeam: rider.riderTeam,
         jerseyImage: rider.jerseyImage,
         value: rider.value,
+        teamClass: rider.teamClass,
       }]);
 
       setSuccessMessage(`${rider.riderName} toegevoegd aan je team!`);
@@ -417,6 +480,9 @@ export default function FullGridPage() {
               selectedTeam={selectedTeam}
               teamsWithSelection={teamsWithSelection}
               onSelectTeam={setSelectedTeam}
+              proTeamsSelectedCount={proTeamsSelectedCount}
+              proTeamsLimit={proTeamLimit}
+              selectedRiderByTeam={selectedRiderByTeam}
             />
           </div>
 
@@ -430,6 +496,7 @@ export default function FullGridPage() {
               canSelect={gameConfig.selectionStatus === 'open'}
               budgetRemaining={budgetStats.remaining}
               onSelectRider={selectRider}
+              onDeselectRider={removeRider}
               saving={saving}
             />
           </div>

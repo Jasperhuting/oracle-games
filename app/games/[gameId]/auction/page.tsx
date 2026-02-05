@@ -552,14 +552,19 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   }, [gameId, selectedPlayerId]);
 
   // Calculate min/max prices from available riders and set initial price range
+  const isFullGridGame = game?.gameType === 'full-grid';
   useEffect(() => {
     if (availableRiders.length > 0) {
-      const prices = availableRiders.map(r => r.effectiveMinBid || r.points || 1);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      setPriceRange([minPrice, maxPrice]);
+      const prices = isFullGridGame
+        ? availableRiders.map(r => r.effectiveMinBid || 0).filter(p => p > 0)
+        : availableRiders.map(r => r.effectiveMinBid || r.points || 1);
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        setPriceRange([minPrice, maxPrice]);
+      }
     }
-  }, [availableRiders]);
+  }, [availableRiders, isFullGridGame]);
 
   const getEffectiveMinimumBid = (riderPoints: number, riderNameId?: string): number => {
     // For full-grid, use admin-set rider values from config
@@ -669,6 +674,37 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       if (existingTeamRider) {
         setError(`Je hebt al een renner van ${rider.team.name} geselecteerd (${existingTeamRider.riderName}). Verwijder eerst die selectie.`);
         return;
+      }
+    }
+
+    // Full Grid: Limit ProTeam selections (max 4 different ProTeams)
+    if (isFullGrid && rider.team?.name) {
+      const teamName = rider.team.name;
+      const teamKey = normalizeTeamKey(teamName);
+      const riderTeamClass =
+        (rider.team as any)?.class || (rider.team as any)?.teamClass || teamClassByKey.get(teamKey); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const isProTeam = isProTourTeamClass(riderTeamClass);
+
+      if (isProTeam) {
+        const selectedProTeams = new Set<string>();
+
+        myBids
+          .filter(b => b.status === 'active' || b.status === 'won')
+          .forEach(b => {
+            const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
+            const bidTeamName = bidRider?.team?.name || b.riderTeam;
+            const bidTeamKey = normalizeTeamKey(bidTeamName);
+            const bidTeamClass =
+              (bidRider?.team as any)?.class || (bidRider?.team as any)?.teamClass || teamClassByKey.get(bidTeamKey); // eslint-disable-line @typescript-eslint/no-explicit-any
+            if (isProTourTeamClass(bidTeamClass) && bidTeamKey) {
+              selectedProTeams.add(bidTeamKey);
+            }
+          });
+
+        if (!selectedProTeams.has(teamKey) && selectedProTeams.size >= fullGridProTeamLimit) {
+          setError(`Je mag maximaal ${fullGridProTeamLimit} ProTeams selecteren.`);
+          return;
+        }
       }
     }
 
@@ -978,6 +1014,22 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     }
   };
 
+  const isProTourTeamClass = (teamClass?: string) => {
+    if (!teamClass) return false;
+    const normalized = teamClass.trim().toLowerCase();
+    return (
+      normalized === 'prt' ||
+      normalized === 'proteam' ||
+      normalized === 'pro team' ||
+      normalized === 'protour' ||
+      normalized === 'pro tour' ||
+      normalized === 'pro'
+    );
+  };
+
+  const normalizeTeamKey = (name?: string) =>
+    (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
   // Full Grid: compute teams that already have a selected rider
   const teamsWithSelection = useMemo(() => {
     if (game?.gameType !== 'full-grid') return new Set<string>();
@@ -989,6 +1041,22 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     );
   }, [myBids, game?.gameType]);
 
+  const teamClassByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    if (game?.gameType !== 'full-grid') return map;
+    availableRiders.forEach(rider => {
+      const teamName = rider.team?.name;
+      const teamClass = (rider.team as any)?.class || (rider.team as any)?.teamClass; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const key = normalizeTeamKey(teamName);
+      if (key && teamClass && !map.has(key)) {
+        map.set(key, String(teamClass));
+      }
+    });
+    return map;
+  }, [availableRiders, game?.gameType]);
+
+  const fullGridProTeamLimit = 4;
+
   // Full Grid: build unique team list for filter dropdown
   const availableTeams = useMemo(() => {
     if (game?.gameType !== 'full-grid') return [];
@@ -998,7 +1066,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       // Only count riders that have an admin-set value
       if (!rider.effectiveMinBid || rider.effectiveMinBid === 0) return;
       const existing = teamMap.get(rider.team.name);
-      const riderTeamImage = (rider.team as any)?.teamImage || (rider.team as any)?.jerseyImageTeam || rider.jerseyImage || ''; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const riderTeamImage = (rider.team as any)?.jerseyImage || (rider.team as any)?.jerseyImageTeam || rider.jerseyImage || ''; // eslint-disable-line @typescript-eslint/no-explicit-any
       teamMap.set(rider.team.name, {
         count: (existing?.count || 0) + 1,
         teamImage: existing?.teamImage || riderTeamImage
@@ -1030,8 +1098,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         (rider.nameID || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (rider.team?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-      const riderPrice = rider.effectiveMinBid || rider.points || 0;
-      const matchesPrice = riderPrice >= priceRange[0] && riderPrice <= priceRange[1];
+      const riderPrice = game?.gameType === 'full-grid'
+        ? (rider.effectiveMinBid || 0)
+        : (rider.effectiveMinBid || rider.points || 0);
+      const matchesPrice = game?.gameType === 'full-grid'
+        ? true
+        : (riderPrice >= priceRange[0] && riderPrice <= priceRange[1]);
 
       // Birth year filter for marginal-gains
       // Compare rider's birth year against the selected range
@@ -1104,7 +1176,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const auctionClosed = game.status === 'active' || game.status === 'finished';
   
   // Calculate min/max prices for the slider
-  const allPrices = availableRiders.map(r => r.effectiveMinBid || r.points || 0);
+  const allPrices = isFullGridGame
+    ? availableRiders.map(r => r.effectiveMinBid || 0).filter(p => p > 0)
+    : availableRiders.map(r => r.effectiveMinBid || r.points || 0);
   const minRiderPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const maxRiderPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
 
@@ -1167,101 +1241,114 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       {/* Content */}
       <div className="p-8">
         <div className="container mx-auto">
-          <div className=" w-full flex flex-row gap-4 mb-4 relative">{/* container */}
-            <div className="bg-white rounded-md flex-9/12">{/* content */}
-                
+          <div className={`w-full flex flex-row gap-4 mb-4 relative ${game?.gameType === 'full-grid' ? 'flex-col' : ''}`}>
+            <div className={`bg-white rounded-md ${game?.gameType === 'full-grid' ? 'w-full' : 'flex-9/12'}`}>
               <Tabs
                 defaultTab="bidding"
                 tabs={[
                   {
-                    id: 'bidding', label: game.bidding ? t('auction.bidding') : t('auction.teamSelection'), content: <Bidding
-                      auctionClosed={auctionClosed}
-                      allBids={allBids}
-                      auctionActive={auctionActive}
-                      cancellingBid={cancellingBid}
-                      setHideSoldPlayers={setHideSoldPlayers}
-                      hideSoldPlayers={hideSoldPlayers}
-                      participant={participant}
-                      isAdmin={isAdmin}
-                      bidAmountsRef={bidAmountsRef}
-                      sortedAndFilteredRiders={sortedAndFilteredRiders}
-                      setshowOnlyFillers={setshowOnlyFillers}
-                      showOnlyFillers={showOnlyFillers}
-                      handlePlaceBid={handlePlaceBid}
-                      setAdjustingBid={setAdjustingBid}
-                      handleCancelBidClick={handleCancelBidClick}
-                      game={game}
-                      myBids={myBids}
-                      availableRiders={availableRiders}
-                      adjustingBid={adjustingBid}
-                      placingBid={placingBid}
-                      userId={user?.uid}
-                      teamsWithSelection={teamsWithSelection}
-                    />
+                    id: 'bidding',
+                    label: game.bidding ? t('auction.bidding') : t('auction.teamSelection'),
+                    content: (
+                      <Bidding
+                        auctionClosed={auctionClosed}
+                        allBids={allBids}
+                        auctionActive={auctionActive}
+                        cancellingBid={cancellingBid}
+                        setHideSoldPlayers={setHideSoldPlayers}
+                        hideSoldPlayers={hideSoldPlayers}
+                        participant={participant}
+                        isAdmin={isAdmin}
+                        bidAmountsRef={bidAmountsRef}
+                        sortedAndFilteredRiders={sortedAndFilteredRiders}
+                        setshowOnlyFillers={setshowOnlyFillers}
+                        showOnlyFillers={showOnlyFillers}
+                        handlePlaceBid={handlePlaceBid}
+                        setAdjustingBid={setAdjustingBid}
+                        handleCancelBidClick={handleCancelBidClick}
+                        game={game}
+                        myBids={myBids}
+                        availableRiders={availableRiders}
+                        adjustingBid={adjustingBid}
+                        placingBid={placingBid}
+                        userId={user?.uid}
+                        teamsWithSelection={teamsWithSelection}
+                        inlineError={error}
+                      />
+                    ),
                   },
-                  ...(!isSelectionBasedGame ? [{
-                    id: 'my-bids', label: 'Bidding history', content: <MyAuctionBidsBig
-                      selectedPlayerBids={selectedPlayerBids}
-                      alleBiedingen={alleBiedingen}
-                      myBids={myBids}
-                      divisionParticipants={divisionParticipants}
-                      selectedPlayerId={selectedPlayerId}
-                      setSelectedPlayerId={setSelectedPlayerId}
-                      setActiveAuctionPeriodTab={setActiveAuctionPeriodTab}
-                      activeAuctionPeriodTab={activeAuctionPeriodTab}
-                      user={user}
-                      availableRiders={availableRiders}
-                      participant={participant}
-                      game={game} />
-                  }] : [])
-                ]} />
-
+                  ...(!isSelectionBasedGame
+                    ? [
+                        {
+                          id: 'my-bids',
+                          label: 'Bidding history',
+                          content: (
+                            <MyAuctionBidsBig
+                              selectedPlayerBids={selectedPlayerBids}
+                              alleBiedingen={alleBiedingen}
+                              myBids={myBids}
+                              divisionParticipants={divisionParticipants}
+                              selectedPlayerId={selectedPlayerId}
+                              setSelectedPlayerId={setSelectedPlayerId}
+                              setActiveAuctionPeriodTab={setActiveAuctionPeriodTab}
+                              activeAuctionPeriodTab={activeAuctionPeriodTab}
+                              user={user}
+                              availableRiders={availableRiders}
+                              participant={participant}
+                              game={game}
+                            />
+                          ),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
             </div>
-            
-            <div className={`bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start min-w-[330px]`} style={{ top: hideBanner ? '107px' : '142px' }}>
-            
 
-              {!auctionActive && (
-                <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'
-                  }`}>
-                  <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'
-                    }`}>
-                    {auctionClosed
-                      ? isSelectionBasedGame
-                        ? 'Team selection has ended. No more riders can be selected.'
-                        : 'The auction has ended. No more bids can be placed.'
-                      : isSelectionBasedGame
-                        ? 'Team selection has not started yet. Selection will open soon.'
-                        : 'The auction has not started yet. Bidding will open soon.'}
-                  </p>
-                </div>
-              )}
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
-                  <span className="text-red-700 text-sm">{error}</span>
-                </div>
-              )}
-
-              <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
-                <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} birthYearRange={birthYearRange} setBirthYearRange={setBirthYearRange} minBirthYear={minBirthYear} maxBirthYear={maxBirthYear} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} availableTeams={availableTeams} selectedTeamFilter={selectedTeamFilter} setSelectedTeamFilter={setSelectedTeamFilter} teamsWithSelection={teamsWithSelection} />
-                <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
-                {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' && (
-                  <MyAuctionBids game={game} availableRiders={availableRiders} myBids={myAuctionBids} />
+            {game?.gameType !== 'full-grid' && (
+              <div className="bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start min-w-[330px]" style={{ top: hideBanner ? '107px' : '142px' }}>
+                {!auctionActive && (
+                  <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+                    <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'}`}>
+                      {auctionClosed
+                        ? isSelectionBasedGame
+                          ? 'Team selection has ended. No more riders can be selected.'
+                          : 'The auction has ended. No more bids can be placed.'
+                        : isSelectionBasedGame
+                          ? 'Team selection has not started yet. Selection will open soon.'
+                          : 'The auction has not started yet. Bidding will open soon.'}
+                    </p>
+                  </div>
                 )}
-                {!isSelectionBasedGame && <MyAuctionTeam availableRiders={availableRiders} auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
-                  ...period,
-                  startDate: typeof period.startDate === 'string' ? period.startDate : period.startDate.toDate().toISOString(),
-                  endDate: typeof period.endDate === 'string' ? period.endDate : period.endDate.toDate().toISOString()
-                }))} myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')} starterAmount={game.config.budget || 0} />
-                }
+
+                {error && game?.gameType !== 'full-grid' && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                    <span className="text-red-700 text-sm">{error}</span>
+                  </div>
+                )}
+
+                <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
+                  <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} birthYearRange={birthYearRange} setBirthYearRange={setBirthYearRange} minBirthYear={minBirthYear} maxBirthYear={maxBirthYear} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} availableTeams={availableTeams} selectedTeamFilter={selectedTeamFilter} setSelectedTeamFilter={setSelectedTeamFilter} teamsWithSelection={teamsWithSelection} />
+                  <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
+                  {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' && (
+                    <MyAuctionBids game={game} availableRiders={availableRiders} myBids={myAuctionBids} />
+                  )}
+                  {!isSelectionBasedGame && (
+                    <MyAuctionTeam
+                      availableRiders={availableRiders}
+                      auctionPeriods={(game.config.auctionPeriods || []).map(period => ({
+                        ...period,
+                        startDate: typeof period.startDate === 'string' ? period.startDate : period.startDate.toDate().toISOString(),
+                        endDate: typeof period.endDate === 'string' ? period.endDate : period.endDate.toDate().toISOString(),
+                      }))}
+                      myBids={myBids.map((bid: Bid) => ({ ...bid, price: filteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points, round: bid.bidAt })).filter((bid: Bid) => bid.status === 'won')}
+                      starterAmount={game.config.budget || 0}
+                    />
+                  )}
+                </div>
               </div>
-
-
-
-            </div>
+            )}
           </div>
-
 
           {!auctionClosed && (
             <MyTeamSelection
@@ -1288,8 +1375,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               isWorldTourManager={isSelectionBasedGame}
             />
           )}
-
-
 
           {filteredRiders.length === 0 && (
             <div className="text-center py-8 text-gray-500">

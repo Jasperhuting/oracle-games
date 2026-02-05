@@ -8,6 +8,22 @@ import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
 // TEMPORARY: Toggle to disable bidding
 const BIDDING_DISABLED = false;
 
+const isProTourTeamClass = (teamClass?: string): boolean => {
+  if (!teamClass) return false;
+  const normalized = teamClass.trim().toLowerCase();
+  return (
+    normalized === 'prt' ||
+    normalized === 'proteam' ||
+    normalized === 'pro team' ||
+    normalized === 'protour' ||
+    normalized === 'pro tour' ||
+    normalized === 'pro'
+  );
+};
+
+const normalizeTeamKey = (name?: string): string =>
+  (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
@@ -318,6 +334,97 @@ export async function POST(
           { error: `Je hebt al een renner van ${riderTeam} geselecteerd (${existingRiderName}). Verwijder eerst die selectie.` },
           { status: 400 }
         );
+      }
+    }
+
+    // Full Grid: ProTeam limit (max 4 different ProTeams)
+    if (gameData?.gameType === 'full-grid' && !isUpdatingOwnBid) {
+      const fullGridProTeamLimit = 4;
+      const rankingsCollection = `rankings_${gameData.year || new Date().getFullYear()}`;
+
+      const riderTeamCache = new Map<string, { teamName: string; teamClass?: string }>();
+      const resolveRiderTeam = async (rNameId: string) => {
+        if (riderTeamCache.has(rNameId)) return riderTeamCache.get(rNameId)!;
+
+        let riderDoc = await db.collection(rankingsCollection).doc(rNameId).get();
+        if (!riderDoc.exists) {
+          const fallback = await db.collection(rankingsCollection).where('nameID', '==', rNameId).limit(1).get();
+          riderDoc = fallback.docs[0];
+        }
+
+        let teamName = '';
+        let teamClass: string | undefined;
+        if (riderDoc && riderDoc.exists) {
+          const riderData = riderDoc.data();
+          if (riderData?.team) {
+            const teamRef = riderData.team;
+            if (typeof teamRef.get === 'function') {
+              const teamDoc = await teamRef.get();
+              if (teamDoc.exists) {
+                const teamData = teamDoc.data();
+                teamName = teamData?.name || '';
+                teamClass = teamData?.class || teamData?.teamClass;
+              }
+            } else if (teamRef.path) {
+              const teamDoc = await db.doc(teamRef.path).get();
+              if (teamDoc.exists) {
+                const teamData = teamDoc.data();
+                teamName = teamData?.name || '';
+                teamClass = teamData?.class || teamData?.teamClass;
+              }
+            }
+          }
+        }
+
+        const resolved = { teamName, teamClass };
+        riderTeamCache.set(rNameId, resolved);
+        return resolved;
+      };
+
+      const currentTeam = await resolveRiderTeam(riderNameId);
+      const currentTeamKey = normalizeTeamKey(currentTeam.teamName || riderTeam);
+      const currentIsPro = isProTourTeamClass(currentTeam.teamClass);
+
+      if (currentIsPro) {
+        const selectedProTeams = new Set<string>();
+
+        for (const doc of allBidsSnapshot.docs) {
+          const data = doc.data();
+          if (data.riderNameId === riderNameId) continue;
+
+          const bidTeam = await resolveRiderTeam(data.riderNameId);
+          if (isProTourTeamClass(bidTeam.teamClass)) {
+            const key = normalizeTeamKey(bidTeam.teamName || data.riderTeam);
+            if (key) selectedProTeams.add(key);
+          }
+        }
+
+        if (currentTeamKey && !selectedProTeams.has(currentTeamKey) && selectedProTeams.size >= fullGridProTeamLimit) {
+          await db.collection('activityLogs').add({
+            action: 'BID_VALIDATION_FAILED',
+            userId,
+            userEmail: userData?.email,
+            userName: userData?.playername || userData?.email,
+            details: {
+              gameId,
+              gameName: gameData?.name,
+              riderNameId,
+              riderName,
+              riderTeam,
+              amount,
+              validationType: 'PROTEAM_LIMIT',
+              errorMessage: `ProTeam limit reached (${fullGridProTeamLimit})`,
+            },
+            timestamp: Timestamp.now(),
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          });
+
+          return NextResponse.json(
+            { error: `Je mag maximaal ${fullGridProTeamLimit} ProTeams selecteren.` },
+            { status: 400 }
+          );
+        }
       }
     }
 

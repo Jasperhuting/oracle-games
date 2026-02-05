@@ -10,6 +10,7 @@ interface RiderValue {
   jerseyImage?: string;
   value: number;
   uciPoints?: number;
+  teamClass?: string;
 }
 
 // GET rider values for a Full Grid game
@@ -56,7 +57,7 @@ export async function GET(
 
     // Fetch rider details from rankings
     const ridersData: RiderValue[] = [];
-    const teamCache = new Map<string, { name: string; slug: string; teamImage: string }>();
+    const teamCache = new Map<string, { name: string; slug: string; jerseyImageTeam: string; teamImage: string; teamClass?: string }>();
 
     // Batch fetch riders (Firestore limits to 30 items per 'in' query)
     const batchSize = 30;
@@ -67,11 +68,9 @@ export async function GET(
         .where('nameID', 'in', batch)
         .get();
 
-        console.log('ridersSnapshot', ridersSnapshot)
-
       for (const doc of ridersSnapshot.docs) {
         const data = doc.data();
-        let teamData = { name: '', slug: '', teamImage: '' };
+        let teamData = { name: '', slug: '', jerseyImageTeam: '', teamImage: '', teamClass: '' };
 
         // Resolve team reference
         if (data.team) {
@@ -93,7 +92,9 @@ export async function GET(
                 teamData = {
                   name: td?.name || '',
                   slug: td?.slug || teamDoc.id,
+                  jerseyImageTeam: td?.jerseyImageTeam || '',
                   teamImage: td?.teamImage || '',
+                  teamClass: td?.class || td?.teamClass || '',
                 };
                 teamCache.set(teamPath, teamData);
               }
@@ -106,9 +107,10 @@ export async function GET(
           riderName: data.name || '',
           riderTeam: teamData.name,
           teamSlug: teamData.slug,
-          jerseyImage: teamData.teamImage,
+          jerseyImage: teamData.teamImage || '',
           value: riderValues[data.nameID || doc.id] || 0,
           uciPoints: data.points || 0,
+          teamClass: teamData.teamClass || undefined,
         });
       }
     }

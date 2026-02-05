@@ -202,37 +202,39 @@ export const AuctionFilters = ({
                     />
                 </span>
             )}
-            <span className="flex flex-col flex-1 justify-center">
-                <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
-                    {game?.gameType === 'marginal-gains' ? t('global.points') : t('games.auctions.priceRangeLabel')}
-                </label>
-                <div className="py-2 mt-2">
-                    <RangeSlider
-                        min={minRiderPrice}
-                        max={maxRiderPrice}
-                        value={priceRange}
-                        onInput={(value: number[]) => setPriceRange([value[0], value[1]])}
-                    />
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                    <input
-                        type="number"
-                        min={minRiderPrice}
-                        max={priceRange[1]}
-                        value={priceMinInput}
-                        onChange={(e) => setPriceMinInput(e.target.value)}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                    />
-                    <input
-                        type="number"
-                        min={priceRange[0]}
-                        max={maxRiderPrice}
-                        value={priceMaxInput}
-                        onChange={(e) => setPriceMaxInput(e.target.value)}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                    />
-                </div>
-            </span>
+            {game?.gameType !== 'full-grid' && (
+                <span className="flex flex-col flex-1 justify-center">
+                    <label htmlFor="price-range" className="text-sm font-bold text-gray-700">
+                        {game?.gameType === 'marginal-gains' ? t('global.points') : t('games.auctions.priceRangeLabel')}
+                    </label>
+                    <div className="py-2 mt-2">
+                        <RangeSlider
+                            min={minRiderPrice}
+                            max={maxRiderPrice}
+                            value={priceRange}
+                            onInput={(value: number[]) => setPriceRange([value[0], value[1]])}
+                        />
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                        <input
+                            type="number"
+                            min={minRiderPrice}
+                            max={priceRange[1]}
+                            value={priceMinInput}
+                            onChange={(e) => setPriceMinInput(e.target.value)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                        />
+                        <input
+                            type="number"
+                            min={priceRange[0]}
+                            max={maxRiderPrice}
+                            value={priceMaxInput}
+                            onChange={(e) => setPriceMaxInput(e.target.value)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                        />
+                    </div>
+                </span>
+            )}
             {isMarginalGains && birthYearRange && setBirthYearRange && minBirthYear !== undefined && maxBirthYear !== undefined && (
                 <span className="flex flex-col flex-1 justify-center">
                     <label htmlFor="birth-year-range" className="text-sm font-bold text-gray-700">
