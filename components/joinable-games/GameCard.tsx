@@ -55,15 +55,21 @@ export const GameCard = ({
 
   return (
     <div
-      className={`bg-white border rounded-lg p-4 ${
-        isJoined ? 'border-primary bg-primary' : 'border-gray-200'
+      className={`group relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-all hover:shadow-md ${
+        isJoined ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-white/90'
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
+      <div className={`absolute inset-x-0 top-0 h-1 ${
+        isJoined
+          ? 'bg-emerald-500'
+          : 'bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400'
+      }`} />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-emerald-100/60 blur-2xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+        <div className="min-w-0">
           {/* Header with badges */}
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold">{group.baseName}</h3>
+            <h3 className="text-lg font-semibold font-serif text-gray-900">{group.baseName}</h3>
             <GameCardBadges
               isJoined={isJoined}
               isWaitingForDivision={!!isWaitingForDivision}
@@ -71,6 +77,15 @@ export const GameCard = ({
               statusLabel={getStatusLabel(game)}
               getStatusBadgeColor={getStatusBadgeColor}
             />
+            {game.gameType === 'full-grid' && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                <span>Gesponsord door</span>
+                <span className="inline-flex items-center gap-1">
+                  <img src="/berc-bike-logo.jpg" alt="Bercbike" className="h-4 w-4 object-contain" />
+                  Bercbike
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Metadata */}
@@ -93,24 +108,26 @@ export const GameCard = ({
         </div>
 
         {/* Action buttons */}
-        <GameCardActions
-          game={game}
-          group={group}
-          joinedGame={joinedGame}
-          isAdmin={isAdmin}
-          isJoined={isJoined}
-          isWaitingForDivision={!!isWaitingForDivision}
-          joinable={joinable}
-          leaveable={leaveable}
-          isFull={isFull}
-          isRegistrationOpen={isRegistrationOpen(game)}
-          isDeadlinePassed={isDeadlinePassed}
-          joining={joining}
-          leaving={leaving}
-          onJoin={onJoin}
-          onLeave={onLeave}
-          isSelectionBasedGame={isSelectionBasedGame}
-        />
+        <div className="flex items-start justify-end">
+          <GameCardActions
+            game={game}
+            group={group}
+            joinedGame={joinedGame}
+            isAdmin={isAdmin}
+            isJoined={isJoined}
+            isWaitingForDivision={!!isWaitingForDivision}
+            joinable={joinable}
+            leaveable={leaveable}
+            isFull={isFull}
+            isRegistrationOpen={isRegistrationOpen(game)}
+            isDeadlinePassed={isDeadlinePassed}
+            joining={joining}
+            leaving={leaving}
+            onJoin={onJoin}
+            onLeave={onLeave}
+            isSelectionBasedGame={isSelectionBasedGame}
+          />
+        </div>
       </div>
     </div>
   );

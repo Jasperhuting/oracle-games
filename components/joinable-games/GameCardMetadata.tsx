@@ -59,60 +59,70 @@ export const GameCardMetadata = ({
 
   return (
     <>
-      {game.description && (
-        <p className="text-sm text-gray-600 mb-2">{game.description}</p>
-      )}
+      <div className="flex items-center gap-2">
+        {availableRules.has(game.gameType as GameType) && (
+          <Button
+            variant="text"
+            size="text"
+            onClick={() => onShowRules(game.gameType, group.baseName)}
+          >
+            {t('games.rules')}
+          </Button>
+        )}
+        {game.description && (
+          <p className="text-sm text-gray-600">{game.description}</p>
+        )}
+      </div>
 
-      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-        <div className="flex items-center gap-2">
-          {availableRules.has(game.gameType as GameType) && (
-            <Button
-              variant="text"
-              size="text"
-              onClick={() => onShowRules(game.gameType, group.baseName)}
-            >
-              {t('games.rules')}
-            </Button>
-          )}
-        </div>
-        <div>
-          <span className="font-medium">{t('global.year')}:</span> {game.year}
+      <div className="mt-2 grid grid-cols-2 lg:grid-cols-3 gap-2 text-xs text-gray-600">
+        <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+          <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('global.year')}</span>
+          <span className="font-semibold text-gray-800">{game.year}</span>
         </div>
         {gameStartDate && (
-          <div>
-            <span className="font-medium">{t('games.starts', 'Start')}:</span> {formatDate(gameStartDate)}
+          <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+            <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('games.starts', 'Start')}</span>
+            <span className="font-semibold text-gray-800">{formatDate(gameStartDate)}</span>
           </div>
         )}
         {game.teamSelectionDeadline && (
-          <div>
-            <span className="font-medium">Deadline:</span> {formatDateTime(game.teamSelectionDeadline)}
+          <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+            <span className="block text-[10px] uppercase tracking-wide text-gray-400">Deadline</span>
+            <span className="font-semibold text-gray-800">{formatDateTime(game.teamSelectionDeadline)}</span>
           </div>
         )}
-        <div>
-          <span className="font-medium">{t('global.players')}:</span> {group.totalPlayers}
-          {isFull && <span className="text-red-600 ml-1">({t('games.full', 'Full')})</span>}
+        <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+          <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('global.players')}</span>
+          <span className="font-semibold text-gray-800">
+            {group.totalPlayers}
+            {isFull && <span className="text-red-600 ml-1">({t('games.full', 'Full')})</span>}
+          </span>
         </div>
         {group.isMultiDivision && (
-          <div>
-            <span className="font-medium">{t('global.divisions')}:</span> {group.games.length}
-            {participant?.assignedDivision && (
-              <span className="text-primary ml-1">
-                ({t('global.you')}: {participant.assignedDivision})
-              </span>
-            )}
+          <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+            <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('global.divisions')}</span>
+            <span className="font-semibold text-gray-800">
+              {group.games.length}
+              {participant?.assignedDivision && (
+                <span className="text-primary ml-1">
+                  ({t('global.you')}: {participant.assignedDivision})
+                </span>
+              )}
+            </span>
           </div>
         )}
         {!group.isMultiDivision && game.division && (
-          <div>
-            <span className="font-medium">{t('global.division')}:</span> {game.division}
+          <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+            <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('global.division')}</span>
+            <span className="font-semibold text-gray-800">{game.division}</span>
           </div>
         )}
       </div>
 
       {/* Races info - show "Heel seizoen" for seasonal games, or specific counting races */}
       {(isSeasonalGame || countingRaces.length > 0) && (
-        <div className="mt-2 text-sm text-gray-600">
-          <span className="font-medium">{t('games.races', 'Wedstrijden')}:</span>{' '}
+        <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-900">
+          <span className="font-semibold">{t('games.races', 'Wedstrijden')}:</span>{' '}
           {isSeasonalGame
             ? t('games.fullSeason', 'Heel seizoen')
             : countingRaces.map(r => r.raceName).join(', ')

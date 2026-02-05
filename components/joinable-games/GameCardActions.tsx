@@ -46,7 +46,7 @@ export const GameCardActions = ({
   };
 
   return (
-    <div className="ml-4 flex flex-row gap-2 justify-center">
+    <div className="flex flex-col gap-2 items-stretch min-w-[140px]">
       {/* Admin View Buttons - Not joined */}
       {isAdmin && !isJoined && (
         <AdminViewButtons
@@ -131,13 +131,13 @@ export const GameCardActions = ({
 
       {/* Status Messages */}
       {!joinable && !leaveable && !isJoined && isFull && !isAdmin && (
-        <span className="text-sm text-red-600">{t('games.gameIsFull')}</span>
+        <span className="text-xs text-red-600">{t('games.gameIsFull')}</span>
       )}
       {!joinable && !isJoined && !isFull && !isRegistrationOpen && isDeadlinePassed && !isAdmin && (
-        <span className="text-sm text-gray-500">{t('games.alreadyStarted', 'Reeds begonnen')}</span>
+        <span className="text-xs text-gray-500">{t('games.alreadyStarted', 'Reeds begonnen')}</span>
       )}
       {!joinable && !isJoined && !isFull && !isRegistrationOpen && !isDeadlinePassed && !isAdmin && (
-        <span className="text-sm text-gray-500">{t('games.registrationClosed')}</span>
+        <span className="text-xs text-gray-500">{t('games.registrationClosed')}</span>
       )}
     </div>
   );

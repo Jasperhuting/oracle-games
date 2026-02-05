@@ -511,23 +511,30 @@ export const JoinableGamesTab = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">{t('games.joinGame')}</h2>
-          <div className="flex items-center gap-3">
+      <div className="bg-white/80 backdrop-blur border border-emerald-100 rounded-2xl p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-600/80">Lobby</p>
+            <h2 className="text-2xl font-semibold text-gray-900">{t('games.joinGame')}</h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
             {/* View toggle */}
-            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <div className="flex rounded-full border border-emerald-200 bg-white overflow-hidden shadow-sm">
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`px-4 py-1.5 text-sm transition-colors ${
+                  viewMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-emerald-50'
+                }`}
               >
                 {t('games.listView', 'Lijst')}
               </button>
               <button
                 onClick={() => setViewMode('calendar')}
-                className={`px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`px-4 py-1.5 text-sm transition-colors ${
+                  viewMode === 'calendar' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-emerald-50'
+                }`}
               >
                 {t('games.calendarView', 'Kalender')}
               </button>
@@ -548,15 +555,15 @@ export const JoinableGamesTab = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4">
-          <div className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Year
             </label>
             <select
               value={filterYear}
               onChange={(e) => setFilterYear(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
             >
               <option value="">{t('global.allYears')}</option>
               <option value="2026">2026</option>
@@ -565,14 +572,14 @@ export const JoinableGamesTab = () => {
             </select>
           </div>
 
-          <div className="flex-1">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('games.status')}
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
             >
               <option value="">{t('global.allStatuses')}</option>
               <option value="registration">{t('games.statuses.registration')}</option>
@@ -702,13 +709,17 @@ export const JoinableGamesTab = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Cycling Games */}
           {cyclingGames.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                🚴 Wielrennen
-              </h3>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  🚴
+                </span>
+                <h3 className="text-lg font-semibold text-gray-800">Wielrennen</h3>
+                <div className="h-px flex-1 bg-emerald-100" />
+              </div>
               {cyclingGames.map((group) => (
                 <GameCard
                   key={group.isMultiDivision ? group.baseName : group.games[0].id}
@@ -738,9 +749,13 @@ export const JoinableGamesTab = () => {
           {/* F1 Games */}
           {f1Games.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                🏎️ Formule 1
-              </h3>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                  🏎️
+                </span>
+                <h3 className="text-lg font-semibold text-gray-800">Formule 1</h3>
+                <div className="h-px flex-1 bg-blue-100" />
+              </div>
               {f1Games.map((group) => (
                 <GameCard
                   key={group.isMultiDivision ? group.baseName : group.games[0].id}
@@ -770,9 +785,13 @@ export const JoinableGamesTab = () => {
           {/* Soccer Games (toekomst) */}
           {soccerGames.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                ⚽ Voetbal
-              </h3>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-700">
+                  ⚽
+                </span>
+                <h3 className="text-lg font-semibold text-gray-800">Voetbal</h3>
+                <div className="h-px flex-1 bg-orange-100" />
+              </div>
               {soccerGames.map((group) => (
                 <GameCard
                   key={group.isMultiDivision ? group.baseName : group.games[0].id}
@@ -802,9 +821,13 @@ export const JoinableGamesTab = () => {
           {/* Other Games (uncategorized) */}
           {otherGames.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700">
-                Overige
-              </h3>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600">
+                  ✦
+                </span>
+                <h3 className="text-lg font-semibold text-gray-800">Overige</h3>
+                <div className="h-px flex-1 bg-gray-100" />
+              </div>
               {otherGames.map((group) => (
                 <GameCard
                   key={group.isMultiDivision ? group.baseName : group.games[0].id}
