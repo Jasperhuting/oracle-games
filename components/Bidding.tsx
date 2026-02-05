@@ -403,9 +403,9 @@ export const Bidding = ({
                     )}
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-4 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-white ring-2 ring-emerald-200 flex items-center justify-center overflow-hidden">
                       <img
                         src="/berc-bike-logo.jpg"
                         alt="Bercbike"
@@ -413,13 +413,18 @@ export const Bidding = ({
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs uppercase tracking-wide text-gray-400">Sponsor</p>
-                      <p className="text-sm font-semibold text-gray-900">Bercbike</p>
-                      <p className="text-xs text-gray-500">Trots partner van Full-Grid</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase tracking-wide text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Sponsor
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-gray-400">Full-Grid</span>
+                      </div>
+                      <p className="text-base font-semibold text-gray-900">Bercbike</p>
+                      <p className="text-xs text-gray-600">Trots partner van deze game</p>
                     </div>
                   </div>
-                  <div className="mt-3 rounded-md bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-100 p-3">
-                    <p className="text-xs text-gray-600">
+                  <div className="mt-3 rounded-md bg-white/80 border border-emerald-100 p-3">
+                    <p className="text-xs text-gray-700">
                       Dit spel wordt mogelijk gemaakt door Bercbike. Bedankt voor de support.
                     </p>
                   </div>
