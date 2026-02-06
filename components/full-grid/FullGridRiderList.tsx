@@ -2,6 +2,7 @@
 
 import { Check, Plus, Trash } from 'tabler-icons-react';
 import { Button } from '@/components/Button';
+import { Flag } from '../Flag';
 
 interface RiderData {
   riderNameId: string;
@@ -105,7 +106,7 @@ export function FullGridRiderList({
                   {rider.riderName}
                 </div>
                 <div className="text-xs text-gray-500 flex flex-wrap items-center gap-2">
-                  {rider.country && <span>{rider.country}</span>}
+                  {rider.country && <Flag countryCode={rider.country} />}
                   {rider.teamClass && (
                     <span className="uppercase tracking-wide text-[10px] text-gray-400">
                       {rider.teamClass}

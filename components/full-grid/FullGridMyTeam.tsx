@@ -46,12 +46,20 @@ export function FullGridMyTeam({
   const [scrollItemCount, setScrollItemCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Group by team
-  const sortedTeam = [...myTeam].sort((a, b) => a.riderTeam.localeCompare(b.riderTeam));
+  const sortedTeam = [...myTeam].sort((a, b) => {
+    const aIsPro = !!a.isProTeam || a.teamClass === 'PRT';
+    const bIsPro = !!b.isProTeam || b.teamClass === 'PRT';
+    if (aIsPro !== bIsPro) return aIsPro ? 1 : -1;
+    return a.riderTeam.localeCompare(b.riderTeam);
+  });
   const totalPages = Math.max(1, Math.ceil(sortedTeam.length / itemsPerPage));
-  const paginatedTeam = displayMode === 'pagination'
-    ? sortedTeam.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : sortedTeam;
+  const orderedTeam = sortedTeam;
+  const displayTeam = displayMode === 'pagination'
+    ? orderedTeam.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : orderedTeam;
+
+  const displayWt = displayTeam.filter(rider => !(rider.isProTeam || rider.teamClass === 'PRT'));
+  const displayPrt = displayTeam.filter(rider => rider.isProTeam || rider.teamClass === 'PRT');
 
   const listMaxHeight = displayMode === 'scroll'
     ? `${scrollItemCount * ITEM_HEIGHT}px`
@@ -171,15 +179,16 @@ export function FullGridMyTeam({
         className="divide-y divide-gray-100 overflow-y-auto"
         style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
       >
-        {paginatedTeam.map((rider) => {
-
-          console.log('paginatedTeam', rider)
-          
-          return (
-          <div
-            key={rider.riderNameId}
-            className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
-          >
+        {displayWt.length > 0 && (
+          <>
+            <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50">
+              WT Teams
+            </div>
+            {displayWt.map((rider) => (
+              <div
+                key={rider.riderNameId}
+                className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
+              >
             {/* Jersey */}
             <div className="w-6 h-6 flex-shrink-0">
               {rider.jerseyImage ? (
@@ -233,8 +242,70 @@ export function FullGridMyTeam({
                 <Trash size={16} />
               </button>
             )}
-          </div>
-        )})}
+              </div>
+            ))}
+          </>
+        )}
+        {displayPrt.length > 0 && (
+          <>
+            <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-50 border-t border-gray-200">
+              ProTeams
+            </div>
+            {displayPrt.map((rider) => (
+              <div
+                key={rider.riderNameId}
+                className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
+              >
+                {/* Jersey */}
+                <div className="w-6 h-6 flex-shrink-0">
+                  {rider.jerseyImage ? (
+                    <img
+                      src={`https://www.procyclingstats.com/${rider.jerseyImage}`}
+                      alt={rider.riderTeam}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <img
+                      src="/jersey-transparent.png"
+                      alt={rider.riderTeam}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </div>
+
+                {/* Rider info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 text-sm truncate">
+                    {rider.riderName}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate flex items-center gap-2">
+                    <span>{rider.riderTeam}</span>
+                    <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700">
+                      PRT
+                    </span>
+                  </div>
+                </div>
+
+                {/* Value */}
+                <div className="text-sm font-semibold text-primary">
+                  {rider.value} pts
+                </div>
+
+                {/* Remove button */}
+                {canEdit && (
+                  <button
+                    onClick={() => onRemoveRider(rider.riderNameId)}
+                    disabled={saving}
+                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                    title="Verwijderen"
+                  >
+                    <Trash size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       {myTeam.length === 0 && (
