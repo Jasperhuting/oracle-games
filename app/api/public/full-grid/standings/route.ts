@@ -25,9 +25,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     const gameData = gameDoc.data();
-    if (gameData?.gameType !== 'full-grid') {
-      return NextResponse.json({ error: 'Game is not full-grid' }, { status: 400 });
-    }
+    // if (gameData?.gameType !== 'full-grid') {
+    //   return NextResponse.json({ error: 'Game is not full-grid' }, { status: 400 });
+    // }
 
     let query = db.collection('gameParticipants')
       .where('gameId', '==', gameId)
