@@ -236,9 +236,13 @@ export async function GET(
       // Calculate totalPoints from riders' pointsScored
       let calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.pointsScored ?? 0), 0);
 
-
       if (gameData?.gameType === 'marginal-gains') {
         calculatedTotalPoints = (-participant.spentBudget) + calculatedTotalPoints;
+      }
+
+      // For full-grid, use participant totalPoints as source of truth
+      if (gameData?.gameType === 'full-grid') {
+        calculatedTotalPoints = participant.totalPoints || 0;
       }
 
       return {

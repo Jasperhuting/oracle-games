@@ -11,7 +11,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { GameCard } from '@/components/joinable-games';
 import { useAuth } from '@/hooks/useAuth';
 import type { JoinableGame, JoinableGameGroup, JoinableGameParticipant } from '@/lib/types';
-import { GameType } from '@/lib/types/games';
+import { AuctioneerConfig, GameType, MarginalGainsConfig, WorldTourManagerConfig } from '@/lib/types/games';
 
 export default function GameDetailPage() {
   const params = useParams();
@@ -38,6 +38,31 @@ export default function GameDetailPage() {
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   const [pendingLeaveGameId, setPendingLeaveGameId] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
+
+  const getGameStartDate = (config: AuctioneerConfig | MarginalGainsConfig | WorldTourManagerConfig | undefined): string | undefined => {
+    if (!config) return undefined;
+
+    if ('auctionPeriods' in config && config.auctionPeriods && config.auctionPeriods.length > 0) {
+      const sortedPeriods = [...config.auctionPeriods].sort((a, b) => {
+        const dateA = typeof a.startDate === 'string' ? a.startDate : a.startDate?.toDate?.()?.toISOString();
+        const dateB = typeof b.startDate === 'string' ? b.startDate : b.startDate?.toDate?.()?.toISOString();
+        return (dateA || '').localeCompare(dateB || '');
+      });
+      const firstPeriod = sortedPeriods[0];
+      if (firstPeriod.startDate) {
+        return typeof firstPeriod.startDate === 'string'
+          ? firstPeriod.startDate
+          : firstPeriod.startDate?.toDate?.()?.toISOString();
+      }
+    }
+
+    return undefined;
+  };
+
+  const getCountingRaces = (config: AuctioneerConfig | undefined): { raceId: string; raceName: string }[] => {
+    if (!config || !('countingRaces' in config) || !config.countingRaces) return [];
+    return config.countingRaces;
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -456,6 +481,73 @@ export default function GameDetailPage() {
                   formatDate={formatDate}
                   formatDateTime={formatDateTime}
                 />
+
+                {selectedGame && (
+                  <div className="rounded-2xl border border-emerald-100 bg-white/80 p-6 shadow-sm">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-emerald-600/80">
+                          {t('games.details', 'Game info')}
+                        </p>
+                        <h2 className="text-2xl font-semibold text-gray-900">
+                          {t('games.detailsHeading', 'Alles wat je moet weten')}
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-700">
+                      <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                        <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('global.year')}</span>
+                        <span className="font-semibold text-gray-900">{selectedGame.year}</span>
+                      </div>
+                      <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                        <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('games.status', 'Status')}</span>
+                        <span className="font-semibold text-gray-900">{getStatusLabel(selectedGame)}</span>
+                      </div>
+                      <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                        <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('global.players')}</span>
+                        <span className="font-semibold text-gray-900">{gameGroup.totalPlayers}</span>
+                      </div>
+                      <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                        <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('games.opens', 'Opens')}</span>
+                        <span className="font-semibold text-gray-900">{formatDate(selectedGame.registrationOpenDate)}</span>
+                      </div>
+                      <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                        <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('games.closes', 'Closes')}</span>
+                        <span className="font-semibold text-gray-900">{formatDate(selectedGame.registrationCloseDate)}</span>
+                      </div>
+                      {selectedGame.teamSelectionDeadline && (
+                        <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                          <span className="block text-[10px] uppercase tracking-wide text-gray-400">Deadline</span>
+                          <span className="font-semibold text-gray-900">{formatDateTime(selectedGame.teamSelectionDeadline)}</span>
+                        </div>
+                      )}
+                      {['auctioneer', 'worldtour-manager', 'marginal-gains'].includes(selectedGame.gameType) && (
+                        <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                          <span className="block text-[10px] uppercase tracking-wide text-gray-400">{t('games.starts', 'Start')}</span>
+                          <span className="font-semibold text-gray-900">
+                            {formatDate(getGameStartDate(selectedGame.config as AuctioneerConfig | MarginalGainsConfig | WorldTourManagerConfig | undefined))}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedGame.description && (
+                      <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+                        {selectedGame.description}
+                      </div>
+                    )}
+
+                    <div className="mt-4 rounded-xl border border-slate-100 bg-white px-4 py-3 text-sm text-gray-700">
+                      <span className="font-semibold">{t('games.races', 'Wedstrijden')}:</span>{' '}
+                      {selectedGame.raceType === 'season'
+                        ? t('games.fullSeason', 'Heel seizoen')
+                        : selectedGame.gameType === 'auctioneer'
+                          ? (getCountingRaces(selectedGame.config as AuctioneerConfig).map(r => r.raceName).join(', ') || '-')
+                          : '-'}
+                    </div>
+                  </div>
+                )}
 
                 <div className="text-sm text-gray-500">
                   <Link href="/games" className="underline">

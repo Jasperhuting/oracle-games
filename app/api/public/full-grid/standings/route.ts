@@ -31,25 +31,43 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     let query = db.collection('gameParticipants')
       .where('gameId', '==', gameId)
-      .orderBy('totalPoints', 'desc')
       .limit(limit);
 
     const snapshot = await query.get();
 
-    const standings: PublicFullGridStanding[] = snapshot.docs.map((doc) => {
+    const standingsRaw: PublicFullGridStanding[] = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         playername: data.playername,
         totalPoints: data.totalPoints ?? 0,
-        ranking: data.ranking,
+        ranking: 0,
       };
     });
 
-    return NextResponse.json({
+    standingsRaw.sort((a, b) => {
+      if ((b.totalPoints ?? 0) !== (a.totalPoints ?? 0)) {
+        return (b.totalPoints ?? 0) - (a.totalPoints ?? 0);
+      }
+      return (a.playername || '').localeCompare(b.playername || '');
+    });
+
+    let currentRank = 1;
+    let previousPoints: number | null = null;
+    const standings = standingsRaw.map((entry, index) => {
+      if (previousPoints === null || entry.totalPoints !== previousPoints) {
+        currentRank = index + 1;
+        previousPoints = entry.totalPoints ?? 0;
+      }
+      return { ...entry, ranking: currentRank };
+    });
+
+    const response = NextResponse.json({
       gameName: gameData?.name || 'Full Grid',
       count: standings.length,
       standings,
     });
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
+    return response;
   } catch (error) {
     console.error('Error fetching public full-grid standings:', error);
     return NextResponse.json(
