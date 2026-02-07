@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch user documents
     const userNames: Record<string, string> = {};
+    const userAvatars: Record<string, string | undefined> = {};
 
     // Firestore doesn't support batched gets with more than 10 docs in 'in' query
     // So we need to batch the requests
@@ -45,6 +46,9 @@ export async function GET(request: NextRequest) {
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
         userNames[doc.id] = data.playername || data.name || data.displayName || 'Anonymous';
+        if (data.avatarUrl) {
+          userAvatars[doc.id] = data.avatarUrl;
+        }
       });
     }
 
@@ -55,7 +59,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ success: true, data: userNames });
+    return NextResponse.json({ success: true, data: userNames, avatars: userAvatars });
   } catch (error) {
     console.error('Error fetching user names:', error);
     return NextResponse.json(

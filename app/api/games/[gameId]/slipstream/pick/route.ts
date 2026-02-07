@@ -8,8 +8,9 @@ interface PickRequest {
   userId: string;
   raceSlug: string;
   stageNumber?: string | number;  // "result" for one-day races, or stage number
-  riderId: string;
-  riderName: string;
+  riderId?: string | null;
+  riderName?: string | null;
+  clearPick?: boolean;
 }
 
 /**
@@ -23,13 +24,19 @@ export async function POST(
   try {
     const { gameId } = await params;
     const body: PickRequest = await request.json();
-    const { userId, raceSlug, riderId, riderName } = body;
+    const { userId, raceSlug, riderId, riderName, clearPick } = body;
     const stageNumber = body.stageNumber || 'result';
 
     // Validate required fields
-    if (!userId || !raceSlug || !riderId || !riderName) {
+    if (!userId || !raceSlug) {
       return NextResponse.json(
-        { error: 'userId, raceSlug, riderId, and riderName are required' },
+        { error: 'userId and raceSlug are required' },
+        { status: 400 }
+      );
+    }
+    if (!clearPick && (!riderId || !riderName)) {
+      return NextResponse.json(
+        { error: 'riderId and riderName are required unless clearPick is true' },
         { status: 400 }
       );
     }
@@ -104,17 +111,22 @@ export async function POST(
     }
 
     // 6. Check if rider has already been used by this participant
-    const slipstreamData = participantData.slipstreamData || {
+    const slipstreamData = {
       totalTimeLostSeconds: 0,
       totalGreenJerseyPoints: 0,
       usedRiders: [],
       picksCount: 0,
       missedPicksCount: 0,
       yellowJerseyRanking: 0,
-      greenJerseyRanking: 0
+      greenJerseyRanking: 0,
+      ...(participantData.slipstreamData || {})
     };
 
-    if (slipstreamData.usedRiders.includes(riderId)) {
+    // Normalize types to avoid NaN/undefined writes
+    slipstreamData.usedRiders = Array.isArray(slipstreamData.usedRiders) ? slipstreamData.usedRiders : [];
+    slipstreamData.picksCount = Number.isFinite(slipstreamData.picksCount) ? slipstreamData.picksCount : 0;
+
+    if (!clearPick && slipstreamData.usedRiders.includes(riderId as string)) {
       return NextResponse.json(
         { error: 'This rider has already been used. Each rider can only be picked once.' },
         { status: 400 }
@@ -129,7 +141,7 @@ export async function POST(
       .limit(1)
       .get();
 
-    let pickId: string;
+    let pickId: string | null = null;
     let previousRiderId: string | null = null;
 
     if (!existingPickSnapshot.empty) {
@@ -138,6 +150,10 @@ export async function POST(
       const existingPick = existingPickSnapshot.docs[0].data();
       previousRiderId = existingPick.riderId || null;
 
+      if (clearPick) {
+        // Delete existing pick
+        await existingPickSnapshot.docs[0].ref.delete();
+      } else {
       // If updating to a different rider, remove the old rider from usedRiders
       // (the old rider becomes available again)
       if (previousRiderId && previousRiderId !== riderId) {
@@ -145,7 +161,7 @@ export async function POST(
         const usedWithoutPrevious = slipstreamData.usedRiders.filter(
           (r: string) => r !== previousRiderId
         );
-        if (usedWithoutPrevious.includes(riderId)) {
+        if (usedWithoutPrevious.includes(riderId as string)) {
           return NextResponse.json(
             { error: 'This rider has already been used in another race.' },
             { status: 400 }
@@ -168,7 +184,18 @@ export async function POST(
         penaltyReason: null,
         processedAt: null
       });
+      }
     } else {
+      if (clearPick) {
+        return NextResponse.json({
+          success: true,
+          pickId: null,
+          message: 'No pick to clear',
+          pick: null,
+          usedRiders: slipstreamData.usedRiders,
+          remainingRiders: config.countingRaces.length - slipstreamData.usedRiders.length
+        });
+      }
       // Create new pick
       const newPick: Omit<StagePick, 'id'> = {
         gameId,
@@ -176,8 +203,8 @@ export async function POST(
         playername: participantData.playername,
         raceSlug,
         stageNumber,
-        riderId,
-        riderName,
+        riderId: riderId as string,
+        riderName: riderName as string,
         pickedAt: Timestamp.now(),
         locked: false
       };
@@ -195,15 +222,15 @@ export async function POST(
     }
 
     // Add new rider if not already in list
-    if (!updatedUsedRiders.includes(riderId)) {
+    if (!clearPick && riderId && !updatedUsedRiders.includes(riderId)) {
       updatedUsedRiders.push(riderId);
     }
 
     await participantDoc.ref.update({
       'slipstreamData.usedRiders': updatedUsedRiders,
-      'slipstreamData.picksCount': existingPickSnapshot.empty
-        ? slipstreamData.picksCount + 1
-        : slipstreamData.picksCount
+      'slipstreamData.picksCount': clearPick
+        ? Math.max(0, slipstreamData.picksCount - 1)
+        : (existingPickSnapshot.empty ? slipstreamData.picksCount + 1 : slipstreamData.picksCount)
     });
 
     // 9. Log the activity
@@ -227,10 +254,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       pickId,
-      message: existingPickSnapshot.empty
-        ? 'Pick submitted successfully'
-        : 'Pick updated successfully',
-      pick: {
+      message: clearPick
+        ? 'Pick cleared successfully'
+        : (existingPickSnapshot.empty ? 'Pick submitted successfully' : 'Pick updated successfully'),
+      pick: clearPick ? null : {
         id: pickId,
         gameId,
         userId,

@@ -58,12 +58,14 @@ export const PlayerRow = ({
                     #{player?.rank}
                 </span>
             )}
-            <span className="w-[20px] h-[20px]">
-                <Flag 
-                    className="w-[20px] h-[20px] whitespace-nowrap break-keep" 
-                    countryCode={player?.country || 'nl'} 
-                />
-            </span>
+            {player?.country && (
+                <span className="w-[20px] h-[20px]">
+                    <Flag 
+                        className="w-[20px] h-[20px] whitespace-nowrap break-keep" 
+                        countryCode={player?.country} 
+                    />
+                </span>
+            )}
             <span className="break-keep whitespace-nowrap">{player?.name}</span>
             {showPoints && (
                 <span className="text-xs text-gray-500 break-keep whitespace-nowrap">

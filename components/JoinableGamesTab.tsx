@@ -35,9 +35,6 @@ export const JoinableGamesTab = () => {
   const [pendingLeaveGameId, setPendingLeaveGameId] = useState<string | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
   const [showTestGames, setShowTestGames] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const { t } = useTranslation();
 
@@ -459,48 +456,6 @@ export const JoinableGamesTab = () => {
   const soccerGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'soccer');
   const otherGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'other');
 
-  // Calendar helper functions
-  const MONTHS_NL = [
-    'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
-    'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
-  ];
-  const DAYS_NL = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-
-  const getGamesForDay = (day: number): JoinableGameGroup[] => {
-    const targetDate = new Date(currentYear, currentMonth, day);
-    return regularGameGroups.filter(group => {
-      const game = group.games[0];
-      // Check registration dates or team selection deadline
-      const regOpen = game.registrationOpenDate ? new Date(game.registrationOpenDate) : null;
-      const regClose = game.registrationCloseDate ? new Date(game.registrationCloseDate) : null;
-      const deadline = game.teamSelectionDeadline ? new Date(game.teamSelectionDeadline) : null;
-      
-      // Show on registration open date
-      if (regOpen && regOpen.toDateString() === targetDate.toDateString()) return true;
-      // Show on registration close date
-      if (regClose && regClose.toDateString() === targetDate.toDateString()) return true;
-      // Show on team selection deadline
-      if (deadline && deadline.toDateString() === targetDate.toDateString()) return true;
-      
-      return false;
-    });
-  };
-
-  const getCalendarDays = () => {
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    
-    let startDayOfWeek = firstDay.getDay() - 1;
-    if (startDayOfWeek < 0) startDayOfWeek = 6;
-    
-    const days: (number | null)[] = [];
-    for (let i = 0; i < startDayOfWeek; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    
-    return days;
-  };
-
   // Show loading state until auth is ready, games are loaded, and participations are loaded
   if (authLoading || loading || (user && !participationsLoaded)) {
     return (
@@ -512,204 +467,21 @@ export const JoinableGamesTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur border border-emerald-100 rounded-2xl p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-600/80">Lobby</p>
-            <h2 className="text-2xl font-semibold text-gray-900">{t('games.joinGame')}</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {/* View toggle */}
-            <div className="flex rounded-full border border-emerald-200 bg-white overflow-hidden shadow-sm">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-1.5 text-sm transition-colors ${
-                  viewMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-emerald-50'
-                }`}
-              >
-                {t('games.listView', 'Lijst')}
-              </button>
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={`px-4 py-1.5 text-sm transition-colors ${
-                  viewMode === 'calendar' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-emerald-50'
-                }`}
-              >
-                {t('games.calendarView', 'Kalender')}
-              </button>
-            </div>
-            <Link
-              href={`/rankings/season/${new Date().getFullYear()}`}
-              className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1"
-            >
-              {t('games.seasonPoints', 'Seizoen Punten')}
-            </Link>
-            <Link
-              href="/calendar"
-              className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1"
-            >
-              {t('games.viewCalendar', 'Bekijk race kalender')}
-            </Link>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Year
-            </label>
-            <select
-              value={filterYear}
-              onChange={(e) => setFilterYear(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-            >
-              <option value="">{t('global.allYears')}</option>
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('games.status')}
-            </label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-            >
-              <option value="">{t('global.allStatuses')}</option>
-              <option value="registration">{t('games.statuses.registration')}</option>
-              <option value="bidding">{t('games.statuses.bidding')}</option>
-              <option value="active">{t('games.statuses.active')}</option>
-              <option value="finished">{t('games.statuses.finished')}</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3">
           <span className="text-red-700 text-sm">{error}</span>
         </div>
       )}
 
-      {/* Games List or Calendar */}
-      {games.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-600">No games found with the selected filters</p>
-        </div>
-      ) : viewMode === 'calendar' ? (
-        /* Calendar View */
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          {/* Month navigation */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <button
-              onClick={() => {
-                if (currentMonth === 0) {
-                  setCurrentMonth(11);
-                  setCurrentYear(y => y - 1);
-                } else {
-                  setCurrentMonth(m => m - 1);
-                }
-              }}
-              className="p-2 hover:bg-gray-100 rounded-full"
-            >
-              ←
-            </button>
-            <h2 className="text-lg font-semibold text-gray-700">
-              {MONTHS_NL[currentMonth]} {currentYear}
-            </h2>
-            <button
-              onClick={() => {
-                if (currentMonth === 11) {
-                  setCurrentMonth(0);
-                  setCurrentYear(y => y + 1);
-                } else {
-                  setCurrentMonth(m => m + 1);
-                }
-              }}
-              className="p-2 hover:bg-gray-100 rounded-full"
-            >
-              →
-            </button>
-          </div>
-
-          {/* Day headers */}
-          <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-            {DAYS_NL.map(day => (
-              <div key={day} className="px-2 py-2 text-center text-xs font-medium text-gray-500">
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7">
-            {getCalendarDays().map((day, index) => {
-              const dayGames = day ? getGamesForDay(day) : [];
-              const isToday = day && 
-                new Date().getDate() === day &&
-                new Date().getMonth() === currentMonth &&
-                new Date().getFullYear() === currentYear;
-
-              return (
-                <div
-                  key={index}
-                  className={`min-h-[100px] p-1 border-b border-r border-gray-100 ${
-                    day ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                >
-                  {day && (
-                    <>
-                      <div className={`text-xs mb-1 ${isToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : 'text-gray-400'}`}>
-                        {day}
-                      </div>
-                      <div className="space-y-0.5">
-                        {dayGames.slice(0, 2).map(group => {
-                          const isJoined = group.games.some(g => myGames.has(g.id));
-                          return (
-                            <div
-                              key={group.baseName}
-                              className={`w-full text-left px-1 py-0.5 text-xs rounded truncate ${
-                                isJoined ? 'bg-green-100 text-green-800' : 'bg-primary/10 text-primary'
-                              }`}
-                              title={group.baseName}
-                            >
-                              {group.baseName}
-                            </div>
-                          );
-                        })}
-                        {dayGames.length > 2 && (
-                          <div className="text-xs text-gray-400 px-1">
-                            +{dayGames.length - 2} meer
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="p-3 border-t border-gray-200 flex gap-4 text-xs text-gray-500">
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-primary/10"></span>
-              <span>{t('games.available', 'Beschikbaar')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded bg-green-100"></span>
-              <span>{t('games.joined', 'Ingeschreven')}</span>
-            </div>
-          </div>
-        </div>
-      ) : (
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         <div className="space-y-6">
+          {/* Games List */}
+          {games.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+              <p className="text-gray-600">No games found with the selected filters</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
           {/* Cycling Games */}
           {cyclingGames.length > 0 && (
             <div className="space-y-4">
@@ -904,8 +676,71 @@ export const JoinableGamesTab = () => {
               )}
             </div>
           )}
+            </div>
+          )}
         </div>
-      )}
+
+        <aside className="space-y-4">
+          <div className="bg-white/80 backdrop-blur border border-emerald-100 rounded-2xl p-5 shadow-sm">
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-600/80">Lobby</p>
+              <h2 className="text-2xl font-semibold text-gray-900">{t('games.joinGame')}</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year
+                </label>
+                <select
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                >
+                  <option value="">{t('global.allYears')}</option>
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('games.status')}
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                >
+                  <option value="">{t('global.allStatuses')}</option>
+                  <option value="registration">{t('games.statuses.registration')}</option>
+                  <option value="bidding">{t('games.statuses.bidding')}</option>
+                  <option value="active">{t('games.statuses.active')}</option>
+                  <option value="finished">{t('games.statuses.finished')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 text-sm text-gray-600">
+            <p className="font-medium text-gray-900 mb-2">Kalender</p>
+            <div className="flex flex-col gap-2">
+              <Link href="/account" className="text-primary hover:text-primary/80">
+                Bekijk de kalender op je profielpagina
+              </Link>
+              <a
+                href="https://www.procyclingstats.com/races.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80"
+              >
+                Volledige PCS kalender (UWT, .Pro, 1. & 2.)
+              </a>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       {/* Game Rules Modal */}
       {selectedGameForRules && (

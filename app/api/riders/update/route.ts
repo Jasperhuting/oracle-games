@@ -72,6 +72,8 @@ export async function PATCH(request: NextRequest) {
     const updatedRider = await db.collection(`rankings_${YEAR}`).doc(riderId).get();
     const riderData = updatedRider.data();
 
+    const updatedFields = Object.keys(updateData).filter(k => k !== 'updatedAt');
+
     // Log the activity
     const adminData = adminDoc.data();
     await db.collection('activityLogs').add({
@@ -82,15 +84,15 @@ export async function PATCH(request: NextRequest) {
       details: {
         riderId,
         riderName: riderData?.name,
-        updatedFields: Object.keys(updateData).filter(k => k !== 'updatedAt'),
+        updatedFields,
       },
       timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
-    // If retired status was changed, increment cache version to invalidate all client caches
-    if (retired !== undefined) {
+    // If any rider field changed, increment cache version to invalidate all client caches
+    if (updatedFields.length > 0) {
       const configRef = db.collection('config').doc('cache');
       const configDoc = await configRef.get();
       const currentCacheVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
@@ -98,7 +100,7 @@ export async function PATCH(request: NextRequest) {
         version: currentCacheVersion + 1,
         updatedAt: Timestamp.now()
       }, { merge: true });
-      console.log(`[RIDER_UPDATE] Cache version incremented to ${currentCacheVersion + 1} due to retired status change`);
+      console.log(`[RIDER_UPDATE] Cache version incremented to ${currentCacheVersion + 1} due to rider update`);
     }
 
     return NextResponse.json({

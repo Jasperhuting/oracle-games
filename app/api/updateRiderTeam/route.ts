@@ -1,6 +1,7 @@
 import { getServerFirebase } from "@/lib/firebase/server";
 import type { NextRequest } from "next/server";
 import { toSlug } from "@/lib/firebase/utils";
+import { Timestamp } from "firebase-admin/firestore";
 
 export async function POST(request: NextRequest) {
   const { riderId, teamSlug, year } = await request.json();
@@ -23,6 +24,15 @@ export async function POST(request: NextRequest) {
     await db.collection(`rankings_${year}`).doc(riderId).update({
       team: teamDoc.ref,
     });
+
+    // Increment cache version to invalidate client caches
+    const configRef = db.collection('config').doc('cache');
+    const configDoc = await configRef.get();
+    const currentVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
+    await configRef.set({
+      version: currentVersion + 1,
+      updatedAt: Timestamp.now()
+    }, { merge: true });
 
     return Response.json({ success: true, team: teamDoc.data() });
   } catch (error) {

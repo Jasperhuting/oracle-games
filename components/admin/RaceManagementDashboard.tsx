@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 interface StageStatus {
   stageNumber: number | string;
-  status: 'scraped' | 'pending' | 'failed';
+  status: 'scraped' | 'pending' | 'failed' | 'empty';
   scrapedAt: string | null;
   riderCount: number;
   hasValidationErrors: boolean;
@@ -80,17 +80,19 @@ interface StageDetailResponse {
   }>;
 }
 
-function StatusBadge({ status }: { status: 'scraped' | 'pending' | 'failed' }) {
+function StatusBadge({ status }: { status: 'scraped' | 'pending' | 'failed' | 'empty' }) {
   const styles = {
     scraped: 'bg-green-100 text-green-800',
     pending: 'bg-yellow-100 text-yellow-800',
     failed: 'bg-red-100 text-red-800',
+    empty: 'bg-amber-100 text-amber-800',
   };
 
   const labels = {
     scraped: 'Scraped',
     pending: 'Pending',
     failed: 'Failed',
+    empty: 'Scraped (empty)',
   };
 
   return (
@@ -278,6 +280,11 @@ function StageRow({
               hasErrors={stage.hasValidationErrors}
               warningCount={stage.validationWarnings}
             />
+          )}
+          {stage.status === 'empty' && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+              Empty
+            </span>
           )}
         </td>
         <td className="px-4 py-2 text-sm text-gray-500">

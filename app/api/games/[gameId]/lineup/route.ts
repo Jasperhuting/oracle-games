@@ -3,6 +3,16 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Team } from '@/lib/scraper';
 
+async function bumpCacheVersion(db: ReturnType<typeof getServerFirebase>) {
+  const configRef = db.collection('config').doc('cache');
+  const configDoc = await configRef.get();
+  const currentVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
+  await configRef.set({
+    version: currentVersion + 1,
+    updatedAt: Timestamp.now()
+  }, { merge: true });
+}
+
 // GET race lineup (teams and riders) for a game
 export async function GET(
   request: NextRequest,
@@ -300,6 +310,8 @@ export async function PATCH(
         updatedGameIds.push(gameId);
       }
 
+      await bumpCacheVersion(db);
+
       // Log the activity
       const adminData = adminDoc.data();
       await db.collection('activityLogs').add({
@@ -418,6 +430,8 @@ export async function PATCH(
     });
 
     await batch.commit();
+
+    await bumpCacheVersion(db);
 
     // Log the activity
     const adminData = adminDoc.data();

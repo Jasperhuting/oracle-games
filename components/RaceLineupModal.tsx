@@ -135,16 +135,22 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
     if (newRiders.length > selectedRiders.length) {
       // Find the newly added rider
       const addedRider = newRiders.find(newR =>
-        !selectedRiders.some(existingR =>
-          existingR.name === newR.name && existingR.rank === newR.rank
-        )
+        !selectedRiders.some(existingR => {
+          const existingId = existingR.id || existingR.nameID;
+          const newId = newR.id || newR.nameID;
+          if (existingId && newId) return existingId === newId;
+          return existingR.name === newR.name && existingR.rank === newR.rank;
+        })
       );
 
       if (addedRider) {
         // Put the new rider at the top
-        const othersRiders = newRiders.filter(r =>
-          !(r.name === addedRider.name && r.rank === addedRider.rank)
-        );
+        const othersRiders = newRiders.filter(r => {
+          const rId = r.id || r.nameID;
+          const addedId = addedRider.id || addedRider.nameID;
+          if (rId && addedId) return rId !== addedId;
+          return !(r.name === addedRider.name && r.rank === addedRider.rank);
+        });
         setSelectedRiders([addedRider, ...othersRiders]);
         return;
       }
@@ -249,6 +255,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                       multiSelect={true}
                       multiSelectShowSelected={false}
                       items={allRiders}
+                      useLocalStorage={false}
                     />
                   </div>
 
@@ -322,6 +329,7 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                       multiSelect={true}
                       multiSelectShowSelected={false}
                       showSelected={false}
+                      availableTeams={allTeams}
                     />
                   </div>
 

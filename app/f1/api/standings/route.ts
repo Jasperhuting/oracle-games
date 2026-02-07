@@ -82,14 +82,14 @@ export async function GET(request: NextRequest) {
       // Get all standings for season
       const snapshot = await standingsRef
         .where('season', '==', season)
-        .orderBy('totalPoints', 'desc')
+        .orderBy('totalPoints', 'asc')
         .get();
 
       standings = snapshot.docs.map(doc => doc.data() as F1Standing);
     }
 
     // Sort by total points
-    standings.sort((a, b) => b.totalPoints - a.totalPoints);
+    standings.sort((a, b) => a.totalPoints - b.totalPoints);
 
     // Enrich with user data from default database
     const enrichedStandings = await Promise.all(

@@ -22,10 +22,10 @@ async function getCacheVersion(): Promise<number> {
 
   try {
     const db = getServerFirebase();
-    const systemRef = db.collection('system').doc('cache');
-    const systemDoc = await systemRef.get();
+    const configRef = db.collection('config').doc('cache');
+    const configDoc = await configRef.get();
 
-    const version = systemDoc.exists ? (systemDoc.data()?.version || 1) : 1;
+    const version = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
 
     // Cache the version
     cachedVersion = { version, timestamp: now };

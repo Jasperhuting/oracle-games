@@ -7,13 +7,15 @@ export const PlayerSelector = ({
     selectedPlayers,
     multiSelect = false,
     multiSelectShowSelected = true,
-    items = []
+    items = [],
+    useLocalStorage = true
 }: {
     setSelectedPlayers: (players: Rider[]) => void,
     selectedPlayers: Rider[],
     multiSelect?: boolean,
     multiSelectShowSelected?: boolean,
-    items?: Rider[]
+    items?: Rider[],
+    useLocalStorage?: boolean
 }) => {
     return (
         <Selector<Rider>
@@ -23,7 +25,7 @@ export const PlayerSelector = ({
             multiSelect={multiSelect}
             multiSelectShowSelected={multiSelectShowSelected}
             placeholder={multiSelect ? "Filter on players..." : "Filter on player..."}
-            localStorageKey={`riders_2026`}
+            localStorageKey={useLocalStorage ? `riders_2026` : undefined}
             getItemLabel={(player) => player.name || ''}
             searchFilter={(player, searchTerm) => {
                 const lowerSearch = searchTerm.toLowerCase();
@@ -31,7 +33,14 @@ export const PlayerSelector = ({
                          player?.team?.name?.toLowerCase().includes(lowerSearch) ||
                          player?.country?.toLowerCase().includes(lowerSearch));
             }}
-            isEqual={(p1, p2) => p1.name === p2.name && p1.rank === p2.rank}
+            isEqual={(p1, p2) => {
+                const p1Id = p1.id || p1.nameID || '';
+                const p2Id = p2.id || p2.nameID || '';
+                if (p1Id && p2Id) {
+                    return p1Id === p2Id;
+                }
+                return p1.name === p2.name && p1.rank === p2.rank;
+            }}
             renderItem={(player, index, isSelected) => (
                 <PlayerRow
                     showPoints={true}

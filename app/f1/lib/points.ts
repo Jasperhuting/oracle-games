@@ -6,8 +6,7 @@ import {
 } from '../types';
 
 /**
- * Calculate points for a prediction based on race results
- * Uses penalty system: start with max points, subtract for position differences
+ * Calculate penalty points for a prediction based on race results
  * Lower score = better prediction
  */
 export function calculatePredictionPoints(
@@ -16,59 +15,59 @@ export function calculatePredictionPoints(
 ): { total: number; breakdown: F1PointsBreakdown } {
   let totalPenalty = 0;
   let correctPositions = 0;
-  let poleBonus = 0;
-  let fastestLapBonus = 0;
-  let dnfBonus = 0;
+  let bonusCorrect = 0;
 
-  // Calculate penalty points (sum of position differences)
-  for (let i = 0; i < prediction.finishOrder.length; i++) {
-    const predictedDriver = prediction.finishOrder[i];
-    const actualPosition = result.finishOrder.indexOf(predictedDriver);
+  const predictedOrder = prediction.finishOrder
+    .slice(0, F1_POINTS_CONFIG.maxPredictionSize)
+    .filter(Boolean);
 
-    if (actualPosition === -1) {
-      // Driver not in results - max penalty for this position
-      totalPenalty += 21; // Max possible difference
-      continue;
+  // Calculate penalty points (sum of capped position differences)
+  for (let i = 0; i < predictedOrder.length; i++) {
+    const predictedDriver = predictedOrder[i];
+    const predictedPos = i + 1;
+    const actualIndex = result.finishOrder.indexOf(predictedDriver);
+
+    let penalty = 0;
+
+    if (actualIndex === -1) {
+      // Driver not in results - treat as DNS/DSQ
+      penalty = F1_POINTS_CONFIG.maxPenaltyPerDriver;
+    } else if (result.dnfDrivers?.includes(predictedDriver)) {
+      // DNF always counts as max penalty, regardless of finishing position
+      penalty = F1_POINTS_CONFIG.maxPenaltyPerDriver;
+    } else {
+      const actualPos = actualIndex + 1;
+      const positionDiff = Math.abs(predictedPos - actualPos);
+      penalty = Math.min(F1_POINTS_CONFIG.maxPenaltyPerDriver, positionDiff);
     }
 
-    const positionDiff = Math.abs(i - actualPosition);
-    totalPenalty += positionDiff;
-
-    if (positionDiff === 0) {
+    totalPenalty += penalty;
+    if (penalty === 0) {
       correctPositions++;
     }
   }
 
-  // Pole position bonus (reduces penalty)
+  // Bonus questions: each correct answer reduces penalty by 2
   if (prediction.polePosition && prediction.polePosition === result.polePosition) {
-    poleBonus = F1_POINTS_CONFIG.polePosition;
+    bonusCorrect++;
   }
-
-  // Fastest lap bonus (reduces penalty)
   if (prediction.fastestLap && prediction.fastestLap === result.fastestLap) {
-    fastestLapBonus = F1_POINTS_CONFIG.fastestLap;
+    bonusCorrect++;
   }
-
-  // DNF bonus (reduces penalty)
   const predictedDnfs = [prediction.dnf1, prediction.dnf2].filter(Boolean) as string[];
   for (const dnf of predictedDnfs) {
     if (result.dnfDrivers?.includes(dnf)) {
-      dnfBonus += F1_POINTS_CONFIG.dnfCorrect;
+      bonusCorrect++;
     }
   }
 
-  // Final score: penalty minus bonuses (lower is better)
-  // But we store as positive where higher = better for standings
-  // Max possible penalty is 22 * 21 = 462, so we invert
-  const maxPenalty = 462;
-  const bonuses = poleBonus + fastestLapBonus + dnfBonus;
-  const finalScore = maxPenalty - totalPenalty + bonuses;
+  const bonusPenalty = -F1_POINTS_CONFIG.bonusPenaltyPerCorrect * bonusCorrect;
+  const finalScore = totalPenalty + bonusPenalty;
 
   const breakdown: F1PointsBreakdown = {
-    positionPoints: correctPositions, // Store correct count for display
-    poleBonus,
-    fastestLapBonus,
-    dnfBonus,
+    positionPenalty: totalPenalty,
+    bonusPenalty,
+    bonusCorrect,
   };
 
   return {
@@ -78,16 +77,10 @@ export function calculatePredictionPoints(
 }
 
 /**
- * Calculate maximum possible points for a race
+ * Calculate maximum possible penalty points for a race
  */
 export function getMaxPossiblePoints(): number {
-  // All 22 positions correct + pole + fastest lap + 2 DNFs
-  const maxPositionPoints = 22 * F1_POINTS_CONFIG.position.exact;
-  const maxPoleBonus = F1_POINTS_CONFIG.polePosition;
-  const maxFastestLapBonus = F1_POINTS_CONFIG.fastestLap;
-  const maxDnfBonus = 2 * F1_POINTS_CONFIG.dnfCorrect;
-
-  return maxPositionPoints + maxPoleBonus + maxFastestLapBonus + maxDnfBonus;
+  return F1_POINTS_CONFIG.maxPredictionSize * F1_POINTS_CONFIG.maxPenaltyPerDriver;
 }
 
 /**
@@ -96,17 +89,9 @@ export function getMaxPossiblePoints(): number {
 export function formatPointsBreakdown(breakdown: F1PointsBreakdown): string[] {
   const lines: string[] = [];
 
-  if (breakdown.positionPoints > 0) {
-    lines.push(`Posities: +${breakdown.positionPoints}`);
-  }
-  if (breakdown.poleBonus > 0) {
-    lines.push(`Pole Position: +${breakdown.poleBonus}`);
-  }
-  if (breakdown.fastestLapBonus > 0) {
-    lines.push(`Snelste Ronde: +${breakdown.fastestLapBonus}`);
-  }
-  if (breakdown.dnfBonus > 0) {
-    lines.push(`DNF Correct: +${breakdown.dnfBonus}`);
+  lines.push(`Posities: +${breakdown.positionPenalty}`);
+  if (breakdown.bonusCorrect > 0) {
+    lines.push(`Bonus: ${breakdown.bonusPenalty} (${breakdown.bonusCorrect} correct)`);
   }
 
   return lines;
@@ -118,8 +103,12 @@ export function formatPointsBreakdown(breakdown: F1PointsBreakdown): string[] {
 export function calculateAccuracy(prediction: F1Prediction, result: F1RaceResult): number {
   let correctPositions = 0;
 
-  for (let i = 0; i < prediction.finishOrder.length; i++) {
-    const predictedDriver = prediction.finishOrder[i];
+  const predictedOrder = prediction.finishOrder
+    .slice(0, F1_POINTS_CONFIG.maxPredictionSize)
+    .filter(Boolean);
+
+  for (let i = 0; i < predictedOrder.length; i++) {
+    const predictedDriver = predictedOrder[i];
     const actualPosition = result.finishOrder.indexOf(predictedDriver);
 
     if (actualPosition === i) {
@@ -127,5 +116,7 @@ export function calculateAccuracy(prediction: F1Prediction, result: F1RaceResult
     }
   }
 
-  return Math.round((correctPositions / prediction.finishOrder.length) * 100);
+  return predictedOrder.length > 0
+    ? Math.round((correctPositions / predictedOrder.length) * 100)
+    : 0;
 }

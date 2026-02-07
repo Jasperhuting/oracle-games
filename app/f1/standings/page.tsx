@@ -44,7 +44,7 @@ const StandingsPage = () => {
     const { names: userNames, avatars: userAvatars, loading: namesLoading } = useUserNames(userIds);
 
     const [sorting, setSorting] = useState<SortingState>([
-        { id: "totalPoints", desc: true }
+        { id: "totalPoints", desc: false }
     ]);
 
     // Get subpoule from URL, default to null (algemeen)
@@ -172,9 +172,9 @@ const StandingsPage = () => {
         return players.filter(p => subpoule.memberIds.includes(p.id));
     }, [selectedSubpoule, players, subLeagues]);
 
-    // Sort filtered players by points
+    // Sort filtered players by penalty points (lower is better)
     const sortedPlayers = useMemo(() => {
-        return [...filteredPlayers].sort((a, b) => b.totalPoints - a.totalPoints);
+        return [...filteredPlayers].sort((a, b) => a.totalPoints - b.totalPoints);
     }, [filteredPlayers]);
 
     const columns = useMemo(
@@ -230,9 +230,9 @@ const StandingsPage = () => {
 },
             }),
             columnHelper.accessor("totalPoints", {
-                header: "Punten",
+                header: "Strafpunten",
                 cell: (info) => (
-                    <span className="text-xl font-black text-green-500">{info.getValue()}</span>
+                    <span className="text-xl font-black text-red-400">{info.getValue()}</span>
                 ),
             }),
             columnHelper.accessor("correctPredictions", {
@@ -263,7 +263,7 @@ const StandingsPage = () => {
                 cell: (info) => {
                     const value = info.getValue();
                     if (value === null) return <span className="text-gray-500">-</span>;
-                    return <span className="text-gray-300">+{value}</span>;
+                    return <span className="text-gray-300">{value}</span>;
                 },
             }),
         ],
@@ -566,8 +566,8 @@ const StandingsPage = () => {
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="text-right">
-                            <div className="text-2xl font-black text-green-500">{player.totalPoints}</div>
-                            <div className="text-xs text-gray-400">punten</div>
+                            <div className="text-2xl font-black text-red-400">{player.totalPoints}</div>
+                            <div className="text-xs text-gray-400">strafpunten</div>
                         </div>
                         <Eye size={18} className="text-gray-500" />
                     </div>
@@ -755,7 +755,7 @@ const StandingsPage = () => {
                             {sortedPlayers[1].name.charAt(0).toUpperCase()}
                         </div>
                         <div className="text-white font-semibold text-sm mb-1">{sortedPlayers[1].name}</div>
-                        <div className="text-green-500 font-black text-lg">{sortedPlayers[1].totalPoints} pt</div>
+                        <div className="text-red-400 font-black text-lg">{sortedPlayers[1].totalPoints} pt</div>
                         <div className="bg-gradient-to-b from-gray-400 to-gray-500 w-full h-20 flex items-center justify-center rounded-t-lg mt-2">
                             <span className="text-4xl font-black text-white">2</span>
                         </div>
@@ -768,7 +768,7 @@ const StandingsPage = () => {
                             {sortedPlayers[0].name.charAt(0).toUpperCase()}
                         </div>
                         <div className="text-white font-semibold mb-1">{sortedPlayers[0].name}</div>
-                        <div className="text-green-500 font-black text-xl">{sortedPlayers[0].totalPoints} pt</div>
+                        <div className="text-red-400 font-black text-xl">{sortedPlayers[0].totalPoints} pt</div>
                         <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 w-full h-28 flex items-center justify-center rounded-t-lg mt-2">
                             <span className="text-5xl font-black text-white">1</span>
                         </div>
@@ -781,7 +781,7 @@ const StandingsPage = () => {
                             {sortedPlayers[2].name.charAt(0).toUpperCase()}
                         </div>
                         <div className="text-white font-semibold text-sm mb-1">{sortedPlayers[2].name}</div>
-                        <div className="text-green-500 font-black text-lg">{sortedPlayers[2].totalPoints} pt</div>
+                        <div className="text-red-400 font-black text-lg">{sortedPlayers[2].totalPoints} pt</div>
                         <div className="bg-gradient-to-b from-amber-600 to-amber-800 w-full h-16 flex items-center justify-center rounded-t-lg mt-2">
                             <span className="text-3xl font-black text-white">3</span>
                         </div>
@@ -1031,7 +1031,7 @@ const StandingsPage = () => {
                                 {/* Points summary */}
                                 <div className="bg-gray-900 rounded-lg p-4 text-center">
                                     <div className="text-3xl font-black text-green-500">{selectedPlayer.lastRacePoints || 0}</div>
-                                    <div className="text-sm text-gray-400">punten deze race</div>
+                                    <div className="text-sm text-gray-400">strafpunten deze race</div>
                                 </div>
 
                                 {/* Bonus predictions */}
@@ -1048,7 +1048,7 @@ const StandingsPage = () => {
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">+10</span>}
+                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
                                                     </>
                                                 ) : <span className="text-gray-500">-</span>;
                                             })()}
@@ -1066,7 +1066,7 @@ const StandingsPage = () => {
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">+10</span>}
+                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
                                                     </>
                                                 ) : <span className="text-gray-500">-</span>;
                                             })()}
@@ -1088,7 +1088,7 @@ const StandingsPage = () => {
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">+5</span>}
+                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
                                                     </>
                                                 ) : <span className="text-gray-500">-</span>;
                                             })()}
@@ -1106,7 +1106,7 @@ const StandingsPage = () => {
                                                             <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
                                                         </span>
                                                         <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">+5</span>}
+                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
                                                     </>
                                                 ) : <span className="text-gray-500">-</span>;
                                             })()}
@@ -1120,17 +1120,20 @@ const StandingsPage = () => {
                                     <div className="grid grid-cols-2 gap-1 max-h-80 overflow-y-auto">
                                         {playerPrediction.finishOrder.slice(0, 10).map((shortName, index) => {
                                             const driver = drivers.find(d => d.shortName === shortName);
-                                            const actualPos = raceResult?.finishOrder.indexOf(shortName);
+                                            const actualPosIndex = raceResult?.finishOrder.indexOf(shortName) ?? -1;
                                             const predictedPos = index + 1;
-                                            const diff = actualPos !== undefined && actualPos !== -1 ? Math.abs((actualPos + 1) - predictedPos) : null;
+                                            const actualPos = actualPosIndex !== -1 ? actualPosIndex + 1 : null;
+                                            const diff = actualPos !== null ? Math.abs(actualPos - predictedPos) : null;
+                                            const isDnf = raceResult?.dnfDrivers?.includes(shortName) ?? false;
                                             
-                                            let points = 0;
-                                            if (diff === 0) points = 25;
-                                            else if (diff === 1) points = 10;
-                                            else if (diff === 2) points = 5;
-                                            else if (predictedPos <= 10 && actualPos !== undefined && actualPos + 1 <= 10) points = 2;
+                                            let penalty = 0;
+                                            if (actualPos === null || isDnf) {
+                                                penalty = 10;
+                                            } else if (diff !== null) {
+                                                penalty = Math.min(10, diff);
+                                            }
 
-                                            const bgColor = points >= 25 ? 'bg-green-900/50' : points >= 10 ? 'bg-green-900/30' : points >= 5 ? 'bg-yellow-900/30' : points > 0 ? 'bg-blue-900/30' : 'bg-gray-900';
+                                            const bgColor = penalty === 0 ? 'bg-green-900/50' : penalty < 10 ? 'bg-yellow-900/30' : 'bg-red-900/40';
 
                                             return (
                                                 <div key={index} className={`flex items-center gap-2 p-1.5 rounded ${bgColor}`}>
@@ -1145,8 +1148,8 @@ const StandingsPage = () => {
                                                             <span className="text-xs text-white font-medium">{driver.shortName}</span>
                                                         </>
                                                     )}
-                                                    {points > 0 && (
-                                                        <span className="text-xs text-green-400 ml-auto">+{points}</span>
+                                                    {penalty > 0 && (
+                                                        <span className="text-xs text-red-400 ml-auto">+{penalty}</span>
                                                     )}
                                                 </div>
                                             );

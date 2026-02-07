@@ -6,6 +6,7 @@ import {
   F1Standing, 
   F1PointsHistory,
   F1_COLLECTIONS, 
+  F1_POINTS_CONFIG,
   createRaceDocId,
   createStandingDocId,
 } from '../../types';
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate points for each prediction
     const pointsUpdates: { userId: string; points: number; breakdown: F1PointsHistory['breakdown'] }[] = [];
+    const predictedUserIds = new Set<string>();
 
     for (const predDoc of predictionsSnapshot.docs) {
       const prediction = predDoc.data() as F1Prediction;
@@ -133,9 +135,32 @@ export async function POST(request: NextRequest) {
         points: total,
         breakdown,
       });
+      predictedUserIds.add(prediction.userId);
 
       // Lock the prediction
       await predDoc.ref.update({ isLocked: true });
+    }
+
+    // Apply missing prediction penalty to active participants without a prediction
+    const participantsSnapshot = await f1Db
+      .collection(F1_COLLECTIONS.PARTICIPANTS)
+      .where('season', '==', result.season)
+      .where('status', '==', 'active')
+      .get();
+
+    for (const participantDoc of participantsSnapshot.docs) {
+      const participant = participantDoc.data() as { userId: string };
+      if (predictedUserIds.has(participant.userId)) continue;
+
+      pointsUpdates.push({
+        userId: participant.userId,
+        points: F1_POINTS_CONFIG.missingPredictionPenalty,
+        breakdown: {
+          positionPenalty: F1_POINTS_CONFIG.missingPredictionPenalty,
+          bonusPenalty: 0,
+          bonusCorrect: 0,
+        },
+      });
     }
 
     // Update standings for each user

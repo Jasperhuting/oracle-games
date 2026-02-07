@@ -123,30 +123,38 @@ export default function SlipstreamPage() {
         const gameData = await gameRes.json();
         setGameName(gameData.game?.name || '');
         
-        // Try to get riders from game config first, otherwise fetch from rankings
-        const riders = gameData.game?.eligibleRiders || [];
-        
-        if (riders.length === 0) {
-          // Fetch riders from rankings
-          const year = new Date().getFullYear();
-          const rankingsRes = await fetch(`/api/getRankings?year=${year}`);
-          if (rankingsRes.ok) {
-            const rankingsData = await rankingsRes.json();
-            const rankingRiders = rankingsData.riders || [];
-            setEligibleRiders(rankingRiders.map((r: Rider) => ({
-              ...r,
-              id: r.id || r.name?.toLowerCase().replace(/\s+/g, '-') || ''
-            })));
-          }
-        } else {
-          const mappedRiders: Rider[] = riders.map((r: string, i: number) => ({
-            id: r,
-            name: r.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-            rank: i + 1,
-            points: 0,
-            country: '',
+        // Always fetch rankings to get full rider data (country/team),
+        // then filter by eligibleRiders when provided.
+        const eligibleIds: string[] = gameData.game?.eligibleRiders || [];
+        const year = gameData.game?.year || new Date().getFullYear();
+        const rankingsRes = await fetch(`/api/getRankings?year=${year}`);
+        if (rankingsRes.ok) {
+          const rankingsData = await rankingsRes.json();
+          const rankingRiders = rankingsData.riders || [];
+          const normalizedRiders = rankingRiders.map((r: Rider) => ({
+            ...r,
+            id: r.id || r.name?.toLowerCase().replace(/\s+/g, '-') || ''
           }));
-          setEligibleRiders(mappedRiders);
+
+          if (eligibleIds.length === 0) {
+            setEligibleRiders(normalizedRiders);
+          } else {
+            const byId = new Map<string, Rider>();
+            normalizedRiders.forEach((r: Rider) => {
+              if (r.id) byId.set(r.id, r);
+              const nameId = (r as { nameID?: string }).nameID;
+              if (nameId) byId.set(nameId, r);
+            });
+            const filtered: Rider[] = [];
+
+            // Preserve order of eligibleIds
+            eligibleIds.forEach((id: string) => {
+              const rider = byId.get(id);
+              if (rider) filtered.push(rider);
+            });
+
+            setEligibleRiders(filtered);
+          }
         }
       }
 
@@ -259,6 +267,45 @@ export default function SlipstreamPage() {
     } catch (err) {
       console.error('Error submitting pick:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit pick');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClearPick = async () => {
+    if (!selectedRaceSlug || !user || !canMakePick) return;
+
+    setSubmitting(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch(`/api/games/${gameId}/slipstream/pick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          raceSlug: selectedRaceSlug,
+          clearPick: true
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clear pick');
+      }
+
+      setSuccessMessage(data.message || 'Pick cleared successfully!');
+
+      if (data.usedRiders) {
+        setParticipantData(prev => prev ? { ...prev, usedRiders: data.usedRiders } : null);
+      }
+
+      await fetchData();
+    } catch (err) {
+      console.error('Error clearing pick:', err);
+      setError(err instanceof Error ? err.message : 'Failed to clear pick');
     } finally {
       setSubmitting(false);
     }
@@ -382,17 +429,32 @@ export default function SlipstreamPage() {
                     </div>
                     
                     {canMakePick && (
-                      <button
-                        onClick={handleSubmitPick}
-                        disabled={!selectedRider || submitting}
-                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                          selectedRider && !submitting
-                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {submitting ? 'Submitting...' : selectedRace.userPick ? 'Update Pick' : 'Submit Pick'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {selectedRace.userPick && (
+                          <button
+                            onClick={handleClearPick}
+                            disabled={submitting}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              !submitting
+                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                          >
+                            {submitting ? 'Submitting...' : 'Remove Pick'}
+                          </button>
+                        )}
+                        <button
+                          onClick={handleSubmitPick}
+                          disabled={!selectedRider || submitting}
+                          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                            selectedRider && !submitting
+                              ? 'bg-blue-500 text-white hover:bg-blue-600'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {submitting ? 'Submitting...' : selectedRace.userPick ? 'Update Pick' : 'Submit Pick'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -27,6 +27,7 @@ import { FinalizeOverviewTab } from "@/components/FinalizeOverviewTab";
 import { SimulateResultsTab } from "@/components/SimulateResultsTab";
 import { TodosTab } from "@/components/TodosTab";
 import { F1ResultsTab } from "@/components/F1ResultsTab";
+import { CacheToolsTab } from "@/components/CacheToolsTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -263,6 +264,11 @@ export default function AdminPageClient() {
                                     id: 'migrations',
                                     label: t('admin.tabs.dataMigrations'),
                                     content: <DataMigrationsTab />
+                                },
+                                {
+                                    id: 'cache-tools',
+                                    label: 'Cache',
+                                    content: <CacheToolsTab />
                                 }
                             ]
                         }

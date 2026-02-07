@@ -448,6 +448,7 @@ Riders removed: ${result.ridersRemoved}`,
                 multiSelect={true}
                 multiSelectShowSelected={false}
                 showSelected={false}
+                availableTeams={_allTeams}
               />
             </div>
 

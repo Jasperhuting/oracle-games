@@ -4,7 +4,7 @@ import { listScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-ser
 
 export interface StageStatus {
   stageNumber: number | string;
-  status: 'scraped' | 'pending' | 'failed';
+  status: 'scraped' | 'pending' | 'failed' | 'empty';
   scrapedAt: string | null;
   riderCount: number;
   hasValidationErrors: boolean;
@@ -338,6 +338,7 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'gp-d-ouverture',
   'great-ocean-road-race',
   'trofeo-palma',
+  'muscat-classic',
 
   // 1.2 races (Non-professional)
   'alanya-cup',
@@ -541,6 +542,22 @@ export async function GET(request: NextRequest) {
     // Get stage dates for all races
     const stageDatesMap = new Map<string, Map<number | string, string>>();
     const racesWithStagesSnapshot = await db.collection('races').get();
+
+    const normalizeDate = (value: unknown): string | null => {
+      if (!value) return null;
+      if (typeof value === 'string') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+      }
+      if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value.toISOString();
+      }
+      if (typeof value === 'object' && value && 'toDate' in value && typeof (value as { toDate?: () => Date }).toDate === 'function') {
+        const parsed = (value as { toDate: () => Date }).toDate();
+        return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+      }
+      return null;
+    };
     
     for (const raceDoc of racesWithStagesSnapshot.docs) {
       const raceSlug = raceDoc.id;
@@ -550,15 +567,52 @@ export async function GET(request: NextRequest) {
       stagesSnapshot.forEach((stageDoc) => {
         const stageData = stageDoc.data();
         const stageNum = stageData.stage;
-        const scrapedAt = stageData.scrapedAt?.toDate();
+        const stageDate = normalizeDate(
+          stageData.date ??
+          stageData.stageDate ??
+          stageData.raceDate ??
+          stageData.startDate ??
+          stageData.day ??
+          stageData.scrapedAt
+        );
         
-        if (scrapedAt) {
-          stageMap.set(stageNum, scrapedAt.toISOString());
+        if (stageDate && stageNum !== undefined && stageNum !== null) {
+          stageMap.set(stageNum, stageDate);
         }
       });
       
       stageDatesMap.set(raceSlug, stageMap);
     }
+
+    const getStageDate = (raceSlug: string, stageNumber: number | string): string | null => {
+      const raceStageDates = stageDatesMap.get(raceSlug);
+      let stageDate =
+        raceStageDates?.get(stageNumber) ||
+        (stageNumber === 'prologue' ? raceStageDates?.get(0) : null) ||
+        null;
+
+      const raceConfig = raceConfigs.get(raceSlug);
+      const startDate = normalizeDate(raceConfig?.startDate || null);
+      const endDate = normalizeDate(raceConfig?.endDate || null);
+
+      if (!stageDate) {
+        if (stageNumber === 'result') {
+          stageDate = endDate || startDate;
+        } else if (stageNumber === 'gc') {
+          stageDate = endDate || startDate;
+        } else if (stageNumber === 'prologue') {
+          stageDate = startDate;
+        } else if (typeof stageNumber === 'number' && startDate) {
+          const base = new Date(startDate);
+          if (!Number.isNaN(base.getTime())) {
+            base.setDate(base.getDate() + Math.max(0, stageNumber - 1));
+            stageDate = base.toISOString();
+          }
+        }
+      }
+
+      return stageDate;
+    };
 
     // Build race status list
     const races: RaceStatus[] = [];
@@ -631,7 +685,8 @@ export async function GET(request: NextRequest) {
       stageDocs.forEach(doc => {
         const validation = validationMap.get(doc.id);
         const riderCount = validation?.riderCount ?? 0;
-        const isFailed = riderCount === 0 || (validation && !validation.valid);
+        const isFailed = !!(validation && !validation.valid);
+        const isEmpty = riderCount === 0;
 
         // GC (tour-gc) is supplementary data, not a race stage - don't count it
         const isSupplementary = doc.key.type === 'tour-gc';
@@ -640,7 +695,7 @@ export async function GET(request: NextRequest) {
           if (isFailed) {
             failedStages++;
             totalStagesFailed++;
-          } else {
+          } else if (!isEmpty) {
             scrapedStages++;
             totalStagesScraped++;
           }
@@ -669,12 +724,17 @@ export async function GET(request: NextRequest) {
         }
 
         // Get stage date from the stage dates map
-        const raceStageDates = stageDatesMap.get(raceSlug);
-        const stageDate = raceStageDates?.get(stageNumber) || null;
+        const stageDate = getStageDate(raceSlug, stageNumber);
+
+        const stageStatus: StageStatus['status'] = isFailed
+          ? 'failed'
+          : isEmpty
+            ? 'empty'
+            : 'scraped';
 
         stages.push({
           stageNumber,
-          status: isFailed ? 'failed' : 'scraped',
+          status: stageStatus,
           scrapedAt: doc.updatedAt,
           riderCount,
           hasValidationErrors: validation ? !validation.valid : false,
@@ -704,8 +764,7 @@ export async function GET(request: NextRequest) {
         const hasResult = stages.some(s => s.stageNumber === 'result');
         if (!hasResult && stages.length === 0) {
           // For single-day race, try to get stage date from stage dates map
-          const raceStageDates = stageDatesMap.get(raceSlug);
-          const stageDate = raceStageDates?.get('result') || null;
+          const stageDate = getStageDate(raceSlug, 'result');
 
           stages.push({
             stageNumber: 'result',
@@ -731,8 +790,7 @@ export async function GET(request: NextRequest) {
         // We detect this from the race config or if other races of same type typically have prologues
         if (hasPrologue && !hasPrologueScraped) {
           // Get prologue stage date from stage dates map
-          const raceStageDates = stageDatesMap.get(raceSlug);
-          const stageDate = raceStageDates?.get('prologue') || raceStageDates?.get(0) || null;
+          const stageDate = getStageDate(raceSlug, 'prologue');
 
           stages.push({
             stageNumber: 'prologue',
@@ -750,8 +808,7 @@ export async function GET(request: NextRequest) {
         for (let i = 1; i <= numberedStages; i++) {
           if (!scrapedStageNumbers.has(i)) {
             // Get stage date from stage dates map
-            const raceStageDates = stageDatesMap.get(raceSlug);
-            const stageDate = raceStageDates?.get(i) || null;
+            const stageDate = getStageDate(raceSlug, i);
 
             stages.push({
               stageNumber: i,
@@ -770,8 +827,7 @@ export async function GET(request: NextRequest) {
         const hasGCScraped = stages.some(s => s.stageNumber === 'gc');
         if (!hasGCScraped) {
           // GC doesn't have a specific stage date, it's usually after the last stage
-          const raceStageDates = stageDatesMap.get(raceSlug);
-          const stageDate = raceStageDates?.get('gc') || null;
+          const stageDate = getStageDate(raceSlug, 'gc');
 
           stages.push({
             stageNumber: 'gc',
@@ -859,8 +915,7 @@ export async function GET(request: NextRequest) {
 
       if (isSingleDay) {
         // Get stage date from stage dates map
-        const raceStageDates = stageDatesMap.get(raceSlug);
-        const stageDate = raceStageDates?.get('result') || null;
+        const stageDate = getStageDate(raceSlug, 'result');
 
         stages.push({
           stageNumber: 'result',
@@ -876,8 +931,7 @@ export async function GET(request: NextRequest) {
         // Add prologue if race has one
         if (hasPrologue) {
           // Get prologue stage date from stage dates map
-          const raceStageDates = stageDatesMap.get(raceSlug);
-          const stageDate = raceStageDates?.get('prologue') || raceStageDates?.get(0) || null;
+          const stageDate = getStageDate(raceSlug, 'prologue');
 
           stages.push({
             stageNumber: 'prologue',
@@ -894,8 +948,7 @@ export async function GET(request: NextRequest) {
         // Add numbered stages
         for (let i = 1; i <= numberedStages; i++) {
           // Get stage date from stage dates map
-          const raceStageDates = stageDatesMap.get(raceSlug);
-          const stageDate = raceStageDates?.get(i) || null;
+          const stageDate = getStageDate(raceSlug, i);
 
           stages.push({
             stageNumber: i,
@@ -911,8 +964,7 @@ export async function GET(request: NextRequest) {
 
         // Add pending General Classification for multi-stage races
         // GC doesn't have a specific stage date, it's usually after the last stage
-        const raceStageDates = stageDatesMap.get(raceSlug);
-        const stageDate = raceStageDates?.get('gc') || null;
+        const stageDate = getStageDate(raceSlug, 'gc');
 
         stages.push({
           stageNumber: 'gc',

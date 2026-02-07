@@ -218,14 +218,14 @@ const F1Page = () => {
                 },
             }),
             columnHelper.accessor("points", {
-                header: "Punten",
+                header: "Strafpunten",
                 cell: (info) => {
                     const points = info.getValue();
                     const status = info.row.original.status;
 
                     if (points !== null) {
                         return (
-                            <span className={`font-bold text-sm ${points > 0 ? "text-green-500" : "text-gray-500"}`}>
+                            <span className={`font-bold text-sm ${points !== 0 ? "text-red-400" : "text-gray-500"}`}>
                                 {points}
                             </span>
                         );
@@ -308,7 +308,7 @@ const F1Page = () => {
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
                             {getStatusBadge()}
                             {row.points !== null && (
-                                <span className={`text-lg font-bold ${row.points > 0 ? "text-green-500" : "text-gray-500"}`}>
+                                <span className={`text-lg font-bold ${row.points !== 0 ? "text-red-400" : "text-gray-500"}`}>
                                     {row.points} pt
                                 </span>
                             )}
@@ -394,8 +394,8 @@ const F1Page = () => {
             {/* Stats cards - optimized for mobile */}
             <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 md:p-4">
-                    <div className="text-xs md:text-sm text-gray-400">Totaal punten</div>
-                    <div className="text-xl md:text-3xl font-bold text-green-500">{totalPoints}</div>
+    <div className="text-xs md:text-sm text-gray-400">Totaal strafpunten</div>
+                    <div className="text-xl md:text-3xl font-bold text-red-400">{totalPoints}</div>
                 </div>
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 md:p-4">
                     <div className="text-xs md:text-sm text-gray-400">Races</div>

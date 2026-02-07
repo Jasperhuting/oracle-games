@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-
 interface UserNameMap {
   [userId: string]: string;
 }
@@ -31,49 +28,28 @@ export function useUserNames(userIds: string[]): UserNamesResult {
     }
 
     const fetchNames = async () => {
-      const nameMap: UserNameMap = {};
-      const avatarMap: UserAvatarMap = {};
-      
-      // Fetch each user's display name and avatar
-      await Promise.all(
-        userIds.map(async (userId) => {
-          try {
-            const userDoc = await getDoc(doc(db, 'users', userId));
-            if (userDoc.exists()) {
-              const data = userDoc.data();
-              
-              // Store avatar URL if available
-              if (data.avatarUrl) {
-                avatarMap[userId] = data.avatarUrl;
-              }
-              
-              // Use playername first, then fallback to other fields
-              if (data.playername) {
-                nameMap[userId] = data.playername;
-              } else if (data.displayName) {
-                nameMap[userId] = data.displayName;
-              } else if (data.firstName && data.lastName) {
-                nameMap[userId] = `${data.firstName} ${data.lastName}`;
-              } else if (data.firstName) {
-                nameMap[userId] = data.firstName;
-              } else if (data.name) {
-                nameMap[userId] = data.name;              
-              } else {
-                nameMap[userId] = userId.substring(0, 8) + '...';
-              }
-            } else {
-              nameMap[userId] = userId.substring(0, 8) + '...';
-            }
-          } catch (err) {
-            console.error(`Error fetching user ${userId}:`, err);
-            nameMap[userId] = userId.substring(0, 8) + '...';
-          }
-        })
-      );
+      try {
+        const response = await fetch(`/api/users/names?ids=${encodeURIComponent(userIds.join(','))}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch user names');
+        }
+        const data = await response.json();
+        const nameMap: UserNameMap = data?.data || {};
+        const avatarMap: UserAvatarMap = data?.avatars || {};
 
-      setNames(nameMap);
-      setAvatars(avatarMap);
-      setLoading(false);
+        setNames(nameMap);
+        setAvatars(avatarMap);
+      } catch (err) {
+        console.error('Error fetching user names:', err);
+        const fallback: UserNameMap = {};
+        userIds.forEach((userId) => {
+          fallback[userId] = userId.substring(0, 8) + '...';
+        });
+        setNames(fallback);
+        setAvatars({});
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchNames();

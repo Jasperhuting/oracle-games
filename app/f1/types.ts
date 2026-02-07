@@ -87,7 +87,7 @@ export interface F1RaceResult {
   raceId: string;
   season: number;
   round: number;
-  finishOrder: string[];  // Array of driver shortNames (22 positions)
+  finishOrder: string[];  // Array of driver shortNames (Top 10)
   polePosition: string;
   fastestLap: string;
   dnfDrivers: string[];
@@ -182,10 +182,9 @@ export interface F1Standing {
 // Points History (Subcollection of Standings)
 // ============================================
 export interface F1PointsBreakdown {
-  positionPoints: number;
-  poleBonus: number;
-  fastestLapBonus: number;
-  dnfBonus: number;
+  positionPenalty: number;
+  bonusPenalty: number; // Negative value (e.g., -2 per correct bonus question)
+  bonusCorrect: number;
 }
 
 export interface F1PointsHistory {
@@ -234,15 +233,10 @@ export interface F1ActivityLog {
 // Points Configuration
 // ============================================
 export const F1_POINTS_CONFIG = {
-  position: {
-    exact: 25,      // Exact position match
-    offBy1: 10,     // 1 position difference
-    offBy2: 5,      // 2 positions difference
-    inTop10: 2,     // In top 10 but >2 difference
-  },
-  polePosition: 10,
-  fastestLap: 10,
-  dnfCorrect: 5,    // Per correct DNF
+  maxPredictionSize: 10,
+  maxPenaltyPerDriver: 10,
+  bonusPenaltyPerCorrect: 2,
+  missingPredictionPenalty: 100,
 } as const;
 
 // ============================================
