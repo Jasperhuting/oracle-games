@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/cleanup-expired-jobs",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/scrape-todays-races",
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
