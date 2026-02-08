@@ -138,7 +138,8 @@ export async function getJobs(filters?: {
   status?: Job['status'];
   limit?: number;
 }): Promise<Job[]> {
-  let query = db.collection(JOBS_COLLECTION).orderBy('createdAt', 'desc');
+  let query: import('@google-cloud/firestore').Query = db.collection(JOBS_COLLECTION);
+  const HARD_LIMIT = 500;
 
   if (filters?.type) {
     query = query.where('type', '==', filters.type);
@@ -148,12 +149,15 @@ export async function getJobs(filters?: {
     query = query.where('status', '==', filters.status);
   }
 
+  const snapshot = await query.limit(HARD_LIMIT).get();
+  const jobs = snapshot.docs.map(doc => doc.data() as Job);
+  jobs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
   if (filters?.limit) {
-    query = query.limit(filters.limit);
+    return jobs.slice(0, filters.limit);
   }
 
-  const snapshot = await query.get();
-  return snapshot.docs.map(doc => doc.data() as Job);
+  return jobs;
 }
 
 /**
