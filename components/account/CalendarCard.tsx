@@ -60,10 +60,21 @@ export function CalendarCard({ userId }: CalendarCardProps) {
 
         // Filter races that are upcoming and relevant to user's games
         const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        const parseRaceDate = (value: string): Date => {
+          // Ensure YYYY-MM-DD strings are treated as local dates (not UTC)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            return new Date(`${value}T00:00:00`);
+          }
+          return new Date(value);
+        };
+
         const upcomingRaces = allRaces
           .filter((race) => {
-            const startDate = new Date(race.startDate);
-            return startDate >= now;
+            const endDate = parseRaceDate(race.endDate);
+            // Include races happening today or in the future (also covers ongoing multi-day races)
+            return endDate >= todayStart;
           })
           .map((race) => {
             // Get games relevant to this race that user is in (excluding test and F1 games)

@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import { getStageResult, getRaceResult } from '@/lib/scraper';
-import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { sendTelegramMessage } from '@/lib/telegram';
+import { createJob } from '@/lib/firebase/job-queue';
 
 const TIME_ZONE = 'Europe/Amsterdam';
+const MAX_RUN_MS = 240_000; // keep under maxDuration to avoid timeouts
 
 type ScrapeOutcome = {
   raceSlug: string;
@@ -46,14 +46,23 @@ export async function GET(request: NextRequest) {
   const notifyOnly = request.nextUrl.searchParams.get('notifyOnly') === 'true';
   const todayStr = formatDateOnly(new Date());
 
+  const runStartedAt = Date.now();
+
   try {
     const db = getServerFirebase();
+    const batchRef = db.collection('scrapeJobBatches').doc();
+    const batchId = batchRef.id;
     const racesSnapshot = await db.collection('races').get();
 
     const outcomes: ScrapeOutcome[] = [];
     const skipped: string[] = [];
+    let queuedJobs = 0;
 
     for (const raceDoc of racesSnapshot.docs) {
+      if (Date.now() - runStartedAt > MAX_RUN_MS) {
+        skipped.push('Stopped early due to time budget');
+        break;
+      }
       const raceData = raceDoc.data();
       const raceSlug = raceData.slug || raceDoc.id;
       const raceName = raceData.name || raceSlug;
@@ -81,60 +90,45 @@ export async function GET(request: NextRequest) {
       const isSingleDay = !!raceData.isSingleDay || startStr === endStr;
 
       if (isSingleDay) {
-        const key: ScraperDataKey = {
-          race: raceSlug,
-          year: raceData.year || new Date().getFullYear(),
-          type: 'result',
-        };
+        const year = raceData.year || new Date().getFullYear();
+        if (dryRun || notifyOnly) {
+          outcomes.push({
+            raceSlug,
+            raceName,
+            type: 'result',
+            success: true,
+            riderCount: 0,
+            message: notifyOnly ? 'NOTIFY-ONLY: skipped scrape (result)' : 'DRY-RUN: would queue result',
+          });
+          continue;
+        }
 
-      if (dryRun || notifyOnly) {
+        await createJob({
+          type: 'scraper',
+          status: 'pending',
+          priority: 1,
+          progress: { current: 0, total: 1, percentage: 0 },
+          data: {
+            type: 'result',
+            race: raceSlug,
+            year,
+            batchId,
+            raceName,
+          },
+        });
+        queuedJobs++;
         outcomes.push({
           raceSlug,
           raceName,
           type: 'result',
           success: true,
           riderCount: 0,
-          message: notifyOnly ? 'NOTIFY-ONLY: skipped scrape (result)' : 'DRY-RUN: would scrape result',
+          message: 'Queued result scrape',
         });
-        continue;
-      }
-
-        try {
-          const result = await getRaceResult({
-            race: raceSlug,
-            year: key.year,
-          });
-          const save = await saveScraperDataValidated(key, result);
-          const riderCount = 'stageResults' in result ? result.stageResults.length : 0;
-
-          outcomes.push({
-            raceSlug,
-            raceName,
-            type: 'result',
-            success: save.success,
-            riderCount,
-            message: save.success ? 'Scraped result' : (save.error || 'Validation failed'),
-          });
-        } catch (error) {
-          outcomes.push({
-            raceSlug,
-            raceName,
-            type: 'result',
-            success: false,
-            riderCount: 0,
-            message: error instanceof Error ? error.message : 'Scrape failed',
-          });
-        }
       } else {
         const stageOffset = diffDays(startStr, todayStr);
         const stageNumber = stageOffset + 1;
-
-        const key: ScraperDataKey = {
-          race: raceSlug,
-          year: raceData.year || new Date().getFullYear(),
-          type: 'stage',
-          stage: stageNumber,
-        };
+        const year = raceData.year || new Date().getFullYear();
 
         if (dryRun || notifyOnly) {
           outcomes.push({
@@ -144,41 +138,50 @@ export async function GET(request: NextRequest) {
             stage: stageNumber,
             success: true,
             riderCount: 0,
-            message: notifyOnly ? `NOTIFY-ONLY: skipped scrape (stage ${stageNumber})` : `DRY-RUN: would scrape stage ${stageNumber}`,
+            message: notifyOnly ? `NOTIFY-ONLY: skipped scrape (stage ${stageNumber})` : `DRY-RUN: would queue stage ${stageNumber}`,
           });
           continue;
         }
 
-        try {
-          const stageResult = await getStageResult({
+        await createJob({
+          type: 'scraper',
+          status: 'pending',
+          priority: 1,
+          progress: { current: 0, total: 1, percentage: 0 },
+          data: {
+            type: 'stage',
             race: raceSlug,
-            year: key.year,
+            year,
             stage: stageNumber,
-          });
-          const save = await saveScraperDataValidated(key, stageResult);
-          const riderCount = 'stageResults' in stageResult ? stageResult.stageResults.length : 0;
-
-          outcomes.push({
-            raceSlug,
+            batchId,
             raceName,
-            type: 'stage',
-            stage: stageNumber,
-            success: save.success,
-            riderCount,
-            message: save.success ? `Scraped stage ${stageNumber}` : (save.error || 'Validation failed'),
-          });
-        } catch (error) {
-          outcomes.push({
-            raceSlug,
-            raceName,
-            type: 'stage',
-            stage: stageNumber,
-            success: false,
-            riderCount: 0,
-            message: error instanceof Error ? error.message : 'Scrape failed',
-          });
-        }
+          },
+        });
+        queuedJobs++;
+        outcomes.push({
+          raceSlug,
+          raceName,
+          type: 'stage',
+          stage: stageNumber,
+          success: true,
+          riderCount: 0,
+          message: `Queued stage ${stageNumber} scrape`,
+        });
       }
+    }
+
+    if (!dryRun && !notifyOnly) {
+      await batchRef.set({
+        id: batchId,
+        createdAt: new Date().toISOString(),
+        date: todayStr,
+        totalJobs: queuedJobs,
+        completedJobs: 0,
+        failedJobs: 0,
+        status: queuedJobs > 0 ? 'running' : 'completed',
+        outcomes: [],
+        telegramSent: false,
+      });
     }
 
     const successCount = outcomes.filter(o => o.success).length;
@@ -201,7 +204,7 @@ export async function GET(request: NextRequest) {
       skipped.length > 0 ? `\n\n⚠️ Skipped:\n${skipped.slice(0, 10).join('\n')}` : '',
     ].join('\n');
 
-    if (!dryRun || notifyOnly) {
+    if (notifyOnly || dryRun || queuedJobs === 0) {
       await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
     }
 

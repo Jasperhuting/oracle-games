@@ -6,9 +6,11 @@ import {
   failJob,
   updateJobProgress,
 } from '@/lib/firebase/job-queue';
-import { getStageResult, getRiders, type RaceSlug } from '@/lib/scraper';
-import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import { getStageResult, getRiders, getRaceResult, type RaceSlug } from '@/lib/scraper';
+import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { sendTelegramMessage } from '@/lib/telegram';
+import { FieldValue } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const maxDuration = 300; // 5 minutes (Vercel Pro)
@@ -67,7 +69,15 @@ export async function POST(
       if (job.type === 'bulk-scrape') {
         await processBulkScrape(jobId, job);
       } else if (job.type === 'scraper') {
-        await processSingleScrape(jobId, job);
+        const result = await processSingleScrape(jobId, job);
+        await completeJob(jobId, result);
+        await updateBatchFromJob(job, result, 'completed');
+        return Response.json({
+          success: true,
+          jobId,
+          status: 'completed',
+          result,
+        });
       } else if (job.type === 'team-update') {
         await processTeamUpdate(jobId, job);
       } else {
@@ -109,6 +119,7 @@ export async function POST(
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       await failJob(jobId, errorMessage);
+      await updateBatchFromJob(job, { success: false, message: errorMessage }, 'failed');
 
       // Calculate execution time for failed job
       const executionTimeMs = Date.now() - startTime;
@@ -221,7 +232,7 @@ async function processBulkScrape(jobId: string, job: any) {
  */
 async function processSingleScrape(jobId: string, job: any) {
   const { type, race, year, stage } = job.data as {
-    type: 'startlist' | 'stage-result';
+    type: 'startlist' | 'stage-result' | 'stage' | 'result';
     race: string;
     year: number;
     stage?: number;
@@ -229,7 +240,7 @@ async function processSingleScrape(jobId: string, job: any) {
 
   await updateJobProgress(jobId, 0, 1, `Scraping ${type}...`);
 
-  let result;
+  let result: any;
 
   if (type === 'startlist') {
     result = await getRiders({
@@ -243,8 +254,14 @@ async function processSingleScrape(jobId: string, job: any) {
       type: 'startlist',
     };
 
-    await saveScraperData(key, result);
-  } else if (type === 'stage-result' && stage) {
+    const save = await saveScraperDataValidated(key, result);
+    await updateJobProgress(jobId, 1, 1, 'Completed');
+    return {
+      success: save.success,
+      message: save.success ? 'Startlist scraped' : (save.error || 'Validation failed'),
+      riderCount: 'riders' in result ? result.riders.length : 0,
+    };
+  } else if ((type === 'stage-result' || type === 'stage') && stage) {
     result = await getStageResult({
       race: race as RaceSlug,
       year,
@@ -258,10 +275,95 @@ async function processSingleScrape(jobId: string, job: any) {
       stage,
     };
 
-    await saveScraperData(key, result);
+    const save = await saveScraperDataValidated(key, result);
+    await updateJobProgress(jobId, 1, 1, 'Completed');
+    return {
+      success: save.success,
+      message: save.success ? `Stage ${stage} scraped` : (save.error || 'Validation failed'),
+      riderCount: 'stageResults' in result ? result.stageResults.length : 0,
+      stage,
+    };
+  } else if (type === 'result') {
+    result = await getRaceResult({
+      race: race as RaceSlug,
+      year,
+    });
+
+    const key: ScraperDataKey = {
+      race,
+      year,
+      type: 'result',
+    };
+
+    const save = await saveScraperDataValidated(key, result);
+    await updateJobProgress(jobId, 1, 1, 'Completed');
+    return {
+      success: save.success,
+      message: save.success ? 'Result scraped' : (save.error || 'Validation failed'),
+      riderCount: 'stageResults' in result ? result.stageResults.length : 0,
+    };
   }
 
   await updateJobProgress(jobId, 1, 1, 'Completed');
+  return { success: false, message: 'Unsupported scrape type' };
+}
+
+async function updateBatchFromJob(job: any, result: any, status: 'completed' | 'failed') {
+  const batchId = job?.data?.batchId as string | undefined;
+  if (!batchId) return;
+
+  const db = getServerFirebase();
+  const batchRef = db.collection('scrapeJobBatches').doc(batchId);
+
+  const outcomeLabelParts = [
+    result?.success ? '✅' : '❌',
+    job?.data?.raceName || job?.data?.race || 'Unknown race',
+  ];
+  if (job?.data?.type === 'stage' || job?.data?.type === 'stage-result') {
+    outcomeLabelParts.push(`Stage ${job?.data?.stage ?? ''}`.trim());
+  } else if (job?.data?.type === 'result') {
+    outcomeLabelParts.push('Result');
+  } else if (job?.data?.type === 'startlist') {
+    outcomeLabelParts.push('Startlist');
+  }
+  const outcomeLabel = outcomeLabelParts.filter(Boolean).join(' — ');
+
+  await batchRef.set({
+    outcomes: FieldValue.arrayUnion(`${outcomeLabel}: ${result?.message || ''}`.trim()),
+    completedJobs: FieldValue.increment(status === 'completed' ? 1 : 0),
+    failedJobs: FieldValue.increment(status === 'failed' ? 1 : 0),
+  }, { merge: true });
+
+  const batchSnap = await batchRef.get();
+  if (!batchSnap.exists) return;
+
+  const batch = batchSnap.data() as any;
+  const totalJobs = batch.totalJobs || 0;
+  const completed = batch.completedJobs || 0;
+  const failed = batch.failedJobs || 0;
+  const done = totalJobs > 0 && completed + failed >= totalJobs;
+
+  if (done && !batch.telegramSent) {
+    const lines: string[] = Array.isArray(batch.outcomes) ? batch.outcomes : [];
+    const message = [
+      `🕛 <b>Daily Race Scrape Completed</b> (${batch.date || ''})`,
+      '',
+      `✅ Success: ${completed}`,
+      `❌ Failed: ${failed}`,
+      '',
+      lines.slice(0, 40).join('\n'),
+      '',
+      `🔗 <a href="https://oracle-games.online/admin/jobs">Bekijk jobs</a>`,
+    ].join('\n');
+
+    await sendTelegramMessage(message, { parse_mode: 'HTML' });
+
+    await batchRef.set({
+      status: 'completed',
+      telegramSent: true,
+      completedAt: new Date().toISOString(),
+    }, { merge: true });
+  }
 }
 
 /**

@@ -1,0 +1,173 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/Button';
+
+type JobStatus = 'pending' | 'running' | 'completed' | 'failed';
+
+interface JobItem {
+  id: string;
+  type: string;
+  status: JobStatus;
+  priority: number;
+  progress: {
+    current: number;
+    total: number;
+    percentage: number;
+    stage?: string;
+  };
+  data: Record<string, unknown>;
+  result?: Record<string, unknown>;
+  error?: string;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+interface BatchItem {
+  id: string;
+  date: string;
+  status: 'running' | 'completed';
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  telegramSent?: boolean;
+  createdAt: string;
+  completedAt?: string;
+  outcomes?: string[];
+}
+
+export function JobsDashboard() {
+  const { user } = useAuth();
+  const [jobs, setJobs] = useState<JobItem[]>([]);
+  const [batches, setBatches] = useState<BatchItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadJobs = async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/jobs?userId=${user.uid}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch jobs');
+      }
+      setJobs(data.jobs || []);
+      setBatches(data.batches || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+  }, [user?.uid]);
+
+  const formatDate = (value?: string) =>
+    value ? new Date(value).toLocaleString('nl-NL') : '-';
+
+  const statusBadge = (status: JobStatus | BatchItem['status']) => {
+    const styles: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      running: 'bg-blue-100 text-blue-800',
+      completed: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+    };
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
+        {status}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Jobs</h2>
+          <p className="text-sm text-gray-500">Scrape batches en job queue status</p>
+        </div>
+        <Button onClick={loadJobs} disabled={loading}>
+          {loading ? 'Loading...' : 'Refresh'}
+        </Button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <span className="text-red-700 text-sm">{error}</span>
+        </div>
+      )}
+
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold mb-3">Batches</h3>
+        {batches.length === 0 ? (
+          <p className="text-sm text-gray-500">No batches found</p>
+        ) : (
+          <div className="space-y-3">
+            {batches.map((batch) => (
+              <details key={batch.id} className="border rounded-md p-3">
+                <summary className="cursor-pointer flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{batch.date || batch.id}</span>
+                    {statusBadge(batch.status)}
+                    <span className="text-sm text-gray-500">
+                      {batch.completedJobs}/{batch.totalJobs} done
+                      {batch.failedJobs > 0 ? ` • ${batch.failedJobs} failed` : ''}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-400">{formatDate(batch.createdAt)}</span>
+                </summary>
+                <div className="mt-3 text-sm text-gray-600 space-y-2">
+                  <div>Telegram sent: {batch.telegramSent ? 'yes' : 'no'}</div>
+                  <div>Completed at: {formatDate(batch.completedAt)}</div>
+                  {batch.outcomes && batch.outcomes.length > 0 && (
+                    <div className="bg-gray-50 border rounded p-2 max-h-48 overflow-y-auto text-xs">
+                      {batch.outcomes.slice(0, 100).map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold mb-3">Jobs</h3>
+        {jobs.length === 0 ? (
+          <p className="text-sm text-gray-500">No jobs found</p>
+        ) : (
+          <div className="space-y-2">
+            {jobs.map((job) => (
+              <div key={job.id} className="border rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{job.data?.raceName as string || (job.data?.race as string) || job.id}</span>
+                    {statusBadge(job.status)}
+                    <span className="text-xs text-gray-500">{job.type}</span>
+                  </div>
+                  <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
+                </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  Progress: {job.progress?.current ?? 0}/{job.progress?.total ?? 0} ({job.progress?.percentage ?? 0}%)
+                  {job.progress?.stage ? ` • ${job.progress.stage}` : ''}
+                </div>
+                {job.error && (
+                  <div className="mt-2 text-sm text-red-600">Error: {job.error}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

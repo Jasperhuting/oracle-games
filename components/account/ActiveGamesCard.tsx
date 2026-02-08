@@ -25,8 +25,48 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const getTodayKey = (): string => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const readDailyCache = (cacheKey: string): ActiveGame[] | null => {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed?.date !== getTodayKey()) return null;
+        if (!Array.isArray(parsed?.games)) return null;
+        return parsed.games as ActiveGame[];
+      } catch {
+        return null;
+      }
+    };
+
+    const writeDailyCache = (cacheKey: string, data: ActiveGame[]) => {
+      try {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({ date: getTodayKey(), games: data })
+        );
+      } catch {
+        // Ignore cache write failures (e.g., storage full or disabled)
+      }
+    };
+
     async function fetchActiveGames() {
       try {
+        const cacheKey = `active-games-summary:${userId}`;
+        const cached = readDailyCache(cacheKey);
+        if (cached) {
+          setGames(cached);
+          setLoading(false);
+          return;
+        }
+
         // Fetch user's participations
         const participantsResponse = await fetch(`/api/gameParticipants?userId=${userId}`);
         if (!participantsResponse.ok) {
@@ -116,6 +156,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
           return a.gameName.localeCompare(b.gameName);
         });
 
+        writeDailyCache(`active-games-summary:${userId}`, activeGames);
         setGames(activeGames);
       } catch (error) {
         console.error('Error fetching active games:', error);
