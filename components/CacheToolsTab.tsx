@@ -21,10 +21,10 @@ export function CacheToolsTab() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">Cache Tools</h2>
+        <h2 className="text-lg font-semibold">Cache tools</h2>
         <p className="text-sm text-gray-600">
-          Verhoog de cacheversie om alle clients te dwingen hun IndexedDB cache te verversen.
-          Dit helpt wanneer oude data zichtbaar blijft na aanpassingen aan teams of renners.
+          Hiermee kun je de rankings-cache ongeldig maken voor alle gebruikers.
+          Gebruik dit als je ziet dat team- of rennersdata niet klopt.
         </p>
       </div>
 
@@ -35,7 +35,7 @@ export function CacheToolsTab() {
       )}
 
       <Button onClick={handleBumpVersion} disabled={isUpdating}>
-        {isUpdating ? 'Bezig met verhogen...' : 'Cacheversie verhogen'}
+        {isUpdating ? 'Bezig met verversen...' : 'Rankings-cache verversen (alle users)'}
       </Button>
     </div>
   );

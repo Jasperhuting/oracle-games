@@ -9,6 +9,7 @@ import { getCacheVersionAsync, resetCachedVersion } from '@/lib/utils/cacheVersi
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
 
 const VERSION_CHECK_INTERVAL = 30 * 1000; // Check for new version every 30 seconds
+const RANKINGS_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours (daily scrape)
 
 export function RankingsProvider({
   children,
@@ -46,7 +47,7 @@ export function RankingsProvider({
       // Try to get from cache first (skip if forceRefresh)
       const cacheKey = `rankings_2026`;
       if (!forceRefresh) {
-        const cached = await getFromCache<Rider[]>(cacheKey, cacheVersion);
+        const cached = await getFromCache<Rider[]>(cacheKey, cacheVersion, RANKINGS_CACHE_MAX_AGE);
 
         if (cached && cached.length > 0) {
           console.log(`[RankingsContext] Using cached rankings data (${cached.length} riders, version ${cacheVersion})`);

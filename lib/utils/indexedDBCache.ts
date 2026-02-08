@@ -67,7 +67,11 @@ function openDatabase(): Promise<IDBDatabase> {
 /**
  * Get data from IndexedDB cache
  */
-export async function getFromCache<T>(key: string, currentVersion: number): Promise<T | null> {
+export async function getFromCache<T>(
+  key: string,
+  currentVersion: number,
+  maxAgeMs?: number
+): Promise<T | null> {
   try {
     const db = await openDatabase();
 
@@ -90,6 +94,16 @@ export async function getFromCache<T>(key: string, currentVersion: number): Prom
           console.log(`Cache version mismatch for ${key}. Expected ${currentVersion}, got ${entry.version}`);
           resolve(null);
           return;
+        }
+
+        // Check if cache is too old
+        if (typeof maxAgeMs === 'number' && maxAgeMs > 0) {
+          const age = Date.now() - entry.timestamp;
+          if (age > maxAgeMs) {
+            console.log(`Cache expired for ${key}. Age ${Math.round(age / 1000)}s > ${Math.round(maxAgeMs / 1000)}s`);
+            resolve(null);
+            return;
+          }
         }
 
         resolve(entry.data);
