@@ -78,6 +78,7 @@ export default function SlipstreamPage() {
 
   const [selectedRaceSlug, setSelectedRaceSlug] = useState<string | null>(null);
   const [selectedRider, setSelectedRider] = useState<Rider | null>(null);
+  const [draftSelections, setDraftSelections] = useState<Record<string, Rider | null>>({});
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -210,11 +211,16 @@ export default function SlipstreamPage() {
   useEffect(() => {
     // Find the race directly from calendar when selectedRaceSlug changes
     const race = calendar.find(r => r.raceSlug === selectedRaceSlug);
-    
+
+    if (selectedRaceSlug && Object.prototype.hasOwnProperty.call(draftSelections, selectedRaceSlug)) {
+      setSelectedRider(draftSelections[selectedRaceSlug] || null);
+      return;
+    }
+
     if (race?.userPick) {
       const pickRiderId = race.userPick.riderId;
       const pickRiderName = race.userPick.riderName;
-      
+
       // Try to find by id first, then by name slug
       let existingRider = eligibleRiders.find(r => r.id === pickRiderId);
       if (!existingRider && pickRiderName) {
@@ -229,7 +235,19 @@ export default function SlipstreamPage() {
     } else {
       setSelectedRider(null);
     }
-  }, [selectedRaceSlug, calendar, eligibleRiders]);
+  }, [selectedRaceSlug, calendar, eligibleRiders, draftSelections]);
+
+  const handleSelectRider = (rider: Rider | null) => {
+    if (!selectedRaceSlug) {
+      setSelectedRider(rider);
+      return;
+    }
+    setSelectedRider(rider);
+    setDraftSelections(prev => ({
+      ...prev,
+      [selectedRaceSlug]: rider
+    }));
+  };
 
   const handleSubmitPick = async () => {
     if (!selectedRider || !selectedRaceSlug || !user || !canMakePick) return;
@@ -260,6 +278,14 @@ export default function SlipstreamPage() {
       
       if (data.usedRiders) {
         setParticipantData(prev => prev ? { ...prev, usedRiders: data.usedRiders } : null);
+      }
+
+      if (selectedRaceSlug) {
+        setDraftSelections(prev => {
+          const next = { ...prev };
+          delete next[selectedRaceSlug];
+          return next;
+        });
       }
 
       await fetchData();
@@ -300,6 +326,14 @@ export default function SlipstreamPage() {
 
       if (data.usedRiders) {
         setParticipantData(prev => prev ? { ...prev, usedRiders: data.usedRiders } : null);
+      }
+
+      if (selectedRaceSlug) {
+        setDraftSelections(prev => {
+          const next = { ...prev };
+          delete next[selectedRaceSlug];
+          return next;
+        });
       }
 
       await fetchData();
@@ -405,7 +439,7 @@ export default function SlipstreamPage() {
                   riders={eligibleRiders}
                   usedRiderIds={participantData?.usedRiders || []}
                   selectedRider={selectedRider}
-                  onSelect={setSelectedRider}
+                  onSelect={handleSelectRider}
                   disabled={!canMakePick}
                 />
               ) : (

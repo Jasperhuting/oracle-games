@@ -1,7 +1,7 @@
 'use client';
 
-import { Trash, ChevronLeft, ChevronRight } from 'tabler-icons-react';
-import { useMemo, useState } from 'react';
+import { Trash } from 'tabler-icons-react';
+import { useMemo } from 'react';
 
 interface MyTeamRider {
   riderNameId: string;
@@ -29,11 +29,6 @@ interface FullGridMyTeamProps {
   saving: boolean;
 }
 
-type DisplayMode = 'all' | 'scroll' | 'pagination';
-const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
-const SCROLL_ITEM_COUNT_OPTIONS = [5, 10, 15, 20, 25, 30];
-const ITEM_HEIGHT = 56;
-
 export function FullGridMyTeam({
   myTeam,
   budgetStats,
@@ -41,29 +36,14 @@ export function FullGridMyTeam({
   onRemoveRider,
   saving,
 }: FullGridMyTeamProps) {
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('scroll');
-  const [itemsPerPage, setItemsPerPage] = useState(20);
-  const [scrollItemCount, setScrollItemCount] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-
   const sortedTeam = [...myTeam].sort((a, b) => {
     const aIsPro = !!a.isProTeam || a.teamClass === 'PRT';
     const bIsPro = !!b.isProTeam || b.teamClass === 'PRT';
     if (aIsPro !== bIsPro) return aIsPro ? 1 : -1;
     return a.riderTeam.localeCompare(b.riderTeam);
   });
-  const totalPages = Math.max(1, Math.ceil(sortedTeam.length / itemsPerPage));
-  const orderedTeam = sortedTeam;
-  const displayTeam = displayMode === 'pagination'
-    ? orderedTeam.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : orderedTeam;
-
-  const displayWt = displayTeam.filter(rider => !(rider.isProTeam || rider.teamClass === 'PRT'));
-  const displayPrt = displayTeam.filter(rider => rider.isProTeam || rider.teamClass === 'PRT');
-
-  const listMaxHeight = displayMode === 'scroll'
-    ? `${scrollItemCount * ITEM_HEIGHT}px`
-    : undefined;
+  const displayWt = sortedTeam.filter(rider => !(rider.isProTeam || rider.teamClass === 'PRT'));
+  const displayPrt = sortedTeam.filter(rider => rider.isProTeam || rider.teamClass === 'PRT');
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -74,76 +54,34 @@ export function FullGridMyTeam({
         </p>
       </div>
 
-      {/* Display controls */}
-      <div className="px-4 py-2 bg-white border-b border-gray-200 flex flex-wrap items-center gap-3 text-xs">
-        <label className="text-gray-600">Weergave</label>
-        <select
-          value={displayMode}
-          onChange={(e) => {
-            setDisplayMode(e.target.value as DisplayMode);
-            setCurrentPage(1);
-          }}
-          className="pl-2 pr-6 py-1 text-xs border border-gray-300 rounded-md bg-white"
-        >
-          <option value="all">Alles</option>
-          <option value="scroll">Scroll</option>
-          <option value="pagination">Pagina’s</option>
-        </select>
-
-        {displayMode === 'pagination' && (
-          <>
-            <label className="text-gray-600">Per pagina</label>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="pl-2 pr-6 py-1 text-xs border border-gray-300 rounded-md bg-white"
-            >
-              {ITEMS_PER_PAGE_OPTIONS.map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </select>
-          </>
-        )}
-
-        {displayMode === 'scroll' && (
-          <>
-            <label className="text-gray-600">Items</label>
-            <select
-              value={scrollItemCount}
-              onChange={(e) => setScrollItemCount(Number(e.target.value))}
-              className="pl-2 pr-6 py-1 text-xs border border-gray-300 rounded-md bg-white"
-            >
-              {SCROLL_ITEM_COUNT_OPTIONS.map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </select>
-          </>
-        )}
-
-        {displayMode === 'pagination' && totalPages > 1 && (
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-1 border border-gray-300 rounded disabled:opacity-50"
-              title="Vorige pagina"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <span className="text-gray-600">{currentPage} / {totalPages}</span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-1 border border-gray-300 rounded disabled:opacity-50"
-              title="Volgende pagina"
-            >
-              <ChevronRight size={14} />
-            </button>
+      {/* Sponsor */}
+      <div className="px-4 py-4 bg-white border-b border-gray-200">
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-full bg-white ring-2 ring-emerald-200 flex items-center justify-center overflow-hidden">
+              <img
+                src="/berc-bike-logo.jpg"
+                alt="Berc Bike"
+                className="h-11 w-11 object-contain"
+              />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] uppercase tracking-wide text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  Sponsor
+                </span>
+                <span className="text-[11px] uppercase tracking-wide text-gray-400">Full-Grid</span>
+              </div>
+              <p className="text-lg font-semibold text-gray-900">Berc Bike</p>
+              <p className="text-sm text-gray-600">
+                Berc Bike sponsort de prijzen voor hen die 5,- storten.
+              </p>
+              <span className="text-sm text-gray-400 cursor-not-allowed">
+                Prijzen
+              </span>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Budget overview */}
@@ -177,7 +115,7 @@ export function FullGridMyTeam({
       {/* Team list */}
       <div
         className="divide-y divide-gray-100 overflow-y-auto"
-        style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
+        style={{ maxHeight: '560px' }}
       >
         {displayWt.length > 0 && (
           <>
@@ -208,11 +146,13 @@ export function FullGridMyTeam({
 
             {/* Rider info */}
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-gray-900 text-sm truncate">
-                {rider.riderName}
-              </div>
-              <div className="text-xs text-gray-500 truncate flex items-center gap-2">
-                <span>{rider.riderTeam}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-semibold text-gray-900 text-base truncate">
+                  {rider.riderName}
+                </span>
+                <span className="text-sm text-gray-500 truncate">
+                  {rider.riderTeam}
+                </span>
                 {rider.teamClass && rider.teamClass !== 'PRT' && (
                   <span className="uppercase tracking-wide text-[10px] text-gray-400">
                     {rider.teamClass}
@@ -275,11 +215,13 @@ export function FullGridMyTeam({
 
                 {/* Rider info */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 text-sm truncate">
-                    {rider.riderName}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate flex items-center gap-2">
-                    <span>{rider.riderTeam}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-semibold text-gray-900 text-base truncate">
+                      {rider.riderName}
+                    </span>
+                    <span className="text-sm text-gray-500 truncate">
+                      {rider.riderTeam}
+                    </span>
                     <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700">
                       PRT
                     </span>

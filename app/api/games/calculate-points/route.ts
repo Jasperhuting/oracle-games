@@ -6,7 +6,9 @@ import {
   calculateStagePoints,
   getGCMultiplier,
   getClassificationMultiplier,
-  shouldCountForPoints
+  shouldCountForPoints,
+  getFullGridStagePoints,
+  getFullGridGCPoints
 } from '@/lib/utils/pointsCalculation';
 import { AuctioneerConfig } from '@/lib/types/games';
 import { ClassificationRider } from '@/lib/scraper/types';
@@ -266,7 +268,7 @@ export async function POST(request: NextRequest) {
         gameName: gameData.name || 'Unknown',
         gameType: gameData.gameType || 'unknown',
         raceType: gameData.raceType || 'unknown',
-        isSeasonGame: gameData.raceType === 'season',
+        isSeasonGame: gameData.raceType === 'season' && gameData.gameType !== 'full-grid',
         countingRaces: (gameData.config as AuctioneerConfig)?.countingRaces || [],
         status: gameData.status || 'unknown',
         config: gameData.config as AuctioneerConfig,
@@ -288,6 +290,17 @@ export async function POST(request: NextRequest) {
       }
       // Check if race is in countingRaces
       return shouldCountForPoints(raceSlug, stage, gameConfig.countingRaces);
+    };
+
+    const getFullGridScale = (gameConfig: GameConfig): 1 | 2 | 3 | 4 => {
+      const entry = gameConfig.countingRaces.find(cr => {
+        if (typeof cr === 'string') {
+          return raceSlug === cr || raceSlug.includes(cr.replace(/_\d{4}$/, '')) || cr.includes(raceSlug.replace(/_\d{4}$/, ''));
+        }
+        return raceSlug.includes(cr.raceSlug) || raceSlug === cr.raceId;
+      });
+      if (!entry || typeof entry === 'string') return 2;
+      return (entry as { pointsScale?: 1 | 2 | 3 | 4 }).pointsScale || 2;
     };
 
     // Helper to get multipliers for a game
@@ -427,6 +440,8 @@ export async function POST(request: NextRequest) {
           // Get multipliers for this game
           const multipliers = getMultipliers(gameConfig);
           const useDirectPcsPoints = gameConfig.isSeasonGame;
+          const isFullGrid = gameConfig.gameType === 'full-grid';
+          const fullGridScale = isFullGrid ? getFullGridScale(gameConfig) : 2;
 
           // Track detailed points breakdown for this stage
           const stagePointsBreakdown: Record<string, number> = {};
@@ -434,17 +449,35 @@ export async function POST(request: NextRequest) {
 
           // For tour GC, only check general classification - always use PCS points
           if (multipliers.isTourGC) {
-            if (multipliers.gcMultiplier > 0 && gcResult && gcResult.place) {
-              // Always use PCS points for tour GC
-              const pcsPoints = typeof gcResult.points === 'number' ? gcResult.points :
-                (typeof gcResult.points === 'string' && gcResult.points !== '-' ? parseInt(gcResult.points as string) : 0);
-              const gcPoints = pcsPoints > 0 ? pcsPoints : calculateStagePoints(gcResult.place) * multipliers.gcMultiplier;
+            if (gcResult && gcResult.place) {
+              const gcPoints = isFullGrid
+                ? getFullGridGCPoints(fullGridScale, gcResult.place)
+                : (() => {
+                    const pcsPoints = typeof gcResult.points === 'number' ? gcResult.points :
+                      (typeof gcResult.points === 'string' && gcResult.points !== '-' ? parseInt(gcResult.points as string) : 0);
+                    return pcsPoints > 0 ? pcsPoints : calculateStagePoints(gcResult.place) * multipliers.gcMultiplier;
+                  })();
 
               if (gcPoints > 0) {
                 riderTotalPoints += gcPoints;
                 stagePointsBreakdown.gcPoints = gcPoints;
                 stagePointsBreakdown.gcPosition = gcResult.place;
-                console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - GC: ${gcPoints} pts (place ${gcResult.place}, pcsPoints: ${gcResult.points})`);
+                console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - GC: ${gcPoints} pts (place ${gcResult.place})`);
+              }
+            }
+
+            // Full Grid: award green classification only at end (tour-gc)
+            if (isFullGrid && stageData.pointsClassification) {
+              const pointsResult = stageData.pointsClassification.find((r: StageResult) =>
+                r.nameID === riderNameId ||
+                r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
+              );
+              if (pointsResult && pointsResult.place) {
+                const pointsClassPoints = getFullGridStagePoints(fullGridScale, pointsResult.place);
+                if (pointsClassPoints > 0) {
+                  riderTotalPoints += pointsClassPoints;
+                  stagePointsBreakdown.pointsClass = pointsClassPoints;
+                }
               }
             }
           } else {
@@ -453,7 +486,9 @@ export async function POST(request: NextRequest) {
             if (riderResult && finishPosition) {
               let stagePoints: number;
 
-              if (useDirectPcsPoints) {
+              if (isFullGrid) {
+                stagePoints = getFullGridStagePoints(fullGridScale, finishPosition);
+              } else if (useDirectPcsPoints) {
                 const pcsPoints = typeof riderResult.points === 'number' ? riderResult.points :
                   (typeof riderResult.points === 'string' && riderResult.points !== '-' ? parseInt(riderResult.points) : 0);
                 stagePoints = pcsPoints;
@@ -470,7 +505,7 @@ export async function POST(request: NextRequest) {
             }
 
             // 2. GENERAL CLASSIFICATION POINTS
-            if (multipliers.gcMultiplier > 0 && gcResult && gcResult.place) {
+            if (!isFullGrid && multipliers.gcMultiplier > 0 && gcResult && gcResult.place) {
               const gcPoints = calculateStagePoints(gcResult.place) * multipliers.gcMultiplier;
               if (gcPoints > 0) {
                 riderTotalPoints += gcPoints;
@@ -481,7 +516,7 @@ export async function POST(request: NextRequest) {
             }
 
             // 3. POINTS CLASSIFICATION (only at final stage)
-            if (multipliers.pointsClassMultiplier > 0 && stageData.pointsClassification) {
+            if (!isFullGrid && multipliers.pointsClassMultiplier > 0 && stageData.pointsClassification) {
               const pointsResult = stageData.pointsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId ||
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
@@ -685,5 +720,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
 

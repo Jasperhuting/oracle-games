@@ -62,6 +62,7 @@ export interface CountingRace {
   raceId: string;                   // e.g., "tour-de-france_2025"
   raceSlug: string;                 // e.g., "tour-de-france"
   raceName: string;                 // e.g., "Tour de France"
+  pointsScale?: 1 | 2 | 3 | 4;      // Optional: Full Grid points scale
   restDays?: number[];              // Stage numbers that are rest days (e.g., [9, 16])
   mountainPointsMultiplier?: number; // Multiplier for mountain points (default: 4 for Tour, 2 for Giro)
   sprintPointsMultiplier?: number;  // Multiplier for sprint points (default: 2)
@@ -177,6 +178,7 @@ export interface FullGridConfig {
   maxRiders: number;                   // Maximum riders to select (e.g., 22)
   riderValues: Record<string, number>; // nameId -> value (points cost)
   selectionStatus: 'open' | 'closed';  // Track if selection is open
+  countingRaces?: (string | CountingRace)[]; // Optional: which races count for this game
   auctionPeriods?: AuctionPeriod[];    // Selection periods with deadlines
   auctionStatus?: AuctionStatus;       // Overall selection status
 }

@@ -291,11 +291,6 @@ Riders removed: ${result.ridersRemoved}`,
               <h1 className="text-2xl font-bold">Manage Race Lineup</h1>
               {gameName && <p className="text-sm text-gray-600 mt-1">{gameName}</p>}
             </div>
-            <Button
-              type="button"
-              text={t('global.backToGames')}
-              onClick={() => router.push('/games')}
-            />
           </div>
         </div>
       </div>

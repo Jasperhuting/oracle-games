@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { GameType } from "@/lib/types/games";
 import { useTranslation } from "react-i18next";
 import { incrementCacheVersion } from "@/lib/utils/cacheVersion";
+import { Selector } from "./Selector";
 
 interface AuctionPeriodInput {
   name: string;
@@ -40,6 +41,7 @@ interface Race {
 
 interface GameFormData {
   name: string;
+  year?: number;
   status: string;
   division?: string;
   divisionLevel?: number;
@@ -75,7 +77,8 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
   const { t } = useTranslation();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<GameFormData>();
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<GameFormData>();
+  const watchYear = watch('year');
 
   useEffect(() => {
     const loadGame = async () => {
@@ -106,6 +109,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         // Populate form
         reset({
           name: game.name,
+          year: game.year || 2025,
           status: game.status,
           division: game.division,
           divisionLevel: game.divisionLevel,
@@ -145,8 +149,8 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           }));
         }
 
-        // Load counting races if auctioneer game
-        if (game.gameType === 'auctioneer' && game.config?.countingRaces) {
+        // Load counting races if auctioneer or full-grid game
+        if ((game.gameType === 'auctioneer' || game.gameType === 'full-grid') && game.config?.countingRaces) {
           setCountingRaces(game.config.countingRaces);
         }
 
@@ -165,17 +169,33 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
     loadGame();
   }, [gameId, reset]);
 
+  useEffect(() => {
+    if (watchYear) {
+      setGameYear(Number(watchYear));
+    }
+  }, [watchYear]);
+
   // Load available races when year changes
   useEffect(() => {
     const loadRaces = async () => {
-      if (!gameYear || gameType !== 'auctioneer') return;
+      if (!gameYear || (gameType !== 'auctioneer' && gameType !== 'full-grid')) return;
+      if (gameType === 'full-grid' && !user) return;
       
       setLoadingRaces(true);
       try {
-        const response = await fetch(`/api/scraper/races?year=${gameYear}`);
-        if (response.ok) {
-          const data = await response.json();
-          setAvailableRaces(data.races || []);
+        if (gameType === 'full-grid') {
+          const response = await fetch(`/api/getRaces?userId=${user?.uid}`);
+          if (response.ok) {
+            const data = await response.json();
+            const allRaces = data.races || [];
+            setAvailableRaces(allRaces.filter((race: Race) => race.year === gameYear));
+          }
+        } else {
+          const response = await fetch(`/api/scraper/races?year=${gameYear}`);
+          if (response.ok) {
+            const data = await response.json();
+            setAvailableRaces(data.races || []);
+          }
         }
       } catch (error) {
         console.error('Error loading races:', error);
@@ -185,7 +205,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
     };
 
     loadRaces();
-  }, [gameYear, gameType]);
+  }, [gameYear, gameType, user]);
 
   const addAuctionPeriod = () => {
     setAuctionPeriods([...auctionPeriods, { name: '', startDate: '', endDate: '', finalizeDate: '', status: 'pending', top200Only: false }]);
@@ -237,6 +257,27 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
     setCountingRaces(countingRaces.filter((_, i) => i !== index));
   };
 
+  const handleCountingRaceSelect = (selected: Race[]) => {
+    setCountingRaces(prev => {
+      const existing = new Map(prev.map(r => [r.raceId, r]));
+      return selected.map((race) => ({
+        raceId: race.id,
+        raceSlug: race.slug,
+        raceName: race.name,
+        pointsScale: existing.get(race.id)?.pointsScale || 2,
+        restDays: existing.get(race.id)?.restDays || [],
+        mountainPointsMultiplier: existing.get(race.id)?.mountainPointsMultiplier,
+        sprintPointsMultiplier: existing.get(race.id)?.sprintPointsMultiplier,
+      }));
+    });
+  };
+
+  const updateCountingRaceScale = (raceId: string, scale: number) => {
+    setCountingRaces(prev => prev.map(r => (
+      r.raceId === raceId ? { ...r, pointsScale: scale as 1 | 2 | 3 | 4 } : r
+    )));
+  };
+
   const updateCountingRace = <K extends keyof CountingRaceInput>(
     index: number,
     field: K,
@@ -257,6 +298,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
       const updates: any = { // eslint-disable-line @typescript-eslint/no-explicit-any
         adminUserId: user.uid,
         name: data.name,
+        year: data.year ? Number(data.year) : gameYear,
         status: data.status,
         division: data.division,
         divisionLevel: data.divisionLevel,
@@ -315,6 +357,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           maxRiders: Number(data.maxRiders) || 22,
           riderValues: existingRiderValues,
           selectionStatus: 'open',
+          countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
           auctionPeriods: auctionPeriods.map(period => {
             const startDate = new Date(period.startDate + ':00');
             const endDate = new Date(period.endDate + ':00');
@@ -410,6 +453,29 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                 />
                 {errors.name && (
                   <span className="text-red-500 text-xs mt-1 block">{errors.name.message}</span>
+                )}
+              </div>
+
+              {/* Year */}
+              <div>
+                <TextInput
+                  type="number"
+                  label="Year"
+                  placeholder="E.g. 2026"
+                  {...register('year', {
+                    valueAsNumber: true,
+                    min: {
+                      value: 2020,
+                      message: 'Year must be at least 2020'
+                    },
+                    max: {
+                      value: 2030,
+                      message: 'Year cannot exceed 2030'
+                    }
+                  })}
+                />
+                {errors.year && (
+                  <span className="text-red-500 text-xs mt-1 block">{errors.year.message}</span>
                 )}
               </div>
 
@@ -669,24 +735,33 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
 
                     {!loadingRaces && availableRaces.length > 0 && (
                       <div className="mb-3">
-                        <select
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              addCountingRace(e.target.value);
-                              e.target.value = '';
-                            }
+                        <Selector<Race>
+                          items={availableRaces}
+                          selectedItems={availableRaces.filter(race => countingRaces.some(cr => cr.raceId === race.id))}
+                          setSelectedItems={handleCountingRaceSelect}
+                          multiSelect={true}
+                          multiSelectShowSelected={true}
+                          placeholder="Zoek en selecteer races..."
+                          getItemLabel={(race) => `${race.name} (${race.classification})`}
+                          searchFilter={(race, searchTerm) => {
+                            const q = searchTerm.toLowerCase();
+                            return race.name.toLowerCase().includes(q) || race.slug.toLowerCase().includes(q);
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="">+ Add Race</option>
-                          {availableRaces
-                            .filter(race => !countingRaces.some(cr => cr.raceId === race.id))
-                            .map((race) => (
-                              <option key={race.id} value={race.id}>
-                                {race.name} ({race.classification}) - {new Date(race.startDate).toLocaleDateString()}
-                              </option>
-                            ))}
-                        </select>
+                          isEqual={(a, b) => a.id === b.id}
+                          renderItem={(race) => (
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-900">{race.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {race.classification} • {new Date(race.startDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                          renderSelectedItem={(race) => (
+                            <div className="text-xs text-gray-700">
+                              {race.name}
+                            </div>
+                          )}
+                        />
                       </div>
                     )}
 
@@ -694,6 +769,28 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                       <p className="text-sm text-gray-500 mb-2">
                         No races selected. All races will count for points.
                       </p>
+                    )}
+
+                    {countingRaces.length > 0 && (
+                      <div className="space-y-2">
+                        {countingRaces.map((race) => (
+                          <div key={race.raceId} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                            <div className="text-sm font-medium text-gray-700">
+                              {race.raceName}
+                            </div>
+                            <select
+                              value={race.pointsScale || 2}
+                              onChange={(e) => updateCountingRaceScale(race.raceId, Number(e.target.value))}
+                              className="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
+                            >
+                              <option value={1}>Schaal 1</option>
+                              <option value={2}>Schaal 2</option>
+                              <option value={3}>Schaal 3</option>
+                              <option value={4}>Schaal 4</option>
+                            </select>
+                          </div>
+                        ))}
+                      </div>
                     )}
 
                     <div className="space-y-3">
@@ -833,6 +930,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                       ))}
                     </div>
                   </div>
+
                 </div>
               )}
 
@@ -868,6 +966,84 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                         })}
                       />
                     </div>
+                  </div>
+
+                  {/* Counting Races */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Counting Races (optional)
+                      </label>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Select which races count for this game. Leave empty to count all races.
+                    </p>
+
+                    {loadingRaces && (
+                      <p className="text-sm text-gray-500 mb-2">Loading races...</p>
+                    )}
+
+                    {!loadingRaces && availableRaces.length > 0 && (
+                      <div className="mb-3">
+                        <Selector<Race>
+                          items={availableRaces}
+                          selectedItems={availableRaces.filter(race => countingRaces.some(cr => cr.raceId === race.id))}
+                          setSelectedItems={handleCountingRaceSelect}
+                          multiSelect={true}
+                          multiSelectShowSelected={true}
+                          showSelected={true}
+                          placeholder="Zoek en selecteer races..."
+                          getItemLabel={(race) => `${race.name} (${race.classification})`}
+                          searchFilter={(race, searchTerm) => {
+                            const q = searchTerm.toLowerCase();
+                            return race.name.toLowerCase().includes(q) || race.slug.toLowerCase().includes(q);
+                          }}
+                          isEqual={(a, b) => a.id === b.id}
+                          renderItem={(race) => (
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-900">{race.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {race.classification} • {new Date(race.startDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                          renderSelectedItem={(race) => (
+                            <div className="text-xs text-gray-700">
+                              {race.name}
+                            </div>
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    {countingRaces.length === 0 && (
+                      <p className="text-sm text-gray-500 mb-2">
+                        No races selected. All races will count for points.
+                      </p>
+                    )}
+
+                    {countingRaces.length > 0 && (
+                      <div className="space-y-2">
+                        {countingRaces.map((race) => (
+                          <div key={race.raceId} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                            <div className="text-sm font-medium text-gray-700">
+                              {race.raceName}
+                            </div>
+                            <select
+                              value={race.pointsScale || 2}
+                              onChange={(e) => updateCountingRaceScale(race.raceId, Number(e.target.value))}
+                              className="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
+                            >
+                              <option value={1}>Schaal 1</option>
+                              <option value={2}>Schaal 2</option>
+                              <option value={3}>Schaal 3</option>
+                              <option value={4}>Schaal 4</option>
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                   </div>
 
                   {/* Selection Periods */}

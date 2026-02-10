@@ -28,6 +28,50 @@ export function SlipstreamRiderSelector({
   );
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
 
+  const normalizeTeamSlug = (value: string) => {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/-+$/g, '')
+      .replace(/-202\d$/g, '');
+  };
+
+  const getRiderTeamSlug = (rider: Rider) => {
+    if (rider.teamId && typeof rider.teamId === 'string') {
+      return normalizeTeamSlug(rider.teamId);
+    }
+    if (rider.team && typeof rider.team === 'object') {
+      const teamObj = rider.team as any;
+      if (teamObj.slug) return normalizeTeamSlug(teamObj.slug);
+      if (teamObj.id) return normalizeTeamSlug(teamObj.id);
+      if (teamObj.name) return normalizeTeamSlug(teamObj.name);
+      if (teamObj.teamName) return normalizeTeamSlug(teamObj.teamName);
+    }
+    if (rider.team && typeof rider.team === 'string') {
+      return normalizeTeamSlug(rider.team);
+    }
+    if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
+      return normalizeTeamSlug((rider as any).teamName);
+    }
+    if ((rider as any).teamNameID && typeof (rider as any).teamNameID === 'string') {
+      return normalizeTeamSlug((rider as any).teamNameID);
+    }
+    return '';
+  };
+
+  const getRiderTeamDisplay = (rider: Rider) => {
+    if (rider.team && typeof rider.team === 'object' && (rider.team as any).name) {
+      return (rider.team as any).name as string;
+    }
+    if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
+      return (rider as any).teamName as string;
+    }
+    if (rider.team && typeof rider.team === 'string') {
+      return rider.team;
+    }
+    return '';
+  };
+
   // Sync internal state with prop when selectedRider changes
   useEffect(() => {
     if (selectedRider) {
@@ -45,21 +89,9 @@ export function SlipstreamRiderSelector({
       if (isUsed) return false;
       
       if (selectedTeams.length > 0) {
-        let riderTeamId = '';
-        
-        // Try different team data structures for filtering
-        if (rider.team && typeof rider.team === 'object' && 'slug' in rider.team) {
-          riderTeamId = (rider.team as any).slug;
-        } else if (rider.team && typeof rider.team === 'object' && 'name' in rider.team) {
-          riderTeamId = (rider.team as any).name.toLowerCase().replace(/\s+/g, '-');
-        } else if (rider.team && typeof rider.team === 'string') {
-          riderTeamId = rider.team.toLowerCase().replace(/\s+/g, '-');
-        } else if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
-          riderTeamId = (rider as any).teamName.toLowerCase().replace(/\s+/g, '-');
-        }
-        
+        const riderTeamId = getRiderTeamSlug(rider);
         const matches = selectedTeams.some(team => {
-          const teamSlug = team.slug || team.name?.toLowerCase().replace(/\s+/g, '-');
+          const teamSlug = normalizeTeamSlug(team.slug || team.id || team.name || '');
           return teamSlug === riderTeamId;
         });
         
@@ -80,28 +112,11 @@ export function SlipstreamRiderSelector({
       const riderId = rider.id || (rider as { nameID?: string }).nameID || '';
       const isUsed = usedRiderIds.includes(riderId);
       
-      if (!isUsed && rider.team) {
-        let teamId = '';
-        let teamName = '';
-        let teamImage = '';
-        
-        // Try different team data structures
-        if (rider.team && typeof rider.team === 'object' && 'slug' in rider.team) {
-          teamId = (rider.team as any).slug;
-          teamName = (rider.team as any).name;
-          teamImage = (rider.team as any).teamImage || (rider.team as any).jerseyImageTeam || '';
-        } else if (rider.team && typeof rider.team === 'object' && 'name' in rider.team) {
-          teamName = (rider.team as any).name;
-          teamId = teamName.toLowerCase().replace(/\s+/g, '-');
-          teamImage = (rider.team as any).teamImage || (rider.team as any).jerseyImageTeam || '';
-        } else if (rider.team && typeof rider.team === 'string') {
-          teamName = rider.team;
-          teamId = teamName.toLowerCase().replace(/\s+/g, '-');
-        } else if ((rider as any).teamName && typeof (rider as any).teamName === 'string') {
-          teamName = (rider as any).teamName;
-          teamId = teamName.toLowerCase().replace(/\s+/g, '-');
-          console.log(`Debug - rider ${rider.name}: teamName="${teamName}", teamId="${teamId}"`);
-        }
+      if (!isUsed) {
+        const teamId = getRiderTeamSlug(rider);
+        const teamImage = (rider.team && typeof rider.team === 'object')
+          ? ((rider.team as any).teamImage || (rider.team as any).jerseyImageTeam || '')
+          : '';
         
         if (teamId) {
           const existing = counts.get(teamId);
@@ -180,7 +195,7 @@ export function SlipstreamRiderSelector({
 
           return !!(
             normalizeString(rider?.name || '').includes(normalizedSearch) ||
-            normalizeString(rider?.team?.name || '').includes(normalizedSearch) ||
+            normalizeString(getRiderTeamDisplay(rider) || '').includes(normalizedSearch) ||
             rider?.country?.toLowerCase().includes(lowerSearch)
           );
         }}

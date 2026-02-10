@@ -7,12 +7,19 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useAuth } from "@/hooks/useAuth";
 import { GameType } from "@/lib/types/games";
 import { useTranslation } from "react-i18next";
+import { Selector } from "./Selector";
 
 interface AuctionPeriodInput {
   name: string;
   startDate: string;
   endDate: string;
   finalizeDate?: string;
+}
+
+interface CountingRaceInput {
+  raceId: string;
+  raceSlug: string;
+  raceName: string;
 }
 
 interface GameFormData {
@@ -68,6 +75,7 @@ export const CreateGameTab = () => {
   const [loadingRaces, setLoadingRaces] = useState(true);
   const [selectedGameType, setSelectedGameType] = useState<GameType | ''>('');
   const [auctionPeriods, setAuctionPeriods] = useState<AuctionPeriodInput[]>([]);
+  const [countingRaces, setCountingRaces] = useState<CountingRaceInput[]>([]);
   const [allowSharedRiders, setAllowSharedRiders] = useState(false);
   const { t } = useTranslation();
 
@@ -81,10 +89,18 @@ export const CreateGameTab = () => {
   const watchGameType = watch('gameType');
   const watchRaceType = watch('raceType');
   const watchRaceSlug = watch('raceSlug');
+  const watchYear = watch('year');
 
   useEffect(() => {
     setSelectedGameType(watchGameType as GameType);
   }, [watchGameType]);
+
+  useEffect(() => {
+    if (watchGameType === 'full-grid') {
+      setValue('raceType', 'season');
+      setValue('raceSlug', '');
+    }
+  }, [watchGameType, setValue]);
 
   // Auto-generate game name when game type, race type, or race changes
   useEffect(() => {
@@ -154,6 +170,24 @@ export const CreateGameTab = () => {
     const updated = [...auctionPeriods];
     updated[index][field] = value;
     setAuctionPeriods(updated);
+  };
+
+  const handleCountingRaceSelect = (selected: Race[]) => {
+    setCountingRaces(prev => {
+      const existing = new Map(prev.map(r => [r.raceId, r]));
+      return selected.map((race) => ({
+        raceId: race.id,
+        raceSlug: race.slug,
+        raceName: race.name,
+        pointsScale: existing.get(race.id)?.pointsScale || 2,
+      }));
+    });
+  };
+
+  const updateCountingRaceScale = (raceId: string, scale: number) => {
+    setCountingRaces(prev => prev.map(r => (
+      r.raceId === raceId ? { ...r, pointsScale: scale as 1 | 2 | 3 | 4 } : r
+    )));
   };
 
   const onSubmit: SubmitHandler<GameFormData> = async (data) => {
@@ -305,6 +339,7 @@ export const CreateGameTab = () => {
           maxRiders: Number(data.fgMaxRiders) || 22,
           riderValues: {}, // Will be populated later via admin interface
           selectionStatus: 'open',
+          countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
           auctionPeriods: auctionPeriods.map(period => {
             const startDate = new Date(period.startDate + ':00Z');
             const endDate = new Date(period.endDate + ':00Z');
@@ -332,8 +367,8 @@ export const CreateGameTab = () => {
           adminUserId: user.uid,
           name: data.name,
           gameType: data.gameType,
-          raceSlug: data.raceSlug || undefined, // Optional for season games
-          raceType: data.raceType,
+          raceSlug: data.gameType === 'full-grid' ? undefined : (data.raceSlug || undefined), // Optional for season games
+          raceType: data.gameType === 'full-grid' ? 'season' : data.raceType,
           year: Number(data.year),
           status: 'draft',
           divisionCount: data.divisionCount,
@@ -362,6 +397,7 @@ export const CreateGameTab = () => {
       reset();
       setSelectedGameType('');
       setAuctionPeriods([]);
+      setCountingRaces([]);
       setAllowSharedRiders(false);
     } catch (error: unknown) {
       console.error('Error creating game:', error);
@@ -425,6 +461,7 @@ export const CreateGameTab = () => {
                 required: 'Race type is required'
               })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={selectedGameType === 'full-grid'}
             >
               <option value="grand-tour">Grand Tour</option>
               <option value="classics">Classics</option>
@@ -435,12 +472,14 @@ export const CreateGameTab = () => {
               <span className="text-red-500 text-xs mt-1 block">{errors.raceType.message}</span>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Select &quot;Season&quot; for games that span the entire season without a specific race.
+              {selectedGameType === 'full-grid'
+                ? 'Full Grid gebruikt altijd Season en heeft geen vaste race.'
+                : 'Select "Season" for games that span the entire season without a specific race.'}
             </p>
           </div>
 
           {/* Race Selection - Only show if not season type */}
-          {watchRaceType !== 'season' && (
+          {watchRaceType !== 'season' && selectedGameType !== 'full-grid' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Race *
@@ -1203,6 +1242,81 @@ export const CreateGameTab = () => {
                     Aantal renners dat geselecteerd moet worden (1 per ploeg)
                   </p>
                 </div>
+              </div>
+
+              {/* Counting Races */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Wedstrijden die tellen (optioneel)
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  Kies welke wedstrijden meetellen voor dit spel. Laat leeg om alles mee te nemen.
+                </p>
+
+                {loadingRaces && (
+                  <p className="text-sm text-gray-500 mb-2">Loading races...</p>
+                )}
+
+                {!loadingRaces && races.length > 0 && (
+                  <div className="mb-3">
+                    <Selector<Race>
+                      items={races.filter(race => !watchYear || race.year === Number(watchYear))}
+                      selectedItems={races.filter(race => countingRaces.some(cr => cr.raceId === race.id))}
+                      setSelectedItems={handleCountingRaceSelect}
+                      multiSelect={true}
+                      multiSelectShowSelected={true}
+                      showSelected={true}
+                      placeholder="Zoek en selecteer races..."
+                      getItemLabel={(race) => `${race.name} (${race.year})`}
+                      searchFilter={(race, searchTerm) => {
+                        const q = searchTerm.toLowerCase();
+                        return race.name.toLowerCase().includes(q) || race.slug.toLowerCase().includes(q);
+                      }}
+                      isEqual={(a, b) => a.id === b.id}
+                      renderItem={(race) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-900">{race.name}</span>
+                          <span className="text-xs text-gray-500">{race.year} • {race.slug}</span>
+                        </div>
+                      )}
+                      renderSelectedItem={(race) => (
+                        <div className="text-xs text-gray-700">
+                          {race.name} ({race.year})
+                        </div>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {countingRaces.length === 0 && (
+                  <p className="text-sm text-gray-500 mb-2">
+                    Geen wedstrijden geselecteerd.
+                  </p>
+                )}
+
+                {countingRaces.length > 0 && (
+                  <div className="space-y-2">
+                    {countingRaces.map((race) => (
+                      <div key={race.raceId} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                        <div className="text-sm font-medium text-gray-700">
+                          {race.raceName}
+                        </div>
+                        <select
+                          value={race.pointsScale || 2}
+                          onChange={(e) => updateCountingRaceScale(race.raceId, Number(e.target.value))}
+                          className="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
+                        >
+                          <option value={1}>Schaal 1</option>
+                          <option value={2}>Schaal 2</option>
+                          <option value={3}>Schaal 3</option>
+                          <option value={4}>Schaal 4</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Selection Periods */}

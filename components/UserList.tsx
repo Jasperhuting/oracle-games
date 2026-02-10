@@ -19,6 +19,8 @@ export const UserList = () => {
   const [filterType, setFilterType] = useState<string>("all");
   const [showDeleted, setShowDeleted] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [sortBy, setSortBy] = useState<'createdAt' | 'lastLoginAt' | 'user'>('createdAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [changingUserTypeId, setChangingUserTypeId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -313,6 +315,37 @@ export const UserList = () => {
     }
   };
 
+  const getDateValue = (value?: { toDate?: () => Date } | string | null) => {
+    if (!value) return 0;
+    if (typeof value === 'string') {
+      const parsed = new Date(value).getTime();
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    if (value.toDate) {
+      return value.toDate().getTime();
+    }
+    return 0;
+  };
+
+  const getUserLabel = (user: User) => {
+    const nameParts = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    return (user.playername || nameParts || user.email || '').toLowerCase();
+  };
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    let compareValue = 0;
+
+    if (sortBy === 'createdAt') {
+      compareValue = getDateValue(a.createdAt) - getDateValue(b.createdAt);
+    } else if (sortBy === 'lastLoginAt') {
+      compareValue = getDateValue(a.lastLoginAt) - getDateValue(b.lastLoginAt);
+    } else {
+      compareValue = getUserLabel(a).localeCompare(getUserLabel(b));
+    }
+
+    return sortDirection === 'asc' ? compareValue : -compareValue;
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -359,6 +392,22 @@ export const UserList = () => {
               <option value="user">Gebruiker</option>
               <option value="admin">Admin</option>
             </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'createdAt' | 'lastLoginAt' | 'user')}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="createdAt">Sorteer: Aangemaakt</option>
+              <option value="lastLoginAt">Sorteer: Laatste login</option>
+              <option value="user">Sorteer: Gebruiker</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+            >
+              {sortDirection === 'asc' ? '⬆︎' : '⬇︎'}
+            </button>
           </div>
         </div>
       </div>
@@ -404,14 +453,14 @@ export const UserList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.length === 0 ? (
+              {sortedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-3 py-3 sm:px-6 sm:py-4 text-center text-xs sm:text-sm text-gray-500">
                     Geen gebruikers gevonden
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                sortedUsers.map((user) => (
                   <tr key={user.uid} className={`hover:bg-gray-50 transition-colors ${user.deletedAt ? 'bg-gray-100 opacity-60' : ''}`}>
                     <td className="px-3 py-2 sm:px-6 sm:py-4">
                       <div className="flex flex-col">
