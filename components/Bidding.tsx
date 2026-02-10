@@ -346,10 +346,12 @@ export const Bidding = ({
             </p>
           )}
           </div>
-          <span className="flex flex-row gap-2 justify-center items-center">
-            <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />{t('global.listView')}</span></Button>
-            <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />{t('global.cardView')}</span></Button>
-          </span>
+          {!isFullGrid && (
+            <span className="flex flex-row gap-2 justify-center items-center">
+              <Button ghost={myTeamBidsView === 'card'} onClick={() => setMyTeamBidsView('list')}><span className={`flex flex-row gap-2 items-center`}><List />{t('global.listView')}</span></Button>
+              <Button ghost={myTeamBidsView === 'list'} onClick={() => setMyTeamBidsView('card')}><span className={`flex flex-row gap-2 items-center`}><GridDots />{t('global.cardView')}</span></Button>
+            </span>
+          )}
         </div>
 
 
@@ -357,6 +359,32 @@ export const Bidding = ({
           <div className="bg-white border border-gray-200 rounded-b-md p-4">
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <div className="xl:col-span-2">
+                <div className="mb-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-full bg-white ring-2 ring-emerald-200 flex items-center justify-center overflow-hidden">
+                      <img
+                        src="/berc-bike-logo.jpg"
+                        alt="Berc Bike"
+                        className="h-11 w-11 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] uppercase tracking-wide text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Sponsor
+                        </span>
+                        <span className="text-[11px] uppercase tracking-wide text-gray-400">Full-Grid</span>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">Berc Bike</p>
+                      <p className="text-sm text-gray-600">
+                        Berc Bike sponsort de prijzen voor hen die 5,- storten.
+                      </p>
+                      <span className="text-sm text-gray-400 cursor-not-allowed">
+                        Prijzen
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <FullGridMyTeam
                   myTeam={fullGridMyTeam}
                   budgetStats={fullGridBudgetStats}
@@ -401,32 +429,6 @@ export const Bidding = ({
                         </span>
                       </div>
                     )}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-4 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-white ring-2 ring-emerald-200 flex items-center justify-center overflow-hidden">
-                      <img
-                        src="/berc-bike-logo.jpg"
-                        alt="Bercbike"
-                        className="h-10 w-10 object-contain"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase tracking-wide text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                          Sponsor
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wide text-gray-400">Full-Grid</span>
-                      </div>
-                      <p className="text-base font-semibold text-gray-900">Bercbike</p>
-                      <p className="text-xs text-gray-600">Trots partner van deze game</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 rounded-md bg-white/80 border border-emerald-100 p-3">
-                    <p className="text-xs text-gray-700">
-                      Dit spel wordt mogelijk gemaakt door Bercbike. Bedankt voor de support.
-                    </p>
                   </div>
                 </div>
               </div>
