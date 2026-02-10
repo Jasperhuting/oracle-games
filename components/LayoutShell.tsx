@@ -93,7 +93,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     return (
         <>
             {/* Reserve space for beta banner to prevent layout shift */}
-            <div className={`${showBanner ? 'h-[36px]' : 'h-0'} transition-[height] duration-300`}>
+            <div className={`${showBanner ? 'h-0 sm:h-[36px]' : 'h-0'} transition-[height] duration-300`}>
                 {showBanner && <BetaBanner setShowBanner={setShowBanner} />}
             </div>
             

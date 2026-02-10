@@ -10,7 +10,7 @@ export default function HistoryPage() {
 
     if (!user) {
         return (
-            <div className="flex flex-col min-h-screen p-8 mt-[36px] bg-gray-50">
+            <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
                 <div className="mx-auto container">
                     <div className="flex items-center justify-center p-8">
                         <div className="text-gray-600">{t('global.loading')}</div>

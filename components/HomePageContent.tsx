@@ -32,12 +32,12 @@ export function HomePageContent() {
     }, []);
 
     return (
-        <div className="flex flex-col min-h-screen p-8 mt-[36px]">
+        <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px]">
             <div className="mx-auto container">
    
                 <h1 className="text-2xl font-bold mb-6">Home</h1>
 
-                <div className="bg-white p-6 border border-gray-200 rounded-md">
+                <div className="bg-white p-3 sm:p-6 border border-gray-200 rounded-md">
                     {loading ? (
                         <div className="flex items-center justify-center py-8">
                             <div className="text-gray-500">{t('global.loading')}</div>

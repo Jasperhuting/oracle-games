@@ -197,6 +197,7 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'tour-of-philippines': 5,
   'etoile-de-besseges': 5,
   'vuelta-a-la-comunidad-valenciana': 5,
+  'volta-comunitat-valenciana': 5,
 };
 
 // Races that typically have a prologue
@@ -223,6 +224,20 @@ const KNOWN_SINGLE_DAY_PATTERNS: string[] = [
 // Classifications to exclude (youth, U23, women categories)
 const UNWANTED_CLASSIFICATIONS = ['MJ', 'MU', 'WJ', 'WU', 'WE', 'WWT'];
 
+const WOMEN_NAME_KEYWORDS = [
+  'WOMEN',
+  'WOMAN',
+  'FEMINA',
+  'FEMINAS',
+  'FEMENINA',
+  'FEMENINO',
+  'FEMME',
+  'FEMMES',
+  'DAMES',
+  'LADIES',
+  'FEMALE',
+];
+
 // Race slugs to explicitly exclude (women's races with incorrect classification, etc.)
 const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'vuelta-el-salvador', // Women's race incorrectly classified as 2.1
@@ -247,24 +262,39 @@ function shouldExcludeRace(name: string, classification: string | null, slug?: s
   }
 
   const cls = (classification || '').trim();
+  const nameUpper = name.toUpperCase();
+  const clsUpper = cls.toUpperCase();
+  const slugUpper = (slug || '').toUpperCase();
 
-  // Check if unwanted classification is in the race name
-  const hasUnwantedInName = UNWANTED_CLASSIFICATIONS.some(
-    unwanted => name.includes(unwanted) || name.includes(`${unwanted} -`)
-  );
+  const hasUnwantedClassToken = (value: string): boolean => {
+    return UNWANTED_CLASSIFICATIONS.some(code => {
+      const pattern = new RegExp(`(^|[^A-Z])${code}([^A-Z]|$)`);
+      return pattern.test(value);
+    });
+  };
+
+  // Check if unwanted classification is in the race name as a token
+  const hasUnwantedInName = hasUnwantedClassToken(nameUpper);
 
   // Check if unwanted classification is in the classification field
   const hasUnwantedInClassification = UNWANTED_CLASSIFICATIONS.some(
-    unwanted => cls.includes(unwanted)
+    unwanted => clsUpper.includes(unwanted)
   );
 
-  // Check for "women" in name
-  const hasWomenInName = name.toLowerCase().includes('women');
+  // Check for women keywords in name or slug
+  const hasWomenInName = WOMEN_NAME_KEYWORDS.some(keyword => nameUpper.includes(keyword));
+  const hasWomenInSlug = WOMEN_NAME_KEYWORDS.some(keyword => slugUpper.includes(keyword));
 
   // Check for WWT in classification
-  const hasWWTInClassification = cls.includes('WWT');
+  const hasWWTInClassification = clsUpper.includes('WWT');
 
-  return hasUnwantedInName || hasUnwantedInClassification || hasWomenInName || hasWWTInClassification;
+  return (
+    hasUnwantedInName ||
+    hasUnwantedInClassification ||
+    hasWomenInName ||
+    hasWomenInSlug ||
+    hasWWTInClassification
+  );
 }
 
 const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([

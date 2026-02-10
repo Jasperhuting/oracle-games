@@ -179,7 +179,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     return (
         <header 
             className="sticky w-full bg-white drop-shadow-header z-40 h-[86px] px-8"
-            style={{ top: `${getHeaderTop()}px` }}
+            style={{ top: `sm:${getHeaderTop()}px` }}
         >
             <div className="container mx-auto hidden md:block">
                 <div className="flex flex-1 justify-between py-2">
@@ -295,7 +295,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                         }
                                     }}
                                     className="fixed top-[86px] right-0 h-[calc(100vh-86px)] w-80 bg-white shadow-lg z-50 p-6 overflow-y-auto"
-                                    style={{ top: `${getHeaderTop() + 86}px` }}
+                                    style={{ top: `sm:${getHeaderTop() + 86}px` }}
                                 >
                                     <nav className="flex flex-col gap-4">
                                         {/* Menu Items */}

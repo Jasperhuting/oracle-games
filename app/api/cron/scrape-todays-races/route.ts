@@ -16,6 +16,71 @@ type ScrapeOutcome = {
   message: string;
 };
 
+// Classifications to exclude (youth, U23, women categories)
+const UNWANTED_CLASSIFICATIONS = ['MJ', 'MU', 'WJ', 'WU', 'WE', 'WWT'];
+
+const WOMEN_NAME_KEYWORDS = [
+  'WOMEN',
+  'WOMAN',
+  'FEMINA',
+  'FEMINAS',
+  'FEMENINA',
+  'FEMENINO',
+  'FEMME',
+  'FEMMES',
+  'DAMES',
+  'LADIES',
+  'FEMALE',
+];
+
+// Race slugs to explicitly exclude (women's races with incorrect classification, etc.)
+const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
+  'vuelta-el-salvador',
+  'trofeo-felanitx-femina',
+  'grand-prix-el-salvador',
+  'grand-prix-san-salvador',
+  'trofeo-palma-femina',
+  'trofeo-binissalem-andratx',
+  'race-torquay',
+  'grand-prix-de-oriente',
+  'pionera-race-we',
+]);
+
+/**
+ * Check if a race should be excluded based on classification, name, or slug
+ * Mirrors the logic from /api/admin/race-status
+ */
+function shouldExcludeRace(name: string, classification: string | null, slug?: string): boolean {
+  if (slug && EXCLUDED_RACE_SLUGS.has(slug)) {
+    return true;
+  }
+
+  const cls = (classification || '').trim();
+  const nameUpper = name.toUpperCase();
+  const clsUpper = cls.toUpperCase();
+  const slugUpper = (slug || '').toUpperCase();
+
+  const hasUnwantedInName = UNWANTED_CLASSIFICATIONS.some(
+    unwanted => nameUpper.includes(unwanted) || nameUpper.includes(`${unwanted} -`)
+  );
+
+  const hasUnwantedInClassification = UNWANTED_CLASSIFICATIONS.some(
+    unwanted => clsUpper.includes(unwanted)
+  );
+
+  const hasWomenInName = WOMEN_NAME_KEYWORDS.some(keyword => nameUpper.includes(keyword));
+  const hasWomenInSlug = WOMEN_NAME_KEYWORDS.some(keyword => slugUpper.includes(keyword));
+  const hasWWTInClassification = clsUpper.includes('WWT');
+
+  return (
+    hasUnwantedInName ||
+    hasUnwantedInClassification ||
+    hasWomenInName ||
+    hasWomenInSlug ||
+    hasWWTInClassification
+  );
+}
+
 const formatDateOnly = (date: Date): string =>
   date.toLocaleDateString('en-CA', { timeZone: TIME_ZONE });
 
@@ -45,6 +110,10 @@ export async function GET(request: NextRequest) {
   const dryRun = request.nextUrl.searchParams.get('dryRun') === 'true';
   const notifyOnly = request.nextUrl.searchParams.get('notifyOnly') === 'true';
   const todayStr = formatDateOnly(new Date());
+  const todayYear = Number(todayStr.split('-')[0]);
+  const targetDates = [0, 1, 2].map((offsetDays) =>
+    formatDateOnly(new Date(Date.now() - offsetDays * 86400000))
+  );
 
   const runStartedAt = Date.now();
 
@@ -52,20 +121,31 @@ export async function GET(request: NextRequest) {
     const db = getServerFirebase();
     const batchRef = db.collection('scrapeJobBatches').doc();
     const batchId = batchRef.id;
-    const racesSnapshot = await db.collection('races').get();
+    let racesSnapshot = await db.collection('races').where('year', '==', todayYear).get();
+    if (racesSnapshot.empty) {
+      racesSnapshot = await db.collection('races').get();
+    }
 
     const outcomes: ScrapeOutcome[] = [];
     const skipped: string[] = [];
     let queuedJobs = 0;
+    let stoppedEarly = false;
 
     for (const raceDoc of racesSnapshot.docs) {
       if (Date.now() - runStartedAt > MAX_RUN_MS) {
+        stoppedEarly = true;
         skipped.push('Stopped early due to time budget');
         break;
       }
       const raceData = raceDoc.data();
       const raceSlug = raceData.slug || raceDoc.id;
       const raceName = raceData.name || raceSlug;
+      const classification = raceData.classification || null;
+
+      if (shouldExcludeRace(raceName, classification, raceSlug)) {
+        skipped.push(`${raceSlug} (excluded by filters)`);
+        continue;
+      }
 
       const startDateRaw = raceData.startDate;
       const endDateRaw = raceData.endDate || raceData.startDate;
@@ -83,7 +163,9 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      if (todayStr < startStr || todayStr > endStr) {
+      const windowStart = targetDates[targetDates.length - 1];
+      const windowEnd = targetDates[0];
+      if (endStr < windowStart || startStr > windowEnd) {
         continue;
       }
 
@@ -91,46 +173,86 @@ export async function GET(request: NextRequest) {
 
       if (isSingleDay) {
         const year = raceData.year || new Date().getFullYear();
-        if (dryRun || notifyOnly) {
-          outcomes.push({
-            raceSlug,
-            raceName,
-            type: 'result',
-            success: true,
-            riderCount: 0,
-            message: notifyOnly ? 'NOTIFY-ONLY: skipped scrape (result)' : 'DRY-RUN: would queue result',
-          });
-          continue;
+        if (targetDates.some(dateStr => dateStr >= startStr && dateStr <= endStr)) {
+          if (dryRun || notifyOnly) {
+            outcomes.push({
+              raceSlug,
+              raceName,
+              type: 'result',
+              success: true,
+              riderCount: 0,
+              message: notifyOnly ? 'NOTIFY-ONLY: skipped scrape (result)' : 'DRY-RUN: would queue result',
+            });
+          } else {
+            await createJob({
+              type: 'scraper',
+              status: 'pending',
+              priority: 1,
+              progress: { current: 0, total: 1, percentage: 0 },
+              data: {
+                type: 'result',
+                race: raceSlug,
+                year,
+                batchId,
+                raceName,
+              },
+            });
+            queuedJobs++;
+            outcomes.push({
+              raceSlug,
+              raceName,
+              type: 'result',
+              success: true,
+              riderCount: 0,
+              message: 'Queued result scrape',
+            });
+          }
         }
-
-        await createJob({
-          type: 'scraper',
-          status: 'pending',
-          priority: 1,
-          progress: { current: 0, total: 1, percentage: 0 },
-          data: {
-            type: 'result',
-            race: raceSlug,
-            year,
-            batchId,
-            raceName,
-          },
-        });
-        queuedJobs++;
-        outcomes.push({
-          raceSlug,
-          raceName,
-          type: 'result',
-          success: true,
-          riderCount: 0,
-          message: 'Queued result scrape',
-        });
       } else {
-        const stageOffset = diffDays(startStr, todayStr);
-        const stageNumber = stageOffset + 1;
         const year = raceData.year || new Date().getFullYear();
 
-        if (dryRun || notifyOnly) {
+        for (const targetDate of targetDates) {
+          if (Date.now() - runStartedAt > MAX_RUN_MS) {
+            stoppedEarly = true;
+            skipped.push('Stopped early due to time budget');
+            break;
+          }
+
+          if (targetDate < startStr || targetDate > endStr) {
+            continue;
+          }
+
+          const stageOffset = diffDays(startStr, targetDate);
+          const stageNumber = stageOffset + 1;
+
+          if (dryRun || notifyOnly) {
+            outcomes.push({
+              raceSlug,
+              raceName,
+              type: 'stage',
+              stage: stageNumber,
+              success: true,
+              riderCount: 0,
+              message: notifyOnly ? `NOTIFY-ONLY: skipped scrape (stage ${stageNumber})` : `DRY-RUN: would queue stage ${stageNumber}`,
+            });
+            continue;
+          }
+
+          await createJob({
+            type: 'scraper',
+            status: 'pending',
+            priority: 1,
+            progress: { current: 0, total: 1, percentage: 0 },
+            data: {
+              type: 'stage',
+              race: raceSlug,
+              year,
+              stage: stageNumber,
+              batchId,
+              raceName,
+            },
+          });
+          queuedJobs++;
           outcomes.push({
             raceSlug,
             raceName,
@@ -138,35 +260,12 @@ export async function GET(request: NextRequest) {
             stage: stageNumber,
             success: true,
             riderCount: 0,
-            message: notifyOnly ? `NOTIFY-ONLY: skipped scrape (stage ${stageNumber})` : `DRY-RUN: would queue stage ${stageNumber}`,
+            message: `Queued stage ${stageNumber} scrape`,
           });
-          continue;
         }
-
-        await createJob({
-          type: 'scraper',
-          status: 'pending',
-          priority: 1,
-          progress: { current: 0, total: 1, percentage: 0 },
-          data: {
-            type: 'stage',
-            race: raceSlug,
-            year,
-            stage: stageNumber,
-            batchId,
-            raceName,
-          },
-        });
-        queuedJobs++;
-        outcomes.push({
-          raceSlug,
-          raceName,
-          type: 'stage',
-          stage: stageNumber,
-          success: true,
-          riderCount: 0,
-          message: `Queued stage ${stageNumber} scrape`,
-        });
+        if (stoppedEarly) {
+          break;
+        }
       }
     }
 
@@ -202,9 +301,10 @@ export async function GET(request: NextRequest) {
       '',
       summaryLines.length > 0 ? summaryLines.join('\n\n') : 'No races scheduled for today.',
       skipped.length > 0 ? `\n\n⚠️ Skipped:\n${skipped.slice(0, 10).join('\n')}` : '',
+      stoppedEarly ? '\n\n⚠️ Stopped early due to time budget.' : '',
     ].join('\n');
 
-    if (notifyOnly || dryRun || queuedJobs === 0) {
+    if (notifyOnly || dryRun || queuedJobs === 0 || stoppedEarly) {
       await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
     }
 
@@ -212,6 +312,7 @@ export async function GET(request: NextRequest) {
       success: true,
       date: todayStr,
       dryRun,
+      stoppedEarly,
       outcomes,
       skipped,
     });

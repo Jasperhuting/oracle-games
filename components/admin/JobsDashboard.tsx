@@ -43,6 +43,7 @@ export function JobsDashboard() {
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [batches, setBatches] = useState<BatchItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadJobs = async () => {
@@ -93,9 +94,37 @@ export function JobsDashboard() {
           <h2 className="text-2xl font-semibold">Jobs</h2>
           <p className="text-sm text-gray-500">Scrape batches en job queue status</p>
         </div>
-        <Button onClick={loadJobs} disabled={loading}>
-          {loading ? 'Loading...' : 'Refresh'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={async () => {
+              if (!user?.uid) return;
+              setCleaning(true);
+              setError(null);
+              try {
+                const response = await fetch('/api/admin/jobs', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: user.uid, action: 'cleanupExcluded' }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                  throw new Error(data.error || 'Failed to cleanup jobs');
+                }
+                await loadJobs();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to cleanup jobs');
+              } finally {
+                setCleaning(false);
+              }
+            }}
+            disabled={loading || cleaning}
+          >
+            {cleaning ? 'Cleaning...' : 'Cleanup excluded'}
+          </Button>
+          <Button onClick={loadJobs} disabled={loading || cleaning}>
+            {loading ? 'Loading...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       {error && (

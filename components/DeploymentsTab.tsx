@@ -74,6 +74,107 @@ export const DeploymentsTab = () => {
       .replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const formatDateKey = (value: Date) => {
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, '0');
+    const day = `${value.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const buildContributionGrid = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let earliest: Date | null = null;
+    deployments.forEach((deployment) => {
+      const date = new Date(deployment.timestamp);
+      if (Number.isNaN(date.getTime())) return;
+      date.setHours(0, 0, 0, 0);
+      if (!earliest || date < earliest) earliest = date;
+    });
+
+    const defaultStart = new Date(today);
+    defaultStart.setDate(defaultStart.getDate() - 364);
+    const start = earliest && earliest > defaultStart ? earliest : defaultStart;
+
+    const startWeek = new Date(start);
+    startWeek.setDate(startWeek.getDate() - startWeek.getDay());
+
+    const countsByDay = new Map<string, number>();
+    deployments.forEach((deployment) => {
+      const date = new Date(deployment.timestamp);
+      if (Number.isNaN(date.getTime())) return;
+      date.setHours(0, 0, 0, 0);
+      if (date < start || date > today) return;
+      const key = formatDateKey(date);
+      countsByDay.set(key, (countsByDay.get(key) || 0) + 1);
+    });
+
+    const allCounts = Array.from(countsByDay.values());
+    const maxCount = allCounts.length > 0 ? Math.max(...allCounts) : 0;
+
+    const getLevel = (count: number) => {
+      if (count <= 0) return 0;
+      if (maxCount <= 1) return 4;
+      const ratio = count / maxCount;
+      if (ratio <= 0.25) return 1;
+      if (ratio <= 0.5) return 2;
+      if (ratio <= 0.75) return 3;
+      return 4;
+    };
+
+    const weeks: { date: Date; count: number; level: number; inRange: boolean }[][] = [];
+    let cursor = new Date(startWeek);
+
+    while (cursor <= today) {
+      const week: { date: Date; count: number; level: number; inRange: boolean }[] = [];
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(cursor);
+        const inRange = day >= start && day <= today;
+        const key = formatDateKey(day);
+        const count = inRange ? countsByDay.get(key) || 0 : 0;
+        week.push({
+          date: day,
+          count,
+          level: inRange ? getLevel(count) : 0,
+          inRange,
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      weeks.push(week);
+    }
+
+    const monthLabels: string[] = [];
+    let lastMonth = '';
+    weeks.forEach((week) => {
+      const firstInRange = week.find(day => day.inRange);
+      if (!firstInRange) {
+        monthLabels.push('');
+        return;
+      }
+      const monthLabel = firstInRange.date.toLocaleString('en-US', { month: 'short' });
+      if (monthLabel !== lastMonth) {
+        monthLabels.push(monthLabel);
+        lastMonth = monthLabel;
+      } else {
+        monthLabels.push('');
+      }
+    });
+
+    const startPaddingDays = (start.getDay() + 6) % 7;
+    return { weeks, monthLabels, total: deployments.length, startPaddingDays };
+  };
+
+  const contributionGrid = buildContributionGrid();
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const levelClasses = [
+    'bg-gray-100 border border-gray-200',
+    'bg-green-100 border border-green-200',
+    'bg-green-300 border border-green-300',
+    'bg-green-500 border border-green-500',
+    'bg-green-700 border border-green-700',
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -100,6 +201,61 @@ export const DeploymentsTab = () => {
             <p className="text-sm text-gray-600">
               {deployments.length} deployment{deployments.length !== 1 ? 's' : ''}
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* GitHub-style contributions */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex flex-col gap-3">
+          <div className="text-sm text-gray-700">
+            <span className="font-semibold">{contributionGrid.total}</span> deployments in the last year
+          </div>
+          <div className="overflow-x-hidden">
+            <div className="w-fit">
+              <div
+                className="grid gap-1"
+                style={{
+                  gridTemplateColumns: `auto repeat(${contributionGrid.weeks.length}, 12px)`,
+                  gridTemplateRows: `16px repeat(7, 12px)`,
+                }}
+              >
+                <div className="text-xs text-gray-500" />
+                {contributionGrid.monthLabels.map((label, index) => (
+                  <div key={`month-${index}`} className="text-xs text-gray-500 h-4">
+                    {label}
+                  </div>
+                ))}
+                {dayLabels.map((label, rowIndex) => (
+                  <div key={`label-${label}`} className="text-xs text-gray-500 text-right pr-1">
+                    {label}
+                  </div>
+                ))}
+                {contributionGrid.weeks.map((week, weekIndex) =>
+                  week.map((day, rowIndex) => {
+                    const labelDate = day.date.toLocaleDateString('nl-NL');
+                    const title = day.inRange
+                      ? `${day.count} deployment${day.count !== 1 ? 's' : ''} on ${labelDate}`
+                      : '';
+                    return (
+                      <div
+                        key={`${weekIndex}-${labelDate}`}
+                        title={title}
+                        className={`h-3 w-3 rounded-sm ${day.inRange ? levelClasses[day.level] : 'bg-transparent'}`}
+                        style={{ gridColumn: weekIndex + 2, gridRow: rowIndex + 2 }}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 text-xs text-gray-500">
+            <span>Less</span>
+            {[0, 1, 2, 3, 4].map((level) => (
+              <span key={`legend-${level}`} className={`h-3 w-3 rounded-sm ${levelClasses[level]}`} />
+            ))}
+            <span>More</span>
           </div>
         </div>
       </div>

@@ -175,13 +175,13 @@ export const FeedbackTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">User Feedback</h2>
-          <div className="flex gap-2">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold">User Feedback</h2>
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 filter === 'all'
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -191,7 +191,7 @@ export const FeedbackTab = () => {
             </button>
             <button
               onClick={() => setFilter('new')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 filter === 'new'
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -201,7 +201,7 @@ export const FeedbackTab = () => {
             </button>
             <button
               onClick={() => setFilter('reviewed')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 filter === 'reviewed'
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -211,7 +211,7 @@ export const FeedbackTab = () => {
             </button>
             <button
               onClick={() => setFilter('resolved')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 filter === 'resolved'
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -231,23 +231,23 @@ export const FeedbackTab = () => {
             {filteredFeedback.map((item) => (
               <div
                 key={item.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+                className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:border-gray-300 transition-colors"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-medium text-gray-900">{item.userEmail}</p>
-                    <p className="text-sm text-gray-500 flex gap-2 items-center">
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start mb-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 text-sm sm:text-base break-words">{item.userEmail}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 flex flex-wrap gap-2 items-center">
                       {new Date(item.createdAt).toLocaleString()}
-                      <span title={item.currentPage} className="text-xs text-gray-500 cursor-pointer">Current Page</span>
+                      <span title={item.currentPage} className="text-[10px] sm:text-xs text-gray-500 cursor-pointer">Current Page</span>
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                  <span className={`self-start px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-medium ${getStatusColor(item.status)}`}>
                     {item.status || 'new'}
                   </span>
                 </div>
 
                 <div className="mb-4">
-                  <p className="text-gray-700 whitespace-pre-wrap">{item.message}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap text-sm sm:text-base">{item.message}</p>
                 </div>
 
                 {/* Admin Response Section */}
@@ -271,14 +271,14 @@ export const FeedbackTab = () => {
                     <textarea
                       value={replyText[item.id!] || ''}
                       onChange={(e) => setReplyText(prev => ({ ...prev, [item.id!]: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[90px] text-sm"
                       placeholder="Type your response..."
                     />
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex flex-wrap gap-2 mt-2">
                       <Button
                         text="Send Response"
                         onClick={() => submitReply(item.id!)}
-                        className="px-3 py-1 text-sm"
+                        className="px-3 py-1 text-xs sm:text-sm"
                         variant="primary"
                       />
                       <Button
@@ -287,19 +287,19 @@ export const FeedbackTab = () => {
                           setReplyingTo(null);
                           setReplyText(prev => ({ ...prev, [item.id!]: '' }));
                         }}
-                        className="px-3 py-1 text-sm"
+                        className="px-3 py-1 text-xs sm:text-sm"
                         variant="secondary"
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {item.status !== 'new' && (
                     <Button
                       text="Mark as New"
                       onClick={() => updateStatus(item.id!, 'new')}
-                      className="px-3 py-1 text-sm"
+                      className="px-3 py-1 text-xs sm:text-sm"
                       variant="secondary"
                       ghost
                     />
@@ -308,7 +308,7 @@ export const FeedbackTab = () => {
                     <Button
                       text="Mark as Reviewed"
                       onClick={() => updateStatus(item.id!, 'reviewed')}
-                      className="px-3 py-1 text-sm"
+                      className="px-3 py-1 text-xs sm:text-sm"
                       variant="secondary"
                       ghost
                     />
@@ -317,7 +317,7 @@ export const FeedbackTab = () => {
                     <Button
                       text="Mark as Resolved"
                       onClick={() => updateStatus(item.id!, 'resolved')}
-                      className="px-3 py-1 text-sm"
+                      className="px-3 py-1 text-xs sm:text-sm"
                       variant="success"
                       ghost
                     />
@@ -334,7 +334,7 @@ export const FeedbackTab = () => {
                           setReplyingTo(item.id!);
                         }
                       }}
-                      className="px-3 py-1 text-sm"
+                      className="px-3 py-1 text-xs sm:text-sm"
                       variant="primary"
                       ghost
                     />
@@ -343,7 +343,7 @@ export const FeedbackTab = () => {
                     <Button
                       text="Delete"
                       onClick={() => deleteFeedback(item.id!)}
-                      className="px-3 py-1 text-sm"
+                      className="px-3 py-1 text-xs sm:text-sm"
                       variant="danger"
                       ghost
                     />

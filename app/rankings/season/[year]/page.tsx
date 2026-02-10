@@ -202,6 +202,21 @@ export default function SeasonLeaderboardPage() {
     setExpandedRiders(newExpanded);
   };
 
+  const getRaceCount = (rider: any): number => {
+    if (rider?.pointsBreakdown && rider.pointsBreakdown.length > 0) {
+      const uniqueRaces = new Set(
+        rider.pointsBreakdown
+          .map((entry: any) => entry?.raceSlug)
+          .filter(Boolean)
+      );
+      return uniqueRaces.size;
+    }
+    if (rider?.racePoints && Object.keys(rider.racePoints).length > 0) {
+      return Object.keys(rider.racePoints).length;
+    }
+    return 0;
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50">
@@ -366,6 +381,12 @@ export default function SeasonLeaderboardPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Renner
                       </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Team
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                        Wedstrijden
+                      </th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Spelers
                       </th>
@@ -407,6 +428,7 @@ export default function SeasonLeaderboardPage() {
                       const hasPointsBreakdown = rider.pointsBreakdown && rider.pointsBreakdown.length > 0;
                       const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
                       const hasPointsData = hasPointsBreakdown || hasRacePoints;
+                      const raceCount = getRaceCount(rider);
 
                       return (
                         <React.Fragment key={`${rider.riderNameId}_${rider.id || 'no-id'}`}>
@@ -456,6 +478,12 @@ export default function SeasonLeaderboardPage() {
                                   </svg>
                                 </div>
                               )}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-700 max-w-[180px] truncate" title={rider.riderTeam || '-'}>
+                              {rider.riderTeam || '-'}
+                            </td>
+                            <td className="px-4 py-4 text-center text-sm text-gray-700">
+                              {raceCount > 0 ? raceCount : '-'}
                             </td>
                             <td className="px-4 py-4 text-center">
                               <div className="flex items-center justify-center gap-1">

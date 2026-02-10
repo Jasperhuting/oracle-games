@@ -94,7 +94,7 @@ export default function AdminPageClient() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen p-8 mt-[36px] bg-gray-50">
+        <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
             <div className="container mx-auto">
 
 

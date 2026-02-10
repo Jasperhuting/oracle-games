@@ -380,25 +380,25 @@ export const UserList = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Gebruiker
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   E-mail
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Auth Methode
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Laatste Login
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aangemaakt
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acties
                 </th>
               </tr>
@@ -406,42 +406,45 @@ export const UserList = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-3 py-3 sm:px-6 sm:py-4 text-center text-xs sm:text-sm text-gray-500">
                     Geen gebruikers gevonden
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
                   <tr key={user.uid} className={`hover:bg-gray-50 transition-colors ${user.deletedAt ? 'bg-gray-100 opacity-60' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 sm:px-6 sm:py-4">
                       <div className="flex flex-col">
-                        <div className="flex flex-col items-start gap-2">
-                          <div className="text-sm font-medium text-gray-900">
+                        <div className="flex flex-col items-start gap-1 sm:gap-2">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
                             <Link href={`/user/${user.uid}`}>{user.playername}</Link>
                           </div>
+                          <div className="text-[10px] text-gray-500 sm:hidden truncate max-w-[180px]">
+                            {user.email}
+                          </div>
                           {user.deletedAt && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-500 text-white">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium bg-gray-500 text-white">
                               Verwijderd
                             </span>
                           )}
                         </div>
                         {(user.firstName || user.lastName) && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] sm:text-xs text-gray-500">
                             {[user.firstName, user.lastName].filter(Boolean).join(' ')}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
+                    <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">{user.email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
                       {isAdmin ? (
                         <select
                           value={user.userType}
                           onChange={(e) => confirmChangeUserType(user.uid, user.userType, e.target.value)}
                           disabled={changingUserTypeId === user.uid || user.userType === 'admin'}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             user.userType === 'admin'
                               ? 'bg-primary text-white cursor-not-allowed'
                               : 'bg-blue-100 text-blue-800 cursor-pointer'
@@ -451,7 +454,7 @@ export const UserList = () => {
                           <option value="admin">admin</option>
                         </select>
                       ) : (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center px-2 py-0.5 sm:px-2.5 rounded-full text-[10px] sm:text-xs font-medium ${
                           user.userType === 'admin'
                             ? 'bg-primary text-white'
                             : 'bg-blue-100 text-blue-800'
@@ -460,26 +463,26 @@ export const UserList = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         {user.lastLoginMethod || user.authMethod || 'N/A'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
+                    <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         {formatDate(user.lastLoginAt?.toDate().toISOString() || '')}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
+                    <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         {formatDate(user.createdAt?.toDate().toISOString() || '')}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-2">
+                    <td className="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
+                      <div className="flex gap-1 sm:gap-2">
                         {!user.deletedAt && (
                           <Button
-                            className="py-1 px-3 text-sm cursor-pointer"
+                            className="py-1 px-2 text-xs sm:py-1 sm:px-3 sm:text-sm cursor-pointer"
                             ghost
                             text={impersonatingUserId === user.uid ? "..." : "Impersonate"}
                             onClick={() => impersonateUser(user.uid)}
@@ -488,14 +491,14 @@ export const UserList = () => {
                         )}
                         {user.deletedAt ? (
                           <Button
-                            className="py-1 px-3 text-sm bg-green-600 hover:bg-green-700 cursor-pointer"
+                            className="py-1 px-2 text-xs sm:py-1 sm:px-3 sm:text-sm bg-green-600 hover:bg-green-700 cursor-pointer"
                             text={deletingUserId === user.uid ? "busy..." : "Restore"}
                             onClick={() => confirmRestoreUser(user.uid)}
                             disabled={deletingUserId === user.uid}
                           />
                         ) : (
                           <Button
-                            className="py-1 px-3 text-sm bg-gray-600 hover:bg-gray-700 cursor-pointer"
+                            className="py-1 px-2 text-xs sm:py-1 sm:px-3 sm:text-sm bg-gray-600 hover:bg-gray-700 cursor-pointer"
                             text={deletingUserId === user.uid ? "busy..." : "Delete"}
                             onClick={() => confirmDeleteUser(user.uid)}
                             disabled={deletingUserId === user.uid}

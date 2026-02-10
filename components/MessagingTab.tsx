@@ -292,16 +292,16 @@ export default function MessagingTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold mb-6">Send Message</h2>
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Send Message</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Message Type Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Message Type
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={() => {
@@ -309,14 +309,14 @@ export default function MessagingTab() {
                   setSelectedGameId('');
                   setSelectedDivision('');
                 }}
-                className={`flex items-center justify-center cursor-pointer gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`flex items-center justify-center cursor-pointer gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-lg border-2 transition-colors ${
                   messageType === 'broadcast'
                     ? 'border-primary bg-primary text-white'
                     : 'border-gray-300 hover:border-primary'
                 }`}
               >
-                <Users className="w-5 h-5" />
-                <span>Broadcast to All</span>
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Broadcast to All</span>
               </button>
               <button
                 type="button"
@@ -325,14 +325,14 @@ export default function MessagingTab() {
                   setSelectedGameId('');
                   setSelectedDivision('');
                 }}
-                className={`flex items-center justify-center cursor-pointer gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`flex items-center justify-center cursor-pointer gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-lg border-2 transition-colors ${
                   messageType === 'individual'
                     ? 'border-primary bg-primary text-white'
                     : 'border-gray-300 hover:border-primary'
                 }`}
               >
-                <User className="w-5 h-5" />
-                <span>Individual User</span>
+                <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Individual User</span>
               </button>
               <button
                 type="button"
@@ -341,14 +341,14 @@ export default function MessagingTab() {
                   setSelectedUserId('');
                   setSelectedDivision('');
                 }}
-                className={`flex items-center justify-center cursor-pointer gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`flex items-center justify-center cursor-pointer gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-lg border-2 transition-colors ${
                   messageType === 'game'
                     ? 'border-primary bg-primary text-white'
                     : 'border-gray-300 hover:border-primary'
                 }`}
               >
-                <Trophy className="w-5 h-5" />
-                <span>Game Participants</span>
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Game Participants</span>
               </button>
               <button
                 type="button"
@@ -356,14 +356,14 @@ export default function MessagingTab() {
                   setMessageType('game_division');
                   setSelectedUserId('');
                 }}
-                className={`flex items-center justify-center cursor-pointer gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`flex items-center justify-center cursor-pointer gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-lg border-2 transition-colors ${
                   messageType === 'game_division'
                     ? 'border-primary bg-primary text-white'
                     : 'border-gray-300 hover:border-primary'
                 }`}
               >
-                <Trophy className="w-5 h-5" />
-                <span>Division Participants</span>
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Division Participants</span>
               </button>
             </div>
           </div>
@@ -371,13 +371,13 @@ export default function MessagingTab() {
           {/* Recipient Selection (for individual messages) */}
           {messageType === 'individual' && (
             <div>
-              <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="recipient" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Select Recipient
               </label>
               <div ref={searchInputRef} className="relative">
                 {/* Display selected user or search input */}
                 {selectedUserId ? (
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between">
+                  <div className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg bg-white flex items-center justify-between">
                     <span className="text-gray-900">{selectedUserDisplay}</span>
                     <button
                       type="button"
@@ -390,7 +390,7 @@ export default function MessagingTab() {
                   </div>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     <input
                       type="text"
                       value={searchQuery}
@@ -400,7 +400,7 @@ export default function MessagingTab() {
                       }}
                       onFocus={() => setShowDropdown(true)}
                       placeholder="Search users by name or email..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                     />
                   </div>
                 )}
@@ -443,16 +443,16 @@ export default function MessagingTab() {
           {/* Game Selection (for game and game_division messages) */}
           {(messageType === 'game' || messageType === 'game_division') && (
             <div>
-              <label htmlFor="game" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="game" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Select Game
               </label>
               <div ref={gameSearchInputRef} className="relative">
                 {/* Display selected game or search input */}
                 {selectedGameId ? (
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white flex items-center justify-between">
+                  <div className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg bg-white flex items-center justify-between">
                     <div>
                       <span className="text-gray-900">{selectedGameDisplay}</span>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         {selectedGame?.playerCount} participant{selectedGame?.playerCount !== 1 ? 's' : ''}
                         {messageType === 'game_division' && selectedDivision && ` • ${selectedDivision}`}
                       </div>
@@ -468,7 +468,7 @@ export default function MessagingTab() {
                   </div>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     <input
                       type="text"
                       value={gameSearchQuery}
@@ -478,7 +478,7 @@ export default function MessagingTab() {
                       }}
                       onFocus={() => setShowGameDropdown(true)}
                       placeholder="Search games by name..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full pl-9 sm:pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                     />
                   </div>
                 )}
@@ -521,14 +521,14 @@ export default function MessagingTab() {
           {/* Division Selection (for game_division messages) */}
           {messageType === 'game_division' && selectedGameId && selectedGameDivisions.length > 0 && (
             <div>
-              <label htmlFor="division" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="division" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                 Select Division
               </label>
               <select
                 id="division"
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                 required
               >
                 <option value="">Choose a division...</option>
@@ -543,7 +543,7 @@ export default function MessagingTab() {
 
           {/* Subject */}
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="subject" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Subject
             </label>
             <input
@@ -551,7 +551,7 @@ export default function MessagingTab() {
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               placeholder="Enter message subject"
               required
             />
@@ -559,15 +559,15 @@ export default function MessagingTab() {
 
           {/* Message */}
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="message" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Message
             </label>
             <textarea
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={8}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              rows={6}
+              className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
               placeholder="Enter your message"
               required
             />
@@ -590,9 +590,9 @@ export default function MessagingTab() {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 cursor-pointer bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 cursor-pointer bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>{loading ? 'Sending...' : 'Send Message'}</span>
             </button>
           </div>
@@ -601,8 +601,8 @@ export default function MessagingTab() {
 
       {/* Info Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">About Messaging</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
+        <h3 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">About Messaging</h3>
+        <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
           <li>• <strong>Broadcast to All:</strong> Sends the message to all registered users</li>
           <li>• <strong>Individual User:</strong> Sends the message to a specific user</li>
           <li>• <strong>Game Participants:</strong> Sends the message to all participants of a selected game</li>
