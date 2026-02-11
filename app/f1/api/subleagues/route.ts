@@ -265,8 +265,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // If creator and only member, delete the subLeague
-    if (subLeague.createdBy === userId && subLeague.memberIds.length === 1) {
+    // If creator, delete the subLeague
+    if (subLeague.createdBy === userId) {
       await docRef.delete();
       return NextResponse.json({ success: true, data: { deleted: true } });
     }

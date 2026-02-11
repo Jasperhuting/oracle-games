@@ -137,7 +137,7 @@ export function SlipstreamRacePicker({
         </span>
       </div>
 
-      <div className="space-y-2 max-h-[300px] overflow-y-auto overflow-x-hidden">
+      <div className="space-y-2 max-h-[min(520px,55vh)] overflow-y-auto overflow-x-hidden">
         {filteredRaces.length === 0 ? (
           <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
             {filter === 'needs_pick' ? 'All races have picks! 🎉' : 'No races found'}

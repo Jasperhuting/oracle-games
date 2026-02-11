@@ -143,12 +143,14 @@ export async function POST(
 
     let pickId: string | null = null;
     let previousRiderId: string | null = null;
+    let previousRiderName: string | null = null;
 
     if (!existingPickSnapshot.empty) {
       // Update existing pick
       pickId = existingPickSnapshot.docs[0].id;
       const existingPick = existingPickSnapshot.docs[0].data();
       previousRiderId = existingPick.riderId || null;
+      previousRiderName = existingPick.riderName || null;
 
       if (clearPick) {
         // Delete existing pick
@@ -234,17 +236,24 @@ export async function POST(
     });
 
     // 9. Log the activity
+    const activityDetails: Record<string, unknown> = {
+      raceSlug,
+      isUpdate: !existingPickSnapshot.empty,
+      previousRiderId,
+    };
+    if (clearPick) {
+      activityDetails.clearedRiderId = previousRiderId;
+      activityDetails.clearedRiderName = previousRiderName;
+    } else {
+      activityDetails.riderId = riderId;
+      activityDetails.riderName = riderName;
+    }
+
     await db.collection('activityLogs').add({
       action: 'SLIPSTREAM_PICK',
       userId,
       gameId,
-      details: {
-        raceSlug,
-        riderId,
-        riderName,
-        isUpdate: !existingPickSnapshot.empty,
-        previousRiderId
-      },
+      details: activityDetails,
       timestamp: Timestamp.now(),
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown'

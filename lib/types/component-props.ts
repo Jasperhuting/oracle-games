@@ -51,6 +51,8 @@ export interface SelectorProps<T> {
   showCheckboxes?: boolean;
   getItemLabel?: (item: T) => string;
   sortKey?: (item: T) => string;
+  showClearButton?: boolean;
+  clearButtonLabel?: string;
 }
 
 export interface RowProps<T> {

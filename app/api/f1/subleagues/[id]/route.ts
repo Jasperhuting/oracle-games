@@ -404,3 +404,49 @@ export async function POST(
     );
   }
 }
+
+// DELETE /api/f1/subleagues/[id] - Delete sub-league (creator only)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userId = await getCurrentUserId(request);
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const docRef = f1Db.collection(F1_COLLECTIONS.SUB_LEAGUES).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return NextResponse.json(
+        { success: false, error: 'Poule niet gevonden' },
+        { status: 404 }
+      );
+    }
+
+    const subLeague = doc.data() as F1SubLeague;
+
+    if (subLeague.createdBy !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Je bent niet de beheerder van deze poule' },
+        { status: 403 }
+      );
+    }
+
+    await docRef.delete();
+
+    return NextResponse.json({ success: true, data: { deleted: true } });
+  } catch (error) {
+    console.error('Error deleting sub-league:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete sub-league' },
+      { status: 500 }
+    );
+  }
+}

@@ -95,6 +95,7 @@ export default function SlipstreamPage() {
 
   const selectedRace = calendar.find(r => r.raceSlug === selectedRaceSlug);
   const canMakePick = selectedRace && !selectedRace.deadlinePassed && selectedRace.status === 'upcoming';
+  const hasDraftSelection = !!selectedRaceSlug && Object.prototype.hasOwnProperty.call(draftSelections, selectedRaceSlug);
 
   const fetchData = useCallback(async () => {
     if (!gameId) return;
@@ -255,6 +256,7 @@ export default function SlipstreamPage() {
     setSubmitting(true);
     setError(null);
     setSuccessMessage(null);
+    const hadPick = !!selectedRace?.userPick;
 
     try {
       const response = await fetch(`/api/games/${gameId}/slipstream/pick`, {
@@ -271,13 +273,18 @@ export default function SlipstreamPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit pick');
+        const details = data.details ? ` (${data.details})` : '';
+        throw new Error((data.error || 'Failed to submit pick') + details);
       }
 
       setSuccessMessage(data.message || 'Pick submitted successfully!');
       
       if (data.usedRiders) {
-        setParticipantData(prev => prev ? { ...prev, usedRiders: data.usedRiders } : null);
+        setParticipantData(prev => prev ? { 
+          ...prev, 
+          usedRiders: data.usedRiders,
+          picksCount: hadPick ? prev.picksCount : prev.picksCount + 1
+        } : null);
       }
 
       if (selectedRaceSlug) {
@@ -288,7 +295,13 @@ export default function SlipstreamPage() {
         });
       }
 
-      await fetchData();
+      if (selectedRaceSlug) {
+        setCalendar(prev => prev.map(race => (
+          race.raceSlug === selectedRaceSlug
+            ? { ...race, userPick: data.pick || null }
+            : race
+        )));
+      }
 
     } catch (err) {
       console.error('Error submitting pick:', err);
@@ -304,6 +317,7 @@ export default function SlipstreamPage() {
     setSubmitting(true);
     setError(null);
     setSuccessMessage(null);
+    const hadPick = !!selectedRace?.userPick;
 
     try {
       const response = await fetch(`/api/games/${gameId}/slipstream/pick`, {
@@ -319,13 +333,18 @@ export default function SlipstreamPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to clear pick');
+        const details = data.details ? ` (${data.details})` : '';
+        throw new Error((data.error || 'Failed to clear pick') + details);
       }
 
       setSuccessMessage(data.message || 'Pick cleared successfully!');
 
       if (data.usedRiders) {
-        setParticipantData(prev => prev ? { ...prev, usedRiders: data.usedRiders } : null);
+        setParticipantData(prev => prev ? { 
+          ...prev, 
+          usedRiders: data.usedRiders,
+          picksCount: hadPick ? Math.max(0, prev.picksCount - 1) : prev.picksCount
+        } : null);
       }
 
       if (selectedRaceSlug) {
@@ -336,13 +355,31 @@ export default function SlipstreamPage() {
         });
       }
 
-      await fetchData();
+      if (selectedRaceSlug) {
+        setCalendar(prev => prev.map(race => (
+          race.raceSlug === selectedRaceSlug
+            ? { ...race, userPick: null }
+            : race
+        )));
+      }
     } catch (err) {
       console.error('Error clearing pick:', err);
       setError(err instanceof Error ? err.message : 'Failed to clear pick');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCancelSelection = () => {
+    if (!selectedRaceSlug) return;
+    setDraftSelections(prev => {
+      if (!Object.prototype.hasOwnProperty.call(prev, selectedRaceSlug)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[selectedRaceSlug];
+      return next;
+    });
   };
 
   if (authLoading || loading) {
@@ -381,13 +418,28 @@ export default function SlipstreamPage() {
           </div>
         )}
 
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-            {successMessage}
-          </div>
-        )}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+          {successMessage}
+        </div>
+      )}
+      <style jsx>{`
+        .pick-actions {
+          container-type: inline-size;
+        }
+        @container (min-width: 360px) {
+          .pick-actions-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @container (min-width: 520px) {
+          .pick-actions-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+      `}</style>
 
-        {/* Your Stats - Moved to top as horizontal bar */}
+        {/* Your Stats - horizontal bar above layout */}
         {participantData && (
           <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <h2 className="text-lg font-semibold mb-3">Your Stats</h2>
@@ -450,44 +502,61 @@ export default function SlipstreamPage() {
               
               {selectedRace && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3">
                     <div className="text-sm text-gray-600">
                       {selectedRace.userPick ? (
-                        <span>
-                          Current pick: <strong>{selectedRace.userPick.riderName}</strong>
-                          {selectedRace.userPick.locked && ' (locked)'}
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 text-green-700">
+                          Huidige pick: <strong className="text-green-800">{selectedRace.userPick.riderName}</strong>
+                          {selectedRace.userPick.locked && <span className="text-xs text-green-600">(locked)</span>}
                         </span>
                       ) : (
-                        <span className="text-orange-600">No pick yet for this race</span>
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 text-orange-700">
+                          Geen pick voor deze race
+                        </span>
                       )}
                     </div>
                     
                     {canMakePick && (
-                      <div className="flex items-center gap-2">
+                      <div className="pick-actions">
+                        <div className="pick-actions-grid grid grid-cols-1 gap-2">
+                        {hasDraftSelection && (
+                          <button
+                            onClick={handleCancelSelection}
+                            disabled={submitting}
+                            className={`w-full px-3 py-2 rounded-lg font-medium transition-colors ${
+                              !submitting
+                                ? 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            }`}
+                          >
+                            Annuleren
+                          </button>
+                        )}
                         {selectedRace.userPick && (
                           <button
                             onClick={handleClearPick}
                             disabled={submitting}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
                               !submitting
-                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                ? 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
                           >
-                            {submitting ? 'Submitting...' : 'Remove Pick'}
+                            {submitting ? 'Bezig...' : 'Pick verwijderen'}
                           </button>
                         )}
                         <button
                           onClick={handleSubmitPick}
                           disabled={!selectedRider || submitting}
-                          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                          className={`w-full px-6 py-2 rounded-lg font-medium transition-colors ${
                             selectedRider && !submitting
                               ? 'bg-blue-500 text-white hover:bg-blue-600'
                               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           }`}
                         >
-                          {submitting ? 'Submitting...' : selectedRace.userPick ? 'Update Pick' : 'Submit Pick'}
+                          {submitting ? 'Bezig...' : selectedRace.userPick ? 'Pick bijwerken' : 'Pick indienen'}
                         </button>
+                        </div>
                       </div>
                     )}
                   </div>

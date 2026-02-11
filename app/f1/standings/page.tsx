@@ -501,6 +501,59 @@ const StandingsPage = () => {
         }
     };
 
+    const handleDeletePoule = async () => {
+        if (!managingSubLeague) return;
+        if (user?.uid !== managingSubLeague.createdBy) return;
+        if (!confirm(`Weet je zeker dat je de poule "${managingSubLeague.name}" wilt verwijderen? Dit kan niet ongedaan worden.`)) return;
+
+        setActionLoading(true);
+        setActionMessage(null);
+
+        try {
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
+                return;
+            }
+
+            const response = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                },
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                setActionMessage({ type: 'success', text: 'Poule verwijderd' });
+                if (selectedSubpoule === managingSubLeague.id) {
+                    handleSubpouleChange(null);
+                }
+                setManagingSubLeague(null);
+                // Refresh lists (public browse + page state)
+                if (showBrowseModal) {
+                    try {
+                        const refreshRes = await fetch('/api/f1/subleagues?public=true');
+                        const refreshData = await refreshRes.json();
+                        if (refreshData.success) {
+                            setPublicSubLeagues(refreshData.data);
+                        }
+                    } catch {
+                        // No-op: keep existing public list
+                    }
+                }
+                router.refresh();
+            } else {
+                setActionMessage({ type: 'error', text: data.error || 'Verwijderen mislukt' });
+            }
+        } catch {
+            setActionMessage({ type: 'error', text: 'Netwerkfout' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 5000);
+        }
+    };
+
     // Fetch prediction when player is selected
     const handleViewPrediction = async (player: Player) => {
         setSelectedPlayer(player);
@@ -1462,6 +1515,15 @@ const StandingsPage = () => {
                             </div>
                         </div>
 
+                        {user?.uid === managingSubLeague.createdBy && (
+                            <button
+                                onClick={handleDeletePoule}
+                                disabled={actionLoading}
+                                className="w-full mb-3 px-4 py-3 bg-red-700 hover:bg-red-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                                Poule verwijderen
+                            </button>
+                        )}
                         <button
                             onClick={() => setManagingSubLeague(null)}
                             className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"

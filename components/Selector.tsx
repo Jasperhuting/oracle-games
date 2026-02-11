@@ -1,6 +1,6 @@
 'use client'
 import { useDebounce } from "@uidotdev/usehooks";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { SelectorProps } from "@/lib/types/component-props";
 
 export function Selector<T>({
@@ -19,12 +19,16 @@ export function Selector<T>({
     showSelected = true,
     showCheckboxes = true,
     getItemLabel,
-    sortKey
+    sortKey,
+    showClearButton = true,
+    clearButtonLabel
 }: SelectorProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isFocused, setIsFocused] = useState(false);
+    const [openUpward, setOpenUpward] = useState(false);
     const [storedItems, setStoredItems] = useState<T[] | null>(null);
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
+    const containerRef = useRef<HTMLDivElement>(null);
     
     // Load items from localStorage once on mount
     useEffect(() => {
@@ -90,8 +94,29 @@ export function Selector<T>({
         return placeholder;
     };
 
+    useEffect(() => {
+        if (!isFocused) return;
+
+        const updatePosition = () => {
+            if (!containerRef.current || typeof window === 'undefined') return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const shouldOpenUp = spaceBelow < 280 && spaceAbove > spaceBelow;
+            setOpenUpward(shouldOpenUp);
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [isFocused]);
+
     return (
-        <div className="relative">
+        <div className="relative" ref={containerRef}>
             <div className="flex items-center gap-2">
                 <input
                     className={`h-[40px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'}`}
@@ -102,13 +127,13 @@ export function Selector<T>({
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                 />
-                {selectedItems.length > 0 && (
+                {showClearButton && selectedItems.length > 0 && (
                     <button
                         onClick={clearAll}
                         className="h-[40px] px-3 bg-red-500 cursor-pointer text-white rounded hover:bg-red-600 whitespace-nowrap"
                         title="Clear selection"
                     >
-                        ✕ Clear ({selectedItems.length})
+                        {clearButtonLabel || `✕ Clear (${selectedItems.length})`}
                     </button>
                 )}
             </div>
@@ -149,8 +174,8 @@ export function Selector<T>({
                 const sortedSelected = sortItems(allSelectedItems);
                 
                 return (
-                    <div className="absolute top-[44px] left-0 right-0 bg-white border border-solid border-gray-200 rounded-md shadow-lg z-50">
-                        <div className="max-h-[400px] overflow-x-hidden overflow-y-auto">
+                    <div className={`absolute ${openUpward ? 'bottom-[44px]' : 'top-[44px]'} left-0 right-0 bg-white border border-solid border-gray-200 rounded-md shadow-lg z-50`}>
+                        <div className="max-h-[60vh] overflow-x-hidden overflow-y-auto">
                             {/* Available group */}
                             {sortedAvailable.length > 0 && (
                                 <>

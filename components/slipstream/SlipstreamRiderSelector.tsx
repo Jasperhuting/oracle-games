@@ -161,34 +161,60 @@ export function SlipstreamRiderSelector({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600">
-          {availableRiders.length} riders available ({usedRiderIds.length} already used)
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-xs text-gray-600">
+        <span className="px-2 py-1 rounded-full bg-gray-100">
+          {availableRiders.length} beschikbaar
+        </span>
+        <span className="px-2 py-1 rounded-full bg-gray-100">
+          {usedRiderIds.length} gebruikt
         </span>
       </div>
 
       {/* Team Filter */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Filter by Team</label>
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Team</label>
         <TeamSelector
           selectedTeams={selectedTeams}
           setSelectedTeams={handleTeamFilterChange}
           multiSelect={false}
           showSelected={false}
-          placeholder="Filter on teams..."
+          placeholder="Filter op team..."
           showRiderCounts={true}
           teamRiderCounts={teamRiderCounts}
         />
       </div>
+
+      {selectedItems[0] && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-gray-900 truncate">
+              {selectedItems[0].name}
+            </div>
+            <div className="text-xs text-gray-600 truncate">
+              {getRiderTeamDisplay(selectedItems[0]) || 'Onbekend team'}
+            </div>
+          </div>
+          <button
+            onClick={() => handleSelect([])}
+            className="text-xs font-medium text-red-600 hover:text-red-700"
+          >
+            Verwijder
+          </button>
+        </div>
+      )}
       
       <Selector<Rider>
         items={availableRiders}
         selectedItems={selectedItems}
         setSelectedItems={handleSelect}
         multiSelect={false}
-        placeholder="Search for a rider..."
+        placeholder="Zoek een renner..."
         getItemLabel={(rider) => rider.name || ''}
+        showSelected={false}
+        showCheckboxes={false}
+        showClearButton={false}
+        initialResultsLimit={200}
         searchFilter={(rider, searchTerm) => {
           const normalizedSearch = normalizeString(searchTerm);
           const lowerSearch = searchTerm.toLowerCase();
@@ -229,9 +255,9 @@ export function SlipstreamRiderSelector({
       />
 
       {usedRiderIds.length > 0 && (
-        <details className="text-sm">
+        <details className="text-xs">
           <summary className="cursor-pointer text-gray-500 hover:text-gray-700">
-            Show used riders ({usedRiderIds.length})
+            Toon gebruikte renners ({usedRiderIds.length})
           </summary>
           <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 max-h-32 overflow-y-auto">
             {usedRiderIds.map((id, i) => {
