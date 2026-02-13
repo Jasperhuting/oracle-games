@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
@@ -23,14 +23,13 @@ interface Standing {
   totalPercentageDiff?: number;
   totalSpent?: number;
   riders?: Array<{ pointsScored?: number; pricePaid?: number }>;
-  eligibleForPrizes?: boolean;
 }
 
 const columnHelper = createColumnHelper<Standing>();
 
 export default function StandingsPage() {
   const params = useParams();
-  const { user } = useAuth();
+  useAuth();
   const gameId = params?.gameId as string;
 
   const [standings, setStandings] = useState<Standing[]>([]);
@@ -40,194 +39,122 @@ export default function StandingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [updatingPrizeEligibility, setUpdatingPrizeEligibility] = useState<Record<string, boolean>>({});
-
-  const showPrizeEligibility = isAdmin && gameType === 'full-grid';
-
-  const togglePrizeEligibility = useCallback(async (participantId: string, nextValue: boolean) => {
-    if (!user) return;
-
-    setUpdatingPrizeEligibility(prev => ({ ...prev, [participantId]: true }));
-
-    try {
-      const response = await fetch(`/api/gameParticipants/${participantId}/prize-eligibility`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          userId: user.uid,
-        },
-        body: JSON.stringify({ eligibleForPrizes: nextValue }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update prize eligibility');
-      }
-
-      setStandings(prev => prev.map(row => (
-        row.participantId === participantId
-          ? { ...row, eligibleForPrizes: nextValue }
-          : row
-      )));
-    } catch (err) {
-      console.error('Error updating prize eligibility:', err);
-    } finally {
-      setUpdatingPrizeEligibility(prev => {
-        const next = { ...prev };
-        delete next[participantId];
-        return next;
-      });
-    }
-  }, [user]);
 
   const columns = useMemo(
-    () => {
-      const baseColumns = [
-        columnHelper.accessor('ranking', {
-          header: '#',
-          cell: (info) => {
-            const ranking = info.getValue();
-            return (
-              <span
-                className={`font-bold ${
-                  ranking === 1
-                    ? 'text-yellow-500'
-                    : ranking === 2
-                    ? 'text-gray-400'
-                    : ranking === 3
-                    ? 'text-amber-600'
-                    : 'text-gray-500'
-                }`}
-              >
-                {ranking}
-              </span>
-            );
-          },
-          size: 60,
-        }),
-        columnHelper.accessor('playername', {
-          header: 'Speler',
-          cell: (info) => (
-            <Link
-              href={`/games/${gameId}/team/${info.row.original.participantId}`}
-              className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
+    () => [
+      columnHelper.accessor('ranking', {
+        header: '#',
+        cell: (info) => {
+          const ranking = info.getValue();
+          return (
+            <span
+              className={`font-bold ${
+                ranking === 1
+                  ? 'text-yellow-500'
+                  : ranking === 2
+                  ? 'text-gray-400'
+                  : ranking === 3
+                  ? 'text-amber-600'
+                  : 'text-gray-500'
+              }`}
             >
-              {info.getValue()}
-            </Link>
-          ),
-        }),
-        columnHelper.accessor(
-          (row) => (row.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0),
-          {
-            id: 'achievedPoints',
-            header: 'Behaalde punten',
-            cell: (info) => (
-              <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
-            ),
-            size: 140,
-          }
+              {ranking}
+            </span>
+          );
+        },
+        size: 60,
+      }),
+      columnHelper.accessor('playername', {
+        header: 'Speler',
+        cell: (info) => (
+          <Link
+            href={`/games/${gameId}/team/${info.row.original.participantId}`}
+            className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
+          >
+            {info.getValue()}
+          </Link>
         ),
-        columnHelper.accessor(
-          (row) => {
-            if (gameType === 'marginal-gains') {
-              const pricePaid = row.totalSpent ?? 0;
-              if (pricePaid <= 0) return undefined;
-
-              const pointsScored = (row.riders ?? []).reduce(
-                (sum, rider) => sum + (rider?.pointsScored || 0),
-                0
-              );
-              const marginalGainsValue = pointsScored - pricePaid;
-              return (marginalGainsValue / pricePaid) * 100;
-            }
-
-            return row.totalPercentageDiff;
-          },
-          {
-            id: 'percentage',
-            header: () => (
-              <span
-                data-tooltip-id="standings-percentage-tooltip"
-                data-tooltip-content={
-                  gameType === 'marginal-gains'
-                    ? 'Berekening: ((punten - betaald) / betaald) × 100'
-                    : 'Berekening: ((betaald - waarde) / waarde) × 100'
-                }
-              >
-                Verschil
-              </span>
-            ),
-            cell: (info) => {
-              const percentage = info.getValue();
-              const percentageClass =
-                percentage === undefined
-                  ? 'text-gray-600'
-                  : percentage > 0
-                    ? gameType === 'marginal-gains'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                    : percentage < 0
-                      ? gameType === 'marginal-gains'
-                        ? 'text-red-600'
-                        : 'text-green-600'
-                      : 'text-gray-600';
-
-              return (
-                <span className={`font-medium ${percentageClass}`}>
-                  {percentage === undefined
-                    ? '-'
-                    : gameType === 'marginal-gains'
-                      ? `${Math.round(percentage)}%`
-                      : `${percentage > 0 ? '+' : ''}${percentage}%`}
-                </span>
-              );
-            },
-            size: 120,
-            sortingFn: 'basic',
-            sortUndefined: 'last',
-          }
-        ),
-        columnHelper.accessor('totalPoints', {
-          header: 'Punten',
+      }),
+      columnHelper.accessor(
+        (row) => (row.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0),
+        {
+          id: 'achievedPoints',
+          header: 'Behaalde punten',
           cell: (info) => (
             <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
           ),
-          size: 100,
-        }),
-      ];
+          size: 140,
+        }
+      ),
+      columnHelper.accessor(
+        (row) => {
+          if (gameType === 'marginal-gains') {
+            const pricePaid = row.totalSpent ?? 0;
+            if (pricePaid <= 0) return undefined;
 
-      if (showPrizeEligibility) {
-        baseColumns.push(
-          columnHelper.accessor('eligibleForPrizes', {
-            header: 'Prijzen',
-            cell: (info) => {
-              const eligible = info.getValue() ?? true;
-              const participantId = info.row.original.participantId;
-              const isUpdating = updatingPrizeEligibility[participantId];
+            const pointsScored = (row.riders ?? []).reduce(
+              (sum, rider) => sum + (rider?.pointsScored || 0),
+              0
+            );
+            const marginalGainsValue = pointsScored - pricePaid;
+            return (marginalGainsValue / pricePaid) * 100;
+          }
 
-              return (
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4"
-                    checked={eligible}
-                    disabled={isUpdating}
-                    onChange={() => togglePrizeEligibility(participantId, !eligible)}
-                  />
-                  <span className="text-xs text-gray-600">
-                    {eligible ? 'Ja' : 'Nee'}
-                  </span>
-                </label>
-              );
-            },
-            size: 120,
-          })
-        );
-      }
+          return row.totalPercentageDiff;
+        },
+        {
+          id: 'percentage',
+          header: () => (
+            <span
+              data-tooltip-id="standings-percentage-tooltip"
+              data-tooltip-content={
+                gameType === 'marginal-gains'
+                  ? 'Berekening: ((punten - betaald) / betaald) × 100'
+                  : 'Berekening: ((betaald - waarde) / waarde) × 100'
+              }
+            >
+              Verschil
+            </span>
+          ),
+          cell: (info) => {
+            const percentage = info.getValue();
+            const percentageClass =
+              percentage === undefined
+                ? 'text-gray-600'
+                : percentage > 0
+                  ? gameType === 'marginal-gains'
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                  : percentage < 0
+                    ? gameType === 'marginal-gains'
+                      ? 'text-red-600'
+                      : 'text-green-600'
+                    : 'text-gray-600';
 
-      return baseColumns;
-    },
-    [gameId, gameType, showPrizeEligibility, togglePrizeEligibility, updatingPrizeEligibility]
+            return (
+              <span className={`font-medium ${percentageClass}`}>
+                {percentage === undefined
+                  ? '-'
+                  : gameType === 'marginal-gains'
+                    ? `${Math.round(percentage)}%`
+                    : `${percentage > 0 ? '+' : ''}${percentage}%`}
+              </span>
+            );
+          },
+          size: 120,
+          sortingFn: 'basic',
+          sortUndefined: 'last',
+        }
+      ),
+      columnHelper.accessor('totalPoints', {
+        header: 'Punten',
+        cell: (info) => (
+          <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
+        ),
+        size: 100,
+      }),
+    ],
+    [gameId, gameType]
   );
 
   const table = useReactTable({
@@ -240,24 +167,6 @@ export default function StandingsPage() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
-
-  useEffect(() => {
-    if (!user) return;
-
-    const checkAdmin = async () => {
-      try {
-        const response = await fetch(`/api/getUser?userId=${user.uid}`);
-        if (response.ok) {
-          const userData = await response.json();
-          setIsAdmin(userData.userType === 'admin');
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-      }
-    };
-
-    checkAdmin();
-  }, [user]);
 
   useEffect(() => {
     async function fetchStandings() {
@@ -292,7 +201,6 @@ export default function StandingsPage() {
           playername: team.playername,
           totalPoints: team.totalPoints ?? 0,
           participantId: team.participantId,
-          eligibleForPrizes: team.eligibleForPrizes ?? true,
           totalPercentageDiff: team.totalPercentageDiff,
           totalSpent: team.totalSpent,
           riders: team.riders,

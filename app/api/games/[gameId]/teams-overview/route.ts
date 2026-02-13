@@ -249,7 +249,7 @@ export async function GET(
         participantId: doc.id,
         userId,
         playername: participant.playername,
-        eligibleForPrizes: participant.eligibleForPrizes ?? true,
+        eligibleForPrizes: participant.eligibleForPrizes ?? false,
         budget: participant.budget || 0,
         spentBudget: participant.spentBudget || 0,
         remainingBudget: (participant.budget || 0) - (participant.spentBudget || 0),

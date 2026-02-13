@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/utils";
 import { SlipstreamRaceManager } from "./slipstream/SlipstreamRaceManager";
 import { FullGridRiderManager } from "./FullGridRiderManager";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Game {
   id: string;
@@ -25,6 +26,14 @@ interface Game {
   eligibleRiders?: string[];
 }
 
+interface GameParticipantRow {
+  id: string;
+  playername: string;
+  userEmail?: string;
+  status?: string;
+  eligibleForPrizes?: boolean;
+}
+
 interface GameDetailsModalProps {
   gameId: string;
   onClose: () => void;
@@ -33,11 +42,16 @@ interface GameDetailsModalProps {
 }
 
 export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDetailsModalProps) => {
+  const { user } = useAuth();
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [slipstreamRaces, setSlipstreamRaces] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loadingRaces, setLoadingRaces] = useState(false);
+  const [participants, setParticipants] = useState<GameParticipantRow[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [participantsError, setParticipantsError] = useState<string | null>(null);
+  const [updatingPrizeEligibility, setUpdatingPrizeEligibility] = useState<Record<string, boolean>>({});
 
   const { t } = useTranslation();
 
@@ -58,11 +72,80 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
     }
   }, [gameId, game]);
 
+  const loadParticipants = useCallback(async () => {
+    if (!gameId || !game || game.gameType !== 'full-grid') return;
+
+    setLoadingParticipants(true);
+    setParticipantsError(null);
+
+    try {
+      const response = await fetch(`/api/gameParticipants?gameId=${gameId}`);
+      if (!response.ok) {
+        throw new Error('Failed to load participants');
+      }
+      const data = await response.json();
+      const rows = (data.participants || []).map((participant: any) => ({
+        id: participant.id,
+        playername: participant.playername,
+        userEmail: participant.userEmail,
+        status: participant.status,
+        eligibleForPrizes: participant.eligibleForPrizes,
+      })) as GameParticipantRow[];
+
+      rows.sort((a, b) => (a.playername || '').localeCompare(b.playername || ''));
+      setParticipants(rows);
+    } catch (error) {
+      console.error('Error loading participants:', error);
+      setParticipantsError('Kon deelnemers niet laden');
+    } finally {
+      setLoadingParticipants(false);
+    }
+  }, [gameId, game]);
+
+  const togglePrizeEligibility = useCallback(async (participantId: string, nextValue: boolean) => {
+    if (!user) return;
+
+    setUpdatingPrizeEligibility(prev => ({ ...prev, [participantId]: true }));
+
+    try {
+      const response = await fetch(`/api/gameParticipants/${participantId}/prize-eligibility`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          userId: user.uid,
+        },
+        body: JSON.stringify({ eligibleForPrizes: nextValue }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update prize eligibility');
+      }
+
+      setParticipants(prev => prev.map(p => (
+        p.id === participantId ? { ...p, eligibleForPrizes: nextValue } : p
+      )));
+    } catch (error) {
+      console.error('Error updating prize eligibility:', error);
+    } finally {
+      setUpdatingPrizeEligibility(prev => {
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      });
+    }
+  }, [user]);
+
   useEffect(() => {
     if (game?.gameType === 'slipstream') {
       loadSlipstreamRaces();
     }
   }, [game?.gameType, loadSlipstreamRaces]);
+
+  useEffect(() => {
+    if (game?.gameType === 'full-grid') {
+      loadParticipants();
+    }
+  }, [game?.gameType, loadParticipants]);
 
   useEffect(() => {
     const loadGame = async () => {
@@ -346,6 +429,74 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                       races={slipstreamRaces}
                       onRacesChange={loadSlipstreamRaces}
                     />
+                  )}
+                </div>
+              )}
+
+              {/* Full Grid Prize Eligibility Management */}
+              {game.gameType === 'full-grid' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-700">Prijzenbeheer</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Bepaal per speler of deze meedoet voor de prijzen (extern systeem).
+                  </p>
+
+                  {participantsError && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                      <span className="text-red-700 text-sm">{participantsError}</span>
+                    </div>
+                  )}
+
+                  {loadingParticipants ? (
+                    <div className="text-center py-4 text-gray-500">Deelnemers laden...</div>
+                  ) : participants.length === 0 ? (
+                    <div className="text-sm text-gray-500">Geen deelnemers gevonden.</div>
+                  ) : (
+                    <div className="border border-gray-200 rounded-md overflow-hidden">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-600">
+                          <tr>
+                            <th className="text-left px-3 py-2 font-medium">Speler</th>
+                            <th className="text-left px-3 py-2 font-medium">Status</th>
+                            <th className="text-left px-3 py-2 font-medium">Prijzen</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {participants.map((participant) => {
+                            const eligible = participant.eligibleForPrizes ?? false;
+                            const isUpdating = updatingPrizeEligibility[participant.id];
+
+                            return (
+                              <tr key={participant.id} className="border-t border-gray-100">
+                                <td className="px-3 py-2 text-gray-900">
+                                  <div className="font-medium">{participant.playername}</div>
+                                  {participant.userEmail && (
+                                    <div className="text-xs text-gray-500">{participant.userEmail}</div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-gray-700">
+                                  {participant.status || '-'}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <label className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4"
+                                      checked={eligible}
+                                      disabled={isUpdating}
+                                      onChange={() => togglePrizeEligibility(participant.id, !eligible)}
+                                    />
+                                    <span className="text-xs text-gray-600">
+                                      {eligible ? 'Ja' : 'Nee'}
+                                    </span>
+                                  </label>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               )}
