@@ -742,6 +742,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                           multiSelect={true}
                           multiSelectShowSelected={true}
                           placeholder="Zoek en selecteer races..."
+                          initialResultsLimit={availableRaces.length}
                           getItemLabel={(race) => `${race.name} (${race.classification})`}
                           searchFilter={(race, searchTerm) => {
                             const q = searchTerm.toLowerCase();
@@ -993,6 +994,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                           multiSelectShowSelected={true}
                           showSelected={true}
                           placeholder="Zoek en selecteer races..."
+                          initialResultsLimit={availableRaces.length}
                           getItemLabel={(race) => `${race.name} (${race.classification})`}
                           searchFilter={(race, searchTerm) => {
                             const q = searchTerm.toLowerCase();

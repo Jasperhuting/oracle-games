@@ -463,7 +463,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                         </thead>
                         <tbody>
                           {participants.map((participant) => {
-                            const eligible = participant.eligibleForPrizes ?? false;
+                            const eligible = participant.eligibleForPrizes ?? true;
                             const isUpdating = updatingPrizeEligibility[participant.id];
 
                             return (
@@ -478,7 +478,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                                   {participant.status || '-'}
                                 </td>
                                 <td className="px-3 py-2">
-                                  <label className="flex items-center gap-2">
+                                  <label className="flex items-center">
                                     <input
                                       type="checkbox"
                                       className="h-4 w-4"
@@ -486,9 +486,6 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                                       disabled={isUpdating}
                                       onChange={() => togglePrizeEligibility(participant.id, !eligible)}
                                     />
-                                    <span className="text-xs text-gray-600">
-                                      {eligible ? 'Ja' : 'Nee'}
-                                    </span>
                                   </label>
                                 </td>
                               </tr>

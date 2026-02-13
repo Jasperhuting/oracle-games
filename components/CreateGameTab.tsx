@@ -90,6 +90,7 @@ export const CreateGameTab = () => {
   const watchRaceType = watch('raceType');
   const watchRaceSlug = watch('raceSlug');
   const watchYear = watch('year');
+  const yearRaces = races.filter(race => !watchYear || race.year === Number(watchYear));
 
   useEffect(() => {
     setSelectedGameType(watchGameType as GameType);
@@ -1262,13 +1263,14 @@ export const CreateGameTab = () => {
                 {!loadingRaces && races.length > 0 && (
                   <div className="mb-3">
                     <Selector<Race>
-                      items={races.filter(race => !watchYear || race.year === Number(watchYear))}
-                      selectedItems={races.filter(race => countingRaces.some(cr => cr.raceId === race.id))}
+                      items={yearRaces}
+                      selectedItems={yearRaces.filter(race => countingRaces.some(cr => cr.raceId === race.id))}
                       setSelectedItems={handleCountingRaceSelect}
                       multiSelect={true}
                       multiSelectShowSelected={true}
                       showSelected={true}
                       placeholder="Zoek en selecteer races..."
+                      initialResultsLimit={yearRaces.length}
                       getItemLabel={(race) => `${race.name} (${race.year})`}
                       searchFilter={(race, searchTerm) => {
                         const q = searchTerm.toLowerCase();
