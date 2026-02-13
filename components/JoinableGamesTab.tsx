@@ -339,8 +339,8 @@ export const JoinableGamesTab = () => {
     if (closeDate && closeDate < now) return false;
     if (teamDeadline && teamDeadline < now) return false;
 
-    // For worldtour-manager and marginal-gains, allow joining during bidding status as well
-    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {
+    // For worldtour-manager, marginal-gains, and full-grid, allow joining during bidding/selection status as well
+    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' || game.gameType === 'full-grid') {
       return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding' || game.status === 'active';
     }
 
@@ -357,8 +357,8 @@ export const JoinableGamesTab = () => {
   const canLeave = (game: JoinableGame) => {
     if (!myGames.has(game.id)) return false;
     // Can only leave if game hasn't started
-    // For worldtour-manager and marginal-gains, also allow leaving during 'bidding' status
-    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {
+    // For worldtour-manager, marginal-gains, and full-grid, also allow leaving during 'bidding' status
+    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' || game.gameType === 'full-grid') {
       return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding';
     }
     return game.status === 'registration' || game.status === 'draft';

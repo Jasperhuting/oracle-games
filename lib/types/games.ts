@@ -302,6 +302,9 @@ export interface GameParticipant {
   totalPoints: number;
   ranking: number;
 
+  // Prize eligibility (external system integration)
+  eligibleForPrizes?: boolean;      // Whether the player competes for prizes
+
   // For division system
   divisionRanking?: number;         // Ranking within division
   assignedDivision?: string;        // For multi-division games, which division user is assigned to
