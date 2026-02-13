@@ -136,7 +136,7 @@ export default function GameDetailPage() {
     if (closeDate && closeDate < now) return false;
     if (teamDeadline && teamDeadline < now) return false;
 
-    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {
+    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' || game.gameType === 'full-grid') {
       return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding' || game.status === 'active';
     }
 
@@ -152,7 +152,7 @@ export default function GameDetailPage() {
 
   const canLeave = (game: JoinableGame) => {
     if (!myGames.has(game.id)) return false;
-    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains') {
+    if (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains' || game.gameType === 'full-grid') {
       return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding';
     }
     return game.status === 'registration' || game.status === 'draft';

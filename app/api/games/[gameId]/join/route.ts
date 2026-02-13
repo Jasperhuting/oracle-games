@@ -55,9 +55,9 @@ export async function POST(
     const gameData = gameDoc.data();
 
     // Check if game is accepting registrations
-    // For worldtour-manager and marginal-gains, also allow joining during 'bidding' status
+    // For worldtour-manager, marginal-gains, and full-grid, also allow joining during 'bidding' status
     const allowedStatuses = ['registration', 'draft', 'active'];
-    if (gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains') {
+    if (gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains' || gameData?.gameType === 'full-grid') {
       allowedStatuses.push('bidding');
     }
 
@@ -335,8 +335,8 @@ export async function DELETE(
     const gameData = gameDoc.data();
 
     // Check if game allows leaving (e.g., not started yet)
-    // For worldtour-manager and marginal-gains, also allow leaving during 'bidding' status
-    const canLeaveDuringBidding = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains';
+    // For worldtour-manager, marginal-gains, and full-grid, also allow leaving during 'bidding' status
+    const canLeaveDuringBidding = gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains' || gameData?.gameType === 'full-grid';
     const blockedStatuses = canLeaveDuringBidding
       ? ['active', 'completed', 'finished']
       : ['active', 'completed', 'finished', 'bidding'];
