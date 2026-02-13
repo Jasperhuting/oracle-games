@@ -177,7 +177,7 @@ export async function POST(
       userEmail: userData?.email,
       joinedAt: now,
       status: 'active',
-      eligibleForPrizes: gameData?.gameType === 'full-grid' ? true : undefined,
+      eligibleForPrizes: gameData?.gameType === 'full-grid' ? false : undefined,
       budget: gameData?.config?.budget || 0,
       spentBudget: 0,
       rosterSize: 0,

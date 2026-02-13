@@ -1230,6 +1230,13 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               )}
               <Button
                 type="button"
+                text="Tussenstand"
+                onClick={() => router.push(`/games/${gameId}/standings`)}
+                ghost
+                title="Bekijk de tussenstand"
+              />
+              <Button
+                type="button"
                 text={t('global.backToGames')}
                 onClick={() => router.push('/games')}
               />

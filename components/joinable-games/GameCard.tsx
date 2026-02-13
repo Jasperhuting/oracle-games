@@ -68,7 +68,7 @@ export const GameCard = ({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
         <div className="min-w-0">
           {/* Header with badges */}
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
             <h3 className="text-lg font-semibold font-serif text-gray-900">{group.baseName}</h3>
             <GameCardBadges
               isJoined={isJoined}
@@ -78,9 +78,9 @@ export const GameCard = ({
               getStatusBadgeColor={getStatusBadgeColor}
             />
             {game.gameType === 'full-grid' && (
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                <span>Gesponsord door</span>
-                <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                <span className="whitespace-nowrap">Gesponsord door</span>
+                <span className="inline-flex items-center gap-1 whitespace-nowrap">
                   <img src="/berc-bike-logo.jpg" alt="Bercbike" className="h-4 w-4 object-contain" />
                   Bercbike
                 </span>

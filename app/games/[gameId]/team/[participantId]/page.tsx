@@ -7,6 +7,8 @@ import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { getRaceNamesClient } from '@/lib/race-names';
+import { auth } from '@/lib/firebase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 // PointsEvent interface for the new format
 interface PointsEvent {
@@ -80,6 +82,7 @@ export default function TeamDetailPage() {
   const params = useParams();
   const gameId = params?.gameId as string;
   const participantId = params?.participantId as string;
+  const { user, loading: authLoading } = useAuth();
 
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [teamDetails, setTeamDetails] = useState<TeamDetails | null>(null);
@@ -95,12 +98,16 @@ export default function TeamDetailPage() {
 
   useEffect(() => {
     async function fetchTeamDetails() {
-      if (!gameId || !participantId) return;
+      if (!gameId || !participantId || authLoading) return;
 
       setLoading(true);
       setError(null);
 
       try {
+        if (!user) {
+          throw new Error('Je hebt geen toegang tot dit team');
+        }
+
         // Fetch game info for the name
         const gameResponse = await fetch(`/api/games/${gameId}`);
         if (gameResponse.ok) {
@@ -110,8 +117,17 @@ export default function TeamDetailPage() {
         }
 
         // Fetch team details
-        const response = await fetch(`/api/games/${gameId}/team/${participantId}`);
+        const headers: HeadersInit = {};
+        const idToken = await auth.currentUser?.getIdToken();
+        if (idToken) {
+          headers['Authorization'] = `Bearer ${idToken}`;
+        }
+
+        const response = await fetch(`/api/games/${gameId}/team/${participantId}`, { headers });
         if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('Je hebt geen toegang tot dit team');
+          }
           throw new Error('Failed to load team details');
         }
         const data = await response.json();
@@ -131,7 +147,7 @@ export default function TeamDetailPage() {
     }
 
     fetchTeamDetails();
-  }, [gameId, participantId]);
+  }, [gameId, participantId, authLoading, user]);
 
   // Load race names
   useEffect(() => {

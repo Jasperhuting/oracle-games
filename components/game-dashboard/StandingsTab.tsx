@@ -17,6 +17,7 @@ interface Standing {
   playername: string;
   totalPoints: number;
   participantId: string;
+  eligibleForPrizes?: boolean;
   totalPercentageDiff?: number;
   totalSpent?: number;
   riders?: Array<{ pointsScored?: number; pricePaid?: number }>;
@@ -63,14 +64,32 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
       columnHelper.accessor('playername', {
         id: 'playername',
         header: 'Speler',
-        cell: (info) => (
-          <Link
-            href={`/games/${gameId}/team/${info.row.original.participantId}`}
-            className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
-          >
-            {info.getValue()}
-          </Link>
-        ),
+        cell: (info) => {
+          const showPrize = info.row.original.eligibleForPrizes;
+          return (
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/games/${gameId}/team/${info.row.original.participantId}`}
+                className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
+              >
+                {info.getValue()}
+              </Link>
+              {showPrize ? (
+                <span
+                  className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 text-amber-900 shadow-sm ring-1 ring-amber-200"
+                  title="Speelt mee voor prijzen"
+                  aria-label="Speelt mee voor prijzen"
+                  data-tooltip-id="standings-prize-tooltip"
+                  data-tooltip-content="Deze speler doet mee voor de prijzen"
+                >
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" aria-hidden="true" fill="currentColor">
+                    <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a1 1 0 0 0-1 1v2a5 5 0 0 0 4 4.9V14a3 3 0 0 0 2 2.83V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-2v-2.17A3 3 0 0 0 16 14v-2.1A5 5 0 0 0 20 7V5a1 1 0 0 0-1-1zM6 7V6h2v3.83A3 3 0 0 1 6 7zm12 0a3 3 0 0 1-2 2.83V6h2v1zM10 5V4h4v1h-4z" />
+                  </svg>
+                </span>
+              ) : null}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor(
         (row) => (row.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0),
@@ -215,6 +234,16 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
     <div>
       <Tooltip
         id="standings-percentage-tooltip"
+        delayShow={0}
+        className="!opacity-100"
+        render={({ content }) => (
+          <div className="text-sm whitespace-pre-line">
+            {String(content || '')}
+          </div>
+        )}
+      />
+      <Tooltip
+        id="standings-prize-tooltip"
         delayShow={0}
         className="!opacity-100"
         render={({ content }) => (

@@ -463,7 +463,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
                         </thead>
                         <tbody>
                           {participants.map((participant) => {
-                            const eligible = participant.eligibleForPrizes ?? true;
+                            const eligible = participant.eligibleForPrizes ?? false;
                             const isUpdating = updatingPrizeEligibility[participant.id];
 
                             return (

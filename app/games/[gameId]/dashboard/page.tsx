@@ -47,6 +47,7 @@ interface Standing {
   playername: string;
   totalPoints: number;
   participantId: string;
+  eligibleForPrizes?: boolean;
   totalPercentageDiff?: number;
   totalSpent?: number;
   riders?: Array<{ pointsScored?: number; pricePaid?: number }>;
@@ -238,6 +239,7 @@ export default function GameDashboardPage() {
           playername: team.playername,
           totalPoints: team.totalPoints ?? 0,
           participantId: team.participantId,
+          eligibleForPrizes: team.eligibleForPrizes,
           totalPercentageDiff: team.totalPercentageDiff,
           totalSpent: team.totalSpent,
           riders: team.riders,
