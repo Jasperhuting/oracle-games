@@ -381,13 +381,25 @@ export default function GameDetailPage() {
   const handleLeaveGame = async () => {
     if (!pendingLeaveGameId) return;
     setLeaveConfirmOpen(false);
+    if (!user) {
+      const errorMessage = 'Je moet ingelogd zijn om een game te verlaten';
+      setError(errorMessage);
+      setInfoDialog({
+        title: 'Leave failed',
+        description: errorMessage + '.',
+      });
+      return;
+    }
     setLeaving(pendingLeaveGameId);
     setError(null);
 
     try {
-      const response = await fetch(`/api/games/${pendingLeaveGameId}/join`, {
+      const response = await fetch(
+        `/api/games/${pendingLeaveGameId}/join?userId=${encodeURIComponent(user.uid)}`,
+        {
         method: 'DELETE',
-      });
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

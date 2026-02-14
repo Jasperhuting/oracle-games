@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getRiders, getStageResult, getRaceResult, getTourGCResult } from '@/lib/scraper';
-import { saveScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
 
@@ -116,7 +116,17 @@ export async function POST(request: NextRequest) {
             stage: stageNum,
           };
 
-          await saveScraperData(stageKey, stageData);
+          const save = await saveScraperDataValidated(stageKey, stageData);
+          if (!save.success) {
+            const errorMsg = save.error || 'Validation failed while saving stage data';
+            errors.push({ stage: stageNum, error: errorMsg, validation: save.validation });
+            results.push({
+              stage: stageNum,
+              success: false,
+              error: errorMsg,
+            });
+            continue;
+          }
           
           const stageCount = 'stageResults' in stageData ? stageData.stageResults.length : 0;
           totalDataCount += stageCount;
@@ -215,17 +225,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to Firebase (this will overwrite existing data)
-    try {
-      await saveScraperData(key, scraperData);
-      console.log('[SCRAPER] Data saved successfully to Firebase');
-    } catch (saveError) {
-      console.error('[SCRAPER] Failed to save data to Firebase:', saveError);
+    const save = await saveScraperDataValidated(key, scraperData);
+    if (!save.success) {
+      console.error('[SCRAPER] Failed to save data to Firebase:', save.error);
       return Response.json({ 
         error: 'Failed to save data to Firebase',
-        details: saveError instanceof Error ? saveError.message : 'Unknown error',
+        details: save.error || 'Unknown error',
+        validation: save.validation || null,
         success: false,
-      }, { status: 500 });
+      }, { status: 400 });
     }
+    console.log('[SCRAPER] Data saved successfully to Firebase');
 
     // Trigger points calculation for stage results, single-day race results, and tour GC results
     if (type === 'stage' || type === 'result' || type === 'tour-gc') {

@@ -188,7 +188,11 @@ async function processBulkScrape(jobId: string, job: any) {
         stage: stageNum,
       };
 
-      await saveScraperData(stageKey, stageData);
+      const save = await saveScraperDataValidated(stageKey, stageData);
+      if (!save.success) {
+        console.error(`[bulk-scrape] Validation failed for ${race} stage ${stageNum}:`, save.error);
+        continue;
+      }
 
       // Trigger points calculation for this stage
       try {

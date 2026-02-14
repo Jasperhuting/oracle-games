@@ -3,7 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getRaceResult } from '@/lib/scraper/getRaceResult';
 import { POST as calculatePoints } from '@/app/api/games/calculate-points/route';
-import { saveScraperData } from '@/lib/firebase/scraper-service';
+import { saveScraperDataValidated } from '@/lib/firebase/scraper-service';
 
 // Helper function to remove undefined values from objects
 function cleanData(obj: unknown): unknown {
@@ -196,17 +196,23 @@ export async function POST(request: NextRequest) {
     });
 
     // Save to scraper-data collection for points calculation
-    try {
-      await saveScraperData({
-        race: raceName,
-        year: parseInt(year),
-        type: 'result'
-      }, cleanedData);
-      console.log(`[saveRaceResult] Saved to scraper-data collection: ${raceName}-${year}-result`);
-    } catch (error) {
-      console.error('[saveRaceResult] Error saving to scraper-data:', error);
-      // Don't fail the whole request if scraper-data save fails
+    const save = await saveScraperDataValidated({
+      race: raceName,
+      year: parseInt(year),
+      type: 'result'
+    }, cleanedData);
+    if (!save.success) {
+      console.error('[saveRaceResult] Error saving to scraper-data:', save.error);
+      return NextResponse.json(
+        {
+          error: 'Failed to save race result (validation failed)',
+          details: save.error || 'Unknown error',
+          validation: save.validation || null,
+        },
+        { status: 400 }
+      );
     }
+    console.log(`[saveRaceResult] Saved to scraper-data collection: ${raceName}-${year}-result`);
 
     // Save to Firestore - for single-day races, save as 'result' document
     const resultDocRef = db.collection(raceSlug).doc('stages').collection('results').doc('result');

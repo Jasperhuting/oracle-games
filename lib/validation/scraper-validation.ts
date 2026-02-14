@@ -19,7 +19,7 @@ import type {
 // Validation configuration
 export const VALIDATION_CONFIG = {
   // Minimum riders required for valid stage result
-  MIN_RIDERS_STAGE: 10,
+  MIN_RIDERS_STAGE: 1,
   // Warning threshold - less than this triggers a warning but not rejection
   MIN_RIDERS_WARNING: 50,
   // Maximum reasonable PCS points for a single result
