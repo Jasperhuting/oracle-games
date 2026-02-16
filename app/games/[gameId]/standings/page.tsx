@@ -41,6 +41,8 @@ export default function StandingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  const backHref = gameType === 'full-grid' ? `/games/${gameId}/auction` : '/games';
+
   const columns = useMemo(
     () => [
       columnHelper.accessor('ranking', {
@@ -252,7 +254,7 @@ export default function StandingsPage() {
         <div className="text-center">
           <div className="text-red-600 mb-4">{error}</div>
           <Link
-            href="/games"
+            href={backHref}
             className="text-blue-600 hover:text-blue-700"
           >
             Terug naar games
@@ -298,7 +300,7 @@ export default function StandingsPage() {
               )}
             </div>
             <Link
-              href="/games"
+              href={backHref}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               Terug

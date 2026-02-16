@@ -198,6 +198,9 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'etoile-de-besseges': 5,
   'vuelta-a-la-comunidad-valenciana': 5,
   'volta-comunitat-valenciana': 5,
+  'setmana-ciclista-valenciana': 4,
+  'tour-cycliste-international-la-provence': 3,
+  'vuelta-ciclista-a-la-region-de-murcia': 2,
 };
 
 // Races that typically have a prologue
@@ -427,7 +430,8 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'visegrad-4-bicycle-race-gp-hungary',
   'visegrad-4-bicycle-race-gp-polski-via-odra',
   'visegrad-4-bicycle-race-gp-slovakia',
-  'youngster-coast-challenge'
+  'youngster-coast-challenge',
+  'asian-championships-me'
 ]);
 
 /**

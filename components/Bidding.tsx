@@ -2,8 +2,8 @@ import CurrencyInput from "react-currency-input-field";
 import { Button } from "./Button";
 import { PlayerCard } from "./PlayerCard";
 import { formatDate, qualifiesAsNeoProf } from "@/lib/utils";
-import { useState, useMemo } from "react";
-import { GridDots, List, SortAscending, SortDescending } from "tabler-icons-react";
+import { useState, useMemo, useEffect } from "react";
+import { CurrencyEuro, GridDots, List, SortAscending, SortDescending } from "tabler-icons-react";
 import { AuctionPeriod, Bid } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { PlayerRowBids } from "./PlayerRowBids";
@@ -20,6 +20,16 @@ import { FullGridTeamSelector } from "@/components/full-grid/FullGridTeamSelecto
 import { FullGridRiderList } from "@/components/full-grid/FullGridRiderList";
 import { FullGridMyTeam } from "@/components/full-grid/FullGridMyTeam";
 import { AuctionStats } from "./AuctionStats";
+import Link from "next/link";
+import { Tooltip } from "react-tooltip";
+
+interface Standing {
+  ranking: number;
+  playername: string;
+  totalPoints: number;
+  participantId: string;
+  eligibleForPrizes?: boolean;
+}
 
 
 export const Bidding = ({
@@ -93,6 +103,10 @@ export const Bidding = ({
   const [myTeamView, setMyTeamView] = useState('card');
   const [myTeamBidsView, setMyTeamBidsView] = useState('list');
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [standings, setStandings] = useState<Standing[]>([]);
+  const [standingsLoading, setStandingsLoading] = useState(false);
+  const [standingsError, setStandingsError] = useState<string | null>(null);
+  const [showPrizesModal, setShowPrizesModal] = useState(false);
 
   const isProTourTeamClass = (teamClass?: string) => {
     if (!teamClass) return false;
@@ -198,6 +212,45 @@ export const Bidding = ({
     });
     return Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [fullGridRiders, isFullGrid]);
+
+  useEffect(() => {
+    if (!isFullGrid || !game?.id) return;
+
+    const loadStandings = async () => {
+      try {
+        setStandingsLoading(true);
+        setStandingsError(null);
+
+        const response = await fetch(`/api/games/${game.id}/teams-overview`);
+        if (!response.ok) {
+          throw new Error('Kon tussenstand niet laden');
+        }
+        const data = await response.json();
+        const teams = data.teams || [];
+
+        const mappedStandings: Standing[] = teams.map((team: any) => ({
+          ranking: team.ranking,
+          playername: team.playername,
+          totalPoints: team.totalPoints ?? 0,
+          participantId: team.participantId,
+          eligibleForPrizes: team.eligibleForPrizes,
+        }));
+
+        setStandings(mappedStandings);
+      } catch (err) {
+        console.error('Error loading standings:', err);
+        setStandingsError(err instanceof Error ? err.message : 'Kon tussenstand niet laden');
+      } finally {
+        setStandingsLoading(false);
+      }
+    };
+
+    loadStandings();
+  }, [isFullGrid, game?.id]);
+
+  const sortedStandings = useMemo(() => {
+    return [...standings].sort((a, b) => (a.ranking ?? 0) - (b.ranking ?? 0));
+  }, [standings]);
 
   const fullGridTeamRiders = useMemo(() => {
     if (!isFullGrid || !selectedTeam) return [];
@@ -327,10 +380,77 @@ export const Bidding = ({
     : Date.now();
 
   return <>
+    {isFullGrid && (
+      <Tooltip
+        id="standings-prize-tooltip"
+        delayShow={0}
+        className="!opacity-100"
+        render={({ content }) => (
+          <div className="text-sm whitespace-pre-line">
+            {String(content || '')}
+          </div>
+        )}
+      />
+    )}
     {game.bidding && <>
       <Countdown key={countdownDate} date={countdownDate} renderer={renderer} />
       <span className="text-gray-500 text-xs">{t('global.endDate')}: {activePeriod?.endDate ? formatDate(activePeriod.endDate instanceof Date ? activePeriod.endDate.toISOString() : typeof activePeriod.endDate === 'string' ? activePeriod.endDate : activePeriod.endDate.toDate().toISOString()) : t('global.unknownDate')}</span>
     </>}
+
+    {showPrizesModal && isFullGrid && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <button
+          className="absolute inset-0 bg-black/40"
+          aria-label="Sluit prijzen"
+          onClick={() => setShowPrizesModal(false)}
+        />
+        <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-xl border border-gray-200">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Prijzen</h3>
+            <button
+              className="text-gray-500 hover:text-gray-700"
+              aria-label="Sluit"
+              onClick={() => setShowPrizesModal(false)}
+            >
+              ×
+            </button>
+          </div>
+          <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
+            <div>
+              <div className="font-semibold text-gray-900">1e prijs</div>
+              <div>&#39;Bike &amp; Pancakes&#39; arrangement voor 4 personen.</div>
+              <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">2e prijs</div>
+              <div>Gravel arrangement voor 2 personen.</div>
+              <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">3e prijs</div>
+              <div>&#39;Proefritje&#39; te nuttigen in het wielercafe in Zeddam</div>
+              <div className="text-xs text-gray-500">(3 speciaalbiertjes geserveerd met lokale kaas &amp; worst)</div>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">4e &amp; 5e prijs</div>
+              <div>een &#39;Veloholic&#39; shirt</div>
+            </div>
+            <div className="text-xs text-gray-500">
+              * Het buffje mag je houden als aandenken aan een leuke sportieve middag!
+            </div>
+          </div>
+          <div className="px-5 py-4 border-t border-gray-200 flex justify-end">
+            <Button
+              type="button"
+              text="Sluiten"
+              onClick={() => setShowPrizesModal(false)}
+              className="px-4 py-2 text-sm"
+              variant="secondary"
+            />
+          </div>
+        </div>
+      </div>
+    )}
 
 
     {/* My Bids Section - Only show when auction is active */}
@@ -381,14 +501,13 @@ export const Bidding = ({
                         Berc Bike sponsort de prijzen voor hen die 5,- storten.
                       </p>
                       
-                      <a
-                        href="#"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2 py-1 text-xs rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-300 cursor-not-allowed text-center"
+                      <button
+                        type="button"
+                        onClick={() => setShowPrizesModal(true)}
+                        className="px-2 py-1 text-xs rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 text-center"
                       >
-                        Prijzen <span className="text-xs italic">(soon)</span>
-                      </a>
+                        Prijzen
+                      </button>
 
                       <a
                         href="https://buymeacoffee.com/oraclegames"
@@ -411,7 +530,10 @@ export const Bidding = ({
               </div>
               <div className="w-full xl:col-span-1 max-w-sm self-start flex flex-col gap-4">
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Budget Stats</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <CurrencyEuro size={16} className="text-gray-500" />
+                    Budget Stats
+                  </h3>
                   <div className="flex flex-col divide-y divide-gray-200 text-sm">
                     <div className="py-2 flex items-center justify-between">
                       <span className="text-gray-600">Totale budget</span>
@@ -443,6 +565,54 @@ export const Bidding = ({
                         <span className="font-semibold text-gray-900">
                           {fullGridBudgetStats.maxRiders}
                         </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-sm font-semibold text-gray-900 mb-2">Tussenstand</div>
+                    {standingsLoading ? (
+                      <div className="text-xs text-gray-500">Laden...</div>
+                    ) : standingsError ? (
+                      <div className="text-xs text-red-600">{standingsError}</div>
+                    ) : sortedStandings.length === 0 ? (
+                      <div className="text-xs text-gray-500">Nog geen tussenstand beschikbaar</div>
+                    ) : (
+                      <div className="max-h-40 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <tbody className="divide-y divide-gray-100">
+                            {sortedStandings.map((row) => (
+                              <tr key={row.participantId} className="hover:bg-gray-50">
+                                <td className="py-2 pr-2 text-gray-500 w-10">#{row.ranking}</td>
+                                <td className="py-2 pr-2">
+                                  <div className="flex items-center gap-2">
+                                    <Link
+                                      href={`/games/${game.id}/team/${row.participantId}`}
+                                      className="font-medium text-gray-900 hover:text-primary hover:underline"
+                                    >
+                                      {row.playername}
+                                    </Link>
+                                    {row.eligibleForPrizes ? (
+                                      <span
+                                        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 text-amber-900 shadow-sm ring-1 ring-amber-200"
+                                        title="Speelt mee voor prijzen"
+                                        aria-label="Speelt mee voor prijzen"
+                                        data-tooltip-id="standings-prize-tooltip"
+                                        data-tooltip-content="Deze speler doet mee voor de prijzen"
+                                      >
+                                        <svg viewBox="0 0 24 24" className="w-2.5 h-2.5" aria-hidden="true" fill="currentColor">
+                                          <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a1 1 0 0 0-1 1v2a5 5 0 0 0 4 4.9V14a3 3 0 0 0 2 2.83V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-2v-2.17A3 3 0 0 0 16 14v-2.1A5 5 0 0 0 20 7V5a1 1 0 0 0-1-1zM6 7V6h2v3.83A3 3 0 0 1 6 7zm12 0a3 3 0 0 1-2 2.83V6h2v1zM10 5V4h4v1h-4z" />
+                                        </svg>
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                </td>
+                                <td className="py-2 text-right font-semibold text-primary">
+                                  {row.totalPoints.toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </div>

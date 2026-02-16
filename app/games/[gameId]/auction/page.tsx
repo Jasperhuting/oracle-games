@@ -1336,7 +1336,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
                 <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
                   <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} birthYearRange={birthYearRange} setBirthYearRange={setBirthYearRange} minBirthYear={minBirthYear} maxBirthYear={maxBirthYear} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} availableTeams={availableTeams} selectedTeamFilter={selectedTeamFilter} setSelectedTeamFilter={setSelectedTeamFilter} teamsWithSelection={teamsWithSelection} />
-                  <AuctionStats game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
+                  <AuctionStats gameId={gameId} game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
                   {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' && (
                     <MyAuctionBids game={game} availableRiders={availableRiders} myBids={myAuctionBids} />
                   )}

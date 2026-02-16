@@ -5,6 +5,7 @@ import { GameCardBadges } from "./GameCardBadges";
 import { GameCardMetadata } from "./GameCardMetadata";
 import { GameCardActions } from "./GameCardActions";
 import { GameCardProps } from "@/lib/types";
+import { useState } from "react";
 
 export const GameCard = ({
   group,
@@ -27,6 +28,7 @@ export const GameCard = ({
   formatDateTime,
 }: GameCardProps) => {
   const { t } = useTranslation();
+  const [showPrizesModal, setShowPrizesModal] = useState(false);
   
   // Use first game as representative for the group
   const game = group.games[0];
@@ -59,6 +61,60 @@ export const GameCard = ({
         isJoined ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-white/90'
       }`}
     >
+      {showPrizesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <button
+            className="absolute inset-0 bg-black/40"
+            aria-label="Sluit prijzen"
+            onClick={() => setShowPrizesModal(false)}
+          />
+          <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-xl border border-gray-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Prijzen</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Sluit"
+                onClick={() => setShowPrizesModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
+              <div>
+                <div className="font-semibold text-gray-900">1e prijs</div>
+                <div>&#39;Bike &amp; Pancakes&#39; arrangement voor 4 personen.</div>
+                <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900">2e prijs</div>
+                <div>Gravel arrangement voor 2 personen.</div>
+                <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900">3e prijs</div>
+                <div>&#39;Proefritje&#39; te nuttigen in het wielercafe in Zeddam</div>
+                <div className="text-xs text-gray-500">(3 speciaalbiertjes geserveerd met lokale kaas &amp; worst)</div>
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900">4e &amp; 5e prijs</div>
+                <div>een &#39;Veloholic&#39; shirt</div>
+              </div>
+              <div className="text-xs text-gray-500">
+                * Het buffje mag je houden als aandenken aan een leuke sportieve middag!
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPrizesModal(false)}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900"
+              >
+                Sluiten
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={`absolute inset-x-0 top-0 h-1 ${
         isJoined
           ? 'bg-emerald-500'
@@ -78,13 +134,22 @@ export const GameCard = ({
               getStatusBadgeColor={getStatusBadgeColor}
             />
             {game.gameType === 'full-grid' && (
-              <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                <span className="whitespace-nowrap">Gesponsord door</span>
-                <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                  <img src="/berc-bike-logo.jpg" alt="Bercbike" className="h-4 w-4 object-contain" />
-                  Bercbike
+              <>
+                <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                  <span className="whitespace-nowrap">Gesponsord door</span>
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                    <img src="/berc-bike-logo.jpg" alt="Bercbike" className="h-4 w-4 object-contain" />
+                    Bercbike
+                  </span>
                 </span>
-              </span>
+                <button
+                  type="button"
+                  onClick={() => setShowPrizesModal(true)}
+                  className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+                >
+                  Prijzen
+                </button>
+              </>
             )}
           </div>
 
