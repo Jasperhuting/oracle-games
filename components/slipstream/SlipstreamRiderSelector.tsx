@@ -214,7 +214,6 @@ export function SlipstreamRiderSelector({
         showSelected={false}
         showCheckboxes={false}
         showClearButton={false}
-        initialResultsLimit={200}
         searchFilter={(rider, searchTerm) => {
           const normalizedSearch = normalizeString(searchTerm);
           const lowerSearch = searchTerm.toLowerCase();

@@ -129,7 +129,7 @@ export default function SlipstreamPage() {
         // then filter by eligibleRiders when provided.
         const eligibleIds: string[] = gameData.game?.eligibleRiders || [];
         const year = gameData.game?.year || new Date().getFullYear();
-        const rankingsRes = await fetch(`/api/getRankings?year=${year}`);
+        const rankingsRes = await fetch(`/api/getRankings?year=${year}&limit=2000`);
         if (rankingsRes.ok) {
           const rankingsData = await rankingsRes.json();
           const rankingRiders = rankingsData.riders || [];
