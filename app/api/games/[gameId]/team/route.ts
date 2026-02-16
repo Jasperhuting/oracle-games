@@ -28,13 +28,45 @@ export async function GET(
       .get();
 
     // Get rankings to enrich with baseValue (rider's UCI points = their value)
-    const rankingsSnapshot = await db.collection('rankings_2026').get();
-    const ridersMap = new Map<string, { points: number }>();
+    const [rankingsSnapshot, teamsSnapshot] = await Promise.all([
+      db.collection('rankings_2026').get(),
+      db.collection('teams').get(),
+    ]);
+    const teamsMap = new Map<string, { name?: string; jerseyImageTeam?: string; teamImage?: string }>();
+    teamsSnapshot.forEach(doc => {
+      const data = doc.data();
+      teamsMap.set(doc.id, {
+        name: data.name,
+        jerseyImageTeam: data.jerseyImageTeam,
+        teamImage: data.teamImage,
+      });
+    });
+    const ridersMap = new Map<string, { points: number; teamName?: string; country?: string; rank?: number; jerseyImageTeam?: string }>();
     rankingsSnapshot.forEach(doc => {
       const rider = doc.data();
       const riderId = rider.nameID || rider.id || doc.id;
       if (riderId) {
-        ridersMap.set(riderId, { points: rider.points || 0 });
+        let teamName: string | undefined;
+        let jerseyImageTeam: string | undefined;
+        if (typeof rider.team === 'string') {
+          teamName = rider.team;
+        } else if (rider.team && typeof rider.team === 'object') {
+          // Firestore DocumentReference or embedded object
+          if (typeof (rider.team as any).name === 'string') {
+            teamName = (rider.team as any).name;
+          } else if (typeof (rider.team as any).id === 'string') {
+            const teamDoc = teamsMap.get((rider.team as any).id);
+            teamName = teamDoc?.name;
+            jerseyImageTeam = teamDoc?.jerseyImageTeam || teamDoc?.teamImage;
+          }
+        }
+        ridersMap.set(riderId, {
+          points: rider.points || 0,
+          teamName: teamName || undefined,
+          country: rider.country || undefined,
+          rank: rider.rank || undefined,
+          jerseyImageTeam: jerseyImageTeam || rider.team?.jerseyImageTeam || undefined,
+        });
       }
     });
 
@@ -46,11 +78,11 @@ export async function GET(
         id: doc.id,
         nameId: data.riderNameId,
         name: data.riderName,
-        team: data.riderTeam,
-        country: data.riderCountry,
-        rank: data.riderRank || 0,
+        team: riderInfo?.teamName || data.riderTeam,
+        country: riderInfo?.country || data.riderCountry,
+        rank: data.riderRank || riderInfo?.rank || 0,
         points: data.pointsScored || 0,
-        jerseyImage: data.jerseyImage,
+        jerseyImage: data.jerseyImage || riderInfo?.jerseyImageTeam,
         pricePaid: data.pricePaid,
         baseValue,
         acquisitionType: data.acquisitionType,
