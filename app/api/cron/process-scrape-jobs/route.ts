@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { getJobs } from '@/lib/firebase/job-queue';
 
 const MAX_RUN_MS = 240_000; // keep under maxDuration
-const DEFAULT_MAX_JOBS_PER_RUN = 5;
-const PER_JOB_TIMEOUT_MS = 10_000;
+const DEFAULT_MAX_JOBS_PER_RUN = 2;
+const PER_JOB_TIMEOUT_MS = 40_000;
 
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
