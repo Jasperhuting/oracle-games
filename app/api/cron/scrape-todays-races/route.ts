@@ -101,8 +101,11 @@ const diffDays = (from: string, to: string): number => {
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
   const authHeader = request.headers.get('authorization');
+  const vercelCronHeader = request.headers.get('x-vercel-cron');
 
-  if (!authHeader || authHeader !== expectedAuth) {
+  const isAuthorized = (authHeader && authHeader === expectedAuth) || vercelCronHeader === '1';
+
+  if (!isAuthorized) {
     console.error('[CRON] Unauthorized access attempt to scrape-todays-races');
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -285,6 +288,7 @@ export async function GET(request: NextRequest) {
 
     const successCount = outcomes.filter(o => o.success).length;
     const failedCount = outcomes.filter(o => !o.success).length;
+    const totalFound = outcomes.length;
 
     const summaryLines = outcomes.map((o) => {
       const label = o.type === 'result' ? 'Result' : `Stage ${o.stage}`;
@@ -293,20 +297,33 @@ export async function GET(request: NextRequest) {
       return `${status} <b>${o.raceName}</b> — ${label}${countInfo}\n${o.message}`;
     });
 
+    const elapsedMs = Date.now() - runStartedAt;
+    const elapsedSeconds = Math.round(elapsedMs / 1000);
+    const skippedCount = skipped.length;
+    const shownSkipped = skipped.slice(0, 10);
+    const skippedSummary =
+      skippedCount > 0
+        ? `\n\n⚠️ Skipped (${skippedCount}):\n${shownSkipped.join('\n')}${skippedCount > shownSkipped.length ? '\n…' : ''}`
+        : '';
+
     const telegramMessage = [
       `🕛 <b>Daily Race Scrape</b> (${todayStr})`,
       '',
       `✅ Success: ${successCount}`,
       `❌ Failed: ${failedCount}`,
+      `📋 Found: ${totalFound}`,
+      `📦 Queued jobs: ${queuedJobs}`,
+      `⏱️ Duration: ${elapsedSeconds}s`,
+      `🧭 Window: ${targetDates[targetDates.length - 1]} → ${targetDates[0]}`,
+      `🧾 Outcomes: ${summaryLines.length}`,
+      `🧹 Excluded slugs: ${EXCLUDED_RACE_SLUGS.size}`,
       '',
       summaryLines.length > 0 ? summaryLines.join('\n\n') : 'No races scheduled for today.',
-      skipped.length > 0 ? `\n\n⚠️ Skipped:\n${skipped.slice(0, 10).join('\n')}` : '',
+      skippedSummary,
       stoppedEarly ? '\n\n⚠️ Stopped early due to time budget.' : '',
     ].join('\n');
 
-    if (notifyOnly || dryRun || queuedJobs === 0 || stoppedEarly) {
-      await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
-    }
+    await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
 
     return Response.json({
       success: true,

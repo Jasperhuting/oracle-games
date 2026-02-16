@@ -145,7 +145,7 @@ export const GameCard = ({
                 <button
                   type="button"
                   onClick={() => setShowPrizesModal(true)}
-                  className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+                  className="inline-flex items-center rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 whitespace-nowrap"
                 >
                   Prijzen
                 </button>
@@ -174,6 +174,15 @@ export const GameCard = ({
 
         {/* Action buttons */}
         <div className="flex items-start justify-end">
+          {game.gameType === 'full-grid' && (
+            <button
+              type="button"
+              onClick={() => setShowPrizesModal(true)}
+              className="lg:hidden mr-2 inline-flex items-center rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 whitespace-nowrap"
+            >
+              Prijzen
+            </button>
+          )}
           <GameCardActions
             game={game}
             group={group}

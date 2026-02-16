@@ -531,7 +531,6 @@ export const Bidding = ({
               <div className="w-full xl:col-span-1 max-w-sm self-start flex flex-col gap-4">
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <CurrencyEuro size={16} className="text-gray-500" />
                     Budget Stats
                   </h3>
                   <div className="flex flex-col divide-y divide-gray-200 text-sm">

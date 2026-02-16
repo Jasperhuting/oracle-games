@@ -12,6 +12,8 @@ interface MobileFloatingMenuProps {
 export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps) {
     const [feedbackExpanded, setFeedbackExpanded] = useState(false);
     const [coffeeExpanded, setCoffeeExpanded] = useState(false);
+    const [prizesExpanded, setPrizesExpanded] = useState(false);
+    const [showPrizesModal, setShowPrizesModal] = useState(false);
     const { user } = useAuth();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -21,6 +23,7 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
                 setFeedbackExpanded(false);
                 setCoffeeExpanded(false);
+                setPrizesExpanded(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -50,6 +53,7 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
         } else {
             setFeedbackExpanded(true);
             setCoffeeExpanded(false);
+            setPrizesExpanded(false);
         }
     };
 
@@ -61,11 +65,78 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
             e.preventDefault();
             setCoffeeExpanded(true);
             setFeedbackExpanded(false);
+            setPrizesExpanded(false);
+        }
+    };
+
+    const handlePrizesButtonClick = (e: React.MouseEvent) => {
+        if (prizesExpanded) {
+            e.preventDefault();
+            setShowPrizesModal(true);
+        } else {
+            e.preventDefault();
+            setPrizesExpanded(true);
+            setFeedbackExpanded(false);
+            setCoffeeExpanded(false);
         }
     };
 
     return (
         <div ref={containerRef} className="md:hidden fixed bottom-4 left-4 z-50 flex flex-col gap-3">
+            {showPrizesModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                    <button
+                        className="absolute inset-0 bg-black/40"
+                        aria-label="Sluit prijzen"
+                        onClick={() => setShowPrizesModal(false)}
+                    />
+                    <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-xl border border-gray-200">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">Prijzen</h3>
+                            <button
+                                className="text-gray-500 hover:text-gray-700"
+                                aria-label="Sluit"
+                                onClick={() => setShowPrizesModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
+                            <div>
+                                <div className="font-semibold text-gray-900">1e prijs</div>
+                                <div>&#39;Bike &amp; Pancakes&#39; arrangement voor 4 personen.</div>
+                                <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+                            </div>
+                            <div>
+                                <div className="font-semibold text-gray-900">2e prijs</div>
+                                <div>Gravel arrangement voor 2 personen.</div>
+                                <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+                            </div>
+                            <div>
+                                <div className="font-semibold text-gray-900">3e prijs</div>
+                                <div>&#39;Proefritje&#39; te nuttigen in het wielercafe in Zeddam</div>
+                                <div className="text-xs text-gray-500">(3 speciaalbiertjes geserveerd met lokale kaas &amp; worst)</div>
+                            </div>
+                            <div>
+                                <div className="font-semibold text-gray-900">4e &amp; 5e prijs</div>
+                                <div>een &#39;Veloholic&#39; shirt</div>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                * Het buffje mag je houden als aandenken aan een leuke sportieve middag!
+                            </div>
+                        </div>
+                        <div className="px-5 py-4 border-t border-gray-200 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setShowPrizesModal(false)}
+                                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900"
+                            >
+                                Sluiten
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Buy me a coffee button */}
             <a
                 href="https://buymeacoffee.com/jasperh"
@@ -85,6 +156,25 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
                     Buy me a coffee
                 </span>
             </a>
+
+            {/* Berc Bike prizes button */}
+            <button
+                onClick={handlePrizesButtonClick}
+                className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-white hover:bg-emerald-50 overflow-hidden border border-emerald-200 ${prizesExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
+            >
+                <div className="flex-shrink-0 w-9 h-9 bg-white ring-1 ring-emerald-200 flex items-center justify-center overflow-hidden">
+                    <Image
+                        src="/berc-bike-logo.jpg"
+                        alt="Berc Bike"
+                        width={36}
+                        height={36}
+                        className="w-fit h-fit object-contain"
+                    />
+                </div>
+                <span className={`text-sm text-emerald-700 font-medium whitespace-nowrap transition-all duration-300 ${prizesExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0'}`}>
+                    Prijzen
+                </span>
+            </button>
 
             {/* Feedback button */}
             <button

@@ -7,8 +7,11 @@ const MAX_JOBS_PER_RUN = 20;
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
   const authHeader = request.headers.get('authorization');
+  const vercelCronHeader = request.headers.get('x-vercel-cron');
 
-  if (!authHeader || authHeader !== expectedAuth) {
+  const isAuthorized = (authHeader && authHeader === expectedAuth) || vercelCronHeader === '1';
+
+  if (!isAuthorized) {
     console.error('[CRON] Unauthorized access attempt to process-scrape-jobs');
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
