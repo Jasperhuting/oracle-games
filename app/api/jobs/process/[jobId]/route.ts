@@ -5,6 +5,7 @@ import {
   completeJob,
   failJob,
   updateJobProgress,
+  updateJob,
 } from '@/lib/firebase/job-queue';
 import { getStageResult, getRiders, getRaceResult, type RaceSlug } from '@/lib/scraper';
 import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
@@ -15,6 +16,8 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export const maxDuration = 300; // 5 minutes (Vercel Pro)
 const SCRAPER_TIMEOUT_MS = 25_000;
+const MAX_SCRAPE_RETRIES = 3;
+const RETRY_DELAY_MS = 5 * 60 * 1000;
 
 const withTimeout = async <T>(promise: Promise<T>, label: string): Promise<T> => {
   let timeoutId: NodeJS.Timeout;
@@ -131,6 +134,30 @@ export async function POST(
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
+
+      const isTimeout = typeof errorMessage === 'string' && errorMessage.includes('timed out after');
+      if (isTimeout && job?.type === 'scraper') {
+        const retryCount = typeof (job as any).retryCount === 'number' ? (job as any).retryCount : 0;
+        if (retryCount < MAX_SCRAPE_RETRIES) {
+          const nextRunAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
+          await updateJob(jobId, {
+            status: 'pending',
+            retryCount: retryCount + 1,
+            nextRunAt,
+            error: errorMessage,
+          } as any);
+
+          return Response.json({
+            success: false,
+            jobId,
+            status: 'pending',
+            retryCount: retryCount + 1,
+            nextRunAt,
+            error: errorMessage,
+          }, { status: 202 });
+        }
+      }
+
       await failJob(jobId, errorMessage);
       await updateBatchFromJob(job, { success: false, message: errorMessage }, 'failed');
 

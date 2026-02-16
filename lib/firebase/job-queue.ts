@@ -14,6 +14,8 @@ export interface Job {
   data: Record<string, unknown>;
   result?: unknown;
   error?: string;
+  retryCount?: number;
+  nextRunAt?: string; // ISO, for backoff scheduling
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
@@ -140,6 +142,7 @@ export async function getJobs(filters?: {
 }): Promise<Job[]> {
   let query: import('@google-cloud/firestore').Query = db.collection(JOBS_COLLECTION);
   const HARD_LIMIT = 500;
+  const nowIso = new Date().toISOString();
 
   if (filters?.type) {
     query = query.where('type', '==', filters.type);
@@ -150,7 +153,12 @@ export async function getJobs(filters?: {
   }
 
   const snapshot = await query.limit(HARD_LIMIT).get();
-  const jobs = snapshot.docs.map(doc => doc.data() as Job);
+  const jobs = snapshot.docs.map(doc => doc.data() as Job).filter(job => {
+    if (filters?.status === 'pending' && job.nextRunAt) {
+      return job.nextRunAt <= nowIso;
+    }
+    return true;
+  });
   jobs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
   if (filters?.limit) {
