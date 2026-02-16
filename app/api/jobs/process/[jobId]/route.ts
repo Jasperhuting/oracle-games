@@ -14,6 +14,19 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const maxDuration = 300; // 5 minutes (Vercel Pro)
+const SCRAPER_TIMEOUT_MS = 25_000;
+
+const withTimeout = async <T>(promise: Promise<T>, label: string): Promise<T> => {
+  let timeoutId: NodeJS.Timeout;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${SCRAPER_TIMEOUT_MS}ms`)), SCRAPER_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId!);
+  }
+};
 
 /**
  * POST /api/jobs/process/[jobId]
@@ -247,10 +260,10 @@ async function processSingleScrape(jobId: string, job: any) {
   let result: any;
 
   if (type === 'startlist') {
-    result = await getRiders({
+    result = await withTimeout(getRiders({
       race: race as RaceSlug,
       year,
-    });
+    }), `startlist scrape ${race}`);
 
     const key: ScraperDataKey = {
       race,
@@ -266,11 +279,11 @@ async function processSingleScrape(jobId: string, job: any) {
       riderCount: 'riders' in result ? result.riders.length : 0,
     };
   } else if ((type === 'stage-result' || type === 'stage') && stage) {
-    result = await getStageResult({
+    result = await withTimeout(getStageResult({
       race: race as RaceSlug,
       year,
       stage,
-    });
+    }), `stage scrape ${race} ${stage}`);
 
     const key: ScraperDataKey = {
       race,
@@ -288,10 +301,10 @@ async function processSingleScrape(jobId: string, job: any) {
       stage,
     };
   } else if (type === 'result') {
-    result = await getRaceResult({
+    result = await withTimeout(getRaceResult({
       race: race as RaceSlug,
       year,
-    });
+    }), `result scrape ${race}`);
 
     const key: ScraperDataKey = {
       race,
