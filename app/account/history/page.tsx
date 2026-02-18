@@ -40,7 +40,7 @@ export default function HistoryPage() {
                         </p>
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
                             <p className="text-purple-800">
-                                Binnenkun kun je hier je volledige geschiedenis bekijken van alle deelnames aan Oracle Games spellen.
+                                Binnenkort kun je hier je volledige geschiedenis bekijken van alle deelnames aan Oracle Games spellen.
                             </p>
                         </div>
                         <Link 

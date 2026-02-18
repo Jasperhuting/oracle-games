@@ -250,6 +250,7 @@ export async function POST(request: NextRequest) {
             raceSlug: race,
             stage: type === 'result' ? 'result' : type === 'tour-gc' ? 'tour-gc' : Number(stage),
             year: Number(year),
+            force: true,
           }),
         });
 

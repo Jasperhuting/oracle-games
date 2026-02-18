@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/Button';
 import toast from 'react-hot-toast';
@@ -591,26 +591,43 @@ function RaceCard({
 export function RaceManagementDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [data, setData] = useState<RaceStatusResponse | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
   const [hideFullyScraped, setHideFullyScraped] = useState(true);
+  const [daysAhead, setDaysAhead] = useState(14);
+  const daysAheadRef = useRef(daysAhead);
 
   // Helper function to check if a race is fully scraped
   const isFullyScraped = (race: RaceStatus): boolean => {
     return race.scrapedStages === race.totalStages && race.failedStages === 0;
   };
 
-  const fetchData = useCallback(async () => {
+  const getMaxDate = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+  };
+
+  const fetchData = useCallback(async (days?: number) => {
     if (!user?.uid) return;
 
-    setLoading(true);
+    const effectiveDays = days ?? daysAheadRef.current;
+    const isLoadMore = days !== undefined && days > daysAheadRef.current;
+
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
     try {
       const params = new URLSearchParams({
         userId: user.uid,
         year: year.toString(),
+        maxDate: getMaxDate(effectiveDays),
       });
 
       const response = await fetch(`/api/admin/race-status?${params}`);
@@ -621,13 +638,22 @@ export function RaceManagementDashboard() {
       }
 
       setData(result);
+      if (isLoadMore) {
+        daysAheadRef.current = effectiveDays;
+        setDaysAhead(effectiveDays);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       toast.error('Failed to load race status');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [user?.uid, year]);
+
+  const handleLoadMore = useCallback(() => {
+    fetchData(daysAheadRef.current + 20);
+  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
@@ -738,9 +764,23 @@ export function RaceManagementDashboard() {
               key={`${race.raceSlug}-${race.year}`}
               race={race}
               userId={user.uid}
-              onRefresh={fetchData}
+              onRefresh={() => fetchData()}
             />
           ))}
+
+          {/* Load More */}
+          <div className="text-center py-4">
+            <Button
+              variant="secondary"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Loading...' : `Load more races (+20 days)`}
+            </Button>
+            <span className="ml-3 text-sm text-gray-500">
+              Showing races up to {new Date(new Date().setDate(new Date().getDate() + daysAhead)).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          </div>
         </div>
       )}
     </div>

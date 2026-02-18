@@ -176,8 +176,8 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
   const formatRanking = (ranking: number, total: number): string => {
     if (ranking === 0 || total === 0) return '-';
-    const percentage = Math.round(((total - ranking + 1) / total) * 100);
-    return `#${ranking} van ${total} (top ${percentage}%)`;
+    const percentage = Math.round((ranking / total) * 100);
+    return `#${ranking} van ${total} (je zit bij de beste ${percentage}%)`;
   };
 
   const getGameLink = (game: ActiveGame): string => {
@@ -226,7 +226,6 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                   <tr className="text-left text-gray-500">
                     <th className="pb-1 font-medium"></th>
                     <th className="pb-1 font-medium text-right pr-4"></th>
-                    <th className="pb-1 font-medium text-right">Punten</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -242,9 +241,6 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
                         {formatRanking(game.ranking, game.totalParticipants)}
-                      </td>
-                      <td className="py-1.5 text-right font-medium text-primary">
-                        {game.totalPoints} punten
                       </td>
                     </tr>
                   ))}
@@ -264,7 +260,6 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                   <tr className="text-left text-gray-500">
                     <th className="pb-1 font-medium"></th>
                     <th className="pb-1 font-medium text-right pr-4"></th>
-                    <th className="pb-1 font-medium text-right">Punten</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -280,9 +275,6 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
                         {formatRanking(game.ranking, game.totalParticipants)}
-                      </td>
-                      <td className="py-1.5 text-right font-medium text-primary">
-                        {game.totalPoints} punten
                       </td>
                     </tr>
                   ))}
@@ -311,9 +303,6 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
                         {formatRanking(game.ranking, game.totalParticipants)}
-                      </td>
-                      <td className="py-1.5 text-right font-medium text-primary">
-                        {game.totalPoints} punten
                       </td>
                     </tr>
                   ))}

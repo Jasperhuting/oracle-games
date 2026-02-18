@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import { listScraperData, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import { type ScraperDataKey } from '@/lib/firebase/scraper-service';
 
 export interface StageStatus {
   stageNumber: number | string;
@@ -84,7 +84,6 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'course-cycliste-de-solidarnosc': 4, // Checked
   'course-de-la-paix-u23': 4, // Checked
   'cote-d-or-classic-juniors': 2, // Checked
-  'istrian-spring-tour': 3, // Checked
   'trofej-umag': 1, // Checked
   'tour-of-albania': 5, // Checked
   'tour-of-turkey': 8, // Checked
@@ -201,6 +200,13 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'setmana-ciclista-valenciana': 4,
   'tour-cycliste-international-la-provence': 3,
   'vuelta-ciclista-a-la-region-de-murcia': 2,
+  'ruta-del-sol': 5,
+  'volta-ao-algarve': 5,
+  'le-tour-de-filipinas': 3,
+  'tour-of-rwanda': 8,
+  'giro-di-sardegna': 5,
+  'istrian-spring-tour': 4,
+  'tour-of-rhodes': 4
 };
 
 // Races that typically have a prologue
@@ -252,6 +258,17 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'race-torquay', // race is cancelled
   'grand-prix-de-oriente', // women's race
   'pionera-race-we',
+  'aveiro-region-champions-classic', // race is cancelled
+  'grand-prix-alaiye', // race is cancelled
+  'clasica-de-almeria-we', // women's race
+  'kuurne-brussel-kuurne-juniors', // juniors race
+  'omloop-van-het-hageland', // women's race
+  'biwase-tour-of-vietnam', // women's race
+  'grand-prix-apollon-temple-we', // women's race
+  'gran-premi-les-franqueses-kh7', // juniors race
+  'biwase-cup', // women's race
+  'gp-oetingen', // women's race
+  'trofeo-da-moreno-piccolo-trofeo-alfredo-binda', // women's junior race
 ]);
 
 /**
@@ -431,7 +448,26 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'visegrad-4-bicycle-race-gp-polski-via-odra',
   'visegrad-4-bicycle-race-gp-slovakia',
   'youngster-coast-challenge',
-  'asian-championships-me'
+  'asian-championships-me',
+  'asian-continental-championships-mixed-relay-ttt',
+  'grand-prix-alaiye1',
+  'tour-des-alpes-maritimes-et-du-var',
+  'nc-philippines-itt',
+  'faun-ardeche-classic',
+  'grand-prix-pedalia',
+  'visit-south-aegean-gp',
+  'region-on-dodecanese-gp',
+  'gp-samyn',
+  'trofej-umag',
+  'trofeo-laigueglia',
+  'grand-prix-apollon-temple-me',
+  'le-tour-des-100-communes',
+  'rhodes-gp',
+  'gp-de-la-ville-de-lillers',
+  'porec-trophy',
+  'popolarissima',
+  
+  
 ]);
 
 /**
@@ -472,59 +508,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all scraper data documents
-    const allScraperData = await listScraperData();
-
-    // Filter by year
-    const yearData = allScraperData.filter(d => d.key?.year === year);
-
-    // Group by race
-    const raceMap = new Map<string, {
-      key: ScraperDataKey;
-      updatedAt: string;
-      id: string;
-    }[]>();
-
-    yearData.forEach(doc => {
-      if (!doc.key) return;
-      const raceSlug = doc.key.race;
-
-      if (raceFilter && raceSlug !== raceFilter) return;
-
-      if (!raceMap.has(raceSlug)) {
-        raceMap.set(raceSlug, []);
-      }
-      raceMap.get(raceSlug)!.push(doc);
-    });
-
-    // Get validation metadata for each document
-    const scraperDataSnapshot = await db.collection('scraper-data').get();
-    const validationMap = new Map<string, {
-      valid: boolean;
-      errorCount: number;
-      warningCount: number;
-      riderCount: number;
-    }>();
-
-    scraperDataSnapshot.docs.forEach(doc => {
-      const data = doc.data();
-      if (data._validation) {
-        validationMap.set(doc.id, {
-          valid: data._validation.valid ?? true,
-          errorCount: data._validation.errorCount ?? 0,
-          warningCount: data._validation.warningCount ?? 0,
-          riderCount: data._validation.metadata?.riderCount ?? data.count ?? 0,
-        });
-      } else {
-        // For documents without validation metadata, use count
-        validationMap.set(doc.id, {
-          valid: true,
-          errorCount: 0,
-          warningCount: 0,
-          riderCount: data.count ?? 0,
-        });
-      }
-    });
+    // Calculate date cutoff from query param, default to today + 14 days
+    const maxDateParam = searchParams.get('maxDate');
+    const maxDate = maxDateParam ? new Date(maxDateParam) : new Date();
+    if (!maxDateParam) {
+      maxDate.setDate(maxDate.getDate() + 7);
+    }
+    maxDate.setHours(23, 59, 59, 999);
 
     // Get race configurations for stage counts - filter by year
     const racesSnapshot = await db.collection('races').where('year', '==', year).get();
@@ -548,13 +538,78 @@ export async function GET(request: NextRequest) {
         return;
       }
 
+      // Skip races that start after the date cutoff (today + 7 days)
+      const startDate = data.startDate || null;
+      if (startDate) {
+        const raceStart = new Date(startDate);
+        if (raceStart > maxDate) {
+          return;
+        }
+      }
+
       raceConfigs.set(slug, {
         name: data.name || slug,
         totalStages: data.totalStages || data.stages || 1,
         isSingleDay: data.isSingleDay ?? false,
-        startDate: data.startDate || null,
+        startDate,
         endDate: data.endDate || null,
         classification,
+      });
+    });
+
+    // Build set of relevant race slugs for filtering scraper data
+    const relevantRaceSlugs = new Set(raceConfigs.keys());
+
+    // Get all scraper data documents (single fetch for both listing and validation)
+    const scraperDataSnapshot = await db.collection('scraper-data').get();
+
+    // Build raceMap and validationMap from a single fetch
+    const raceMap = new Map<string, {
+      key: ScraperDataKey;
+      updatedAt: string;
+      id: string;
+    }[]>();
+    const validationMap = new Map<string, {
+      valid: boolean;
+      errorCount: number;
+      warningCount: number;
+      riderCount: number;
+    }>();
+
+    scraperDataSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+
+      // Build validation map for all docs
+      if (data._validation) {
+        validationMap.set(doc.id, {
+          valid: data._validation.valid ?? true,
+          errorCount: data._validation.errorCount ?? 0,
+          warningCount: data._validation.warningCount ?? 0,
+          riderCount: data._validation.metadata?.riderCount ?? data.count ?? 0,
+        });
+      } else {
+        validationMap.set(doc.id, {
+          valid: true,
+          errorCount: 0,
+          warningCount: 0,
+          riderCount: data.count ?? 0,
+        });
+      }
+
+      // Build race map (only for relevant races in the right year)
+      const key = data.key as ScraperDataKey | undefined;
+      if (!key || key.year !== year) return;
+      const raceSlug = key.race;
+      if (raceFilter && raceSlug !== raceFilter) return;
+      if (!relevantRaceSlugs.has(raceSlug)) return;
+
+      if (!raceMap.has(raceSlug)) {
+        raceMap.set(raceSlug, []);
+      }
+      raceMap.get(raceSlug)!.push({
+        key,
+        updatedAt: data.updatedAt as string,
+        id: doc.id,
       });
     });
 
@@ -573,9 +628,8 @@ export async function GET(request: NextRequest) {
       return 'in-progress';
     };
 
-    // Get stage dates for all races
+    // Get stage dates only for relevant races (reuse racesSnapshot instead of fetching all races)
     const stageDatesMap = new Map<string, Map<number | string, string>>();
-    const racesWithStagesSnapshot = await db.collection('races').get();
 
     const normalizeDate = (value: unknown): string | null => {
       if (!value) return null;
@@ -592,9 +646,11 @@ export async function GET(request: NextRequest) {
       }
       return null;
     };
-    
-    for (const raceDoc of racesWithStagesSnapshot.docs) {
-      const raceSlug = raceDoc.id;
+
+    for (const raceDoc of racesSnapshot.docs) {
+      const raceSlug = raceDoc.data().slug || raceDoc.id;
+      // Only fetch stage subcollections for relevant races
+      if (!relevantRaceSlugs.has(raceSlug)) continue;
       const stagesSnapshot = await raceDoc.ref.collection('stages').get();
       const stageMap = new Map<number | string, string>();
       

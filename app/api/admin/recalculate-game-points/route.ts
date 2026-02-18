@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
               raceSlug: raceSlug,
               stage: stage,
               year: year.toString(),
+              force: true,
             }),
           });
 

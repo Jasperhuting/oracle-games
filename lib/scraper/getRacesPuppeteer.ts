@@ -105,6 +105,26 @@ export async function getRacesPuppeteer(year: number): Promise<RacesResult> {
       });
     });
 
+    const manualRaces: Race[] = [];
+
+    if (year === 2026) {
+      manualRaces.push({
+        slug: 'asian-continental-championships-mixed-relay-ttt',
+        name: 'Asian Continental Championships - Mixed Relay TTT',
+        startDate: '2026-02-07',
+        endDate: '2026-02-07',
+        classification: 'CC',
+        country: 'sa',
+      });
+    }
+
+    const existingSlugs = new Set(racesData.map(race => race.slug));
+    manualRaces.forEach(race => {
+      if (!existingSlugs.has(race.slug)) {
+        racesData.push(race);
+      }
+    });
+
     console.log(`[getRacesPuppeteer] Successfully scraped ${racesData.length} races`);
 
     return {
