@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
             userEmail: email,
             joinedAt: new Date(),
             status: 'active',
+            eligibleForPrizes: false,
             budget: testGameData.config?.budget || 7000,
             spentBudget: 0,
             rosterSize: 0,

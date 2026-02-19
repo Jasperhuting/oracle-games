@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendTelegramMessage } from '@/lib/telegram';
 import { createJob } from '@/lib/firebase/job-queue';
+import { generateDocumentId, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 
 const TIME_ZONE = 'Europe/Amsterdam';
 const MAX_RUN_MS = 240_000; // keep under maxDuration to avoid timeouts
@@ -9,7 +10,7 @@ const MAX_RUN_MS = 240_000; // keep under maxDuration to avoid timeouts
 type ScrapeOutcome = {
   raceSlug: string;
   raceName: string;
-  type: 'stage' | 'result';
+  type: 'stage' | 'result' | 'tour-gc';
   stage?: number;
   success: boolean;
   riderCount: number;
@@ -98,6 +99,38 @@ const diffDays = (from: string, to: string): number => {
   return Math.floor((toUtc - fromUtc) / 86400000);
 };
 
+const addDays = (dateStr: string, days: number): string => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const utc = Date.UTC(year, month - 1, day + days);
+  return formatDateOnly(new Date(utc));
+};
+
+const parseMaybeJsonArray = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+async function hasExistingScrape(db: ReturnType<typeof getServerFirebase>, key: ScraperDataKey): Promise<boolean> {
+  const docId = generateDocumentId(key);
+  const doc = await db.collection('scraper-data').doc(docId).get();
+
+  if (!doc.exists) return false;
+  const data = doc.data();
+  if (!data) return false;
+
+  const stageResults = parseMaybeJsonArray(data.stageResults);
+  const generalClassification = parseMaybeJsonArray(data.generalClassification);
+  const count = typeof data.count === 'number' ? data.count : 0;
+
+  return stageResults.length > 0 || generalClassification.length > 0 || count > 0;
+}
+
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
   const authHeader = request.headers.get('authorization');
@@ -177,6 +210,15 @@ export async function GET(request: NextRequest) {
       if (isSingleDay) {
         const year = raceData.year || new Date().getFullYear();
         if (targetDates.some(dateStr => dateStr >= startStr && dateStr <= endStr)) {
+          const alreadyScraped = await hasExistingScrape(db, {
+            race: raceSlug,
+            year,
+            type: 'result',
+          });
+          if (alreadyScraped) {
+            skipped.push(`${raceSlug} (result already scraped)`);
+            continue;
+          }
           if (dryRun || notifyOnly) {
             outcomes.push({
               raceSlug,
@@ -228,6 +270,17 @@ export async function GET(request: NextRequest) {
           const stageOffset = diffDays(startStr, targetDate);
           const stageNumber = stageOffset + 1;
 
+          const alreadyScraped = await hasExistingScrape(db, {
+            race: raceSlug,
+            year,
+            type: 'stage',
+            stage: stageNumber,
+          });
+          if (alreadyScraped) {
+            skipped.push(`${raceSlug} (stage ${stageNumber} already scraped)`);
+            continue;
+          }
+
           if (dryRun || notifyOnly) {
             outcomes.push({
               raceSlug,
@@ -269,6 +322,53 @@ export async function GET(request: NextRequest) {
         if (stoppedEarly) {
           break;
         }
+
+        const dayAfterEnd = addDays(endStr, 1);
+        if (targetDates.includes(dayAfterEnd)) {
+          const alreadyScraped = await hasExistingScrape(db, {
+            race: raceSlug,
+            year,
+            type: 'tour-gc',
+          });
+          if (alreadyScraped) {
+            skipped.push(`${raceSlug} (tour-gc already scraped)`);
+            continue;
+          }
+          if (dryRun || notifyOnly) {
+            outcomes.push({
+              raceSlug,
+              raceName,
+              type: 'tour-gc',
+              success: true,
+              riderCount: 0,
+              message: notifyOnly ? 'NOTIFY-ONLY: skipped scrape (tour-gc)' : 'DRY-RUN: would queue tour-gc',
+            });
+            continue;
+          }
+
+          await createJob({
+            type: 'scraper',
+            status: 'pending',
+            priority: 1,
+            progress: { current: 0, total: 1, percentage: 0 },
+            data: {
+              type: 'tour-gc',
+              race: raceSlug,
+              year,
+              batchId,
+              raceName,
+            },
+          });
+          queuedJobs++;
+          outcomes.push({
+            raceSlug,
+            raceName,
+            type: 'tour-gc',
+            success: true,
+            riderCount: 0,
+            message: 'Queued tour-gc scrape',
+          });
+        }
       }
     }
 
@@ -291,7 +391,7 @@ export async function GET(request: NextRequest) {
     const totalFound = outcomes.length;
 
     const summaryLines = outcomes.map((o) => {
-      const label = o.type === 'result' ? 'Result' : `Stage ${o.stage}`;
+      const label = o.type === 'result' ? 'Result' : o.type === 'tour-gc' ? 'Tour GC' : `Stage ${o.stage}`;
       const status = o.success ? '✅' : '❌';
       const countInfo = o.riderCount > 0 ? ` (${o.riderCount} riders)` : '';
       return `${status} <b>${o.raceName}</b> — ${label}${countInfo}\n${o.message}`;
@@ -300,7 +400,9 @@ export async function GET(request: NextRequest) {
     const elapsedMs = Date.now() - runStartedAt;
     const elapsedSeconds = Math.round(elapsedMs / 1000);
     const skippedCount = skipped.length;
-    const shownSkipped = skipped.slice(0, 10);
+    const alreadyScraped = skipped.filter((entry) => entry.includes('already scraped'));
+    const otherSkipped = skipped.filter((entry) => !entry.includes('already scraped'));
+    const shownSkipped = [...alreadyScraped, ...otherSkipped].slice(0, 10);
     const skippedSummary =
       skippedCount > 0
         ? `\n\n⚠️ Skipped (${skippedCount}):\n${shownSkipped.join('\n')}${skippedCount > shownSkipped.length ? '\n…' : ''}`

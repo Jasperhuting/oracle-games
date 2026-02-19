@@ -36,6 +36,7 @@ export async function GET(
       return {
         id: doc.id,
         ...data,
+        eligibleForPrizes: data.eligibleForPrizes ?? false,
         joinedAt: data.joinedAt?.toDate?.()?.toISOString() || data.joinedAt,
         eliminatedAt: data.eliminatedAt?.toDate?.()?.toISOString(),
       } as ClientGameParticipant;
