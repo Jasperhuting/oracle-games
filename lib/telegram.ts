@@ -57,6 +57,7 @@ export async function sendTelegramMessage(
  * Send a feedback notification to Telegram
  */
 export async function sendFeedbackNotification(
+  feedbackId: string,
   userEmail: string,
   userName: string,
   currentPage: string,
@@ -70,6 +71,9 @@ export async function sendFeedbackNotification(
 
 💬 <b>Bericht:</b>
 ${message}
+
+🆔 <b>Feedback ID:</b> ${feedbackId}
+↩️ <b>Antwoord via Telegram:</b> /reply ${feedbackId} &lt;bericht&gt;
 
 ⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
   `.trim();

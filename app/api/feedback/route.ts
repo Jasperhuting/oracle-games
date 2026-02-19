@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
     // Send Telegram notification
     try {
       await sendFeedbackNotification(
+        feedbackRef.id,
         userEmail,
         displayName,
         currentPage || 'Niet opgegeven',
