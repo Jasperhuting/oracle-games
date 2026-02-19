@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const TELEGRAM_ADMIN_USER_ID = process.env.TELEGRAM_ADMIN_USER_ID;
 
@@ -38,6 +39,24 @@ async function resolveAdminUser() {
     .get();
 
   return admins.docs[0] || null;
+}
+
+async function sendTelegramReply(chatId: string | number, text: string) {
+  if (!TELEGRAM_BOT_TOKEN) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      }),
+    });
+  } catch (error) {
+    console.error('[TELEGRAM_WEBHOOK] Failed to send confirmation:', error);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -133,6 +152,13 @@ export async function POST(request: NextRequest) {
       },
       timestamp: Timestamp.now(),
     });
+
+    if (chatId) {
+      await sendTelegramReply(
+        chatId,
+        `✅ Antwoord verzonden en opgeslagen voor feedback <code>${feedbackId}</code>.`
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
