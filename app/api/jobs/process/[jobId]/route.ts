@@ -11,6 +11,7 @@ import { getStageResult, getRiders, getRaceResult, type RaceSlug } from '@/lib/s
 import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendTelegramMessage } from '@/lib/telegram';
+import { cleanFirebaseData } from '@/lib/firebase/utils';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -86,8 +87,9 @@ export async function POST(
         await processBulkScrape(jobId, job);
       } else if (job.type === 'scraper') {
         const result = await processSingleScrape(jobId, job);
+        const safeResult = cleanFirebaseData(result) as ScrapeResult;
 
-        if (!result.success && result.retryable) {
+        if (!safeResult.success && safeResult.retryable) {
           const retryCount = typeof (job as any).retryCount === 'number' ? (job as any).retryCount : 0;
           if (retryCount < MAX_SCRAPE_RETRIES) {
             const nextRunAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
@@ -95,7 +97,7 @@ export async function POST(
               status: 'pending',
               retryCount: retryCount + 1,
               nextRunAt,
-              error: result.message,
+              error: safeResult.message,
             } as any);
 
             return Response.json({
@@ -104,33 +106,33 @@ export async function POST(
               status: 'pending',
               retryCount: retryCount + 1,
               nextRunAt,
-              error: result.message,
-              result,
+              error: safeResult.message,
+              result: safeResult,
             }, { status: 202 });
           }
         }
 
-        if (!result.success) {
-          await failJob(jobId, result.message);
-          await updateBatchFromJob(job, result, 'failed');
+        if (!safeResult.success) {
+          await failJob(jobId, safeResult.message);
+          await updateBatchFromJob(job, safeResult, 'failed');
           return Response.json(
             {
-              error: result.message,
+              error: safeResult.message,
               jobId,
               status: 'failed',
-              result,
+              result: safeResult,
             },
             { status: 500 }
           );
         }
 
-        await completeJob(jobId, result);
-        await updateBatchFromJob(job, result, 'completed');
+        await completeJob(jobId, safeResult);
+        await updateBatchFromJob(job, safeResult, 'completed');
         return Response.json({
           success: true,
           jobId,
           status: 'completed',
-          result,
+          result: safeResult,
         });
       } else if (job.type === 'team-update') {
         await processTeamUpdate(jobId, job);
@@ -370,6 +372,33 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (save.success) {
+      try {
+        const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
+        const calculatePoints = calculatePointsModule.POST;
+
+        const mockRequest = new NextRequest('http://localhost:3000/api/games/calculate-points', {
+          method: 'POST',
+          body: JSON.stringify({
+            raceSlug: race,
+            stage,
+            year,
+            force: true,
+          }),
+        });
+
+        const calculatePointsResponse = await calculatePoints(mockRequest);
+        const pointsResult = await calculatePointsResponse.json();
+
+        if (calculatePointsResponse.status === 200) {
+          console.log(`[jobs/process] Points calculation completed for ${race} stage ${stage}:`, pointsResult);
+        } else {
+          console.error(`[jobs/process] Failed to calculate points for ${race} stage ${stage}:`, pointsResult);
+        }
+      } catch (error) {
+        console.error(`[jobs/process] Error calculating points for ${race} stage ${stage}:`, error);
+      }
+    }
     return {
       success: save.success,
       message: save.success ? `Stage ${stage} scraped` : (save.error || 'Validation failed'),
@@ -392,6 +421,33 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (save.success) {
+      try {
+        const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
+        const calculatePoints = calculatePointsModule.POST;
+
+        const mockRequest = new NextRequest('http://localhost:3000/api/games/calculate-points', {
+          method: 'POST',
+          body: JSON.stringify({
+            raceSlug: race,
+            stage: 'result',
+            year,
+            force: true,
+          }),
+        });
+
+        const calculatePointsResponse = await calculatePoints(mockRequest);
+        const pointsResult = await calculatePointsResponse.json();
+
+        if (calculatePointsResponse.status === 200) {
+          console.log(`[jobs/process] Points calculation completed for ${race} result:`, pointsResult);
+        } else {
+          console.error(`[jobs/process] Failed to calculate points for ${race} result:`, pointsResult);
+        }
+      } catch (error) {
+        console.error(`[jobs/process] Error calculating points for ${race} result:`, error);
+      }
+    }
     return {
       success: save.success,
       message: save.success ? 'Result scraped' : (save.error || 'Validation failed'),

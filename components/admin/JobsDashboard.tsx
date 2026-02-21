@@ -45,6 +45,7 @@ export function JobsDashboard() {
   const [loading, setLoading] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [processingJobId, setProcessingJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadJobs = async () => {
@@ -210,7 +211,38 @@ export function JobsDashboard() {
                     {statusBadge(job.status)}
                     <span className="text-xs text-gray-500">{job.type}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
+                  <div className="flex items-center gap-2">
+                    {job.status === 'failed' && (
+                      <Button
+                        variant="secondary"
+                        onClick={async () => {
+                          if (!user?.uid) return;
+                          setProcessingJobId(job.id);
+                          setError(null);
+                          try {
+                            const response = await fetch('/api/admin/retry-job', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ userId: user.uid, jobId: job.id }),
+                            });
+                            const data = await response.json();
+                            if (!response.ok) {
+                              throw new Error(data.error || 'Failed to retry job');
+                            }
+                            await loadJobs();
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : 'Failed to retry job');
+                          } finally {
+                            setProcessingJobId(null);
+                          }
+                        }}
+                        disabled={loading || cleaning || processing || processingJobId !== null}
+                      >
+                        {processingJobId === job.id ? 'Retrying...' : 'Retry'}
+                      </Button>
+                    )}
+                    <span className="text-xs text-gray-400">{formatDate(job.createdAt)}</span>
+                  </div>
                 </div>
                 <div className="mt-2 text-sm text-gray-600">
                   Progress: {job.progress?.current ?? 0}/{job.progress?.total ?? 0} ({job.progress?.percentage ?? 0}%)
