@@ -75,6 +75,12 @@ export function MyTeamTab({
   };
 
   const isMarginalGains = game?.gameType === 'marginal-gains';
+  const isAuctioneer = game?.gameType === 'auctioneer';
+  const isSelectionGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
+  const hasAnyRacePoints = useMemo(
+    () => riders.some((rider) => rider.racePoints && Object.keys(rider.racePoints).length > 0),
+    [riders]
+  );
 
   // Load race names
   useEffect(() => {
@@ -285,18 +291,17 @@ export function MyTeamTab({
                           {rider.baseValue !== undefined && rider.baseValue > 0 && (
                             <span>Waarde: {rider.baseValue}</span>
                           )}
-                          {rider.pricePaid !== undefined && rider.pricePaid > 0 && (
+                          {rider.pricePaid !== undefined && rider.pricePaid > 0 && !isSelectionGame && (
                             <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>
                           )}
-                          {rider.acquisitionType && (
+                          {rider.acquisitionType && rider.acquisitionType !== 'auction' && (
                             <span className="text-gray-400 italic">
-                              {rider.acquisitionType === 'auction' ? 'Veiling' : 
-                               rider.acquisitionType === 'draft' ? 'Draft' : 
+                              {rider.acquisitionType === 'draft' ? 'Draft' : 
                                rider.acquisitionType === 'selection' ? 'Selectie' : 
                                rider.acquisitionType}
                             </span>
                           )}
-                          {riderPopularity && (
+                          {riderPopularity && !isAuctioneer && (
                             <span className="text-blue-600">
                               Gekozen door {riderPopularity.percentage}% ({riderPopularity.selectedBy}/{riderPopularity.totalTeams})
                             </span>
@@ -358,7 +363,7 @@ export function MyTeamTab({
       </div>
 
       {/* Info text */}
-      {riders.length > 0 && (
+      {riders.length > 0 && hasAnyRacePoints && (
         <div className="mt-6 text-center text-sm text-gray-500">
           Klik op een renner om de gedetailleerde punten per etappe te zien
         </div>

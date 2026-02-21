@@ -43,8 +43,8 @@ export default function StandingsPage() {
 
   const backHref = gameType === 'full-grid' ? `/games/${gameId}/auction` : '/games';
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const allColumns = [
       columnHelper.accessor('ranking', {
         header: '#',
         cell: (info) => {
@@ -100,7 +100,7 @@ export default function StandingsPage() {
         (row) => (row.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0),
         {
           id: 'achievedPoints',
-          header: 'Behaalde punten',
+          header: 'Punten',
           cell: (info) => (
             <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
           ),
@@ -174,9 +174,14 @@ export default function StandingsPage() {
         ),
         size: 100,
       }),
-    ],
-    [gameId, gameType]
-  );
+    ];
+
+    if (gameType === 'auctioneer') {
+      return allColumns.filter((column) => column.id !== 'percentage');
+    }
+
+    return allColumns;
+  }, [gameId, gameType]);
 
   const table = useReactTable({
     data: standings,

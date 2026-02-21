@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Flag } from '@/components/Flag';
@@ -94,6 +94,10 @@ export default function TeamDetailPage() {
   const [totalPointsScored, setTotalPointsScored] = useState<number>(0);
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
+  const hasAnyRacePoints = useMemo(
+    () => teamDetails?.riders?.some((rider) => rider.racePoints && Object.keys(rider.racePoints).length > 0) ?? false,
+    [teamDetails]
+  );
   
 
   useEffect(() => {
@@ -379,7 +383,7 @@ export default function TeamDetailPage() {
         </div>
 
         {/* Info text */}
-        {teamDetails.riders.length > 0 && (
+        {teamDetails.riders.length > 0 && hasAnyRacePoints && (
           <div className="mt-6 text-center text-sm text-gray-500">
             Klik op een renner om de gedetailleerde punten per etappe te zien
           </div>

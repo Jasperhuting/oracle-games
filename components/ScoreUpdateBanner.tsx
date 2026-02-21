@@ -118,9 +118,7 @@ export function ScoreUpdateBanner({
         })
       : '';
 
-    const points = update.totalPointsAwarded ? ` (+${Math.round(update.totalPointsAwarded)} punten)` : '';
-
-    return `Scores bijgewerkt: ${formatRaceLabel(update.raceSlug)} – ${formatStageLabel(update.stage)} (${dateStr})${points}`;
+    return `Scores bijgewerkt: ${formatRaceLabel(update.raceSlug)} – ${formatStageLabel(update.stage)} (${dateStr})`;
   }, [update]);
 
   const dismiss = () => {

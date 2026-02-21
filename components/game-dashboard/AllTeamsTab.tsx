@@ -281,17 +281,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
               : 'bg-white text-gray-700 border border-gray-300'
           }`}
         >
-          Per Speler
-        </button>
-        <button
-          onClick={() => setViewMode('cycling-teams')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            viewMode === 'cycling-teams'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300'
-          }`}
-        >
-          Per Wielerteam
+          Deelnemers
         </button>
         <button
           onClick={() => setViewMode('all')}
@@ -301,7 +291,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
               : 'bg-white text-gray-700 border border-gray-300'
           }`}
         >
-          Alles
+          Renners
         </button>
         <button
           onClick={() => setViewMode('compare')}

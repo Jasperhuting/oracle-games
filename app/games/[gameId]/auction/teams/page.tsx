@@ -79,6 +79,7 @@ export default function TeamsOverviewPage() {
   const [game, setGame] = useState<Game | null>(null);
 
   const { riders: allRiders, uniqueRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams();
+  const showAuctionLink = game?.status === 'bidding';
 
   useEffect(() => {
     const gameRiders = allRiders.filter(r => r.gameId === gameId);
@@ -316,12 +317,14 @@ export default function TeamsOverviewPage() {
                 Alle gekozen teams in één overzicht
               </p>
             </div>
-            <Link
-              href={`/games/${gameId}/auction`}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Terug naar Auction
-            </Link>
+            {showAuctionLink && (
+              <Link
+                href={`/games/${gameId}/auction`}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Terug naar Auction
+              </Link>
+            )}
           </div>
 
           {/* View Mode Toggle */}
@@ -337,17 +340,7 @@ export default function TeamsOverviewPage() {
                   : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
-              Per Speler
-            </button>
-            <button
-              onClick={() => setViewMode('cycling-teams')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                viewMode === 'cycling-teams'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300'
-              }`}
-            >
-              Per Wielerteam
+              Deelnemers
             </button>
             <button
               onClick={() => setViewMode('all')}
@@ -357,7 +350,7 @@ export default function TeamsOverviewPage() {
                   : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
-              Alles
+              Renners
             </button>
             <button
               onClick={() => setViewMode('compare')}

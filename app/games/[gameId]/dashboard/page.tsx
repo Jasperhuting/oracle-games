@@ -382,20 +382,22 @@ export default function GameDashboardPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              {(game?.gameType === 'auctioneer' || game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains') && (
+              {game?.gameType === 'auctioneer' && (
                 <Link
                   href={`/games/${gameId}/auction`}
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
                 >
-                  {game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' ? 'Selectie' : 'Auction'}
+                  Auction
                 </Link>
               )}
-              <Link
-                href="/games"
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Terug naar Games
-              </Link>
+              {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && (
+                <Link
+                  href="/games"
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Terug naar Games
+                </Link>
+              )}
             </div>
           </div>
         </div>

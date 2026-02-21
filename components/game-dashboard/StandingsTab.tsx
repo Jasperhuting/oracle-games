@@ -95,7 +95,7 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
         (row) => (row.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0),
         {
           id: 'achievedPoints',
-          header: 'Behaalde punten',
+          header: 'Punten',
           cell: (info) => (
             <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
           ),
@@ -194,13 +194,17 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
   // Filter columns based on game type
   const columns = useMemo(() => {
     if (gameType === 'worldtour-manager') {
-      // For worldtour-manager: hide achievedPoints and percentage, show avgPointsPerRider
+      // For worldtour-manager: hide achievedPoints, percentage, and avgPointsPerRider
       return allColumns.filter(
-        (col) => col.id !== 'achievedPoints' && col.id !== 'percentage'
+        (col) => col.id !== 'achievedPoints' && col.id !== 'percentage' && col.id !== 'avgPointsPerRider'
       );
     }
-    // For other games: hide avgPointsPerRider
-    return allColumns.filter((col) => col.id !== 'avgPointsPerRider');
+    // For other games: hide avgPointsPerRider, and hide percentage for auctioneer
+    return allColumns.filter((col) => {
+      if (col.id === 'avgPointsPerRider') return false;
+      if (gameType === 'auctioneer' && col.id === 'percentage') return false;
+      return true;
+    });
   }, [allColumns, gameType]);
 
   const table = useReactTable({

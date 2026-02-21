@@ -109,6 +109,9 @@ export async function completeJob(jobId: string, result?: unknown): Promise<void
     throw new Error(`Job ${jobId} not found`);
   }
 
+  const { cleanFirebaseData } = await import('./utils');
+  const safeResult = result !== undefined ? cleanFirebaseData(result) : undefined;
+
   await updateJob(jobId, {
     status: 'completed',
     completedAt: new Date().toISOString(),
@@ -117,7 +120,7 @@ export async function completeJob(jobId: string, result?: unknown): Promise<void
       total: job.progress.total,
       percentage: 100,
     },
-    result,
+    result: safeResult,
   });
 }
 

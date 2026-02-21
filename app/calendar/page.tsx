@@ -62,14 +62,18 @@ function filterUnwantedClassifications(races: CalendarRace[]): CalendarRace[] {
     const hasUnwantedInClassification = unwantedClassifications.some(cls => 
       classification.includes(cls)
     );
-    const hasWomenInName = race.name.toLowerCase().includes('women');
+    const nameLower = race.name.toLowerCase();
+    const slugLower = (race.slug || '').toLowerCase();
+    const hasWomenInName = nameLower.includes('women') || nameLower.includes('vrouw') || nameLower.includes('dames');
+    const hasWomenInSlug = slugLower.includes('women') || slugLower.includes('vrouw') || slugLower.includes('dames');
     const hasWWTInClassification = classification.includes('WWT');
+    const isWomenClassification = classification.includes('.W') || classification.endsWith('W');
     
-    if (hasUnwantedInName || hasUnwantedInClassification || hasWomenInName || hasWWTInClassification) {
+    if (hasUnwantedInName || hasUnwantedInClassification || hasWomenInName || hasWomenInSlug || hasWWTInClassification || isWomenClassification) {
       console.log('Filtering out race:', race.name, 'classification:', classification, 'hasWWT:', hasWWTInClassification);
     }
     
-    return !hasUnwantedInName && !hasUnwantedInClassification && !hasWomenInName && !hasWWTInClassification;
+    return !hasUnwantedInName && !hasUnwantedInClassification && !hasWomenInName && !hasWomenInSlug && !hasWWTInClassification && !isWomenClassification;
   });
   
   console.log('Original races:', races.length);
