@@ -430,6 +430,7 @@ function RaceCard({
   onRefresh: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [recalcLoading, setRecalcLoading] = useState(false);
 
   const progressPercent = race.totalStages > 0
     ? Math.round((race.scrapedStages / race.totalStages) * 100)
@@ -553,6 +554,38 @@ function RaceCard({
                 Last update: {new Date(race.lastScrapedAt).toLocaleString('nl-NL')}
               </span>
             )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                if (!userId) return;
+                if (!confirm(`Recalculate points for ${race.raceName}?`)) return;
+                setRecalcLoading(true);
+                try {
+                  const response = await fetch('/api/admin/recalculate-race-points', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId,
+                      raceSlug: race.raceSlug,
+                      year: race.year,
+                    }),
+                  });
+                  const data = await response.json();
+                  if (!response.ok) {
+                    throw new Error(data.error || 'Failed to recalculate points');
+                  }
+                  toast.success(`Recalculated points (${data.successCount}/${data.totalStages})`);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : 'Failed to recalculate points');
+                } finally {
+                  setRecalcLoading(false);
+                }
+              }}
+              disabled={recalcLoading}
+            >
+              {recalcLoading ? 'Recalculating...' : 'Recalculate points'}
+            </Button>
           </div>
 
           {/* Stages Table */}

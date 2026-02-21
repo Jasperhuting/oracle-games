@@ -20,6 +20,19 @@ const SCRAPER_TIMEOUT_MS = 25_000;
 const MAX_SCRAPE_RETRIES = 3;
 const RETRY_DELAY_MS = 5 * 60 * 1000;
 
+const logPointsCalculation = async (details: Record<string, unknown>) => {
+  try {
+    const db = getServerFirebase();
+    await db.collection('activityLogs').add({
+      action: 'POINTS_CALCULATION',
+      details,
+      timestamp: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('[jobs/process] Failed to log points calculation:', error);
+  }
+};
+
 const withTimeout = async <T>(promise: Promise<T>, label: string): Promise<T> => {
   let timeoutId: NodeJS.Timeout;
   const timeoutPromise = new Promise<T>((_, reject) => {
@@ -349,13 +362,16 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
-    return {
+    const startlistResult: ScrapeResult = {
       success: save.success,
       message: save.success ? 'Startlist scraped' : (save.error || 'Validation failed'),
       riderCount: 'riders' in result ? result.riders.length : 0,
       retryable: !save.success,
-      failureReason: save.success ? undefined : 'validation',
     };
+    if (!save.success) {
+      startlistResult.failureReason = 'validation';
+    }
+    return startlistResult;
   } else if ((type === 'stage-result' || type === 'stage') && stage) {
     result = await withTimeout(getStageResult({
       race: race as RaceSlug,
@@ -390,6 +406,17 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         const calculatePointsResponse = await calculatePoints(mockRequest);
         const pointsResult = await calculatePointsResponse.json();
 
+        await logPointsCalculation({
+          jobId,
+          race,
+          year,
+          stage,
+          type: 'stage',
+          status: calculatePointsResponse.status,
+          success: calculatePointsResponse.status === 200,
+          error: calculatePointsResponse.status === 200 ? null : pointsResult?.error || 'Unknown error',
+        });
+
         if (calculatePointsResponse.status === 200) {
           console.log(`[jobs/process] Points calculation completed for ${race} stage ${stage}:`, pointsResult);
         } else {
@@ -397,16 +424,29 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         }
       } catch (error) {
         console.error(`[jobs/process] Error calculating points for ${race} stage ${stage}:`, error);
+        await logPointsCalculation({
+          jobId,
+          race,
+          year,
+          stage,
+          type: 'stage',
+          status: 500,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
     }
-    return {
+    const stageResult: ScrapeResult = {
       success: save.success,
       message: save.success ? `Stage ${stage} scraped` : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       stage,
       retryable: !save.success,
-      failureReason: save.success ? undefined : 'validation',
     };
+    if (!save.success) {
+      stageResult.failureReason = 'validation';
+    }
+    return stageResult;
   } else if (type === 'result') {
     result = await withTimeout(getRaceResult({
       race: race as RaceSlug,
@@ -439,6 +479,17 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         const calculatePointsResponse = await calculatePoints(mockRequest);
         const pointsResult = await calculatePointsResponse.json();
 
+        await logPointsCalculation({
+          jobId,
+          race,
+          year,
+          stage: 'result',
+          type: 'result',
+          status: calculatePointsResponse.status,
+          success: calculatePointsResponse.status === 200,
+          error: calculatePointsResponse.status === 200 ? null : pointsResult?.error || 'Unknown error',
+        });
+
         if (calculatePointsResponse.status === 200) {
           console.log(`[jobs/process] Points calculation completed for ${race} result:`, pointsResult);
         } else {
@@ -446,15 +497,28 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         }
       } catch (error) {
         console.error(`[jobs/process] Error calculating points for ${race} result:`, error);
+        await logPointsCalculation({
+          jobId,
+          race,
+          year,
+          stage: 'result',
+          type: 'result',
+          status: 500,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
     }
-    return {
+    const resultResult: ScrapeResult = {
       success: save.success,
       message: save.success ? 'Result scraped' : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       retryable: !save.success,
-      failureReason: save.success ? undefined : 'validation',
     };
+    if (!save.success) {
+      resultResult.failureReason = 'validation';
+    }
+    return resultResult;
   }
 
   await updateJobProgress(jobId, 1, 1, 'Completed');

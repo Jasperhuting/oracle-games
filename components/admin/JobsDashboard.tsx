@@ -38,14 +38,32 @@ interface BatchItem {
   outcomes?: string[];
 }
 
+interface PointsCalcLogItem {
+  id: string;
+  timestamp?: string;
+  details: {
+    jobId?: string;
+    race?: string;
+    raceSlug?: string;
+    year?: number;
+    stage?: number | string;
+    type?: string;
+    status?: number;
+    success?: boolean;
+    error?: string | null;
+  };
+}
+
 export function JobsDashboard() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [batches, setBatches] = useState<BatchItem[]>([]);
+  const [pointsLogs, setPointsLogs] = useState<PointsCalcLogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingJobId, setProcessingJobId] = useState<string | null>(null);
+  const [recalcRaceSlug, setRecalcRaceSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadJobs = async () => {
@@ -54,13 +72,22 @@ export function JobsDashboard() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/jobs?userId=${user.uid}`);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch jobs');
+      const [jobsResponse, logsResponse] = await Promise.all([
+        fetch(`/api/admin/jobs?userId=${user.uid}`),
+        fetch(`/api/admin/points-calculation-logs?userId=${user.uid}&status=failed`),
+      ]);
+
+      const jobsData = await jobsResponse.json();
+      if (!jobsResponse.ok) {
+        throw new Error(jobsData.error || 'Failed to fetch jobs');
       }
-      setJobs(data.jobs || []);
-      setBatches(data.batches || []);
+      setJobs(jobsData.jobs || []);
+      setBatches(jobsData.batches || []);
+
+      const logsData = await logsResponse.json();
+      if (logsResponse.ok) {
+        setPointsLogs(logsData.logs || []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch jobs');
     } finally {
@@ -193,6 +220,72 @@ export function JobsDashboard() {
                 </div>
               </details>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold mb-3">Points Calculation Errors</h3>
+        {pointsLogs.length === 0 ? (
+          <p className="text-sm text-gray-500">No failed calculations found</p>
+        ) : (
+          <div className="space-y-2">
+            {pointsLogs.map((log) => {
+              const raceSlug = log.details.raceSlug || log.details.race || 'unknown';
+              const year = log.details.year;
+              const stage = log.details.stage;
+              const errorText = log.details.error || 'Unknown error';
+              const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString('nl-NL') : '-';
+              return (
+                <div key={log.id} className="border rounded-md p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">{raceSlug}</span>
+                      <span className="text-xs text-gray-500">{year ?? '-'}</span>
+                      <span className="text-xs text-gray-500">Stage: {stage ?? '-'}</span>
+                      <span className="text-xs text-red-600">Failed</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={async () => {
+                          if (!user?.uid) return;
+                          setRecalcRaceSlug(raceSlug);
+                          setError(null);
+                          try {
+                            const response = await fetch('/api/admin/recalculate-race-points', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                userId: user.uid,
+                                raceSlug,
+                                year,
+                              }),
+                            });
+                            const data = await response.json();
+                            if (!response.ok) {
+                              throw new Error(data.error || 'Failed to recalculate points');
+                            }
+                            await loadJobs();
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : 'Failed to recalculate points');
+                          } finally {
+                            setRecalcRaceSlug(null);
+                          }
+                        }}
+                        disabled={loading || processing || cleaning || recalcRaceSlug !== null}
+                      >
+                        {recalcRaceSlug === raceSlug ? 'Recalculating...' : 'Recalculate race'}
+                      </Button>
+                      <span className="text-xs text-gray-400">{timestamp}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    Error: {errorText}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

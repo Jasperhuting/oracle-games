@@ -252,7 +252,7 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'vuelta-el-salvador', // Women's race incorrectly classified as 2.1
   'trofeo-felanitx-femina', // women's race
   'grand-prix-el-salvador', // women's race
-  'grand-prix-san-salvador', // women's race
+  'grand-prix-san-salvador', //  race
   'trofeo-palma-femina', // women's race
   'trofeo-binissalem-andratx', // women's race
   'race-torquay', // race is cancelled
@@ -269,6 +269,7 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'biwase-cup', // women's race
   'gp-oetingen', // women's race
   'trofeo-da-moreno-piccolo-trofeo-alfredo-binda', // women's junior race
+  'le-tour-de-filipinas' // cancelled
 ]);
 
 /**
