@@ -44,6 +44,7 @@ export function JobsDashboard() {
   const [batches, setBatches] = useState<BatchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadJobs = async () => {
@@ -98,6 +99,32 @@ export function JobsDashboard() {
           <Button
             onClick={async () => {
               if (!user?.uid) return;
+              setProcessing(true);
+              setError(null);
+              try {
+                const response = await fetch('/api/admin/process-scrape-jobs', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: user.uid, limit: 10 }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                  throw new Error(data.error || 'Failed to process scrape jobs');
+                }
+                await loadJobs();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to process scrape jobs');
+              } finally {
+                setProcessing(false);
+              }
+            }}
+            disabled={loading || cleaning || processing}
+          >
+            {processing ? 'Processing...' : 'Process queue'}
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!user?.uid) return;
               setCleaning(true);
               setError(null);
               try {
@@ -117,11 +144,11 @@ export function JobsDashboard() {
                 setCleaning(false);
               }
             }}
-            disabled={loading || cleaning}
+            disabled={loading || cleaning || processing}
           >
             {cleaning ? 'Cleaning...' : 'Cleanup excluded'}
           </Button>
-          <Button onClick={loadJobs} disabled={loading || cleaning}>
+          <Button onClick={loadJobs} disabled={loading || cleaning || processing}>
             {loading ? 'Loading...' : 'Refresh'}
           </Button>
         </div>

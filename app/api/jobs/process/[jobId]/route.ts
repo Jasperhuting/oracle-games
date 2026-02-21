@@ -86,6 +86,44 @@ export async function POST(
         await processBulkScrape(jobId, job);
       } else if (job.type === 'scraper') {
         const result = await processSingleScrape(jobId, job);
+
+        if (!result.success && result.retryable) {
+          const retryCount = typeof (job as any).retryCount === 'number' ? (job as any).retryCount : 0;
+          if (retryCount < MAX_SCRAPE_RETRIES) {
+            const nextRunAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
+            await updateJob(jobId, {
+              status: 'pending',
+              retryCount: retryCount + 1,
+              nextRunAt,
+              error: result.message,
+            } as any);
+
+            return Response.json({
+              success: false,
+              jobId,
+              status: 'pending',
+              retryCount: retryCount + 1,
+              nextRunAt,
+              error: result.message,
+              result,
+            }, { status: 202 });
+          }
+        }
+
+        if (!result.success) {
+          await failJob(jobId, result.message);
+          await updateBatchFromJob(job, result, 'failed');
+          return Response.json(
+            {
+              error: result.message,
+              jobId,
+              status: 'failed',
+              result,
+            },
+            { status: 500 }
+          );
+        }
+
         await completeJob(jobId, result);
         await updateBatchFromJob(job, result, 'completed');
         return Response.json({
@@ -274,7 +312,16 @@ async function processBulkScrape(jobId: string, job: any) {
 /**
  * Process single scraper job (startlist or single stage)
  */
-async function processSingleScrape(jobId: string, job: any) {
+type ScrapeResult = {
+  success: boolean;
+  message: string;
+  riderCount: number;
+  stage?: number;
+  retryable?: boolean;
+  failureReason?: 'validation' | 'unsupported';
+};
+
+async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResult> {
   const { type, race, year, stage } = job.data as {
     type: 'startlist' | 'stage-result' | 'stage' | 'result';
     race: string;
@@ -304,6 +351,8 @@ async function processSingleScrape(jobId: string, job: any) {
       success: save.success,
       message: save.success ? 'Startlist scraped' : (save.error || 'Validation failed'),
       riderCount: 'riders' in result ? result.riders.length : 0,
+      retryable: !save.success,
+      failureReason: save.success ? undefined : 'validation',
     };
   } else if ((type === 'stage-result' || type === 'stage') && stage) {
     result = await withTimeout(getStageResult({
@@ -326,6 +375,8 @@ async function processSingleScrape(jobId: string, job: any) {
       message: save.success ? `Stage ${stage} scraped` : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       stage,
+      retryable: !save.success,
+      failureReason: save.success ? undefined : 'validation',
     };
   } else if (type === 'result') {
     result = await withTimeout(getRaceResult({
@@ -345,11 +396,13 @@ async function processSingleScrape(jobId: string, job: any) {
       success: save.success,
       message: save.success ? 'Result scraped' : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
+      retryable: !save.success,
+      failureReason: save.success ? undefined : 'validation',
     };
   }
 
   await updateJobProgress(jobId, 1, 1, 'Completed');
-  return { success: false, message: 'Unsupported scrape type' };
+  return { success: false, message: 'Unsupported scrape type', riderCount: 0, retryable: false, failureReason: 'unsupported' };
 }
 
 async function updateBatchFromJob(job: any, result: any, status: 'completed' | 'failed') {

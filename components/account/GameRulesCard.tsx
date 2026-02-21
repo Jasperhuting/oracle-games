@@ -102,7 +102,8 @@ function getGameTypeName(gameType: GameType): string {
     'fan-flandrien': 'Fan Flandrien',
     'full-grid': 'Full Grid',
     'marginal-gains': 'Marginal Gains',
-    'f1-prediction': 'F1 Predictions',
+    'formula-1': 'F1 Predictions',
+    'wk-2026': 'WK 2026',
   };
 
   return names[gameType] || gameType;

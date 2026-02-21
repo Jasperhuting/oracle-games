@@ -384,6 +384,21 @@ export async function GET(request: NextRequest) {
         outcomes: [],
         telegramSent: false,
       });
+
+      if (queuedJobs > 0 && process.env.CRON_SECRET) {
+        try {
+          const processUrl = new URL('/api/cron/process-scrape-jobs', request.nextUrl.origin);
+          processUrl.searchParams.set('limit', '10');
+          await fetch(processUrl.toString(), {
+            method: 'GET',
+            headers: {
+              authorization: `Bearer ${process.env.CRON_SECRET}`,
+            },
+          });
+        } catch (error) {
+          console.error('[CRON] Failed to trigger process-scrape-jobs:', error);
+        }
+      }
     }
 
     const successCount = outcomes.filter(o => o.success).length;

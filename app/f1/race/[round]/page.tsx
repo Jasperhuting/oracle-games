@@ -1314,8 +1314,59 @@ export default function RacePage() {
                     </div>
                 </div>
 
+                {/* F1-styled info bar with actions */}
+                <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 md:p-4 mb-6 border border-gray-700">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-red-600 rounded-full hidden md:block"></div>
+                            <p className="text-gray-300 text-sm md:text-base">
+                                <span className="text-white font-semibold">Tip:</span> Sleep de coureurs naar de startgrid om je voorspelling te maken.
+                            </p>
+                        </div>
+                        {!isRaceDone && (
+                            <>
+                                <div className="flex gap-2 md:gap-3">
+                                    <button
+                                        onClick={() => setGrid(Array(10).fill(null))}
+                                        className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                    >
+                                        Reset
+                                    </button>
+                                    <button
+                                        onClick={handleSavePrediction}
+                                        disabled={saving || isRaceDone}
+                                        className={`flex-1 md:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
+                                            saving || isRaceDone 
+                                                ? 'bg-gray-600 cursor-not-allowed' 
+                                                : 'bg-red-600 hover:bg-red-500'
+                                        }`}
+                                    >
+                                        {saving ? 'Opslaan...' : 'Opslaan'}
+                                    </button>
+                                </div>
+                                {/* Save message feedback */}
+                                {saveMessage && (
+                                    <div className={`mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
+                                        saveMessage.type === 'success' 
+                                            ? 'bg-green-900/50 text-green-400 border border-green-700' 
+                                            : 'bg-red-900/50 text-red-400 border border-red-700'
+                                    }`}>
+                                        {saveMessage.text}
+                                    </div>
+                                )}
+                                {/* Login prompt */}
+                                {!isAuthenticated && !predictionLoading && (
+                                    <div className="mt-3 px-4 py-2 rounded-lg text-sm bg-yellow-900/50 text-yellow-400 border border-yellow-700">
+                                        Log in om je voorspelling op te slaan
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+
                 <div className="flex flex-row gap-2 md:gap-4 justify-between items-start">
-                    
+
                     <div className="mb-4 grid md:flex-1 grid-cols-2 content-center md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-1 md:gap-2">
                         <div className="relative hidden lg:block">
                             <div className="select-none">
@@ -1461,56 +1512,6 @@ export default function RacePage() {
                             <span className="text-gray-500 text-xs uppercase tracking-wider">Finish Line</span>
                         </div>
                         <div className="hidden md:block h-2 mt-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-b"></div>
-                    </div>
-                </div>
-                      {/* F1-styled info bar with actions */}
-                <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 md:p-4 mb-6 border border-gray-700">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-1 h-8 bg-red-600 rounded-full hidden md:block"></div>
-                            <p className="text-gray-300 text-sm md:text-base">
-                                <span className="text-white font-semibold">Tip:</span> Sleep de coureurs naar de startgrid om je voorspelling te maken.
-                            </p>
-                        </div>
-                        {!isRaceDone && (
-                            <>
-                                <div className="flex gap-2 md:gap-3">
-                                    <button
-                                        onClick={() => setGrid(Array(10).fill(null))}
-                                        className="flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
-                                    >
-                                        Reset
-                                    </button>
-                                    <button
-                                        onClick={handleSavePrediction}
-                                        disabled={saving || isRaceDone}
-                                        className={`flex-1 md:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
-                                            saving || isRaceDone 
-                                                ? 'bg-gray-600 cursor-not-allowed' 
-                                                : 'bg-red-600 hover:bg-red-500'
-                                        }`}
-                                    >
-                                        {saving ? 'Opslaan...' : 'Opslaan'}
-                                    </button>
-                                </div>
-                                {/* Save message feedback */}
-                                {saveMessage && (
-                                    <div className={`mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
-                                        saveMessage.type === 'success' 
-                                            ? 'bg-green-900/50 text-green-400 border border-green-700' 
-                                            : 'bg-red-900/50 text-red-400 border border-red-700'
-                                    }`}>
-                                        {saveMessage.text}
-                                    </div>
-                                )}
-                                {/* Login prompt */}
-                                {!isAuthenticated && !predictionLoading && (
-                                    <div className="mt-3 px-4 py-2 rounded-lg text-sm bg-yellow-900/50 text-yellow-400 border border-yellow-700">
-                                        Log in om je voorspelling op te slaan
-                                    </div>
-                                )}
-                            </>
-                        )}
                     </div>
                 </div>
                 </>

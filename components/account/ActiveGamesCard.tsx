@@ -13,6 +13,7 @@ interface ActiveGame {
   totalParticipants: number;
   totalPoints: number;
   status: string;
+  lastScoreUpdate?: string | null;
 }
 
 interface ActiveGamesCardProps {
@@ -25,20 +26,14 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getTodayKey = (): string => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
     const readDailyCache = (cacheKey: string): ActiveGame[] | null => {
       try {
         const raw = localStorage.getItem(cacheKey);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
-        if (parsed?.date !== getTodayKey()) return null;
+        const cachedAt = typeof parsed?.timestamp === 'number' ? parsed.timestamp : 0;
+        const cacheAgeMs = Date.now() - cachedAt;
+        if (cacheAgeMs > 24 * 60 * 60 * 1000) return null;
         if (!Array.isArray(parsed?.games)) return null;
         return parsed.games as ActiveGame[];
       } catch {
@@ -50,7 +45,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
       try {
         localStorage.setItem(
           cacheKey,
-          JSON.stringify({ date: getTodayKey(), games: data })
+          JSON.stringify({ timestamp: Date.now(), games: data })
         );
       } catch {
         // Ignore cache write failures (e.g., storage full or disabled)
@@ -119,10 +114,12 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
             let userRanking = 0;
             let userPoints = 0;
 
+            let lastScoreUpdate: string | null = null;
             if (standingsResponse.ok) {
               const standingsData = await standingsResponse.json();
               const teams = standingsData.teams || [];
               totalParticipants = teams.length;
+              lastScoreUpdate = standingsData.lastScoreUpdate || null;
 
               // Find user's entry in the standings
               const userTeam = teams.find((team: any) => team.userId === userId);
@@ -141,6 +138,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
               totalParticipants,
               totalPoints: userPoints,
               status: game.status,
+              lastScoreUpdate,
             });
           } catch {
             // Skip games that fail
@@ -185,6 +183,23 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
       return `/f1`;
     }
     return `/games/${game.gameId}/dashboard`;
+  };
+
+  const formatLastUpdate = (lastUpdate?: string | null): string => {
+    if (!lastUpdate) return 'Geen updates';
+    const date = new Date(lastUpdate);
+    if (Number.isNaN(date.getTime())) return 'Onbekend';
+
+    const diffMs = Date.now() - date.getTime();
+    const diffMinutes = Math.round(diffMs / (1000 * 60));
+    if (diffMinutes < 1) return 'Zojuist';
+    if (diffMinutes < 60) return `${diffMinutes} min geleden`;
+
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} uur geleden`;
+
+    const diffDays = Math.round(diffHours / 24);
+    return `${diffDays} dagen geleden`;
   };
 
   return (
@@ -238,6 +253,9 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                         >
                           {game.gameName}
                         </Link>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          Laatste update: {formatLastUpdate(game.lastScoreUpdate)}
+                        </div>
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
                         {formatRanking(game.ranking, game.totalParticipants)}
@@ -272,6 +290,9 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                         >
                           {game.gameName}
                         </Link>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          Laatste update: {formatLastUpdate(game.lastScoreUpdate)}
+                        </div>
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
                         {formatRanking(game.ranking, game.totalParticipants)}
@@ -300,6 +321,9 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                         >
                           {game.gameName}
                         </Link>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          Laatste update: {formatLastUpdate(game.lastScoreUpdate)}
+                        </div>
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
                         {formatRanking(game.ranking, game.totalParticipants)}

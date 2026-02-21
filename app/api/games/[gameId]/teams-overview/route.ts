@@ -289,7 +289,33 @@ export async function GET(
       team.ranking = currentRank;
     });
 
-    return NextResponse.json({ teams });
+    // Find the most recent score update for this game
+    let lastScoreUpdate: string | null = null;
+    try {
+      const scoreUpdatesSnapshot = await db
+        .collection('scoreUpdates')
+        .where('gamesAffected', 'array-contains', gameId)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get();
+
+      if (!scoreUpdatesSnapshot.empty) {
+        const updateData = scoreUpdatesSnapshot.docs[0].data();
+        if (updateData?.calculatedAt) {
+          lastScoreUpdate = updateData.calculatedAt;
+        } else if (updateData?.createdAt?.toDate) {
+          lastScoreUpdate = updateData.createdAt.toDate().toISOString();
+        } else if (updateData?.createdAt?._seconds) {
+          lastScoreUpdate = new Date(
+            updateData.createdAt._seconds * 1000 + (updateData.createdAt._nanoseconds || 0) / 1000000
+          ).toISOString();
+        }
+      }
+    } catch (error) {
+      console.warn('[TEAMS-OVERVIEW] Failed to load last score update:', error);
+    }
+
+    return NextResponse.json({ teams, lastScoreUpdate });
 
   } catch (error) {
     console.error('Error fetching teams overview:', error);
