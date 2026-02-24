@@ -101,25 +101,57 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
                                 ×
                             </button>
                         </div>
-                        <div className="px-5 py-4 text-sm text-gray-700 space-y-3">
-                            <div>
+                        <div className="px-5 py-4 text-sm text-gray-700 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <div className="space-y-2">
                                 <div className="font-semibold text-gray-900">1e prijs</div>
                                 <div>&#39;Bike &amp; Pancakes&#39; arrangement voor 4 personen.</div>
                                 <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+                                <div className="overflow-hidden rounded-lg border border-gray-200">
+                                    <img
+                                        src="https://bercbike.nl/wp-content/uploads/2023/02/gravelbike-huren-montferland-1024x683.jpg"
+                                        alt="1e prijs - Bike & Pancakes arrangement"
+                                        className="w-full h-40 object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
                             </div>
-                            <div>
+                            <div className="space-y-2">
                                 <div className="font-semibold text-gray-900">2e prijs</div>
                                 <div>Gravel arrangement voor 2 personen.</div>
                                 <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+                                <div className="overflow-hidden rounded-lg border border-gray-200">
+                                    <img
+                                        src="https://bercbike.nl/wp-content/uploads/2021/11/mtb-verhuur-zeddam-montferland.jpg"
+                                        alt="2e prijs - Gravel arrangement"
+                                        className="w-full h-40 object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
                             </div>
-                            <div>
+                            <div className="space-y-2">
                                 <div className="font-semibold text-gray-900">3e prijs</div>
                                 <div>&#39;Proefritje&#39; te nuttigen in het wielercafe in Zeddam</div>
                                 <div className="text-xs text-gray-500">(3 speciaalbiertjes geserveerd met lokale kaas &amp; worst)</div>
+                                <div className="overflow-hidden rounded-lg border border-gray-200">
+                                    <img
+                                        src="https://bercbike.nl/wp-content/uploads/2021/07/achterhoekse-bieren-wielercafe-1024x1024.jpg"
+                                        alt="3e prijs - Proefritje"
+                                        className="w-full h-40 object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
                             </div>
-                            <div>
+                            <div className="space-y-2">
                                 <div className="font-semibold text-gray-900">4e &amp; 5e prijs</div>
                                 <div>een &#39;Veloholic&#39; shirt</div>
+                                <div className="overflow-hidden rounded-lg border border-gray-200">
+                                    <img
+                                        src="https://instagram.fein1-2.fna.fbcdn.net/v/t51.2885-15/625039582_18106740397743293_7408014545346298231_n.jpg?stp=dst-jpg_e35_s640x640_sh0.08_tt6&_nc_ht=instagram.fein1-2.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2QFBPUHMH0E5BHQVahYxIhxfr9R5GjB_QY_iBzb-z-UqRvAow1lbqpgEbkBXEk9Xylo&_nc_ohc=t_1Bj8QXGNIQ7kNvwFJFZa_&_nc_gid=vw9WCWoLnaFi_oSPh8vOOQ&edm=AOQ1c0wBAAAA&ccb=7-5&oh=00_AftEubWOCOSCQMmWPMsXSR_1ZtVOnUBLxlEc5fE0npf_Jg&oe=69A3927C&_nc_sid=8b3546"
+                                        alt="4e en 5e prijs - Veloholic shirt"
+                                        className="w-full h-40 object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
                             </div>
                             <div className="text-xs text-gray-500">
                                 * Het buffje mag je houden als aandenken aan een leuke sportieve middag!
@@ -162,7 +194,7 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
                 onClick={handlePrizesButtonClick}
                 className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-white hover:bg-emerald-50 overflow-hidden border border-emerald-200 ${prizesExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
             >
-                <div className="flex-shrink-0 w-9 h-9 bg-white ring-1 ring-emerald-200 flex items-center justify-center overflow-hidden">
+                <div className="flex-shrink-0 w-9 h-9 bg-white flex items-center justify-center overflow-hidden">
                     <Image
                         src="/berc-bike-logo.jpg"
                         alt="Berc Bike"

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import {
-  getScraperData,
   getScraperDataWithMetadata,
   listScraperDataBackups,
   generateDocumentId,
   type ScraperDataKey,
 } from '@/lib/firebase/scraper-service';
-import { validateScraperData, isStageResult } from '@/lib/validation/scraper-validation';
+import { validateScraperData } from '@/lib/validation/scraper-validation';
 
 export interface StageDetailResponse {
   race: string;
@@ -73,7 +72,8 @@ export async function GET(request: NextRequest) {
     }
 
     const year = parseInt(yearParam, 10);
-    const stage = stageParam ? parseInt(stageParam, 10) : undefined;
+    const parsedStage = stageParam !== null ? Number(stageParam) : NaN;
+    const stage = stageParam !== null && Number.isFinite(parsedStage) ? parsedStage : undefined;
 
     const db = getServerFirebase();
 
@@ -126,29 +126,65 @@ export async function GET(request: NextRequest) {
     // Get backups
     const backups = await listScraperDataBackups(docId);
 
-    // Extract sample riders - only those with points
-    const sampleRiders: StageDetailResponse['sampleRiders'] = [];
+    const toArray = (value: unknown): unknown[] => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
 
-    if (isStageResult(dataWithMeta.data)) {
-      const stageResults = dataWithMeta.data.stageResults || [];
-      stageResults.forEach((rider) => {
-        if ('riders' in rider) {
-          // TTT result - skip
-          return;
-        }
-        // Only include riders with points
-        const points = rider.points;
-        const hasPoints = points && points !== '-' && Number(points) > 0;
-        if (hasPoints) {
-          sampleRiders.push({
-            place: rider.place,
-            name: rider.shortName || `${rider.firstName} ${rider.lastName}`.trim() || rider.name || 'Unknown',
-            team: rider.team || '',
-            points: rider.points,
-          });
-        }
+    const getSampleSourceRows = (): Array<Record<string, unknown>> => {
+      const data = dataWithMeta.data as Record<string, unknown>;
+      const stageRows = toArray(data.stageResults);
+      const gcRows = toArray(data.generalClassification);
+
+      const normalized = (rows: unknown[]) =>
+        rows.filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null);
+
+      if (typeParam === 'tour-gc') {
+        return normalized(gcRows);
+      }
+      if (typeParam === 'result') {
+        return normalized(stageRows);
+      }
+      return normalized(stageRows.length > 0 ? stageRows : gcRows);
+    };
+
+    // Extract sample riders - show top finishers even if points are missing (common for GC docs).
+    const sampleRiders: StageDetailResponse['sampleRiders'] = [];
+    const sampleRows = getSampleSourceRows();
+    sampleRows.forEach((row) => {
+      // Skip TTT aggregate rows.
+      if (Array.isArray(row.riders)) return;
+
+      const placeRaw = row.place;
+      const place = typeof placeRaw === 'number' ? placeRaw : Number(placeRaw);
+      if (!Number.isFinite(place) || place <= 0) return;
+
+      const firstName = typeof row.firstName === 'string' ? row.firstName : '';
+      const lastName = typeof row.lastName === 'string' ? row.lastName : '';
+      const riderName = typeof row.rider === 'string' ? row.rider : '';
+      const shortName = typeof row.shortName === 'string' ? row.shortName : '';
+      const fallbackName = `${firstName} ${lastName}`.trim();
+      const name = shortName || riderName || fallbackName || 'Unknown';
+      const team = typeof row.team === 'string' ? row.team : '';
+      const points = row.points ?? row.pointsTotal ?? row.timeDifference ?? row.gc ?? '-';
+
+      sampleRiders.push({
+        place,
+        name,
+        team,
+        points: typeof points === 'number' || typeof points === 'string' ? points : '-',
       });
-    }
+    });
+
+    sampleRiders.sort((a, b) => a.place - b.place);
 
     const response: StageDetailResponse = {
       race,

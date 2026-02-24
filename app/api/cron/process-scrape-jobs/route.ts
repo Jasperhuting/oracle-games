@@ -87,6 +87,8 @@ export async function GET(request: NextRequest) {
           failedJobs?: number;
           outcomes?: string[];
           lastProgressTelegramAt?: string;
+          lastNotifiedCompletedJobs?: number;
+          lastNotifiedFailedJobs?: number;
         };
 
         const lastProgressAt = batch.lastProgressTelegramAt ? Date.parse(batch.lastProgressTelegramAt) : NaN;
@@ -94,12 +96,20 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        const totalJobs = typeof batch.totalJobs === 'number' ? batch.totalJobs : 0;
-        const completedJobs = typeof batch.completedJobs === 'number' ? batch.completedJobs : 0;
-        const failedJobs = typeof batch.failedJobs === 'number' ? batch.failedJobs : 0;
+        const totalJobs = Number.isFinite(Number(batch.totalJobs)) ? Number(batch.totalJobs) : 0;
+        const completedJobs = Number.isFinite(Number(batch.completedJobs)) ? Number(batch.completedJobs) : 0;
+        const failedJobs = Number.isFinite(Number(batch.failedJobs)) ? Number(batch.failedJobs) : 0;
+        const lastNotifiedCompletedJobs = Number.isFinite(Number(batch.lastNotifiedCompletedJobs)) ? Number(batch.lastNotifiedCompletedJobs) : 0;
+        const lastNotifiedFailedJobs = Number.isFinite(Number(batch.lastNotifiedFailedJobs)) ? Number(batch.lastNotifiedFailedJobs) : 0;
         const resolvedJobs = completedJobs + failedJobs;
         const remainingJobs = Math.max(0, totalJobs - completedJobs - failedJobs);
 
+        // Only notify on real progress (executed/failed increased since last Telegram update).
+        const hasNewCompleted = completedJobs > lastNotifiedCompletedJobs;
+        const hasNewFailed = failedJobs > lastNotifiedFailedJobs;
+
+        if (!hasNewCompleted && !hasNewFailed) continue;
+        if (completedJobs <= 0 && failedJobs <= 0) continue;
         if (totalJobs <= 0 || remainingJobs <= 0 || resolvedJobs <= 0) continue;
 
         const outcomes = Array.isArray(batch.outcomes) ? batch.outcomes : [];
@@ -120,6 +130,8 @@ export async function GET(request: NextRequest) {
         await sendTelegramMessage(message, { parse_mode: 'HTML' });
         await batchDoc.ref.set({
           lastProgressTelegramAt: new Date(now).toISOString(),
+          lastNotifiedCompletedJobs: completedJobs,
+          lastNotifiedFailedJobs: failedJobs,
         }, { merge: true });
       }
     } catch (error) {

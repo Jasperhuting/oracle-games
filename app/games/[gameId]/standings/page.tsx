@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
 import { Tooltip } from 'react-tooltip';
 import {
@@ -26,6 +27,17 @@ interface Standing {
   riders?: Array<{ pointsScored?: number; pricePaid?: number }>;
 }
 
+interface TeamOverview {
+  ranking: number;
+  playername: string;
+  totalPoints?: number;
+  participantId: string;
+  eligibleForPrizes?: boolean;
+  totalPercentageDiff?: number;
+  totalSpent?: number;
+  riders?: Array<{ pointsScored?: number; pricePaid?: number }>;
+}
+
 const columnHelper = createColumnHelper<Standing>();
 
 export default function StandingsPage() {
@@ -40,7 +52,21 @@ export default function StandingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [showPrizeEligibleOnly, setShowPrizeEligibleOnly] = useState(false);
+  const [prizesExpanded, setPrizesExpanded] = useState(false);
+  const [showPrizesModal, setShowPrizesModal] = useState(false);
 
+  const prizeEligibleCount = useMemo(
+    () => standings.filter((standing) => standing.eligibleForPrizes).length,
+    [standings]
+  );
+  const filteredStandings = useMemo(
+    () =>
+      showPrizeEligibleOnly
+        ? standings.filter((standing) => standing.eligibleForPrizes)
+        : standings,
+    [showPrizeEligibleOnly, standings]
+  );
   const backHref = gameType === 'full-grid' ? `/games/${gameId}/auction` : '/games';
 
   const columns = useMemo(() => {
@@ -184,7 +210,7 @@ export default function StandingsPage() {
   }, [gameId, gameType]);
 
   const table = useReactTable({
-    data: standings,
+    data: filteredStandings,
     columns,
     state: {
       sorting,
@@ -220,9 +246,9 @@ export default function StandingsPage() {
           throw new Error('Failed to load standings');
         }
         const data = await response.json();
-        const teams = data.teams || [];
+        const teams: TeamOverview[] = data.teams || [];
 
-        const mappedStandings: Standing[] = teams.map((team: any) => ({
+        const mappedStandings: Standing[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
           totalPoints: team.totalPoints ?? 0,
@@ -244,6 +270,15 @@ export default function StandingsPage() {
 
     fetchStandings();
   }, [gameId]);
+  const handlePrizesButtonClick = (e: React.MouseEvent) => {
+    if (prizesExpanded) {
+      e.preventDefault();
+      setShowPrizesModal(true);
+    } else {
+      e.preventDefault();
+      setPrizesExpanded(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -272,6 +307,92 @@ export default function StandingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
+        {showPrizesModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center">
+            <button
+              className="absolute inset-0 bg-black/40"
+              aria-label="Sluit prijzen"
+              onClick={() => setShowPrizesModal(false)}
+            />
+            <div className="relative bg-white w-full max-w-lg mx-4 rounded-xl shadow-xl border border-gray-200">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Prijzen</h3>
+                <button
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Sluit"
+                  onClick={() => setShowPrizesModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="px-5 py-4 text-sm text-gray-700 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="space-y-2">
+                  <div className="font-semibold text-gray-900">1e prijs</div>
+                  <div>&#39;Bike &amp; Pancakes&#39; arrangement voor 4 personen.</div>
+                  <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src="https://bercbike.nl/wp-content/uploads/2023/02/gravelbike-huren-montferland-1024x683.jpg"
+                      alt="1e prijs - Bike & Pancakes arrangement"
+                      className="w-full h-40 object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="font-semibold text-gray-900">2e prijs</div>
+                  <div>Gravel arrangement voor 2 personen.</div>
+                  <div className="text-xs text-gray-500">(met fietsverhuur, navigatie, helm, bidon, vignet &amp; buffje*)</div>
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src="https://bercbike.nl/wp-content/uploads/2021/11/mtb-verhuur-zeddam-montferland.jpg"
+                      alt="2e prijs - Gravel arrangement"
+                      className="w-full h-40 object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="font-semibold text-gray-900">3e prijs</div>
+                  <div>&#39;Proefritje&#39; te nuttigen in het wielercafe in Zeddam</div>
+                  <div className="text-xs text-gray-500">(3 speciaalbiertjes geserveerd met lokale kaas &amp; worst)</div>
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src="https://bercbike.nl/wp-content/uploads/2021/07/achterhoekse-bieren-wielercafe-1024x1024.jpg"
+                      alt="3e prijs - Proefritje"
+                      className="w-full h-40 object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="font-semibold text-gray-900">4e &amp; 5e prijs</div>
+                  <div>een &#39;Veloholic&#39; shirt</div>
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src="https://instagram.fein1-2.fna.fbcdn.net/v/t51.2885-15/625039582_18106740397743293_7408014545346298231_n.jpg?stp=dst-jpg_e35_s640x640_sh0.08_tt6&_nc_ht=instagram.fein1-2.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2QFBPUHMH0E5BHQVahYxIhxfr9R5GjB_QY_iBzb-z-UqRvAow1lbqpgEbkBXEk9Xylo&_nc_ohc=t_1Bj8QXGNIQ7kNvwFJFZa_&_nc_gid=vw9WCWoLnaFi_oSPh8vOOQ&edm=AOQ1c0wBAAAA&ccb=7-5&oh=00_AftEubWOCOSCQMmWPMsXSR_1ZtVOnUBLxlEc5fE0npf_Jg&oe=69A3927C&_nc_sid=8b3546"
+                      alt="4e en 5e prijs - Veloholic shirt"
+                      className="w-full h-40 object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  * Het buffje mag je houden als aandenken aan een leuke sportieve middag!
+                </div>
+              </div>
+              <div className="px-5 py-4 border-t border-gray-200 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowPrizesModal(false)}
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900"
+                >
+                  Sluiten
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <ScoreUpdateBanner year={gameYear} gameId={gameId} />
         <Tooltip
           id="standings-percentage-tooltip"
@@ -313,11 +434,53 @@ export default function StandingsPage() {
           </div>
         </div>
 
+        <div className="mb-4 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPrizeEligibleOnly((prev) => !prev)}
+                className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  showPrizeEligibleOnly
+                    ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {showPrizeEligibleOnly ? 'Toon alle deelnemers' : 'Alleen voor prijzen'}
+              </button>
+              <button
+                onClick={handlePrizesButtonClick}
+                className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-white hover:bg-emerald-50 overflow-hidden border border-emerald-200 ${prizesExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
+              >
+                <div className="flex-shrink-0 w-9 h-9 bg-white flex items-center justify-center overflow-hidden">
+                  <Image
+                    src="/berc-bike-logo.jpg"
+                    alt="Berc Bike"
+                    width={36}
+                    height={36}
+                    className="w-fit h-fit object-contain"
+                  />
+                </div>
+                <span className={`text-sm text-emerald-700 font-medium whitespace-nowrap transition-all duration-300 ${prizesExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0'}`}>
+                  Prijzen
+                </span>
+              </button>
+            </div>
+            <span className="text-sm text-gray-600">
+              {showPrizeEligibleOnly
+                ? `${prizeEligibleCount} deelnemers voor prijzen`
+                : `${standings.length} deelnemers totaal`}
+            </span>
+          </div>
+        </div>
+
         {/* Standings Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {standings.length === 0 ? (
+          {filteredStandings.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              Nog geen tussenstand beschikbaar
+              {showPrizeEligibleOnly
+                ? 'Geen deelnemers die meespelen voor prijzen'
+                : 'Nog geen tussenstand beschikbaar'}
             </div>
           ) : (
             <table className="w-full">

@@ -592,12 +592,21 @@ async function updateBatchFromJob(job: any, result: any, status: 'completed' | '
   if (!batchSnap.exists) return;
 
   const batch = batchSnap.data() as any;
-  const totalJobs = batch.totalJobs || 0;
-  const completed = batch.completedJobs || 0;
-  const failed = batch.failedJobs || 0;
+  const totalJobs = Number.isFinite(Number(batch.totalJobs)) ? Number(batch.totalJobs) : 0;
+  const completed = Number.isFinite(Number(batch.completedJobs)) ? Number(batch.completedJobs) : 0;
+  const failed = Number.isFinite(Number(batch.failedJobs)) ? Number(batch.failedJobs) : 0;
   const done = totalJobs > 0 && completed + failed >= totalJobs;
 
   if (done && !batch.telegramSent) {
+    if (completed <= 0 && failed <= 0) {
+      await batchRef.set({
+        status: 'completed',
+        telegramSent: true,
+        completedAt: new Date().toISOString(),
+      }, { merge: true });
+      return;
+    }
+
     const lines: string[] = Array.isArray(batch.outcomes) ? batch.outcomes : [];
     const message = [
       `🕛 <b>Daily Race Scrape Completed</b> (${batch.date || ''})`,
