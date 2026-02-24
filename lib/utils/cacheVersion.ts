@@ -11,7 +11,9 @@ import { db } from '@/lib/firebase/client';
 let cachedVersion: number | null = null;
 let cachePromise: Promise<number> | null = null;
 let lastFetchTime: number = 0;
-const CACHE_TTL = 30 * 1000; // 30 seconds - refetch from Firebase after this time
+const CACHE_TTL = 23 * 60 * 60 * 1000; // 23 hours
+const VERSION_STORAGE_KEY = 'oracle_cache_version_value';
+const VERSION_FETCHED_AT_STORAGE_KEY = 'oracle_cache_version_fetched_at';
 
 // Promise that resolves when auth state is first determined
 let authReadyPromise: Promise<void> | null = null;
@@ -47,6 +49,23 @@ export async function getCacheVersionAsync(): Promise<number> {
   // Return cached version if available and not expired
   if (cachedVersion !== null && !cacheExpired) return cachedVersion;
 
+  // Reuse persisted version across page reloads while TTL is valid
+  if (cachedVersion === null) {
+    const storedVersionRaw = localStorage.getItem(VERSION_STORAGE_KEY);
+    const storedFetchedAtRaw = localStorage.getItem(VERSION_FETCHED_AT_STORAGE_KEY);
+
+    if (storedVersionRaw && storedFetchedAtRaw) {
+      const storedVersion = Number.parseInt(storedVersionRaw, 10);
+      const storedFetchedAt = Number.parseInt(storedFetchedAtRaw, 10);
+
+      if (!Number.isNaN(storedVersion) && !Number.isNaN(storedFetchedAt) && now - storedFetchedAt <= CACHE_TTL) {
+        cachedVersion = storedVersion;
+        lastFetchTime = storedFetchedAt;
+        return storedVersion;
+      }
+    }
+  }
+
   // Return existing promise if one is in flight
   if (cachePromise !== null) return cachePromise;
 
@@ -72,6 +91,8 @@ export async function getCacheVersionAsync(): Promise<number> {
         const oldVersion = cachedVersion;
         cachedVersion = version;
         lastFetchTime = Date.now();
+        localStorage.setItem(VERSION_STORAGE_KEY, String(version));
+        localStorage.setItem(VERSION_FETCHED_AT_STORAGE_KEY, String(lastFetchTime));
         
         // If version changed, clear local IndexedDB cache
         if (oldVersion !== null && oldVersion !== version) {
@@ -85,6 +106,8 @@ export async function getCacheVersionAsync(): Promise<number> {
       await setDoc(cacheDocRef, { version: 1 }, { merge: true });
       cachedVersion = 1;
       lastFetchTime = Date.now();
+      localStorage.setItem(VERSION_STORAGE_KEY, '1');
+      localStorage.setItem(VERSION_FETCHED_AT_STORAGE_KEY, String(lastFetchTime));
       return 1;
     } catch (error) {
       // Silently handle permission errors for unauthenticated users
@@ -96,6 +119,8 @@ export async function getCacheVersionAsync(): Promise<number> {
       // Fall back to version 1 if there's an error
       cachedVersion = 1;
       lastFetchTime = Date.now();
+      localStorage.setItem(VERSION_STORAGE_KEY, '1');
+      localStorage.setItem(VERSION_FETCHED_AT_STORAGE_KEY, String(lastFetchTime));
       return 1;
     } finally {
       cachePromise = null;
@@ -148,6 +173,9 @@ export async function incrementCacheVersion(): Promise<void> {
 
     // Update local cache
     cachedVersion = newVersion;
+    lastFetchTime = Date.now();
+    localStorage.setItem(VERSION_STORAGE_KEY, String(newVersion));
+    localStorage.setItem(VERSION_FETCHED_AT_STORAGE_KEY, String(lastFetchTime));
 
     // Reload page to apply new cache version
     window.location.reload();
@@ -164,4 +192,21 @@ export function resetCachedVersion(): void {
   cachedVersion = null;
   cachePromise = null;
   lastFetchTime = 0;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(VERSION_STORAGE_KEY);
+    localStorage.removeItem(VERSION_FETCHED_AT_STORAGE_KEY);
+  }
+}
+
+/**
+ * Update local cache version without fetching Firestore.
+ * Useful when another source (e.g. realtime listener) already knows the latest version.
+ */
+export function primeCachedVersion(version: number): void {
+  if (typeof window === 'undefined') return;
+
+  cachedVersion = version;
+  lastFetchTime = Date.now();
+  localStorage.setItem(VERSION_STORAGE_KEY, String(version));
+  localStorage.setItem(VERSION_FETCHED_AT_STORAGE_KEY, String(lastFetchTime));
 }

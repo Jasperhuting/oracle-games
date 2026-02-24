@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase/client';
-import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 
 export function useUnreadMessages(userId: string | undefined) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -15,11 +15,11 @@ export function useUnreadMessages(userId: string | undefined) {
 
     // Set up real-time listener for unread messages
     const messagesRef = collection(db, 'messages');
-    // Limit to 100 most recent messages to reduce Firestore reads
+    // Listen only to unread messages to reduce Firestore reads.
     const q = query(
       messagesRef,
       where('recipientId', '==', userId),
-      orderBy('sentAt', 'desc'),
+      where('read', '==', false),
       limit(100)
     );
 

@@ -4,11 +4,12 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { Rider } from '@/lib/types/rider';
 import { RankingsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
-import { getCacheVersionAsync, resetCachedVersion } from '@/lib/utils/cacheVersion';
+import { getCacheVersionAsync, primeCachedVersion } from '@/lib/utils/cacheVersion';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
 
-const VERSION_CHECK_INTERVAL = 30 * 1000; // Check for new version every 30 seconds
 const RANKINGS_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours (daily scrape)
 
 export function RankingsProvider({
@@ -27,10 +28,6 @@ export function RankingsProvider({
     setError(null);
 
     try {
-      // Always reset cached version to get fresh version from Firebase
-      // This ensures we always check the latest version
-      resetCachedVersion();
-      
       // Get current cache version dynamically from Firebase
       const cacheVersion = await getCacheVersionAsync();
       
@@ -101,33 +98,45 @@ export function RankingsProvider({
     }
   }, [autoLoad, fetchRankings]);
 
-  // Periodically check for cache version changes
+  // Realtime version invalidation for fast updates with minimal reads.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const cacheRef = doc(db, 'config', 'cache');
 
-    const checkForVersionChange = async () => {
-      try {
-        // Reset to force fresh fetch from Firebase
-        resetCachedVersion();
-        const currentVersion = await getCacheVersionAsync();
-        
-        if (lastKnownVersionRef.current !== null && currentVersion !== lastKnownVersionRef.current) {
-          console.log(`[RankingsContext] Cache version changed from ${lastKnownVersionRef.current} to ${currentVersion}, clearing IndexedDB and refetching...`);
-          
-          // Clear the old cached data from IndexedDB
-          await clearOldVersions(currentVersion);
-          
-          // Refetch with force refresh
-          fetchRankings(true);
-        }
-      } catch (error) {
-        console.error('[RankingsContext] Error checking cache version:', error);
+    const unsubscribe = onSnapshot(
+      cacheRef,
+      (snapshot) => {
+        if (!snapshot.exists()) return;
+        const version = snapshot.data()?.version ?? 1;
+
+        void (async () => {
+          try {
+            const previousVersion = lastKnownVersionRef.current;
+
+            // First snapshot only initializes local tracking.
+            if (previousVersion === null) {
+              lastKnownVersionRef.current = version;
+              primeCachedVersion(version);
+              return;
+            }
+
+            if (version !== previousVersion) {
+              console.log(`[RankingsContext] Cache version changed from ${previousVersion} to ${version}, refetching rankings...`);
+              primeCachedVersion(version);
+              lastKnownVersionRef.current = version;
+              await clearOldVersions(version);
+              await fetchRankings(true);
+            }
+          } catch (error) {
+            console.error('[RankingsContext] Error processing cache version update:', error);
+          }
+        })();
+      },
+      (error) => {
+        console.error('[RankingsContext] Error listening for cache version updates:', error);
       }
-    };
+    );
 
-    const intervalId = setInterval(checkForVersionChange, VERSION_CHECK_INTERVAL);
-
-    return () => clearInterval(intervalId);
+    return () => unsubscribe();
   }, [fetchRankings]);
 
   // Helper function to get a single rider by ID
