@@ -146,7 +146,7 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
                                 <div>een &#39;Veloholic&#39; shirt</div>
                                 <div className="overflow-hidden rounded-lg border border-gray-200">
                                     <img
-                                        src="https://instagram.fein1-2.fna.fbcdn.net/v/t51.2885-15/625039582_18106740397743293_7408014545346298231_n.jpg?stp=dst-jpg_e35_s640x640_sh0.08_tt6&_nc_ht=instagram.fein1-2.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2QFBPUHMH0E5BHQVahYxIhxfr9R5GjB_QY_iBzb-z-UqRvAow1lbqpgEbkBXEk9Xylo&_nc_ohc=t_1Bj8QXGNIQ7kNvwFJFZa_&_nc_gid=vw9WCWoLnaFi_oSPh8vOOQ&edm=AOQ1c0wBAAAA&ccb=7-5&oh=00_AftEubWOCOSCQMmWPMsXSR_1ZtVOnUBLxlEc5fE0npf_Jg&oe=69A3927C&_nc_sid=8b3546"
+                                        src="https://res.cloudinary.com/dtkg71eih/image/upload/v1771949728/wielershirt_z4m8wc.jpg"
                                         alt="4e en 5e prijs - Veloholic shirt"
                                         className="w-full h-40 object-cover"
                                         loading="lazy"

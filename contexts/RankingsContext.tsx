@@ -5,7 +5,7 @@ import { Rider } from '@/lib/types/rider';
 import { RankingsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
 import { getCacheVersionAsync, primeCachedVersion } from '@/lib/utils/cacheVersion';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
@@ -98,45 +98,61 @@ export function RankingsProvider({
     }
   }, [autoLoad, fetchRankings]);
 
-  // Realtime version invalidation for fast updates with minimal reads.
+  // Poll cache version to avoid Firestore watch-stream instability in dev.
   useEffect(() => {
+    let isActive = true;
+    let permissionDenied = false;
     const cacheRef = doc(db, 'config', 'cache');
 
-    const unsubscribe = onSnapshot(
-      cacheRef,
-      (snapshot) => {
-        if (!snapshot.exists()) return;
+    const checkCacheVersion = async () => {
+      try {
+        if (permissionDenied || !isActive) return;
+        const snapshot = await getDoc(cacheRef);
+        if (!isActive || !snapshot.exists()) return;
+
         const version = snapshot.data()?.version ?? 1;
 
-        void (async () => {
-          try {
-            const previousVersion = lastKnownVersionRef.current;
+        const previousVersion = lastKnownVersionRef.current;
 
-            // First snapshot only initializes local tracking.
-            if (previousVersion === null) {
-              lastKnownVersionRef.current = version;
-              primeCachedVersion(version);
-              return;
-            }
+        // First check only initializes local tracking.
+        if (previousVersion === null) {
+          lastKnownVersionRef.current = version;
+          primeCachedVersion(version);
+          return;
+        }
 
-            if (version !== previousVersion) {
-              console.log(`[RankingsContext] Cache version changed from ${previousVersion} to ${version}, refetching rankings...`);
-              primeCachedVersion(version);
-              lastKnownVersionRef.current = version;
-              await clearOldVersions(version);
-              await fetchRankings(true);
-            }
-          } catch (error) {
-            console.error('[RankingsContext] Error processing cache version update:', error);
-          }
-        })();
-      },
-      (error) => {
-        console.error('[RankingsContext] Error listening for cache version updates:', error);
+        if (version !== previousVersion) {
+          console.log(`[RankingsContext] Cache version changed from ${previousVersion} to ${version}, refetching rankings...`);
+          primeCachedVersion(version);
+          lastKnownVersionRef.current = version;
+          await clearOldVersions(version);
+          if (!isActive) return;
+          await fetchRankings(true);
+        }
+      } catch (error) {
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 'permission-denied'
+        ) {
+          permissionDenied = true;
+          console.warn('[RankingsContext] No permission for config/cache; skipping cache-version polling.');
+          return;
+        }
+        console.error('[RankingsContext] Error checking cache version updates:', error);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    void checkCacheVersion();
+    const pollInterval = setInterval(() => {
+      void checkCacheVersion();
+    }, 30000);
+
+    return () => {
+      isActive = false;
+      clearInterval(pollInterval);
+    };
   }, [fetchRankings]);
 
   // Helper function to get a single rider by ID

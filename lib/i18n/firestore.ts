@@ -1,31 +1,34 @@
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/client";
 
 export const listenTranslations = (locale: string, callback: (data: Record<string, string>) => void) => {
-  console.log(`Setting up Firestore listener for locale: ${locale}`);
+  let isActive = true;
   const ref = doc(db, "translations", locale);
 
-  // onSnapshot provides initial data on first callback, no need for separate getDoc
-  const unsubscribe = onSnapshot(
-    ref,
-    (snapshot) => {
+  const fetchTranslations = async () => {
+    try {
+      const snapshot = await getDoc(ref);
+      if (!isActive) return;
+
       if (snapshot.exists()) {
-        console.log('Received translation update from Firestore');
         callback(snapshot.data() || {});
       } else {
-        console.warn(`No document found for locale: ${locale}`);
         callback({});
       }
-    },
-    (error) => {
-      console.error('Error listening to translations:', error);
-      // Blijf luisteren, maar geef lege objecten door
+    } catch (error) {
+      console.error('Error fetching translations:', error);
+      if (!isActive) return;
       callback({});
     }
-  );
+  };
+
+  void fetchTranslations();
+  const pollInterval = setInterval(() => {
+    void fetchTranslations();
+  }, 30000);
 
   return () => {
-    console.log('Cleaning up Firestore listener');
-    unsubscribe();
+    isActive = false;
+    clearInterval(pollInterval);
   };
 };
