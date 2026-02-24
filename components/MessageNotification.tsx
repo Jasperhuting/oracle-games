@@ -2,8 +2,8 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase/client';
-import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
+import { useEffect, useRef, useState } from 'react';
 import { Mail, X } from 'tabler-icons-react';
 import { useRouter } from 'next/navigation';
 
@@ -16,59 +16,57 @@ interface Message {
 
 export default function MessageNotification() {
   const { user } = useAuth();
+  const userId = user?.uid;
   const router = useRouter();
   const [notification, setNotification] = useState<Message | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [seenMessageIds, setSeenMessageIds] = useState<Set<string>>(() => {
-    // Load seen message IDs from localStorage on mount
+  const isInitializedRef = useRef(false);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // Load seen message IDs once for this user session.
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('seenMessageIds');
       if (stored) {
         try {
-          return new Set(JSON.parse(stored));
+          seenMessageIdsRef.current = new Set(JSON.parse(stored));
         } catch {
-          return new Set();
+          seenMessageIdsRef.current = new Set();
         }
+      } else {
+        seenMessageIdsRef.current = new Set();
       }
     }
-    return new Set();
-  });
 
-  // Save seenMessageIds to localStorage whenever it changes
-  useEffect(() => {
-    if (seenMessageIds.size > 0) {
-      localStorage.setItem('seenMessageIds', JSON.stringify(Array.from(seenMessageIds)));
-    }
-  }, [seenMessageIds]);
+    isInitializedRef.current = false;
 
-  useEffect(() => {
-    if (!user) return;
-
-    // Listen for new unread messages (simplified query for testing)
+    // Listen only to this user's unread messages, capped to keep reads low.
     const messagesRef = collection(db, 'messages');
     const q = query(
       messagesRef,
-      where('recipientId', '==', user.uid),
-      limit(50) // Get recent messages and filter client-side
+      where('recipientId', '==', userId),
+      where('read', '==', false),
+      limit(20)
     );
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        
-        // On initial load, mark all current messages as seen
-        if (!isInitialized) {
+        // On initial load, mark all current messages as seen.
+        if (!isInitializedRef.current) {
           const currentMessageIds = snapshot.docs
             .filter(doc => {
               const data = doc.data();
-              return data.read === false && !data.deletedAt;
+              return data.read === false && !data.deletedAt && !data.deletedByRecipient;
             })
             .map(doc => doc.id);
-          setSeenMessageIds(new Set(currentMessageIds));
-          setIsInitialized(true);
+          seenMessageIdsRef.current = new Set(currentMessageIds);
+          localStorage.setItem('seenMessageIds', JSON.stringify(Array.from(seenMessageIdsRef.current)));
+          isInitializedRef.current = true;
           return;
         }
-        
+
         // Check for new documents only (not updates)
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
@@ -77,7 +75,7 @@ export default function MessageNotification() {
             const messageId = doc.id;
             
             // Only show notification if it's unread, not deleted, and not seen before
-            if (data.read === false && !data.deletedAt && !seenMessageIds.has(messageId)) {
+            if (data.read === false && !data.deletedAt && !data.deletedByRecipient && !seenMessageIdsRef.current.has(messageId)) {
               
               // Check if user is on inbox page at the moment of notification
               const currentPath = window.location.pathname;
@@ -98,7 +96,8 @@ export default function MessageNotification() {
               }
               
               // Mark this message as seen
-              setSeenMessageIds(prev => new Set([...prev, messageId]));
+              seenMessageIdsRef.current.add(messageId);
+              localStorage.setItem('seenMessageIds', JSON.stringify(Array.from(seenMessageIdsRef.current)));
             }
           }
         });
@@ -110,7 +109,7 @@ export default function MessageNotification() {
     );
 
     return () => unsubscribe();
-  }, [user, isInitialized, seenMessageIds]);
+  }, [userId]);
 
   const handleClick = () => {
     router.push('/inbox');
