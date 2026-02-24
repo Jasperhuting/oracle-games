@@ -97,9 +97,10 @@ export async function GET(request: NextRequest) {
         const totalJobs = typeof batch.totalJobs === 'number' ? batch.totalJobs : 0;
         const completedJobs = typeof batch.completedJobs === 'number' ? batch.completedJobs : 0;
         const failedJobs = typeof batch.failedJobs === 'number' ? batch.failedJobs : 0;
+        const resolvedJobs = completedJobs + failedJobs;
         const remainingJobs = Math.max(0, totalJobs - completedJobs - failedJobs);
 
-        if (totalJobs <= 0 || remainingJobs <= 0) continue;
+        if (totalJobs <= 0 || remainingJobs <= 0 || resolvedJobs <= 0) continue;
 
         const outcomes = Array.isArray(batch.outcomes) ? batch.outcomes : [];
         const recentOutcomes = outcomes.slice(-5);
@@ -110,10 +111,8 @@ export async function GET(request: NextRequest) {
           `🆔 Batch: <code>${batchDoc.id}</code>`,
           `✅ Executed: ${completedJobs}`,
           `❌ Failed: ${failedJobs}`,
-          `🕒 Remaining: ${remainingJobs}`,
-          `📦 Total: ${totalJobs}`,
           '',
-          recentOutcomes.length > 0 ? `Laatste outcomes:\n${recentOutcomes.join('\n')}` : 'Nog geen afgeronde jobs in deze batch.',
+          recentOutcomes.length > 0 ? `Laatste outcomes:\n${recentOutcomes.join('\n')}` : 'Nog geen outcomes beschikbaar.',
           '',
           `🔗 <a href="https://oracle-games.online/admin/jobs">Bekijk jobs</a>`,
         ].join('\n');

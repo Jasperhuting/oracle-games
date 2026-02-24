@@ -595,7 +595,6 @@ async function updateBatchFromJob(job: any, result: any, status: 'completed' | '
   const totalJobs = batch.totalJobs || 0;
   const completed = batch.completedJobs || 0;
   const failed = batch.failedJobs || 0;
-  const pending = Math.max(0, totalJobs - completed - failed);
   const done = totalJobs > 0 && completed + failed >= totalJobs;
 
   if (done && !batch.telegramSent) {
@@ -605,7 +604,6 @@ async function updateBatchFromJob(job: any, result: any, status: 'completed' | '
       '',
       `✅ Executed: ${completed}`,
       `❌ Failed: ${failed}`,
-      `🕒 Remaining: ${pending}`,
       '',
       lines.slice(0, 40).join('\n'),
       '',
