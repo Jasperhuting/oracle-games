@@ -496,6 +496,9 @@ export default function CalendarPage() {
   const [year, setYear] = useState(currentYear);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [monthFilter, setMonthFilter] = useState<number | 'all'>('all');
+  const [classificationFilter, setClassificationFilter] = useState<string>('all');
+  const [showPast, setShowPast] = useState(false);
   const [data, setData] = useState<CalendarResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -504,11 +507,49 @@ export default function CalendarPage() {
   // Available years for dropdown
   const years = [currentYear, currentYear + 1];
 
-  // Filter races by removing unwanted classifications
+  const classificationOptions = useMemo(() => {
+    if (!data?.races) return [];
+    const filtered = filterUnwantedClassifications(data.races);
+    const unique = Array.from(
+      new Set(
+        filtered
+          .map((race) => (race.classification || '').trim())
+          .filter(Boolean)
+      )
+    ).sort();
+    return unique;
+  }, [data?.races]);
+
+  const raceOverlapsMonth = (race: CalendarRace, month: number) => {
+    const raceStart = new Date(race.startDate);
+    const raceEnd = new Date(race.endDate);
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0);
+    return raceStart <= monthEnd && raceEnd >= monthStart;
+  };
+
+  // Filter races by removing unwanted classifications + filters
   const filteredRaces = useMemo(() => {
     if (!data?.races) return [];
-    return filterUnwantedClassifications(data.races);
-  }, [data?.races]);
+    const today = new Date();
+    const base = filterUnwantedClassifications(data.races);
+    return base.filter((race) => {
+      if (!showPast) {
+        const raceEnd = new Date(race.endDate);
+        // Treat endDate as end of local day so ongoing races aren't hidden too early.
+        raceEnd.setHours(23, 59, 59, 999);
+        if (raceEnd < today) return false;
+      }
+      if (classificationFilter !== 'all') {
+        const classification = (race.classification || '').trim();
+        if (classification !== classificationFilter) return false;
+      }
+      if (monthFilter !== 'all' && !raceOverlapsMonth(race, monthFilter)) {
+        return false;
+      }
+      return true;
+    });
+  }, [data?.races, showPast, classificationFilter, monthFilter, year]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -535,6 +576,12 @@ export default function CalendarPage() {
 
     fetchData();
   }, [year]);
+
+  useEffect(() => {
+    if (viewMode === 'calendar' && monthFilter !== 'all') {
+      setCurrentMonth(monthFilter);
+    }
+  }, [viewMode, monthFilter]);
 
   const racesByMonth = groupRacesByMonth(filteredRaces);
 
@@ -591,6 +638,51 @@ export default function CalendarPage() {
       {/* Filters */}
       <div className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Maand</label>
+            <select
+              value={monthFilter}
+              onChange={(e) => {
+                const value = e.target.value;
+                setMonthFilter(value === 'all' ? 'all' : parseInt(value, 10));
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">Alle</option>
+              {MONTHS_NL.map((month, index) => (
+                <option key={month} value={index}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Raceniveau</label>
+            <select
+              value={classificationFilter}
+              onChange={(e) => setClassificationFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">Alle</option>
+              {classificationOptions.map((classification) => (
+                <option key={classification} value={classification}>
+                  {getClassificationLabel(classification)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={showPast}
+              onChange={(e) => setShowPast(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            Toon afgelopen
+          </label>
+
           <span className="text-sm text-gray-400">
             ({filteredRaces.length} {filteredRaces.length === 1 ? 'race' : 'races'})
           </span>

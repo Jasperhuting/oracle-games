@@ -111,7 +111,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                     )}
                 </div>
             ),
-            display: true
+            display: false
         },
         {
             name: t('header.menu.logout'),
@@ -126,18 +126,8 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
     const MenuItems = [
         {
-            name: t('header.menu.home'),
-            href: "/home",
-            display: true
-        },
-        {
             name: t('header.menu.games'),
             href: "/games",
-            display: true
-        },
-        {
-            name: t('header.menu.rules'),
-            href: "/rules",
             display: true
         },
         {
@@ -148,12 +138,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
         {
             name: t('header.menu.forum'),
             href: "/forum",
-            display: false
-        },
-        {
-            name: t('header.menu.calendar', 'Kalender'),
-            href: "/calendar",
-            display: true
+            display: isAdmin || impersonationStatus.isImpersonating
         },
         {
             name: t('header.menu.myGames'),
@@ -184,7 +169,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             <div className="container mx-auto hidden md:block">
                 <div className="flex flex-1 justify-between py-2">
                     <div className="flex-1 flex items-center">
-                        <Link href="/home">
+                        <Link href="/account">
                             <Image 
                                 src="/logo.png" 
                                 alt="Oracle Games Logo" 
@@ -216,7 +201,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                     <MenuProvider>
                                         {user && <ProfileMenuButton user={user} loading={loading} pathname={pathname} unreadCount={unreadCount} />}
                                         <Menu>
-                                            {profileItems.map((item) => {
+                                            {profileItems.filter((item) => item.display).map((item) => {
                                                 return <MenuItem key={item.name} onClick={() => item.onClick ? item.onClick() : router.push(item.href)} className={`text-gray-900 whitespace-nowrap py-2 px-3 ${item.href === pathname ? 'text-primary font-bold' : ''}`}>
                                                     <span className="mr-2">{item.icon}</span>
                                                     {item.name}
@@ -233,7 +218,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
             <div className="md:hidden h-[86px] items-center justify-center content-center flex ">
                 <div className="flex-1 flex items-center justify-center">
-                        <Link href="/home">
+                        <Link href="/account">
                             <Image 
                                 src="/logo.png" 
                                 alt="Oracle Games Logo" 
@@ -322,7 +307,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                         {/* Profile Items */}
                                         {user && (
                                             <div className="flex flex-col gap-2">
-                                                {profileItems.map((item) => (
+                                                {profileItems.filter((item) => item.display).map((item) => (
                                                     <button
                                                         key={item.name}
                                                         onClick={() => {

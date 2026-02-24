@@ -332,8 +332,35 @@ type ScrapeResult = {
   message: string;
   riderCount: number;
   stage?: number;
+  resultPreview?: string[];
   retryable?: boolean;
   failureReason?: 'validation' | 'unsupported';
+};
+
+const getRiderDisplayName = (row: any): string => {
+  if (!row || typeof row !== 'object') return 'Unknown';
+
+  if (typeof row.name === 'string' && row.name.trim()) return row.name.trim();
+  if (typeof row.rider === 'string' && row.rider.trim()) return row.rider.trim();
+
+  const firstName = typeof row.firstName === 'string' ? row.firstName.trim() : '';
+  const lastName = typeof row.lastName === 'string' ? row.lastName.trim() : '';
+  const combined = `${firstName} ${lastName}`.trim();
+  if (combined) return combined;
+
+  if (typeof row.team === 'string' && row.team.trim()) return row.team.trim();
+  if (typeof row.shortName === 'string' && row.shortName.trim()) return row.shortName.trim();
+  return 'Unknown';
+};
+
+const getTopResultsPreview = (data: any, maxRows = 3): string[] => {
+  if (!data || !Array.isArray(data.stageResults)) return [];
+
+  return data.stageResults
+    .filter((row: any) => row && typeof row.place === 'number' && row.place > 0)
+    .sort((a: any, b: any) => a.place - b.place)
+    .slice(0, maxRows)
+    .map((row: any) => `${row.place}. ${getRiderDisplayName(row)}`);
 };
 
 async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResult> {
@@ -372,7 +399,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       startlistResult.failureReason = 'validation';
     }
     return startlistResult;
-  } else if ((type === 'stage-result' || type === 'stage') && stage) {
+  } else if ((type === 'stage-result' || type === 'stage') && stage !== undefined) {
     result = await withTimeout(getStageResult({
       race: race as RaceSlug,
       year,
@@ -441,6 +468,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       message: save.success ? `Stage ${stage} scraped` : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       stage,
+      resultPreview: save.success ? getTopResultsPreview(result) : [],
       retryable: !save.success,
     };
     if (!save.success) {
@@ -513,6 +541,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       success: save.success,
       message: save.success ? 'Result scraped' : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
+      resultPreview: save.success ? getTopResultsPreview(result) : [],
       retryable: !save.success,
     };
     if (!save.success) {
@@ -544,9 +573,17 @@ async function updateBatchFromJob(job: any, result: any, status: 'completed' | '
     outcomeLabelParts.push('Startlist');
   }
   const outcomeLabel = outcomeLabelParts.filter(Boolean).join(' — ');
+  const resultPreviewText =
+    Array.isArray(result?.resultPreview) && result.resultPreview.length > 0
+      ? ` | Top: ${result.resultPreview.join(', ')}`
+      : '';
+  const riderCountText =
+    typeof result?.riderCount === 'number' && result.riderCount > 0
+      ? ` | Riders: ${result.riderCount}`
+      : '';
 
   await batchRef.set({
-    outcomes: FieldValue.arrayUnion(`${outcomeLabel}: ${result?.message || ''}`.trim()),
+    outcomes: FieldValue.arrayUnion(`${outcomeLabel}: ${result?.message || ''}${riderCountText}${resultPreviewText}`.trim()),
     completedJobs: FieldValue.increment(status === 'completed' ? 1 : 0),
     failedJobs: FieldValue.increment(status === 'failed' ? 1 : 0),
   }, { merge: true });
@@ -558,6 +595,7 @@ async function updateBatchFromJob(job: any, result: any, status: 'completed' | '
   const totalJobs = batch.totalJobs || 0;
   const completed = batch.completedJobs || 0;
   const failed = batch.failedJobs || 0;
+  const pending = Math.max(0, totalJobs - completed - failed);
   const done = totalJobs > 0 && completed + failed >= totalJobs;
 
   if (done && !batch.telegramSent) {
@@ -565,8 +603,9 @@ async function updateBatchFromJob(job: any, result: any, status: 'completed' | '
     const message = [
       `🕛 <b>Daily Race Scrape Completed</b> (${batch.date || ''})`,
       '',
-      `✅ Success: ${completed}`,
+      `✅ Executed: ${completed}`,
       `❌ Failed: ${failed}`,
+      `🕒 Remaining: ${pending}`,
       '',
       lines.slice(0, 40).join('\n'),
       '',

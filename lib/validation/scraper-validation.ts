@@ -43,6 +43,7 @@ export interface ValidationResult {
   warnings: ValidationError[];
   metadata: {
     riderCount: number;
+    hasResults: boolean;
     hasGC: boolean;
     hasPointsClassification: boolean;
     hasMountainsClassification: boolean;
@@ -213,6 +214,15 @@ export function validateStageResult(data: StageResult): ValidationResult {
     ? gc.length
     : (tttRiderCount > 0 ? tttRiderCount : regularRiderCount);
 
+  const hasResults = isTourGC
+    ? gc.some(r => typeof r.place === 'number' && r.place > 0)
+    : stageResults.some(result => {
+        if (isTTTTeamResult(result)) {
+          return typeof result.place === 'number' && result.place > 0;
+        }
+        return typeof result.place === 'number' && result.place > 0;
+      });
+
   // 1. Check minimum rider count (only error for very low counts, no warning for "low" counts)
   // Note: Some races like National Championship ITTs can have as few as 20-30 riders
   if (riderCount < VALIDATION_CONFIG.MIN_RIDERS_STAGE) {
@@ -333,6 +343,7 @@ export function validateStageResult(data: StageResult): ValidationResult {
     warnings,
     metadata: {
       riderCount,
+      hasResults,
       hasGC: gc.length > 0,
       hasPointsClassification: points.length > 0,
       hasMountainsClassification: mountains.length > 0,
@@ -402,6 +413,7 @@ export function validateStartlist(data: StartlistResult): ValidationResult {
     warnings,
     metadata: {
       riderCount: totalRiders,
+      hasResults: false,
       hasGC: false,
       hasPointsClassification: false,
       hasMountainsClassification: false,

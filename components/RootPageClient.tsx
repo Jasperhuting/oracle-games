@@ -11,7 +11,7 @@ export default function RootPageClient() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.push('/home');
+        router.push('/account');
       } else {
         router.push('/login');
       }

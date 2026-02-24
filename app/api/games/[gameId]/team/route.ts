@@ -168,6 +168,22 @@ export async function POST(
     const gameData = gameDoc.data();
     const config = gameData?.config || {};
 
+    // Enforce eligible riders if configured
+    if (Array.isArray(gameData?.eligibleRiders) && gameData.eligibleRiders.length > 0) {
+      const eligibleSet = new Set(gameData.eligibleRiders);
+      const invalidRiders = riders.filter(r => !r?.nameId || !eligibleSet.has(r.nameId));
+
+      if (invalidRiders.length > 0) {
+        return NextResponse.json(
+          {
+            error: 'One or more riders are not eligible for this game',
+            invalidRiders: invalidRiders.map(r => ({ nameId: r?.nameId || null, name: r?.name || null })),
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate roster size
     if (config.maxRiders && riders.length > config.maxRiders) {
       return NextResponse.json(

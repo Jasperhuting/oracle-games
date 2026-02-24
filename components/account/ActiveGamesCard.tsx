@@ -79,71 +79,68 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
             .filter((id: string) => id)
         )] as string[];
 
-        const activeGames: ActiveGame[] = [];
+        const activeGames = (await Promise.all(
+          gameIds.map(async (gameId) => {
+            try {
+              const [gameResponse, standingsResponse] = await Promise.all([
+                fetch(`/api/games/${gameId}`),
+                fetch(`/api/games/${gameId}/teams-overview`),
+              ]);
 
-        for (const gameId of gameIds) {
-          try {
-            // Fetch game info
-            const gameResponse = await fetch(`/api/games/${gameId}`);
-            if (!gameResponse.ok) continue;
+              if (!gameResponse.ok) return null;
 
-            const gameData = await gameResponse.json();
-            const game = gameData.game;
+              const gameData = await gameResponse.json();
+              const game = gameData.game;
 
-            // Only show active, bidding, or registration games
-            if (!['registration', 'bidding', 'active'].includes(game?.status)) {
-              continue;
-            }
-
-            // Skip test games
-            if (game.isTest || game.name?.toLowerCase().includes('test')) {
-              continue;
-            }
-
-            // Find participant data for this user
-            const participant = participants.find((p: any) =>
-              p.gameId.replace(/-pending$/, '') === gameId
-            );
-
-            // Determine sport type
-            const sportType = getSportType(game.gameType);
-
-            // Get standings to find user's ranking and points
-            const standingsResponse = await fetch(`/api/games/${gameId}/teams-overview`);
-            let totalParticipants = 0;
-            let userRanking = 0;
-            let userPoints = 0;
-
-            let lastScoreUpdate: string | null = null;
-            if (standingsResponse.ok) {
-              const standingsData = await standingsResponse.json();
-              const teams = standingsData.teams || [];
-              totalParticipants = teams.length;
-              lastScoreUpdate = standingsData.lastScoreUpdate || null;
-
-              // Find user's entry in the standings
-              const userTeam = teams.find((team: any) => team.userId === userId);
-              if (userTeam) {
-                userRanking = userTeam.ranking || 0;
-                userPoints = userTeam.totalPoints || 0;
+              // Only show active, bidding, or registration games
+              if (!['registration', 'bidding', 'active'].includes(game?.status)) {
+                return null;
               }
-            }
 
-            activeGames.push({
-              gameId,
-              gameName: game.division ? `${game.name} - ${game.division}` : game.name,
-              gameType: game.gameType,
-              sportType,
-              ranking: userRanking,
-              totalParticipants,
-              totalPoints: userPoints,
-              status: game.status,
-              lastScoreUpdate,
-            });
-          } catch {
-            // Skip games that fail
-          }
-        }
+              // Skip test games
+              if (game.isTest || game.name?.toLowerCase().includes('test')) {
+                return null;
+              }
+
+              // Determine sport type
+              const sportType = getSportType(game.gameType);
+
+              // Get standings to find user's ranking and points
+              let totalParticipants = 0;
+              let userRanking = 0;
+              let userPoints = 0;
+              let lastScoreUpdate: string | null = null;
+
+              if (standingsResponse.ok) {
+                const standingsData = await standingsResponse.json();
+                const teams = standingsData.teams || [];
+                totalParticipants = teams.length;
+                lastScoreUpdate = standingsData.lastScoreUpdate || null;
+
+                // Find user's entry in the standings
+                const userTeam = teams.find((team: any) => team.userId === userId);
+                if (userTeam) {
+                  userRanking = userTeam.ranking || 0;
+                  userPoints = userTeam.totalPoints || 0;
+                }
+              }
+
+              return {
+                gameId,
+                gameName: game.division ? `${game.name} - ${game.division}` : game.name,
+                gameType: game.gameType,
+                sportType,
+                ranking: userRanking,
+                totalParticipants,
+                totalPoints: userPoints,
+                status: game.status,
+                lastScoreUpdate,
+              } as ActiveGame;
+            } catch {
+              return null;
+            }
+          })
+        )).filter((game): game is ActiveGame => Boolean(game));
 
         // Sort by sport type, then by name
         activeGames.sort((a, b) => {

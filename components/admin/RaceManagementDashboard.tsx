@@ -130,6 +130,7 @@ function StageRow({
   year,
   userId,
   isSingleDay,
+  pointsStatus,
   onRefresh,
 }: {
   stage: StageStatus;
@@ -137,6 +138,11 @@ function StageRow({
   year: number;
   userId: string;
   isSingleDay: boolean;
+  pointsStatus?: {
+    status: 'success' | 'partial' | 'failed';
+    calculatedAt?: string | null;
+    errors?: string[];
+  } | null;
   onRefresh: () => void;
 }) {
   const [loading, setLoading] = useState(false);
@@ -281,6 +287,21 @@ function StageRow({
               warningCount={stage.validationWarnings}
             />
           )}
+          {pointsStatus && (
+            <div className="mt-1 text-xs">
+              <span
+                className={`px-2 py-0.5 rounded-full ${
+                  pointsStatus.status === 'success'
+                    ? 'bg-green-100 text-green-800'
+                    : pointsStatus.status === 'partial'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
+                }`}
+              >
+                Points: {pointsStatus.status}
+              </span>
+            </div>
+          )}
           {stage.status === 'empty' && (
             <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
               Empty
@@ -317,6 +338,43 @@ function StageRow({
             disabled={loading}
           >
             {loading ? 'Loading...' : stage.status === 'pending' ? 'Scrape' : 'Re-scrape'}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            outline
+            onClick={async () => {
+              if (!confirm(`Recalculate points for ${race} stage ${stage.stageNumber}?`)) return;
+              setLoading(true);
+              try {
+                let stageParam: number | string = stage.stageNumber as any;
+                if (stage.stageNumber === 'prologue') stageParam = 0;
+                if (stage.stageNumber === 'gc') stageParam = 'tour-gc';
+                if (stage.stageNumber === 'result') stageParam = 'result';
+                const response = await fetch('/api/admin/recalculate-stage-points', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId,
+                    raceSlug: race,
+                    year,
+                    stage: stageParam,
+                  }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                  throw new Error(data.error || 'Failed to recalculate points');
+                }
+                toast.success('Points recalculated');
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : 'Failed to recalculate points');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+          >
+            Recalculate points
           </Button>
         </td>
       </tr>
@@ -431,6 +489,53 @@ function RaceCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [recalcLoading, setRecalcLoading] = useState(false);
+  const [pointsStatus, setPointsStatus] = useState<Record<string, { status: 'success' | 'partial' | 'failed'; calculatedAt?: string | null; errors?: string[] }> | null>(null);
+  const [pointsLoading, setPointsLoading] = useState(false);
+
+  const getStageKey = (stageNumber: StageStatus['stageNumber']): string => {
+    if (stageNumber === 'prologue') return '0';
+    if (stageNumber === 'gc') return 'tour-gc';
+    if (stageNumber === 'result') return 'result';
+    return String(stageNumber);
+  };
+
+  useEffect(() => {
+    if (!expanded || !userId) return;
+    let cancelled = false;
+    const loadPointsStatus = async () => {
+      setPointsLoading(true);
+      try {
+        const response = await fetch(`/api/admin/points-calculation-status?userId=${userId}&raceSlug=${race.raceSlug}&year=${race.year}`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch points calculation status');
+        }
+        const map: Record<string, { status: 'success' | 'partial' | 'failed'; calculatedAt?: string | null; errors?: string[] }> = {};
+        (data.items || []).forEach((item: any) => {
+          map[String(item.stage)] = {
+            status: item.status,
+            calculatedAt: item.calculatedAt,
+            errors: item.errors,
+          };
+        });
+        if (!cancelled) {
+          setPointsStatus(map);
+        }
+      } catch {
+        if (!cancelled) {
+          setPointsStatus(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setPointsLoading(false);
+        }
+      }
+    };
+    loadPointsStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [expanded, userId, race.raceSlug, race.year]);
 
   const progressPercent = race.totalStages > 0
     ? Math.round((race.scrapedStages / race.totalStages) * 100)
@@ -544,6 +649,9 @@ function RaceCard({
       {/* Expanded Content */}
       {expanded && (
         <div className="p-4">
+          {pointsLoading && (
+            <div className="text-sm text-gray-500 mb-2">Loading points calculation status...</div>
+          )}
           {/* Startlist Info */}
           <div className="mb-4 flex items-center gap-4 text-sm">
             <span className={race.hasStartlist ? 'text-green-600' : 'text-gray-400'}>
@@ -610,6 +718,7 @@ function RaceCard({
                   year={race.year}
                   userId={userId}
                   isSingleDay={race.isSingleDay}
+                  pointsStatus={pointsStatus ? pointsStatus[getStageKey(stage.stageNumber)] : null}
                   onRefresh={onRefresh}
                 />
               ))}
@@ -630,6 +739,20 @@ export function RaceManagementDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [hideFullyScraped, setHideFullyScraped] = useState(true);
   const [daysAhead, setDaysAhead] = useState(14);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [pointsHealth, setPointsHealth] = useState<{
+    totalScraped: number;
+    issues: Array<{
+      raceSlug: string;
+      year: number;
+      type: 'stage' | 'result' | 'tour-gc';
+      stage?: number | string;
+      scrapedAt?: string | null;
+      pointsStatus: 'missing' | 'failed' | 'partial';
+      lastCalculatedAt?: string | null;
+      lastError?: string | null;
+    }>;
+  } | null>(null);
   const daysAheadRef = useRef(daysAhead);
 
   // Helper function to check if a race is fully scraped
@@ -671,6 +794,21 @@ export function RaceManagementDashboard() {
       }
 
       setData(result);
+      setHealthLoading(true);
+      try {
+        const healthResponse = await fetch(`/api/admin/points-health?userId=${user.uid}&year=${year}&maxDays=60`);
+        const healthData = await healthResponse.json();
+        if (healthResponse.ok) {
+          setPointsHealth({
+            totalScraped: healthData.totalScraped || 0,
+            issues: healthData.issues || [],
+          });
+        } else {
+          setPointsHealth(null);
+        }
+      } finally {
+        setHealthLoading(false);
+      }
       if (isLoadMore) {
         daysAheadRef.current = effectiveDays;
         setDaysAhead(effectiveDays);
@@ -753,6 +891,72 @@ export function RaceManagementDashboard() {
           </div>
         </div>
       )}
+
+      {/* Points Health */}
+      <div className="bg-white border rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Points Health (last 60 days)</h2>
+          <Button onClick={() => fetchData()} disabled={loading || healthLoading}>
+            {healthLoading ? 'Checking...' : 'Refresh'}
+          </Button>
+        </div>
+        {healthLoading && <div className="text-sm text-gray-500">Loading points health...</div>}
+        {!healthLoading && pointsHealth && pointsHealth.issues.length === 0 && (
+          <div className="text-sm text-green-600">All scraped stages have successful points calculations.</div>
+        )}
+        {!healthLoading && pointsHealth && pointsHealth.issues.length > 0 && (
+          <div className="space-y-2">
+            {pointsHealth.issues.map((issue, idx) => (
+              <div key={`${issue.raceSlug}-${issue.stage}-${idx}`} className="border rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{issue.raceSlug}</span>
+                    <span className="text-xs text-gray-500">Stage: {issue.type === 'stage' ? issue.stage : issue.type}</span>
+                    <span className={`text-xs ${issue.pointsStatus === 'missing' ? 'text-yellow-700' : 'text-red-600'}`}>
+                      {issue.pointsStatus}
+                    </span>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      if (!user?.uid) return;
+                      let stageParam: number | string = issue.stage as any;
+                      if (issue.type === 'result') stageParam = 'result';
+                      if (issue.type === 'tour-gc') stageParam = 'tour-gc';
+                      const response = await fetch('/api/admin/recalculate-stage-points', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          userId: user.uid,
+                          raceSlug: issue.raceSlug,
+                          year: issue.year,
+                          stage: stageParam,
+                        }),
+                      });
+                      const data = await response.json();
+                      if (!response.ok) {
+                        toast.error(data.error || 'Failed to recalculate points');
+                        return;
+                      }
+                      toast.success('Points recalculated');
+                      fetchData();
+                    }}
+                    disabled={loading || healthLoading}
+                  >
+                    Recalculate stage
+                  </Button>
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Scraped: {issue.scrapedAt ? new Date(issue.scrapedAt).toLocaleString('nl-NL') : '-'}
+                </div>
+                {issue.lastError && (
+                  <div className="mt-1 text-xs text-red-600">Last error: {issue.lastError}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Error */}
       {error && (

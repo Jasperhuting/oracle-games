@@ -1,10 +1,5 @@
-import { AuthGuard } from "@/components/AuthGuard";
-import { HomePageContent } from "@/components/HomePageContent";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-    return (
-        <AuthGuard>
-            <HomePageContent />
-        </AuthGuard>
-    );
+    redirect('/account');
 }

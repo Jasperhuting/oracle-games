@@ -162,7 +162,13 @@ export async function getJobs(filters?: {
     }
     return true;
   });
-  jobs.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  // Process queue in deterministic FIFO order, with priority first.
+  // This prevents older retries from being starved by newer jobs.
+  jobs.sort((a, b) => {
+    const priorityDiff = (a.priority ?? 99) - (b.priority ?? 99);
+    if (priorityDiff !== 0) return priorityDiff;
+    return (a.createdAt || '').localeCompare(b.createdAt || '');
+  });
 
   if (filters?.limit) {
     return jobs.slice(0, filters.limit);

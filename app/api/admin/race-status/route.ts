@@ -199,7 +199,6 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'volta-comunitat-valenciana': 5,
   'setmana-ciclista-valenciana': 4,
   'tour-cycliste-international-la-provence': 3,
-  'vuelta-ciclista-a-la-region-de-murcia': 2,
   'ruta-del-sol': 5,
   'volta-ao-algarve': 5,
   'le-tour-de-filipinas': 3,
@@ -269,7 +268,11 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'biwase-cup', // women's race
   'gp-oetingen', // women's race
   'trofeo-da-moreno-piccolo-trofeo-alfredo-binda', // women's junior race
-  'le-tour-de-filipinas' // cancelled
+  'le-tour-de-filipinas', // cancelled
+  'asian-cycling-championships-mj2',
+  'asian-cycling-championships-wu23',
+  'aveiro-region-champions-classic', // cancelled
+  'grand-prix-alaiye1',
 ]);
 
 /**
@@ -467,6 +470,7 @@ const KNOWN_SINGLE_DAY_RACES: Set<string> = new Set([
   'gp-de-la-ville-de-lillers',
   'porec-trophy',
   'popolarissima',
+  'vuelta-ciclista-a-la-region-de-murcia',
   
   
 ]);
@@ -570,11 +574,53 @@ export async function GET(request: NextRequest) {
       updatedAt: string;
       id: string;
     }[]>();
+    const hasResultsFromData = (data: any): boolean => {
+      const stageResults = data?.stageResults;
+      const gcResults = data?.generalClassification;
+
+      const checkArray = (arr: any[]): boolean => {
+        return arr.some((r) => {
+          if (!r) return false;
+          if (Array.isArray((r as any).riders)) {
+            return typeof r.place === 'number' && r.place > 0;
+          }
+          return typeof r.place === 'number' && r.place > 0;
+        });
+      };
+
+      if (Array.isArray(stageResults)) {
+        return checkArray(stageResults);
+      }
+      if (typeof stageResults === 'string') {
+        try {
+          const parsed = JSON.parse(stageResults);
+          if (Array.isArray(parsed)) return checkArray(parsed);
+        } catch {
+          // ignore
+        }
+      }
+
+      if (Array.isArray(gcResults)) {
+        return checkArray(gcResults);
+      }
+      if (typeof gcResults === 'string') {
+        try {
+          const parsed = JSON.parse(gcResults);
+          if (Array.isArray(parsed)) return checkArray(parsed);
+        } catch {
+          // ignore
+        }
+      }
+
+      return false;
+    };
+
     const validationMap = new Map<string, {
       valid: boolean;
       errorCount: number;
       warningCount: number;
       riderCount: number;
+      hasResults: boolean;
     }>();
 
     scraperDataSnapshot.docs.forEach(doc => {
@@ -582,18 +628,24 @@ export async function GET(request: NextRequest) {
 
       // Build validation map for all docs
       if (data._validation) {
+        const riderCount = data._validation.metadata?.riderCount ?? data.count ?? 0;
+        const hasResults = data._validation.metadata?.hasResults ?? hasResultsFromData(data) ?? (riderCount > 0);
         validationMap.set(doc.id, {
           valid: data._validation.valid ?? true,
           errorCount: data._validation.errorCount ?? 0,
           warningCount: data._validation.warningCount ?? 0,
-          riderCount: data._validation.metadata?.riderCount ?? data.count ?? 0,
+          riderCount,
+          hasResults,
         });
       } else {
+        const riderCount = data.count ?? 0;
+        const hasResults = hasResultsFromData(data) ?? (riderCount > 0);
         validationMap.set(doc.id, {
           valid: true,
           errorCount: 0,
           warningCount: 0,
-          riderCount: data.count ?? 0,
+          riderCount,
+          hasResults,
         });
       }
 
@@ -776,8 +828,9 @@ export async function GET(request: NextRequest) {
       stageDocs.forEach(doc => {
         const validation = validationMap.get(doc.id);
         const riderCount = validation?.riderCount ?? 0;
+        const hasResults = validation?.hasResults ?? (riderCount > 0);
         const isFailed = !!(validation && !validation.valid);
-        const isEmpty = riderCount === 0;
+        const isEmpty = !hasResults;
 
         // GC (tour-gc) is supplementary data, not a race stage - don't count it
         const isSupplementary = doc.key.type === 'tour-gc';

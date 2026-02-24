@@ -401,13 +401,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const successCount = outcomes.filter(o => o.success).length;
-    const failedCount = outcomes.filter(o => !o.success).length;
     const totalFound = outcomes.length;
 
     const summaryLines = outcomes.map((o) => {
       const label = o.type === 'result' ? 'Result' : o.type === 'tour-gc' ? 'Tour GC' : `Stage ${o.stage}`;
-      const status = o.success ? '✅' : '❌';
+      const status = o.success ? '🕒' : '❌';
       const countInfo = o.riderCount > 0 ? ` (${o.riderCount} riders)` : '';
       return `${status} <b>${o.raceName}</b> — ${label}${countInfo}\n${o.message}`;
     });
@@ -424,15 +422,16 @@ export async function GET(request: NextRequest) {
         : '';
 
     const telegramMessage = [
-      `🕛 <b>Daily Race Scrape</b> (${todayStr})`,
+      `🕛 <b>Daily Race Scrape Queue</b> (${todayStr})`,
       '',
-      `✅ Success: ${successCount}`,
-      `❌ Failed: ${failedCount}`,
-      `📋 Found: ${totalFound}`,
-      `📦 Queued jobs: ${queuedJobs}`,
+      `ℹ️ Dit bericht toont wat in de queue is gezet, niet wat al klaar is.`,
+      `🆔 Batch: <code>${dryRun || notifyOnly ? 'n/a' : batchId}</code>`,
+      `📋 Gevonden: ${totalFound}`,
+      `📦 Jobs aangemaakt: ${queuedJobs}`,
+      `🏃 Uitgevoerd nu: 0`,
       `⏱️ Duration: ${elapsedSeconds}s`,
       `🧭 Window: ${targetDates[targetDates.length - 1]} → ${targetDates[0]}`,
-      `🧾 Outcomes: ${summaryLines.length}`,
+      `🧾 Te verwerken: ${summaryLines.length}`,
       `🧹 Excluded slugs: ${EXCLUDED_RACE_SLUGS.size}`,
       '',
       summaryLines.length > 0 ? summaryLines.join('\n\n') : 'No races scheduled for today.',
