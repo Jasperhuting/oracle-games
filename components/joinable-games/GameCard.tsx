@@ -171,7 +171,7 @@ export const GameCard = ({
                   <span className="whitespace-nowrap">Gesponsord door</span>
                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
                     <img src="/berc-bike-logo.jpg" alt="Bercbike" className="h-4 w-4 object-contain" />
-                    Bercbike
+                    Berc Bike
                   </span>
                 </span>
                 <button
