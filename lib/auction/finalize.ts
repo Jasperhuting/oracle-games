@@ -1,5 +1,5 @@
 import { getServerFirebase } from '@/lib/firebase/server';
-import { AuctioneerConfig, AuctionPeriod, FullGridConfig, Game, LastManStandingConfig, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
+import { AuctioneerConfig, AuctionPeriod, FullGridConfig, Game, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export interface FinalizeAuctionOptions {
@@ -574,8 +574,6 @@ export async function finalizeAuction(
             maxRiders = (gameData.config as MarginalGainsConfig).teamSize || 0;
           } else if (gameData.gameType === 'full-grid') {
             maxRiders = (gameData.config as FullGridConfig).maxRiders || 0;
-          } else if (gameData.gameType === 'last-man-standing') {
-            maxRiders = (gameData.config as LastManStandingConfig).teamSize || 0;
           }
           const rosterComplete = newTeam.length >= maxRiders;
 

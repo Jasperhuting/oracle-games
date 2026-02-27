@@ -116,6 +116,28 @@ const parseMaybeJsonArray = (value: unknown): unknown[] => {
   }
 };
 
+const truncate = (value: string, max = 1200): string =>
+  value.length > max ? `${value.slice(0, max)}...` : value;
+
+const sendCronFailureAlert = async (context: {
+  endpoint: string;
+  message: string;
+  details?: string;
+  batchId?: string;
+}) => {
+  const telegramMessage = [
+    `🚨 <b>Cron Failure</b>`,
+    ``,
+    `🔗 <b>Endpoint:</b> ${context.endpoint}`,
+    `❌ <b>Issue:</b> ${context.message}`,
+    context.batchId ? `🆔 <b>Batch:</b> <code>${context.batchId}</code>` : '',
+    context.details ? `📋 <b>Details:</b>\n<code>${truncate(context.details)}</code>` : '',
+    `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
+  ].filter(Boolean).join('\n');
+
+  await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
+};
+
 async function hasExistingScrape(db: ReturnType<typeof getServerFirebase>, key: ScraperDataKey): Promise<boolean> {
   const docId = generateDocumentId(key);
   const doc = await db.collection('scraper-data').doc(docId).get();
@@ -385,18 +407,41 @@ export async function GET(request: NextRequest) {
         telegramSent: false,
       });
 
-      if (queuedJobs > 0 && process.env.CRON_SECRET) {
+      if (queuedJobs > 0) {
         try {
           const processUrl = new URL('/api/cron/process-scrape-jobs', request.nextUrl.origin);
-          processUrl.searchParams.set('limit', '10');
-          await fetch(processUrl.toString(), {
+          processUrl.searchParams.set('limit', '20');
+          const headers: HeadersInit = {};
+          if (process.env.CRON_SECRET) {
+            headers.authorization = `Bearer ${process.env.CRON_SECRET}`;
+          } else {
+            // Fallback for environments without CRON_SECRET so queue processing is still attempted.
+            headers['x-vercel-cron'] = '1';
+          }
+
+          const processResponse = await fetch(processUrl.toString(), {
             method: 'GET',
-            headers: {
-              authorization: `Bearer ${process.env.CRON_SECRET}`,
-            },
+            headers,
           });
+
+          if (!processResponse.ok) {
+            const errorText = await processResponse.text();
+            console.error('[CRON] process-scrape-jobs trigger failed:', processResponse.status, errorText);
+            await sendCronFailureAlert({
+              endpoint: '/api/cron/scrape-todays-races',
+              message: `process-scrape-jobs trigger failed (${processResponse.status})`,
+              details: errorText,
+              batchId,
+            });
+          }
         } catch (error) {
           console.error('[CRON] Failed to trigger process-scrape-jobs:', error);
+          await sendCronFailureAlert({
+            endpoint: '/api/cron/scrape-todays-races',
+            message: 'Failed to trigger process-scrape-jobs',
+            details: error instanceof Error ? error.message : 'Unknown error',
+            batchId,
+          });
         }
       }
     }
@@ -451,6 +496,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[CRON] Error in scrape-todays-races:', error);
+    await sendCronFailureAlert({
+      endpoint: '/api/cron/scrape-todays-races',
+      message: 'Unhandled exception',
+      details: error instanceof Error ? `${error.message}\n${error.stack || ''}` : 'Unknown error',
+    });
     return Response.json(
       { error: 'Failed to scrape today races', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

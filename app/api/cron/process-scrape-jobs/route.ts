@@ -8,6 +8,27 @@ const DEFAULT_MAX_JOBS_PER_RUN = 10;
 const PER_JOB_TIMEOUT_MS = 270_000;
 const STALE_RUNNING_MS = 15 * 60 * 1000;
 const PROGRESS_NOTIFY_MIN_INTERVAL_MS = 4 * 60 * 1000;
+const TIME_ZONE = 'Europe/Amsterdam';
+
+const truncate = (value: string, max = 1200): string =>
+  value.length > max ? `${value.slice(0, max)}...` : value;
+
+const sendCronFailureAlert = async (context: {
+  endpoint: string;
+  message: string;
+  details?: string;
+}) => {
+  const telegramMessage = [
+    `🚨 <b>Cron Failure</b>`,
+    ``,
+    `🔗 <b>Endpoint:</b> ${context.endpoint}`,
+    `❌ <b>Issue:</b> ${context.message}`,
+    context.details ? `📋 <b>Details:</b>\n<code>${truncate(context.details)}</code>` : '',
+    `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
+  ].filter(Boolean).join('\n');
+
+  await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
+};
 
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
@@ -67,6 +88,17 @@ export async function GET(request: NextRequest) {
       } finally {
         clearTimeout(timeout);
       }
+    }
+
+    const failedProcessedJobs = processed.filter((entry) => entry.status >= 400);
+    if (failedProcessedJobs.length > 0) {
+      await sendCronFailureAlert({
+        endpoint: '/api/cron/process-scrape-jobs',
+        message: `${failedProcessedJobs.length} job(s) returned error status`,
+        details: failedProcessedJobs
+          .map((entry) => `jobId=${entry.jobId}, status=${entry.status}`)
+          .join('\n'),
+      });
     }
 
     // Send periodic progress notifications for running batches
@@ -147,6 +179,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[CRON] Error in process-scrape-jobs:', error);
+    await sendCronFailureAlert({
+      endpoint: '/api/cron/process-scrape-jobs',
+      message: 'Unhandled exception',
+      details: error instanceof Error ? `${error.message}\n${error.stack || ''}` : 'Unknown error',
+    });
     return Response.json(
       { error: 'Failed to process scrape jobs', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
