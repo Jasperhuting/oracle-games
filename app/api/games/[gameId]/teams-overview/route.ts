@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import type { DocumentData } from 'firebase-admin/firestore';
+import type { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { GameData, Team } from '@/lib/types';
 
 export async function GET(
@@ -292,15 +292,38 @@ export async function GET(
     // Find the most recent score update for this game
     let lastScoreUpdate: string | null = null;
     try {
-      const scoreUpdatesSnapshot = await db
-        .collection('scoreUpdates')
-        .where('gamesAffected', 'array-contains', gameId)
-        .orderBy('createdAt', 'desc')
-        .limit(1)
-        .get();
+      // Avoid composite index requirement by only ordering on createdAt
+      // and filtering by gameId in memory.
+      const batchSize = 100;
+      const maxBatches = 10;
+      let latestMatch: QueryDocumentSnapshot<DocumentData> | undefined;
+      let lastDoc: QueryDocumentSnapshot<DocumentData> | undefined;
 
-      if (!scoreUpdatesSnapshot.empty) {
-        const updateData = scoreUpdatesSnapshot.docs[0].data();
+      for (let batch = 0; batch < maxBatches && !latestMatch; batch++) {
+        let query = db
+          .collection('scoreUpdates')
+          .orderBy('createdAt', 'desc')
+          .limit(batchSize);
+
+        if (lastDoc) {
+          query = query.startAfter(lastDoc);
+        }
+
+        const recentUpdatesSnapshot = await query.get();
+        if (recentUpdatesSnapshot.empty) {
+          break;
+        }
+
+        latestMatch = recentUpdatesSnapshot.docs.find((doc) => {
+          const data = doc.data();
+          return Array.isArray(data?.gamesAffected) && data.gamesAffected.includes(gameId);
+        });
+
+        lastDoc = recentUpdatesSnapshot.docs[recentUpdatesSnapshot.docs.length - 1];
+      }
+
+      if (latestMatch) {
+        const updateData = latestMatch.data();
         if (updateData?.calculatedAt) {
           lastScoreUpdate = updateData.calculatedAt;
         } else if (updateData?.createdAt?.toDate) {
