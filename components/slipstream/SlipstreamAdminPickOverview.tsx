@@ -104,10 +104,10 @@ export function SlipstreamAdminPickOverview({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Resultatenmatrix</h3>
+        <h3 className="font-semibold text-gray-900">Picksmatrix</h3>
         {!loading && (
           <p className="mt-2 text-sm text-gray-500">
-            {participantRows.length} deelnemers • {raceOptions.length} afgewerkte races
+            {participantRows.length} deelnemers • {raceOptions.length} zichtbare races
             {activeSortRaceSlug && (
               <span className="ml-2 text-gray-600">
                 • Gesorteerd op: {raceOptions.find((race) => race.raceSlug === activeSortRaceSlug)?.raceName}
@@ -209,7 +209,7 @@ export function SlipstreamAdminPickOverview({
       )}
 
       {!loading && !error && raceOptions.length === 0 && (
-        <div className="p-4 text-sm text-gray-500">Nog geen afgewerkte races met resultaten.</div>
+        <div className="p-4 text-sm text-gray-500">Nog geen races met verstreken pickdeadline.</div>
       )}
     </div>
   );

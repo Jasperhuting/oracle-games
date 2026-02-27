@@ -116,21 +116,8 @@ export default function SlipstreamPage() {
   }, [router, searchParams]);
 
   const selectedRace = calendar.find(r => r.raceSlug === selectedRaceSlug);
-  const finishedRaces = calendar.filter((race) => race.status === 'finished');
-  const finishedRaceSlugSet = new Set(finishedRaces.map((race) => race.raceSlug));
-  const raceSlugsWithResults = new Set(
-    adminPicks
-      .filter((pick) =>
-        finishedRaceSlugSet.has(pick.raceSlug) &&
-        (
-          !!pick.timeLostFormatted ||
-          pick.greenJerseyPoints !== null ||
-          pick.riderFinishPosition !== null
-        )
-      )
-      .map((pick) => pick.raceSlug)
-  );
-  const visibleMatrixRaces = finishedRaces.filter((race) => raceSlugsWithResults.has(race.raceSlug));
+  const revealableRaces = calendar.filter((race) => race.deadlinePassed);
+  const visibleMatrixRaces = revealableRaces;
   const matrixRacesForCurrentUser = isProgrammer ? calendar : visibleMatrixRaces;
   const shouldShowResultsMatrix = matrixRacesForCurrentUser.length > 0;
   const canMakePick = selectedRace && !selectedRace.deadlinePassed && selectedRace.status === 'upcoming';
@@ -233,13 +220,13 @@ export default function SlipstreamPage() {
         }
       }
 
-      const finishedRaceSlugs = new Set(
+      const revealableRaceSlugs = new Set(
         loadedCalendar
-          .filter((race) => race.status === 'finished')
+          .filter((race) => race.deadlinePassed)
           .map((race) => race.raceSlug)
       );
 
-      if (isProgrammerUser || finishedRaceSlugs.size > 0) {
+      if (isProgrammerUser || revealableRaceSlugs.size > 0) {
         setAdminOverviewLoading(true);
         setAdminOverviewError(null);
 
@@ -271,7 +258,7 @@ export default function SlipstreamPage() {
             greenJerseyPoints: pick.greenJerseyPoints ?? null,
             riderFinishPosition: pick.riderFinishPosition ?? null
           }))
-            .filter((pick: AdminPickData) => isProgrammerUser || finishedRaceSlugs.has(pick.raceSlug));
+            .filter((pick: AdminPickData) => isProgrammerUser || revealableRaceSlugs.has(pick.raceSlug));
 
           const normalizedParticipants: AdminParticipantData[] = (participantsPayload.participants || [])
             .filter((participant: { status?: string }) => participant.status === 'active')

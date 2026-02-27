@@ -52,7 +52,12 @@ export async function finalizeAuction(
     const gameData = gameDoc.data() as Game;
 
     // Check if game type supports bidding/selection
-    if (gameData?.gameType !== 'auctioneer' && gameData?.gameType !== 'worldtour-manager' && gameData?.gameType !== 'marginal-gains') {
+    if (
+      gameData?.gameType !== 'auctioneer' &&
+      gameData?.gameType !== 'worldtour-manager' &&
+      gameData?.gameType !== 'marginal-gains' &&
+      gameData?.gameType !== 'full-grid'
+    ) {
       return {
         success: false,
         error: 'Game does not support bidding',
@@ -243,6 +248,8 @@ export async function finalizeAuction(
           winnersAssigned: 0,
           losersRefunded: 0,
           errors: [],
+          totalParticipants: 0,
+          processedParticipants: 0,
         },
       };
     }
@@ -269,11 +276,12 @@ export async function finalizeAuction(
     });
 
     // Process each rider's bids
-    const results = {
+    const results: NonNullable<FinalizeAuctionResult['results']> = {
       totalRiders: bidsByRider.size,
       winnersAssigned: 0,
       losersRefunded: 0,
       errors: [] as string[],
+      lastProcessedUserId: undefined,
       totalParticipants: 0, // Will be set later
       processedParticipants: 0,
     };
@@ -290,6 +298,9 @@ export async function finalizeAuction(
     } else if (gameData.gameType === 'marginal-gains') {
       maxRiders = (gameData.config as MarginalGainsConfig).teamSize || 0;
       maxBudget = 0; // No budget for marginal-gains
+    } else if (gameData.gameType === 'full-grid') {
+      maxRiders = (gameData.config as FullGridConfig).maxRiders || 0;
+      maxBudget = (gameData.config as FullGridConfig).budget || 0;
     }
 
     console.log(`[FINALIZE] Game limits: maxRiders=${maxRiders}, maxBudget=${maxBudget}`);
@@ -561,6 +572,8 @@ export async function finalizeAuction(
             maxRiders = (gameData.config as WorldTourManagerConfig).maxRiders || 0;
           } else if (gameData.gameType === 'marginal-gains') {
             maxRiders = (gameData.config as MarginalGainsConfig).teamSize || 0;
+          } else if (gameData.gameType === 'full-grid') {
+            maxRiders = (gameData.config as FullGridConfig).maxRiders || 0;
           } else if (gameData.gameType === 'last-man-standing') {
             maxRiders = (gameData.config as LastManStandingConfig).teamSize || 0;
           }
