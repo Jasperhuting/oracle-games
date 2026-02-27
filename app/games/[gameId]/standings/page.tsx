@@ -104,7 +104,7 @@ export default function StandingsPage() {
             <div className="flex items-center gap-2">
               <Link
                 href={`/user/${userId}`}
-                className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
+                className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer truncate"
               >
                 {info.getValue()}
               </Link>
