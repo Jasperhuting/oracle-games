@@ -15,6 +15,7 @@ import {
 interface Standing {
   ranking: number;
   playername: string;
+  userId: string;
   totalPoints: number;
   participantId: string;
   eligibleForPrizes?: boolean;
@@ -24,16 +25,16 @@ interface Standing {
 }
 
 interface StandingsTabProps {
-  gameId: string;
   standings: Standing[];
   gameType: string | null;
   loading: boolean;
   error: string | null;
+  currentUserId?: string;
 }
 
 const columnHelper = createColumnHelper<Standing>();
 
-export function StandingsTab({ gameId, standings, gameType, loading, error }: StandingsTabProps) {
+export function StandingsTab({ standings, gameType, loading, error, currentUserId }: StandingsTabProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const allColumns = useMemo(
@@ -66,11 +67,13 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
         header: 'Speler',
         cell: (info) => {
           const showPrize = info.row.original.eligibleForPrizes;
+          const userId = info.row.original.userId;
+          const isCurrentUser = currentUserId === userId;
           return (
             <div className="flex items-center gap-2">
               <Link
-                href={`/games/${gameId}/team/${info.row.original.participantId}`}
-                className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
+                href={`/user/${userId}`}
+                className={`${isCurrentUser ? 'font-bold' : 'font-medium'} text-gray-900 hover:text-primary hover:underline cursor-pointer`}
               >
                 {info.getValue()}
               </Link>
@@ -188,7 +191,7 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
         }
       ),
     ],
-    [gameId, gameType]
+    [currentUserId, gameType]
   );
 
   // Filter columns based on game type
@@ -295,7 +298,12 @@ export function StandingsTab({ gameId, standings, gameType, loading, error }: St
             </thead>
             <tbody className="divide-y divide-gray-200">
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
+                <tr
+                  key={row.id}
+                  className={`hover:bg-gray-50 ${
+                    row.original.userId === currentUserId ? 'bg-blue-50/70' : ''
+                  }`}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}

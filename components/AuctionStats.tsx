@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 interface Standing {
   ranking: number;
   playername: string;
+  userId: string;
   totalPoints: number;
   participantId: string;
 }
@@ -58,6 +59,7 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
           const mappedStandings: Standing[] = teams.map((team: any) => ({
             ranking: team.ranking,
             playername: team.playername,
+            userId: team.userId,
             totalPoints: team.totalPoints ?? 0,
             participantId: team.participantId,
           }));
@@ -186,7 +188,7 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
                           <td className="py-2 pr-2 text-gray-500 w-10">#{row.ranking}</td>
                           <td className="py-2 pr-2">
                             <Link
-                              href={`/games/${gameId}/team/${row.participantId}`}
+                              href={`/user/${row.userId}`}
                               className="font-medium text-gray-900 hover:text-primary hover:underline"
                             >
                               {row.playername}

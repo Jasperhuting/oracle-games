@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AvatarUpload } from './AvatarUpload';
 
 interface TopResult {
@@ -18,10 +18,10 @@ interface CarriereCardProps {
   dateOfBirth?: string;
   avatarUrl?: string;
   onAvatarUpdate?: (newAvatarUrl: string) => void;
+  readOnly?: boolean;
 }
 
-export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate }: CarriereCardProps) {
-  const { t } = useTranslation();
+export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false }: CarriereCardProps) {
   const [topResults, setTopResults] = useState<TopResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
@@ -132,11 +132,36 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
         <div className="flex items-center gap-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            <AvatarUpload
-              currentAvatarUrl={currentAvatarUrl}
-              onUploadSuccess={handleAvatarUpload}
-              size={100}
-            />
+            {readOnly ? (
+              <div
+                className="rounded-full overflow-hidden border-2 border-gray-200 bg-gray-200 flex items-center justify-center"
+                style={{ width: 100, height: 100 }}
+              >
+                {currentAvatarUrl ? (
+                  <Image
+                    src={currentAvatarUrl}
+                    alt={`${playername} avatar`}
+                    width={100}
+                    height={100}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <svg
+                    className="w-1/2 h-1/2 text-gray-400"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
+                )}
+              </div>
+            ) : (
+              <AvatarUpload
+                currentAvatarUrl={currentAvatarUrl}
+                onUploadSuccess={handleAvatarUpload}
+                size={100}
+              />
+            )}
           </div>
 
           {/* Basic Info */}
@@ -219,46 +244,48 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
       </div>
 
       {/* Action Links */}
-      <div className="p-6 bg-gray-50 border-t border-gray-200">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link
-            href="/account/settings"
-            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-blue-300 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
-              <span className="text-xl">⚙️</span>
-            </div>
-            <div className="text-sm font-semibold text-gray-700 group-hover:text-blue-600">Voorkeuren</div>
-          </Link>
-          <Link
-            href="/account/stats"
-            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-green-300 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 transition-colors">
-              <span className="text-xl">📊</span>
-            </div>
-            <div className="text-sm font-semibold text-gray-700 group-hover:text-green-600">Statistiek</div>
-          </Link>
-          <Link
-            href="/account/history"
-            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-purple-300 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors">
-              <span className="text-xl">📜</span>
-            </div>
-            <div className="text-sm font-semibold text-gray-700 group-hover:text-purple-600">Geschiedenis</div>
-          </Link>
-          <Link
-            href="/forum"
-            className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-orange-300 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-200 transition-colors">
-              <span className="text-xl">💬</span>
-            </div>
-            <div className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Forum</div>
-          </Link>
+      {!readOnly && (
+        <div className="p-6 bg-gray-50 border-t border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link
+              href="/account/settings"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-blue-300 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
+                <span className="text-xl">⚙️</span>
+              </div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-blue-600">Voorkeuren</div>
+            </Link>
+            <Link
+              href="/account/stats"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-green-300 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 transition-colors">
+                <span className="text-xl">📊</span>
+              </div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-green-600">Statistiek</div>
+            </Link>
+            <Link
+              href="/account/history"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-purple-300 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors">
+                <span className="text-xl">📜</span>
+              </div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-purple-600">Geschiedenis</div>
+            </Link>
+            <Link
+              href="/forum"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-orange-300 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-200 transition-colors">
+                <span className="text-xl">💬</span>
+              </div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Forum</div>
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

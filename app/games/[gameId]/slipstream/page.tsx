@@ -8,6 +8,7 @@ import { SlipstreamRacePicker, RaceFilter } from '@/components/slipstream/Slipst
 import { SlipstreamRiderSelector } from '@/components/slipstream/SlipstreamRiderSelector';
 import { SlipstreamStandings } from '@/components/slipstream/SlipstreamStandings';
 import { SlipstreamRaceManager } from '@/components/slipstream/SlipstreamRaceManager';
+import { SlipstreamAdminPickOverview } from '@/components/slipstream/SlipstreamAdminPickOverview';
 import { Rider } from '@/lib/scraper/types';
 
 const VALID_FILTERS: RaceFilter[] = ['needs_pick', 'upcoming', 'finished', 'all'];
@@ -54,6 +55,22 @@ interface ParticipantData {
   missedPicksCount: number;
 }
 
+interface AdminPickData {
+  userId: string;
+  playername: string;
+  raceSlug: string;
+  riderName: string;
+  pickedAt?: string | null;
+  timeLostFormatted?: string | null;
+  greenJerseyPoints?: number | null;
+  riderFinishPosition?: number | null;
+}
+
+interface AdminParticipantData {
+  userId: string;
+  playername: string;
+}
+
 export default function SlipstreamPage() {
   const params = useParams();
   const router = useRouter();
@@ -85,6 +102,11 @@ export default function SlipstreamPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isProgrammer, setIsProgrammer] = useState(false);
+  const [adminPicks, setAdminPicks] = useState<AdminPickData[]>([]);
+  const [adminParticipants, setAdminParticipants] = useState<AdminParticipantData[]>([]);
+  const [adminOverviewLoading, setAdminOverviewLoading] = useState(false);
+  const [adminOverviewError, setAdminOverviewError] = useState<string | null>(null);
 
   // Update URL when filter changes
   const handleFilterChange = useCallback((newFilter: RaceFilter) => {
@@ -94,6 +116,23 @@ export default function SlipstreamPage() {
   }, [router, searchParams]);
 
   const selectedRace = calendar.find(r => r.raceSlug === selectedRaceSlug);
+  const finishedRaces = calendar.filter((race) => race.status === 'finished');
+  const finishedRaceSlugSet = new Set(finishedRaces.map((race) => race.raceSlug));
+  const raceSlugsWithResults = new Set(
+    adminPicks
+      .filter((pick) =>
+        finishedRaceSlugSet.has(pick.raceSlug) &&
+        (
+          !!pick.timeLostFormatted ||
+          pick.greenJerseyPoints !== null ||
+          pick.riderFinishPosition !== null
+        )
+      )
+      .map((pick) => pick.raceSlug)
+  );
+  const visibleMatrixRaces = finishedRaces.filter((race) => raceSlugsWithResults.has(race.raceSlug));
+  const matrixRacesForCurrentUser = isProgrammer ? calendar : visibleMatrixRaces;
+  const shouldShowResultsMatrix = matrixRacesForCurrentUser.length > 0;
   const canMakePick = selectedRace && !selectedRace.deadlinePassed && selectedRace.status === 'upcoming';
   const hasDraftSelection = !!selectedRaceSlug && Object.prototype.hasOwnProperty.call(draftSelections, selectedRaceSlug);
 
@@ -113,12 +152,21 @@ export default function SlipstreamPage() {
         fetch(`/api/games/${gameId}/slipstream/calendar?userId=${user.uid}`),
         fetch(`/api/games/${gameId}/slipstream/standings`)
       ]);
+      let loadedCalendar: CalendarRace[] = [];
 
       // Check admin status
+      let isAdminUser = false;
+      let isProgrammerUser = false;
       const userRes = await fetch(`/api/getUser?userId=${user.uid}`);
       if (userRes.ok) {
         const userData = await userRes.json();
-        setIsAdmin(userData.userType === 'admin');
+        isAdminUser = userData.userType === 'admin';
+        isProgrammerUser = userData.programmer === true;
+        setIsAdmin(isAdminUser);
+        setIsProgrammer(isProgrammerUser);
+      } else {
+        setIsAdmin(false);
+        setIsProgrammer(false);
       }
 
       if (gameRes.ok) {
@@ -162,7 +210,8 @@ export default function SlipstreamPage() {
 
       if (calendarRes.ok) {
         const calendarData = await calendarRes.json();
-        setCalendar(calendarData.calendar || []);
+        loadedCalendar = calendarData.calendar || [];
+        setCalendar(loadedCalendar);
       }
 
       if (standingsRes.ok) {
@@ -177,11 +226,75 @@ export default function SlipstreamPage() {
 
       const participantRes = await fetch(`/api/gameParticipants?gameId=${gameId}&userId=${user.uid}`);
       if (participantRes.ok) {
-        const participantData = await participantRes.json();
-        const participant = participantData.participants?.[0];
+        const participantPayload = await participantRes.json();
+        const participant = participantPayload.participants?.[0];
         if (participant?.slipstreamData) {
           setParticipantData(participant.slipstreamData);
         }
+      }
+
+      const finishedRaceSlugs = new Set(
+        loadedCalendar
+          .filter((race) => race.status === 'finished')
+          .map((race) => race.raceSlug)
+      );
+
+      if (isProgrammerUser || finishedRaceSlugs.size > 0) {
+        setAdminOverviewLoading(true);
+        setAdminOverviewError(null);
+
+        try {
+          const [picksRes, participantsRes] = await Promise.all([
+            fetch(`/api/games/${gameId}/slipstream/picks`),
+            fetch(`/api/gameParticipants?gameId=${gameId}`)
+          ]);
+
+          if (!picksRes.ok) {
+            throw new Error('Kon picks-overzicht niet laden');
+          }
+          if (!participantsRes.ok) {
+            throw new Error('Kon deelnemers niet laden');
+          }
+
+          const [picksPayload, participantsPayload] = await Promise.all([
+            picksRes.json(),
+            participantsRes.json()
+          ]);
+
+          const normalizedPicks: AdminPickData[] = (picksPayload.picks || []).map((pick: AdminPickData) => ({
+            userId: pick.userId,
+            playername: pick.playername,
+            raceSlug: pick.raceSlug,
+            riderName: pick.riderName,
+            pickedAt: pick.pickedAt || null,
+            timeLostFormatted: pick.timeLostFormatted || null,
+            greenJerseyPoints: pick.greenJerseyPoints ?? null,
+            riderFinishPosition: pick.riderFinishPosition ?? null
+          }))
+            .filter((pick: AdminPickData) => isProgrammerUser || finishedRaceSlugs.has(pick.raceSlug));
+
+          const normalizedParticipants: AdminParticipantData[] = (participantsPayload.participants || [])
+            .filter((participant: { status?: string }) => participant.status === 'active')
+            .map((participant: AdminParticipantData) => ({
+              userId: participant.userId,
+              playername: participant.playername
+            }));
+
+          setAdminPicks(normalizedPicks);
+          setAdminParticipants(normalizedParticipants);
+        } catch (adminErr) {
+          console.error('Error loading admin pick overview:', adminErr);
+          setAdminOverviewError(
+            adminErr instanceof Error ? adminErr.message : 'Kon resultatenmatrix niet laden'
+          );
+        } finally {
+          setAdminOverviewLoading(false);
+        }
+      } else {
+        setAdminPicks([]);
+        setAdminParticipants([]);
+        setAdminOverviewError(null);
+        setAdminOverviewLoading(false);
       }
 
     } catch (err) {
@@ -577,6 +690,18 @@ export default function SlipstreamPage() {
             )}
           </div>
         </div>
+
+        {shouldShowResultsMatrix && (
+          <div className="mt-6">
+            <SlipstreamAdminPickOverview
+              races={matrixRacesForCurrentUser}
+              picks={adminPicks}
+              participants={adminParticipants}
+              loading={adminOverviewLoading}
+              error={adminOverviewError}
+            />
+          </div>
+        )}
 
         {isAdmin && (
           <div className="mt-6">

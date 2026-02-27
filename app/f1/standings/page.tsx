@@ -224,10 +224,15 @@ const StandingsPage = () => {
             columnHelper.accessor("name", {
                 header: "Speler",
                 cell: (info) => {
-    return (
-        <span className="font-semibold text-white">{info.getValue()}</span>
-    );
-},
+                    return (
+                        <Link
+                            href={`/user/${info.row.original.id}`}
+                            className="font-semibold text-white hover:text-red-300 hover:underline"
+                        >
+                            {info.getValue()}
+                        </Link>
+                    );
+                },
             }),
             columnHelper.accessor("totalPoints", {
                 header: "Strafpunten",

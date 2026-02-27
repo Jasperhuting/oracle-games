@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
 
 interface ActiveGame {
   gameId: string;
@@ -20,8 +19,24 @@ interface ActiveGamesCardProps {
   userId: string;
 }
 
+interface ParticipantSummary {
+  id?: string;
+  gameId: string;
+  playername?: string;
+  status?: string;
+  ranking?: number;
+  totalPoints?: number;
+}
+
+interface TeamSummary {
+  participantId?: string;
+  userId: string;
+  playername?: string;
+  ranking?: number;
+  totalPoints?: number;
+}
+
 export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
-  const { t } = useTranslation();
   const [games, setGames] = useState<ActiveGame[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,12 +69,11 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
     async function fetchActiveGames() {
       try {
-        const cacheKey = `active-games-summary:${userId}`;
+        const cacheKey = `active-games-summary:v3:${userId}`;
         const cached = readDailyCache(cacheKey);
         if (cached) {
           setGames(cached);
           setLoading(false);
-          return;
         }
 
         // Fetch user's participations
@@ -70,12 +84,27 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
         }
 
         const participantsData = await participantsResponse.json();
-        const participants = participantsData.participants || [];
+        const participants = ((participantsData.participants || []) as ParticipantSummary[])
+          .filter((participant) => {
+            const isActive = participant.status === 'active';
+            const isPendingGameId = participant.gameId?.endsWith('-pending');
+            return isActive && !isPendingGameId;
+          });
+        const participantsByGameId = new Map<string, ParticipantSummary[]>();
+
+        participants.forEach((participant) => {
+          const normalizedGameId = participant.gameId?.replace(/-pending$/, '');
+          if (!normalizedGameId) return;
+          if (!participantsByGameId.has(normalizedGameId)) {
+            participantsByGameId.set(normalizedGameId, []);
+          }
+          participantsByGameId.get(normalizedGameId)!.push(participant);
+        });
 
         // Get unique game IDs (remove -pending suffix)
         const gameIds = [...new Set(
           participants
-            .map((p: any) => p.gameId.replace(/-pending$/, ''))
+            .map((p) => p.gameId.replace(/-pending$/, ''))
             .filter((id: string) => id)
         )] as string[];
 
@@ -107,18 +136,42 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
               // Get standings to find user's ranking and points
               let totalParticipants = 0;
-              let userRanking = 0;
-              let userPoints = 0;
+              const userParticipantsForGame = participantsByGameId.get(gameId) || [];
+              const activeParticipantsForGame = userParticipantsForGame.filter((p) => p.status === 'active');
+              const preferredParticipants =
+                activeParticipantsForGame.length > 0 ? activeParticipantsForGame : userParticipantsForGame;
+
+              const fallbackParticipant =
+                preferredParticipants.find((p) => typeof p.ranking === 'number' && p.ranking > 0) ||
+                preferredParticipants.find((p) => typeof p.totalPoints === 'number' && p.totalPoints > 0) ||
+                preferredParticipants[0];
+              let userRanking = fallbackParticipant?.ranking || 0;
+              let userPoints = fallbackParticipant?.totalPoints || 0;
               let lastScoreUpdate: string | null = null;
 
               if (standingsResponse.ok) {
                 const standingsData = await standingsResponse.json();
-                const teams = standingsData.teams || [];
+                const teams = (standingsData.teams || []) as TeamSummary[];
                 totalParticipants = teams.length;
                 lastScoreUpdate = standingsData.lastScoreUpdate || null;
 
+                const preferredParticipantIds = new Set(
+                  preferredParticipants
+                    .map((p) => p.id)
+                    .filter((id): id is string => Boolean(id))
+                );
+                const preferredPlayerNames = new Set(
+                  preferredParticipants
+                    .map((p) => p.playername?.trim().toLowerCase())
+                    .filter((name): name is string => Boolean(name))
+                );
+
                 // Find user's entry in the standings
-                const userTeam = teams.find((team: any) => team.userId === userId);
+                const userTeam = teams.find((team) =>
+                  team.userId === userId ||
+                  (team.participantId ? preferredParticipantIds.has(team.participantId) : false) ||
+                  (team.playername ? preferredPlayerNames.has(team.playername.trim().toLowerCase()) : false)
+                );
                 if (userTeam) {
                   userRanking = userTeam.ranking || 0;
                   userPoints = userTeam.totalPoints || 0;
@@ -151,7 +204,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
           return a.gameName.localeCompare(b.gameName);
         });
 
-        writeDailyCache(`active-games-summary:${userId}`, activeGames);
+        writeDailyCache(cacheKey, activeGames);
         setGames(activeGames);
       } catch (error) {
         console.error('Error fetching active games:', error);
@@ -170,7 +223,8 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
   const otherGames = games.filter(g => g.sportType === 'other');
 
   const formatRanking = (ranking: number, total: number): string => {
-    if (ranking === 0 || total === 0) return '-';
+    if (ranking === 0) return '-';
+    if (total === 0) return `#${ranking}`;
     const percentage = Math.round((ranking / total) * 100);
     return `#${ranking} van ${total} (je zit bij de beste ${percentage}%)`;
   };

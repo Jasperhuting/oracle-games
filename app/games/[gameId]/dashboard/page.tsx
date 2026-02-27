@@ -45,6 +45,7 @@ interface TeamRider {
 interface Standing {
   ranking: number;
   playername: string;
+  userId: string;
   totalPoints: number;
   participantId: string;
   eligibleForPrizes?: boolean;
@@ -237,6 +238,7 @@ export default function GameDashboardPage() {
         const mappedStandings: Standing[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
+          userId: team.userId,
           totalPoints: team.totalPoints ?? 0,
           participantId: team.participantId,
           eligibleForPrizes: team.eligibleForPrizes,
@@ -330,11 +332,11 @@ export default function GameDashboardPage() {
       label: 'Klassement',
       content: (
         <StandingsTab
-          gameId={gameId}
           standings={standings}
           gameType={game?.gameType ?? null}
           loading={standingsLoading}
           error={standingsError}
+          currentUserId={user?.uid}
         />
       ),
     },

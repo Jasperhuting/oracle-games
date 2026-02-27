@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Trophy } from 'tabler-icons-react';
+import Link from 'next/link';
 
 interface StandingEntry {
   userId: string;
@@ -115,7 +116,12 @@ export function SlipstreamStandings({
                   </div>
                   <div className="col-span-5">
                     <div className="font-medium text-gray-900 truncate">
-                      {entry.playername}
+                      <Link
+                        href={`/user/${entry.userId}`}
+                        className="hover:text-primary hover:underline"
+                      >
+                        {entry.playername}
+                      </Link>
                       {isCurrentUser && (
                         <span className="ml-1 text-xs text-blue-600">(you)</span>
                       )}

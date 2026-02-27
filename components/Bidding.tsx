@@ -26,6 +26,7 @@ import { Tooltip } from "react-tooltip";
 interface Standing {
   ranking: number;
   playername: string;
+  userId: string;
   totalPoints: number;
   participantId: string;
   eligibleForPrizes?: boolean;
@@ -231,6 +232,7 @@ export const Bidding = ({
         const mappedStandings: Standing[] = teams.map((team: any) => ({
           ranking: team.ranking,
           playername: team.playername,
+          userId: team.userId,
           totalPoints: team.totalPoints ?? 0,
           participantId: team.participantId,
           eligibleForPrizes: team.eligibleForPrizes,
@@ -617,7 +619,7 @@ export const Bidding = ({
                                 <td className="py-2 pr-2">
                                   <div className="flex items-center gap-2">
                                     <Link
-                                      href={`/games/${game.id}/team/${row.participantId}`}
+                                      href={`/user/${row.userId}`}
                                       className="font-medium text-gray-900 hover:text-primary hover:underline"
                                     >
                                       {row.playername}

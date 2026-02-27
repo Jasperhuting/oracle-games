@@ -19,6 +19,7 @@ import {
 interface Standing {
   ranking: number;
   playername: string;
+  userId: string;
   totalPoints: number;
   participantId: string;
   eligibleForPrizes?: boolean;
@@ -30,6 +31,7 @@ interface Standing {
 interface TeamOverview {
   ranking: number;
   playername: string;
+  userId: string;
   totalPoints?: number;
   participantId: string;
   eligibleForPrizes?: boolean;
@@ -97,10 +99,11 @@ export default function StandingsPage() {
         header: 'Speler',
         cell: (info) => {
           const showPrize = info.row.original.eligibleForPrizes;
+          const userId = info.row.original.userId;
           return (
             <div className="flex items-center gap-2">
               <Link
-                href={`/games/${gameId}/team/${info.row.original.participantId}`}
+                href={`/user/${userId}`}
                 className="font-medium text-gray-900 hover:text-primary hover:underline cursor-pointer"
               >
                 {info.getValue()}
@@ -207,7 +210,7 @@ export default function StandingsPage() {
     }
 
     return allColumns;
-  }, [gameId, gameType]);
+  }, [gameType]);
 
   const table = useReactTable({
     data: filteredStandings,
@@ -251,6 +254,7 @@ export default function StandingsPage() {
         const mappedStandings: Standing[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
+          userId: team.userId,
           totalPoints: team.totalPoints ?? 0,
           participantId: team.participantId,
           eligibleForPrizes: team.eligibleForPrizes,

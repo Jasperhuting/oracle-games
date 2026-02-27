@@ -66,7 +66,7 @@ export function MyGamesStandings() {
           const isCurrentUser = info.row.original.oddsUserId === user?.uid;
           return (
             <Link
-              href={`/games/${activeTab}/team/${info.row.original.participantId}`}
+              href={`/user/${info.row.original.oddsUserId}`}
               className={`${isCurrentUser ? 'font-bold text-primary' : 'font-medium text-gray-900'} hover:text-primary hover:underline cursor-pointer`}
             >
               {info.getValue()}
