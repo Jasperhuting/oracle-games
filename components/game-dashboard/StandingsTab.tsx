@@ -196,6 +196,14 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
 
   // Filter columns based on game type
   const columns = useMemo(() => {
+    if (gameType === 'full-grid') {
+      // Full Grid standings are ranked directly on achieved points.
+      // Hide percentage and duplicate totalPoints column.
+      return allColumns.filter(
+        (col) => col.id !== 'percentage' && col.id !== 'totalPoints' && col.id !== 'avgPointsPerRider'
+      );
+    }
+
     if (gameType === 'worldtour-manager') {
       // For worldtour-manager: hide achievedPoints, percentage, and avgPointsPerRider
       return allColumns.filter(

@@ -70,6 +70,7 @@ export default function StandingsPage() {
     [showPrizeEligibleOnly, standings]
   );
   const backHref = gameType === 'full-grid' ? `/games/${gameId}/auction` : '/games';
+  const isFullGrid = (gameType || '').toLowerCase() === 'full-grid';
 
   const columns = useMemo(() => {
     const allColumns = [
@@ -136,81 +137,86 @@ export default function StandingsPage() {
           size: 140,
         }
       ),
-      columnHelper.accessor(
-        (row) => {
-          if (gameType === 'marginal-gains') {
-            const pricePaid = row.totalSpent ?? 0;
-            if (pricePaid <= 0) return undefined;
-
-            const pointsScored = (row.riders ?? []).reduce(
-              (sum, rider) => sum + (rider?.pointsScored || 0),
-              0
-            );
-            const marginalGainsValue = pointsScored - pricePaid;
-            return (marginalGainsValue / pricePaid) * 100;
-          }
-
-          return row.totalPercentageDiff;
-        },
-        {
-          id: 'percentage',
-          header: () => (
-            <span
-              data-tooltip-id="standings-percentage-tooltip"
-              data-tooltip-content={
-                gameType === 'marginal-gains'
-                  ? 'Berekening: ((punten - betaald) / betaald) × 100'
-                  : 'Berekening: ((betaald - waarde) / waarde) × 100'
-              }
-            >
-              Verschil
-            </span>
-          ),
-          cell: (info) => {
-            const percentage = info.getValue();
-            const percentageClass =
-              percentage === undefined
-                ? 'text-gray-600'
-                : percentage > 0
-                  ? gameType === 'marginal-gains'
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                  : percentage < 0
-                    ? gameType === 'marginal-gains'
-                      ? 'text-red-600'
-                      : 'text-green-600'
-                    : 'text-gray-600';
-
-            return (
-              <span className={`font-medium ${percentageClass}`}>
-                {percentage === undefined
-                  ? '-'
-                  : gameType === 'marginal-gains'
-                    ? `${Math.round(percentage)}%`
-                    : `${percentage > 0 ? '+' : ''}${percentage}%`}
-              </span>
-            );
-          },
-          size: 120,
-          sortingFn: 'basic',
-          sortUndefined: 'last',
-        }
-      ),
-      columnHelper.accessor('totalPoints', {
-        header: 'Punten',
-        cell: (info) => (
-          <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
-        ),
-        size: 100,
-      }),
     ];
+
+    if (!isFullGrid) {
+      allColumns.push(
+        columnHelper.accessor(
+          (row) => {
+            if (gameType === 'marginal-gains') {
+              const pricePaid = row.totalSpent ?? 0;
+              if (pricePaid <= 0) return undefined;
+
+              const pointsScored = (row.riders ?? []).reduce(
+                (sum, rider) => sum + (rider?.pointsScored || 0),
+                0
+              );
+              const marginalGainsValue = pointsScored - pricePaid;
+              return (marginalGainsValue / pricePaid) * 100;
+            }
+
+            return row.totalPercentageDiff;
+          },
+          {
+            id: 'percentage',
+            header: () => (
+              <span
+                data-tooltip-id="standings-percentage-tooltip"
+                data-tooltip-content={
+                  gameType === 'marginal-gains'
+                    ? 'Berekening: ((punten - betaald) / betaald) × 100'
+                    : 'Berekening: ((betaald - waarde) / waarde) × 100'
+                }
+              >
+                Verschil
+              </span>
+            ),
+            cell: (info) => {
+              const percentage = info.getValue();
+              const percentageClass =
+                percentage === undefined
+                  ? 'text-gray-600'
+                  : percentage > 0
+                    ? gameType === 'marginal-gains'
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                    : percentage < 0
+                      ? gameType === 'marginal-gains'
+                        ? 'text-red-600'
+                        : 'text-green-600'
+                      : 'text-gray-600';
+
+              return (
+                <span className={`font-medium ${percentageClass}`}>
+                  {percentage === undefined
+                    ? '-'
+                    : gameType === 'marginal-gains'
+                      ? `${Math.round(percentage)}%`
+                      : `${percentage > 0 ? '+' : ''}${percentage}%`}
+                </span>
+              );
+            },
+            size: 120,
+            sortingFn: 'basic',
+            sortUndefined: 'last',
+          }
+        ),
+        columnHelper.accessor('totalPoints', {
+          header: 'Punten',
+          cell: (info) => (
+            <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
+          ),
+          size: 100,
+        })
+      );
+    }
 
     if (gameType === 'auctioneer') {
       return allColumns.filter((column) => column.id !== 'percentage');
     }
 
     return allColumns;
-  }, [gameType]);
+  }, [gameType, isFullGrid]);
 
   const table = useReactTable({
     data: filteredStandings,
