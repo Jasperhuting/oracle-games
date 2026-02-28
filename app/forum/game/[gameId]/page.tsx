@@ -34,7 +34,6 @@ export default function ForumGamePage() {
   const [selectedDivisionGameId, setSelectedDivisionGameId] = useState<string>('');
   const [seedingDefaults, setSeedingDefaults] = useState(false);
   const [seedMessage, setSeedMessage] = useState<string | null>(null);
-  const [autoSeedChecked, setAutoSeedChecked] = useState(false);
 
   const currentGame = useMemo(
     () => games.find((game) => game.id === gameId || (game.gameIds || []).includes(gameId)),
@@ -117,38 +116,6 @@ export default function ForumGamePage() {
       return preferred;
     });
   }, [divisionOptions]);
-
-  useEffect(() => {
-    const autoSeedMissingDefaults = async () => {
-      if (!user || !currentGame || loadingTopics || topicError || autoSeedChecked) return;
-      const hasGeneral = topics.some(
-        (topic) => topic.title.trim().toLowerCase() === 'algemeen'
-      );
-      setAutoSeedChecked(true);
-      if (hasGeneral) return;
-
-      const targetIds = currentGame.gameIds?.length ? currentGame.gameIds : [currentGame.id];
-      const res = await fetch('/api/forum/topics/seed-defaults', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          gameIds: targetIds,
-        }),
-      });
-
-      if (!res.ok) return;
-
-      const refreshIds = currentGame.gameIds?.length ? currentGame.gameIds.join(',') : gameId;
-      const refresh = await fetch(`/api/forum/topics?gameIds=${encodeURIComponent(refreshIds)}&sort=${sort}`);
-      if (refresh.ok) {
-        const data = await refresh.json();
-        setTopics(data.topics || []);
-      }
-    };
-
-    autoSeedMissingDefaults();
-  }, [user, currentGame, loadingTopics, topicError, autoSeedChecked, topics, gameId, sort]);
 
   const handleCreateTopic = async () => {
     if (!user || !gameId || !title.trim() || !contentPlain) return;
