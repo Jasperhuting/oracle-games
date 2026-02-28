@@ -3,9 +3,10 @@ import { adminDb } from '@/lib/firebase/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { topicId: string } }
+  context: { params: Promise<{ topicId: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await context.params;
     const topicId = params.topicId;
     const body = await request.json();
     const { content, userId, parentReplyId } = body || {};
@@ -18,6 +19,9 @@ export async function POST(
     const topicDoc = await topicDocRef.get();
     if (!topicDoc.exists || topicDoc.data()?.deleted) {
       return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
+    }
+    if (topicDoc.data()?.status === 'locked') {
+      return NextResponse.json({ error: 'Topic is locked' }, { status: 403 });
     }
 
     const now = new Date();

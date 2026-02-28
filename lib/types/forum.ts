@@ -1,5 +1,21 @@
 export type ForumTopicStatus = 'open' | 'locked';
 
+export interface ForumGameDivision {
+  id: string;
+  division?: string | null;
+  divisionLevel?: number | null;
+}
+
+export interface ForumGame {
+  id: string;
+  name: string;
+  status?: string;
+  topicCount: number;
+  lastActivityAt?: string | null;
+  gameIds?: string[];
+  divisions?: ForumGameDivision[];
+}
+
 export interface ForumCategory {
   id: string;
   name: string;
@@ -10,9 +26,13 @@ export interface ForumCategory {
 
 export interface ForumTopic {
   id: string;
-  categoryId: string;
-  categorySlug: string;
+  categoryId?: string;
+  categorySlug?: string;
   gameId?: string;
+  gameName?: string;
+  gameDivision?: string | null;
+  gameDivisionLevel?: number | null;
+  isMainTopic?: boolean;
   createdByName?: string;
   createdByAvatarUrl?: string | null;
   lastReplyUserId?: string | null;

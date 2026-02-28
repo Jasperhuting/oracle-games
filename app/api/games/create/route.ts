@@ -3,15 +3,9 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Game, ClientGame } from '@/lib/types/games';
 import { serializeGame } from '@/lib/utils/serializeGame';
-import type { CreateGameRequest, CreateGameResponse, CreateMultipleGamesResponse, ApiErrorResponse } from '@/lib/types';
+import type { CreateGameResponse, CreateMultipleGamesResponse, ApiErrorResponse } from '@/lib/types';
 import { createGameSchema, validateRequest } from '@/lib/validation';
-
-const FORUM_GAMES_CATEGORY = {
-  id: 'spellen',
-  name: 'Spellen',
-  slug: 'spellen',
-  order: 2,
-};
+import { ensureDefaultForumTopicsForGame } from '@/lib/forum/defaultTopics';
 
 // Helper to remove undefined values from object
 function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Partial<T> {
@@ -22,60 +16,6 @@ function removeUndefinedFields<T extends Record<string, unknown>>(obj: T): Parti
     }
   }
   return cleaned;
-}
-
-async function ensureForumCategory(db: FirebaseFirestore.Firestore) {
-  const categoryRef = db.collection('forum_categories').doc(FORUM_GAMES_CATEGORY.id);
-  const existing = await categoryRef.get();
-  if (!existing.exists) {
-    await categoryRef.set({
-      name: FORUM_GAMES_CATEGORY.name,
-      slug: FORUM_GAMES_CATEGORY.slug,
-      order: FORUM_GAMES_CATEGORY.order,
-      isActive: true,
-    });
-  }
-}
-
-async function ensureGameTopic({
-  db,
-  gameId,
-  gameName,
-  createdBy,
-}: {
-  db: FirebaseFirestore.Firestore;
-  gameId: string;
-  gameName: string;
-  createdBy: string;
-}) {
-  if (!gameName || gameName.toLowerCase().includes('test')) return;
-
-  await ensureForumCategory(db);
-
-  const existingSnapshot = await db
-    .collection('forum_topics')
-    .where('gameId', '==', gameId)
-    .limit(1)
-    .get();
-
-  if (!existingSnapshot.empty) return;
-
-  const now = new Date();
-  await db.collection('forum_topics').add({
-    categoryId: FORUM_GAMES_CATEGORY.id,
-    categorySlug: FORUM_GAMES_CATEGORY.slug,
-    gameId,
-    title: gameName,
-    body: `Discussie over ${gameName}.`,
-    createdBy,
-    createdAt: now,
-    updatedAt: now,
-    replyCount: 0,
-    lastReplyAt: now,
-    pinned: false,
-    status: 'open',
-    deleted: false,
-  });
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<CreateGameResponse | CreateMultipleGamesResponse | ApiErrorResponse>> {
@@ -185,14 +125,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
         createdGames.push({ id: gameRef.id, game: serializeGame(game, gameRef.id) });
 
         try {
-          await ensureGameTopic({
+          await ensureDefaultForumTopicsForGame({
             db,
             gameId: gameRef.id,
-            gameName: game.name,
-            createdBy: adminUserId,
+            userId: adminUserId,
           });
         } catch (error) {
-          console.error('Error creating forum topic for game:', error);
+          console.error('Error seeding default forum topics for game:', error);
         }
 
         // Log the activity
@@ -256,14 +195,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateGam
       const gameRef = await db.collection('games').add(cleanedGame);
 
       try {
-        await ensureGameTopic({
+        await ensureDefaultForumTopicsForGame({
           db,
           gameId: gameRef.id,
-          gameName: game.name,
-          createdBy: adminUserId,
+          userId: adminUserId,
         });
       } catch (error) {
-        console.error('Error creating forum topic for game:', error);
+        console.error('Error seeding default forum topics for game:', error);
       }
 
       // Log the activity

@@ -13,6 +13,8 @@ type SortOption = 'active' | 'new';
 
 const CATEGORY_LABELS: Record<string, string> = {
   algemeen: 'Algemeen',
+  'vragen-hulp': 'Vragen & Hulp',
+  test: 'Test (verwijder me)',
   spellen: 'Spellen',
   'off-topic': 'Off-topic',
 };
@@ -295,7 +297,7 @@ export default function ForumCategoryPage() {
                       )}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">
                       {topic.replyCount} reacties
                     </div>
                   </div>

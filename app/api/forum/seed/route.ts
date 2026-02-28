@@ -3,8 +3,10 @@ import { adminDb } from '@/lib/firebase/server';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Algemeen', slug: 'algemeen', order: 1 },
-  { name: 'Spellen', slug: 'spellen', order: 2 },
-  { name: 'Off-topic', slug: 'off-topic', order: 3 },
+  { name: 'Vragen & Hulp', slug: 'vragen-hulp', order: 2 },
+  { name: 'Spellen', slug: 'spellen', order: 3 },
+  { name: 'Off-topic', slug: 'off-topic', order: 4 },
+  { name: 'Test (verwijder me)', slug: 'test', order: 99 },
 ];
 
 export async function POST(): Promise<NextResponse> {

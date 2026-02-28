@@ -240,9 +240,13 @@ export async function GET(
         calculatedTotalPoints = (-participant.spentBudget) + calculatedTotalPoints;
       }
 
-      // For full-grid, use participant totalPoints as source of truth
+      // For full-grid, prefer participant totalPoints when populated.
+      // Fallback to summed rider points when participant totalPoints is not synced yet.
       if (gameData?.gameType === 'full-grid') {
-        calculatedTotalPoints = participant.totalPoints || 0;
+        const participantTotalPoints = Number(participant.totalPoints) || 0;
+        if (participantTotalPoints > 0 || riders.length === 0) {
+          calculatedTotalPoints = participantTotalPoints;
+        }
       }
 
       return {

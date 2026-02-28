@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
+const normalizeTeamKey = (value: string): string =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 // GET player's team for a game
 export async function GET(
   request: NextRequest,
@@ -33,13 +41,18 @@ export async function GET(
       db.collection('teams').get(),
     ]);
     const teamsMap = new Map<string, { name?: string; jerseyImageTeam?: string; teamImage?: string }>();
+    const teamImageByName = new Map<string, string>();
     teamsSnapshot.forEach(doc => {
       const data = doc.data();
+      const preferredTeamImage = data.jerseyImageTeam || data.teamImage;
       teamsMap.set(doc.id, {
         name: data.name,
         jerseyImageTeam: data.jerseyImageTeam,
         teamImage: data.teamImage,
       });
+      if (data.name && preferredTeamImage) {
+        teamImageByName.set(normalizeTeamKey(data.name), preferredTeamImage);
+      }
     });
     const ridersMap = new Map<string, { points: number; teamName?: string; country?: string; rank?: number; jerseyImageTeam?: string }>();
     rankingsSnapshot.forEach(doc => {
@@ -50,10 +63,12 @@ export async function GET(
         let jerseyImageTeam: string | undefined;
         if (typeof rider.team === 'string') {
           teamName = rider.team;
+          jerseyImageTeam = teamImageByName.get(normalizeTeamKey(rider.team));
         } else if (rider.team && typeof rider.team === 'object') {
           // Firestore DocumentReference or embedded object
           if (typeof (rider.team as any).name === 'string') {
             teamName = (rider.team as any).name;
+            jerseyImageTeam = teamImageByName.get(normalizeTeamKey(teamName));
           } else if (typeof (rider.team as any).id === 'string') {
             const teamDoc = teamsMap.get((rider.team as any).id);
             teamName = teamDoc?.name;
@@ -74,6 +89,7 @@ export async function GET(
       const data = doc.data();
       const riderInfo = ridersMap.get(data.riderNameId);
       const baseValue = riderInfo?.points || 0;
+      const teamJerseyImage = riderInfo?.jerseyImageTeam || null;
       return {
         id: doc.id,
         nameId: data.riderNameId,
@@ -82,7 +98,8 @@ export async function GET(
         country: riderInfo?.country || data.riderCountry,
         rank: data.riderRank || riderInfo?.rank || 0,
         points: data.pointsScored || 0,
-        jerseyImage: data.jerseyImage || riderInfo?.jerseyImageTeam,
+        // Prefer team jersey image over rider image for dashboard cards.
+        jerseyImage: teamJerseyImage || data.jerseyImage || null,
         pricePaid: data.pricePaid,
         baseValue,
         acquisitionType: data.acquisitionType,

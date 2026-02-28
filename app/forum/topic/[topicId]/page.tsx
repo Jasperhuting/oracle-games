@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { AdminOrImpersonatedGate } from '@/components/AdminOrImpersonatedGate';
 import { useAuth } from '@/hooks/useAuth';
 import type { ForumReply, ForumTopic } from '@/lib/types/forum';
@@ -12,7 +12,9 @@ import { AvatarBadge } from '@/components/forum/AvatarBadge';
 export default function ForumTopicPage() {
   const params = useParams();
   const topicId = String(params?.topicId || '');
+  const router = useRouter();
   const { user } = useAuth();
+
   const [topic, setTopic] = useState<ForumTopic | null>(null);
   const [replies, setReplies] = useState<ForumReply[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,30 +22,54 @@ export default function ForumTopicPage() {
   const [replyTo, setReplyTo] = useState<ForumReply | null>(null);
   const contentPlain = content.replace(/<[^>]+>/g, '').trim();
   const [saving, setSaving] = useState(false);
+  const [mutatingTopic, setMutatingTopic] = useState(false);
+  const [deletingTopic, setDeletingTopic] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const loadTopic = async () => {
-      setLoading(true);
-      const res = await fetch(`/api/forum/topics/${topicId}`);
-      if (!res.ok) {
-        setTopic(null);
-        setReplies([]);
-        setLoading(false);
-        return;
-      }
-      const data = await res.json();
-      setTopic(data.topic || null);
-      setReplies(data.replies || []);
+  const isLocked = topic?.status === 'locked';
+
+  const loadTopic = useCallback(async () => {
+    if (!topicId) return;
+
+    setLoading(true);
+    const res = await fetch(`/api/forum/topics/${topicId}`);
+    if (!res.ok) {
+      setTopic(null);
+      setReplies([]);
       setLoading(false);
-    };
-
-    if (topicId) {
-      loadTopic();
+      return;
     }
+
+    const data = await res.json();
+    setTopic(data.topic || null);
+    setReplies(data.replies || []);
+    setLoading(false);
   }, [topicId]);
 
+  useEffect(() => {
+    loadTopic();
+  }, [loadTopic]);
+
+  useEffect(() => {
+    const loadAdmin = async () => {
+      if (!user) return;
+
+      const res = await fetch(`/api/getUser?userId=${user.uid}`);
+      if (!res.ok) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const data = await res.json();
+      setIsAdmin(data.userType === 'admin');
+    };
+
+    loadAdmin();
+  }, [user]);
+
   const handleReply = async () => {
-    if (!user || !contentPlain || !topic) return;
+    if (!user || !contentPlain || !topic || isLocked) return;
+
     setSaving(true);
     try {
       const res = await fetch(`/api/forum/topics/${topic.id}/replies`, {
@@ -55,18 +81,60 @@ export default function ForumTopicPage() {
           parentReplyId: replyTo?.id ?? null,
         }),
       });
+
       if (res.ok) {
         setContent('');
         setReplyTo(null);
-        const refreshed = await fetch(`/api/forum/topics/${topic.id}`);
-        if (refreshed.ok) {
-          const data = await refreshed.json();
-          setTopic(data.topic || null);
-          setReplies(data.replies || []);
-        }
+        await loadTopic();
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTopicUpdate = async (changes: { pinned?: boolean; status?: 'open' | 'locked' }) => {
+    if (!user || !topic || !isAdmin) return;
+
+    setMutatingTopic(true);
+    try {
+      const res = await fetch(`/api/forum/topics/${topic.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          ...changes,
+        }),
+      });
+
+      if (res.ok) {
+        await loadTopic();
+      }
+    } finally {
+      setMutatingTopic(false);
+    }
+  };
+
+  const handleDeleteTopic = async () => {
+    if (!user || !topic || !isAdmin || deletingTopic) return;
+
+    const confirmed = window.confirm(
+      'Weet je zeker dat je dit topic wilt verwijderen? Alle reacties in dit topic worden ook verwijderd.'
+    );
+    if (!confirmed) return;
+
+    setDeletingTopic(true);
+    try {
+      const res = await fetch(`/api/forum/topics/${topic.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid }),
+      });
+
+      if (res.ok) {
+        router.push(topic.gameId ? `/forum/game/${topic.gameId}` : '/forum');
+      }
+    } finally {
+      setDeletingTopic(false);
     }
   };
 
@@ -92,13 +160,15 @@ export default function ForumTopicPage() {
               {reply.createdByName || 'Onbekend'} • {new Date(reply.createdAt).toLocaleString('nl-NL')}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setReplyTo(reply)}
-            className="text-xs text-primary hover:underline"
-          >
-            Reageer
-          </button>
+          {!isLocked && (
+            <button
+              type="button"
+              onClick={() => setReplyTo(reply)}
+              className="text-xs text-primary hover:underline"
+            >
+              Reageer
+            </button>
+          )}
         </div>
         <div className="text-gray-800 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: reply.body }} />
         {renderReplies(reply.id, depth + 1)}
@@ -111,14 +181,15 @@ export default function ForumTopicPage() {
       <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
-            <Link href="/forum" className="text-sm text-gray-600 hover:text-gray-900 underline">
+            <Link
+              href={topic?.gameId ? `/forum/game/${topic.gameId}` : '/forum'}
+              className="text-sm text-gray-600 hover:text-gray-900 underline"
+            >
               ← Terug naar forum
             </Link>
           </div>
 
-          {loading && (
-            <div className="text-sm text-gray-500">Laden...</div>
-          )}
+          {loading && <div className="text-sm text-gray-500">Laden...</div>}
 
           {!loading && !topic && (
             <div className="bg-white border border-gray-200 rounded-lg p-6 text-gray-600">
@@ -133,10 +204,25 @@ export default function ForumTopicPage() {
                   <div className="flex items-start gap-3">
                     <AvatarBadge name={topic.createdByName} avatarUrl={topic.createdByAvatarUrl} size={44} />
                     <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{topic.title}</h1>
-                    <p className="text-sm text-gray-500">
-                      Door {topic.createdByName || 'Onbekend'} • Laatste activiteit: {topic.lastReplyAt ? new Date(topic.lastReplyAt).toLocaleString('nl-NL') : '—'}
-                    </p>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h1 className="text-2xl font-bold text-gray-900">{topic.title}</h1>
+                        {topic.pinned && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Vastgezet</span>
+                        )}
+                        {isLocked && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">Gesloten</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Door {topic.createdByName || 'Onbekend'} • Laatste activiteit:{' '}
+                        {topic.lastReplyAt ? new Date(topic.lastReplyAt).toLocaleString('nl-NL') : '—'}
+                      </p>
+                      {topic.gameName && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Spel: {topic.gameName}
+                          {topic.gameDivision ? ` • ${topic.gameDivision}` : ''}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
@@ -144,6 +230,47 @@ export default function ForumTopicPage() {
                   </span>
                 </div>
                 <div className="mt-4 text-gray-800 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: topic.body }} />
+
+                {isAdmin && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={mutatingTopic}
+                      onClick={() => handleTopicUpdate({ pinned: !topic.pinned })}
+                      className={`px-3 py-1 text-xs rounded-md border ${
+                        mutatingTopic
+                          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      {topic.pinned ? 'Losmaken' : 'Vastzetten'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={mutatingTopic}
+                      onClick={() => handleTopicUpdate({ status: isLocked ? 'open' : 'locked' })}
+                      className={`px-3 py-1 text-xs rounded-md border ${
+                        mutatingTopic
+                          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      {isLocked ? 'Heropen topic' : 'Sluit topic'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={mutatingTopic || deletingTopic}
+                      onClick={handleDeleteTopic}
+                      className={`px-3 py-1 text-xs rounded-md border ${
+                        mutatingTopic || deletingTopic
+                          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                          : 'bg-red-50 text-red-700 border-red-200 hover:border-red-300'
+                      }`}
+                    >
+                      {deletingTopic ? 'Verwijderen...' : 'Verwijder topic'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white border border-gray-200 rounded-2xl p-6">
@@ -158,7 +285,12 @@ export default function ForumTopicPage() {
 
               <div className="bg-white border border-gray-200 rounded-2xl p-6">
                 <h2 className="text-sm font-semibold text-gray-700 mb-3">Plaats reactie</h2>
-                {replyTo && (
+                {isLocked && (
+                  <div className="mb-3 text-xs text-gray-600 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
+                    Dit topic is gesloten. Nieuwe reacties zijn uitgeschakeld.
+                  </div>
+                )}
+                {replyTo && !isLocked && (
                   <div className="mb-3 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center justify-between">
                     <span>Reageren op: {replyTo.body.replace(/<[^>]*>/g, '').slice(0, 80)}...</span>
                     <button
@@ -173,13 +305,13 @@ export default function ForumTopicPage() {
                 <RichTextEditor
                   value={content}
                   onChange={setContent}
-                  placeholder="Schrijf je reactie..."
+                  placeholder={isLocked ? 'Topic is gesloten' : 'Schrijf je reactie...'}
                 />
                 <button
                   onClick={handleReply}
-                  disabled={saving || !contentPlain}
+                  disabled={saving || !contentPlain || isLocked}
                   className={`mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
-                    saving || !contentPlain
+                    saving || !contentPlain || isLocked
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-primary text-white hover:bg-primary/80'
                   }`}
