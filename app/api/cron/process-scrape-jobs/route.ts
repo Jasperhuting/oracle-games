@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       : DEFAULT_MAX_JOBS_PER_RUN;
 
     const pendingJobs = await getJobs({ type: 'scraper', status: 'pending', limit: maxJobs });
-    const processed: Array<{ jobId: string; status: number }> = [];
+    const processed: Array<{ jobId: string; status: number; error?: string }> = [];
 
     for (const job of pendingJobs) {
       if (Date.now() - runStartedAt > MAX_RUN_MS) break;
@@ -77,11 +77,29 @@ export async function GET(request: NextRequest) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), PER_JOB_TIMEOUT_MS);
       try {
+        const headers: HeadersInit = {};
+        if (process.env.INTERNAL_API_KEY) {
+          headers['x-internal-key'] = process.env.INTERNAL_API_KEY;
+        }
+        if (process.env.CRON_SECRET) {
+          headers.authorization = `Bearer ${process.env.CRON_SECRET}`;
+        }
+
         const response = await fetch(
           `${request.nextUrl.origin}/api/jobs/process/${job.id}`,
-          { method: 'POST', signal: controller.signal }
+          { method: 'POST', signal: controller.signal, headers }
         );
-        processed.push({ jobId: job.id, status: response.status });
+
+        if (!response.ok) {
+          const responseBody = await response.text().catch(() => '');
+          processed.push({
+            jobId: job.id,
+            status: response.status,
+            error: truncate(responseBody || `HTTP ${response.status}`, 250),
+          });
+        } else {
+          processed.push({ jobId: job.id, status: response.status });
+        }
       } catch (error) {
         const isAbort = error instanceof Error && error.name === 'AbortError';
         processed.push({ jobId: job.id, status: isAbort ? 408 : 500 });
@@ -96,7 +114,7 @@ export async function GET(request: NextRequest) {
         endpoint: '/api/cron/process-scrape-jobs',
         message: `${failedProcessedJobs.length} job(s) returned error status`,
         details: failedProcessedJobs
-          .map((entry) => `jobId=${entry.jobId}, status=${entry.status}`)
+          .map((entry) => `jobId=${entry.jobId}, status=${entry.status}${entry.error ? `, error=${entry.error}` : ''}`)
           .join('\n'),
       });
     }
