@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getJobs, updateJob } from '@/lib/firebase/job-queue';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendTelegramMessage } from '@/lib/telegram';
+import { createHash } from 'crypto';
 
 const MAX_RUN_MS = 240_000; // keep under maxDuration
 const DEFAULT_MAX_JOBS_PER_RUN = 10;
@@ -9,6 +10,7 @@ const PER_JOB_TIMEOUT_MS = 270_000;
 const STALE_RUNNING_MS = 15 * 60 * 1000;
 const PROGRESS_NOTIFY_MIN_INTERVAL_MS = 4 * 60 * 1000;
 const TIME_ZONE = 'Europe/Amsterdam';
+const CRON_ALERT_DEDUP_COLLECTION = 'cronAlertState';
 
 const truncate = (value: string, max = 1200): string =>
   value.length > max ? `${value.slice(0, max)}...` : value;
@@ -18,6 +20,29 @@ const sendCronFailureAlert = async (context: {
   message: string;
   details?: string;
 }) => {
+  const db = getServerFirebase();
+  const dedupKey = createHash('sha256').update(context.endpoint).digest('hex');
+  const fingerprint = createHash('sha256')
+    .update(`${context.endpoint}\n${context.message}\n${context.details || ''}`)
+    .digest('hex');
+
+  const dedupRef = db.collection(CRON_ALERT_DEDUP_COLLECTION).doc(dedupKey);
+  const dedupSnapshot = await dedupRef.get();
+  const lastFingerprint = dedupSnapshot.data()?.lastFingerprint as string | undefined;
+
+  if (lastFingerprint === fingerprint) {
+    await dedupRef.set(
+      {
+        endpoint: context.endpoint,
+        lastFingerprint: fingerprint,
+        duplicateCount: (dedupSnapshot.data()?.duplicateCount || 0) + 1,
+        lastDuplicateAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return;
+  }
+
   const telegramMessage = [
     `🚨 <b>Cron Failure</b>`,
     ``,
@@ -27,7 +52,18 @@ const sendCronFailureAlert = async (context: {
     `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
   ].filter(Boolean).join('\n');
 
-  await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
+  const sent = await sendTelegramMessage(telegramMessage, { parse_mode: 'HTML' });
+  if (sent) {
+    await dedupRef.set(
+      {
+        endpoint: context.endpoint,
+        lastFingerprint: fingerprint,
+        duplicateCount: 0,
+        lastSentAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  }
 };
 
 export async function GET(request: NextRequest) {
