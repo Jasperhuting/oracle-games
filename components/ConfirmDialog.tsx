@@ -40,7 +40,7 @@ export const ConfirmDialog = ({
 
       <div className="flex gap-2 justify-end mt-2">
         <Ariakit.DialogDismiss
-          className="flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-white px-4 text-base font-medium text-black border border-gray-300 hover:border-gray-400 active:pt-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(204,100%,40%)] dark:bg-white/5 dark:text-white dark:border-white/10 dark:hover:border-white/25"
+          className="flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded border bg-white px-4 text-sm font-medium text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50 active:scale-[0.97] active:bg-gray-100 transition-all duration-150 select-none cursor-pointer"
         >
           {cancelText}
         </Ariakit.DialogDismiss>

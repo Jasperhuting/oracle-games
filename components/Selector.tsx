@@ -183,9 +183,9 @@ export function Selector<T>({
                                         Available ({sortedAvailable.length})
                                     </div>
                                     {sortedAvailable.map((item, index) => (
-                                        <div 
-                                            key={`available-${index}`} 
-                                            className={`flex w-full items-center gap-2 hover:bg-gray-50 p-2 pl-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`} 
+                                        <div
+                                            key={`available-${index}`}
+                                            className={`flex w-full items-center gap-2 hover:bg-gray-100 p-2 pl-3 cursor-pointer transition-colors duration-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                                             onMouseDown={(e) => {
                                                 if (multiSelect) {
                                                     e.preventDefault();
@@ -216,9 +216,9 @@ export function Selector<T>({
                                         Selected ({sortedSelected.length})
                                     </div>
                                     {sortedSelected.map((item, index) => (
-                                        <div 
-                                            key={`selected-${index}`} 
-                                            className={`flex w-full items-center gap-2 hover:bg-blue-100 p-2 pl-3 bg-blue-50`} 
+                                        <div
+                                            key={`selected-${index}`}
+                                            className={`flex w-full items-center gap-2 hover:bg-blue-100 p-2 pl-3 bg-blue-50 cursor-pointer transition-colors duration-100`}
                                             onMouseDown={(e) => {
                                                 if (multiSelect) {
                                                     e.preventDefault();

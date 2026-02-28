@@ -187,11 +187,11 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                         <div className="flex divide-solid divide-[#CAC4D0] divide-x my-3 justify-center align-middle">
                             {/* it should show the admin only if isAdmin is true */}
                             {mounted && MenuItems.filter((item) => !isAdmin ? item.name !== 'Admin' : true).filter(item => item.display).map((item) => (
-                                <div key={item.name} className="gap-1 flex flex-col items-center px-3 hover:[text-shadow:0_0_0.4px_currentColor] group">
-                                    <Link key={item.name} href={item.href} className={`text-gray-900 whitespace-nowrap ${item.href === pathname ? 'text-primary font-bold' : ''}`}>
+                                <div key={item.name} className="gap-1 flex flex-col items-center px-3 group">
+                                    <Link key={item.name} href={item.href} className={`whitespace-nowrap transition-colors duration-150 ${item.href === pathname ? 'text-primary font-semibold' : 'text-gray-700 hover:text-gray-900 hover:[text-shadow:0_0_0.4px_currentColor]'}`}>
                                         {item.name}
                                     </Link>
-                                    <span className={`w-full h-[2px]   group-hover:bg-primary ${item.href === pathname ? 'bg-primary' : 'bg-white'}`}></span>
+                                    <span className={`w-full h-[2px] rounded-full transition-all duration-200 group-hover:bg-primary/50 ${item.href === pathname ? 'bg-primary' : 'bg-transparent'}`}></span>
                                 </div>
                             ))}
                         </div>
@@ -202,7 +202,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                         {user && <ProfileMenuButton user={user} loading={loading} pathname={pathname} unreadCount={unreadCount} />}
                                         <Menu>
                                             {profileItems.filter((item) => item.display).map((item) => {
-                                                return <MenuItem key={item.name} onClick={() => item.onClick ? item.onClick() : router.push(item.href)} className={`text-gray-900 whitespace-nowrap py-2 px-3 ${item.href === pathname ? 'text-primary font-bold' : ''}`}>
+                                                return <MenuItem key={item.name} onClick={() => item.onClick ? item.onClick() : router.push(item.href)} className={`whitespace-nowrap py-2.5 px-4 transition-colors duration-100 hover:bg-gray-50 rounded cursor-pointer ${item.href === pathname ? 'text-primary font-semibold' : 'text-gray-700'}`}>
                                                     <span className="mr-2">{item.icon}</span>
                                                     {item.name}
                                                 </MenuItem>
@@ -290,10 +290,10 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                                     key={item.name}
                                                     href={item.href}
                                                     onClick={() => setIsMenuOpen(false)}
-                                                    className={`text-lg py-3 px-4 rounded-lg transition-colors ${
+                                                    className={`text-lg py-3 px-4 rounded-lg transition-all duration-150 ${
                                                         item.href === pathname
-                                                            ? 'text-white font-bold bg-primary bg-opacity-10'
-                                                            : 'text-gray-900 hover:bg-gray-100'
+                                                            ? 'text-primary font-semibold bg-primary/10'
+                                                            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                                                     }`}
                                                 >
                                                     {item.name}
@@ -318,10 +318,10 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                                             }
                                                             setIsMenuOpen(false);
                                                         }}
-                                                        className={`flex items-center cursor-pointer gap-3 text-lg py-3 px-4 rounded-lg transition-colors text-left ${
+                                                        className={`flex items-center gap-3 text-lg py-3 px-4 rounded-lg transition-all duration-150 text-left w-full ${
                                                             item.href === pathname
-                                                                ? 'text-white font-bold bg-primary bg-opacity-10'
-                                                                : 'text-gray-900 hover:bg-gray-100'
+                                                                ? 'text-primary font-semibold bg-primary/10'
+                                                                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                                                         }`}
                                                     >
                                                         {item.icon}
@@ -336,10 +336,10 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                                             <Link
                                                 href="/login"
                                                 onClick={() => setIsMenuOpen(false)}
-                                                className={`text-lg py-3 px-4 rounded-lg transition-colors ${
+                                                className={`text-lg py-3 px-4 rounded-lg transition-all duration-150 ${
                                                     '/login' === pathname
-                                                        ? 'text-primary font-bold bg-primary bg-opacity-10'
-                                                        : 'text-gray-900 hover:bg-gray-100'
+                                                        ? 'text-primary font-semibold bg-primary/10'
+                                                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                                                 }`}
                                             >
                                                 Login

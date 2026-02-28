@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'tabler-icons-react';
+import { ChevronDown } from 'tabler-icons-react';
 import { CollapsibleProps } from '@/lib/types/component-props';
 
 export const Collapsible = ({ title, children, defaultOpen = true, className = '' }: CollapsibleProps) => {
@@ -9,15 +9,13 @@ export const Collapsible = ({ title, children, defaultOpen = true, className = '
     <div className={className}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 rounded-md transition-all duration-150 select-none group"
         aria-expanded={isOpen}
       >
-        <h2 className="text-lg font-bold">{title}</h2>
-        {isOpen ? (
-          <ChevronUp size={20} className="text-gray-600" />
-        ) : (
-          <ChevronDown size={20} className="text-gray-600" />
-        )}
+        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <span className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${isOpen ? 'rotate-180' : 'rotate-0'}`}>
+          <ChevronDown size={20} />
+        </span>
       </button>
       {isOpen && <div className="mt-2">{children}</div>}
     </div>
