@@ -1,16 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
-import { IconArrowBackUp } from '@tabler/icons-react';
+import { useMemo, useState } from 'react';
+import { IconArrowBackUp, IconTrash, IconVolumeOff } from '@tabler/icons-react';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/lib/types/chat';
 import EmojiReactions from './EmojiReactions';
+import MuteUserDialog from './MuteUserDialog';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
   roomId: string;
   currentUserId: string;
   onReply: (msg: { messageId: string; userName: string; text: string }) => void;
+  isAdmin?: boolean;
 }
 
 function getInitialColor(userId: string): string {
@@ -63,10 +65,25 @@ export default function ChatMessageItem({
   roomId,
   currentUserId,
   onReply,
+  isAdmin = false,
 }: ChatMessageItemProps) {
   const avatarColor = useMemo(() => getInitialColor(message.userId), [message.userId]);
   const timeStr = useMemo(() => formatTimestamp(message.createdAt), [message.createdAt]);
   const isOwn = message.userId === currentUserId;
+  const [showMuteDialog, setShowMuteDialog] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm('Weet je zeker dat je dit bericht wilt verwijderen?')) return;
+    try {
+      await fetch(`/api/chat/rooms/${roomId}/messages/${message.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deleted: true }),
+      });
+    } catch (err) {
+      console.error('Failed to delete message:', err);
+    }
+  };
 
   if (message.deleted) {
     return (
@@ -133,20 +150,51 @@ export default function ChatMessageItem({
         />
       </div>
 
-      {/* Reply button */}
-      <button
-        onClick={() =>
-          onReply({
-            messageId: message.id,
-            userName: message.userName,
-            text: message.text,
-          })
-        }
-        className="opacity-0 group-hover:opacity-100 mt-1 p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-all flex-shrink-0"
-        title="Beantwoorden"
-      >
-        <IconArrowBackUp className="h-4 w-4" />
-      </button>
+      {/* Action buttons */}
+      <div className="opacity-0 group-hover:opacity-100 mt-1 flex items-center gap-0.5 flex-shrink-0">
+        <button
+          onClick={() =>
+            onReply({
+              messageId: message.id,
+              userName: message.userName,
+              text: message.text,
+            })
+          }
+          className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-all"
+          title="Beantwoorden"
+        >
+          <IconArrowBackUp className="h-4 w-4" />
+        </button>
+
+        {isAdmin && (
+          <>
+            <button
+              onClick={handleDelete}
+              className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-all"
+              title="Verwijderen"
+            >
+              <IconTrash className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowMuteDialog(true)}
+              className="p-1 rounded hover:bg-orange-100 text-gray-400 hover:text-orange-600 transition-all"
+              title="Gebruiker dempen"
+            >
+              <IconVolumeOff className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {showMuteDialog && (
+        <MuteUserDialog
+          userId={message.userId}
+          userName={message.userName}
+          roomId={roomId}
+          mutedBy={currentUserId}
+          onClose={() => setShowMuteDialog(false)}
+        />
+      )}
     </div>
   );
 }

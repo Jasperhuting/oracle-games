@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Countdown from 'react-countdown';
@@ -60,6 +60,16 @@ export default function ChatRoomPage() {
   const { room, loading: roomLoading, error: roomError } = useChatRoom(roomId);
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [replyingTo, setReplyingTo] = useState<ReplyTo | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/getUser?userId=${user.uid}`)
+        .then(res => res.json())
+        .then(data => setIsAdmin(data.userType === 'admin'))
+        .catch(() => setIsAdmin(false));
+    }
+  }, [user]);
 
   const loading = roomLoading || authLoading;
 
@@ -187,6 +197,7 @@ export default function ChatRoomPage() {
             replyingTo={replyingTo}
             onReply={setReplyingTo}
             currentUserId={user!.uid}
+            isAdmin={isAdmin}
           />
 
           {/* Input */}

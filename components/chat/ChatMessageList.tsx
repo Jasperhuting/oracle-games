@@ -15,12 +15,14 @@ interface ChatMessageListProps {
   replyingTo: ReplyTo | null;
   onReply: (msg: ReplyTo) => void;
   currentUserId: string;
+  isAdmin?: boolean;
 }
 
 export default function ChatMessageList({
   roomId,
   onReply,
   currentUserId,
+  isAdmin = false,
 }: ChatMessageListProps) {
   const { messages, loading, hasMore, loadMore } = useChatMessages(roomId);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -110,6 +112,7 @@ export default function ChatMessageList({
               roomId={roomId}
               currentUserId={currentUserId}
               onReply={onReply}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
