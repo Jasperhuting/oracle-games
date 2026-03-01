@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { IconMoodSmile } from '@tabler/icons-react';
-
-const EMOJI_OPTIONS = ['👍', '❤️', '😂', '🔥', '👀', '💯'];
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 
 interface EmojiReactionsProps {
   reactions: Record<string, string[]>;
@@ -20,6 +19,21 @@ export default function EmojiReactions({
 }: EmojiReactionsProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!showPicker) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPicker]);
 
   const toggleReaction = async (emoji: string) => {
     if (loading) return;
@@ -37,6 +51,10 @@ export default function EmojiReactions({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    toggleReaction(emojiData.emoji);
   };
 
   const reactionEntries = Object.entries(reactions).filter(
@@ -64,7 +82,7 @@ export default function EmojiReactions({
         );
       })}
 
-      <div className="relative">
+      <div className="relative" ref={pickerRef}>
         <button
           onClick={() => setShowPicker(!showPicker)}
           className="inline-flex items-center justify-center h-6 w-6 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
@@ -74,17 +92,15 @@ export default function EmojiReactions({
         </button>
 
         {showPicker && (
-          <div className="absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1 z-10">
-            {EMOJI_OPTIONS.map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => toggleReaction(emoji)}
-                disabled={loading}
-                className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 transition-colors text-base"
-              >
-                {emoji}
-              </button>
-            ))}
+          <div className="absolute bottom-full right-0 mb-1 z-50">
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              theme={Theme.LIGHT}
+              width={320}
+              height={400}
+              searchPlaceHolder="Zoek emoji..."
+              previewConfig={{ showPreview: false }}
+            />
           </div>
         )}
       </div>
