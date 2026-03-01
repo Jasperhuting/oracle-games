@@ -12,11 +12,13 @@ export async function POST(
   try {
     const { roomId } = await params;
     const body = await request.json();
-    const { text, userId, userName, userAvatar, replyTo } = body;
+    const { text, userId, userName, userAvatar, replyTo, giphy } = body;
+    const trimmedText = typeof text === 'string' ? text.trim() : '';
+    const hasGif = Boolean(giphy?.url);
 
-    if (!text?.trim() || !userId || !userName) {
+    if ((!trimmedText && !hasGif) || !userId || !userName) {
       return NextResponse.json(
-        { error: 'Missing required fields: text, userId, userName' },
+        { error: 'Missing required fields: text or giphy, userId, userName' },
         { status: 400 }
       );
     }
@@ -55,7 +57,17 @@ export async function POST(
     }
 
     const messageData = {
-      text: text.trim(),
+      text: trimmedText,
+      giphy: hasGif
+        ? {
+            id: String(giphy.id || ''),
+            title: String(giphy.title || 'GIF'),
+            url: String(giphy.url || ''),
+            previewUrl: String(giphy.previewUrl || giphy.url || ''),
+            width: typeof giphy.width === 'number' ? giphy.width : null,
+            height: typeof giphy.height === 'number' ? giphy.height : null,
+          }
+        : null,
       userId,
       userName,
       userAvatar: userAvatar || null,

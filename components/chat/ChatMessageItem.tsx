@@ -117,6 +117,8 @@ export default function ChatMessageItem({
   }
 
   const hasEditHistory = message.editHistory && message.editHistory.length > 0;
+  const hasText = Boolean(message.text?.trim());
+  const hasGif = Boolean(message.giphy?.url);
 
   return (
     <div
@@ -191,9 +193,20 @@ export default function ChatMessageItem({
             </button>
           </div>
         ) : (
-          <p className="text-sm text-gray-800 wrap-break-word whitespace-pre-wrap">
-            {message.text}
-          </p>
+          <>
+            {hasText && (
+              <p className="text-sm text-gray-800 wrap-break-word whitespace-pre-wrap">
+                {message.text}
+              </p>
+            )}
+            {hasGif && (
+              <img
+                src={message.giphy!.previewUrl || message.giphy!.url}
+                alt={message.giphy!.title || 'GIF'}
+                className="mt-2 max-h-64 max-w-xs rounded-lg border border-gray-200 object-cover"
+              />
+            )}
+          </>
         )}
 
         {/* Edit history */}
@@ -233,7 +246,7 @@ export default function ChatMessageItem({
             onReply({
               messageId: message.id,
               userName: message.userName,
-              text: message.text,
+              text: message.text?.trim() || (message.giphy ? '[GIF]' : ''),
             })
           }
           className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-all"

@@ -322,6 +322,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_GIPHY_API_KEY=your_giphy_web_sdk_key
 
 # Firebase Admin Configuration (Server-side)
 FIREBASE_PROJECT_ID=your_project_id

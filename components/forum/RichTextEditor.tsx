@@ -7,6 +7,7 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, List } from 'tabler-icons-react';
+import GiphyPicker from '@/components/giphy/GiphyPicker';
 
 interface RichTextEditorProps {
   value: string;
@@ -16,7 +17,9 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const [showEmojis, setShowEmojis] = useState(false);
+  const [showGiphy, setShowGiphy] = useState(false);
   const emojiPickerWrapperRef = useRef<HTMLDivElement | null>(null);
+  const giphyPickerWrapperRef = useRef<HTMLDivElement | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -47,18 +50,23 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
   }, [value, editor]);
 
   useEffect(() => {
-    if (!showEmojis) return;
+    if (!showEmojis && !showGiphy) return;
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!emojiPickerWrapperRef.current) return;
-      if (!emojiPickerWrapperRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickedEmoji = emojiPickerWrapperRef.current?.contains(target);
+      const clickedGiphy = giphyPickerWrapperRef.current?.contains(target);
+      if (!clickedEmoji) {
         setShowEmojis(false);
+      }
+      if (!clickedGiphy) {
+        setShowGiphy(false);
       }
     };
 
     document.addEventListener('mousedown', handlePointerDown);
     return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [showEmojis]);
+  }, [showEmojis, showGiphy]);
 
   const isActive = useMemo(() => ({
     bold: editor?.isActive('bold'),
@@ -140,6 +148,27 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
                   editor.chain().focus().insertContent(emojiData.emoji).run();
                   setShowEmojis(false);
                 }}
+              />
+            </div>
+          )}
+        </div>
+        <div ref={giphyPickerWrapperRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setShowGiphy((prev) => !prev)}
+            className="px-2 py-1 rounded text-sm text-gray-600 hover:bg-gray-200"
+          >
+            GIF
+          </button>
+          {showGiphy && (
+            <div className="absolute right-0 top-full mt-2 z-50">
+              <GiphyPicker
+                onSelect={(gif) => {
+                  const safeTitle = (gif.title || 'GIF').replace(/"/g, '&quot;');
+                  editor.chain().focus().insertContent(`<img src="${gif.url}" alt="${safeTitle}" />`).run();
+                  setShowGiphy(false);
+                }}
+                width={300}
               />
             </div>
           )}

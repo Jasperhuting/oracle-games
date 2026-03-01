@@ -23,6 +23,14 @@ export interface ChatMessageEdit {
 export interface ChatMessage {
   id: string;
   text: string;
+  giphy?: {
+    id: string;
+    title: string;
+    url: string;
+    previewUrl: string;
+    width: number | null;
+    height: number | null;
+  } | null;
   userId: string;
   userName: string;
   userAvatar?: string | null;

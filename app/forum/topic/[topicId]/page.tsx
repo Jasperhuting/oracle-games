@@ -21,6 +21,7 @@ export default function ForumTopicPage() {
   const [content, setContent] = useState('');
   const [replyTo, setReplyTo] = useState<ForumReply | null>(null);
   const contentPlain = content.replace(/<[^>]+>/g, '').trim();
+  const hasContent = Boolean(contentPlain) || /<img[\s>]/i.test(content);
   const [saving, setSaving] = useState(false);
   const [mutatingTopic, setMutatingTopic] = useState(false);
   const [deletingTopic, setDeletingTopic] = useState(false);
@@ -68,7 +69,7 @@ export default function ForumTopicPage() {
   }, [user]);
 
   const handleReply = async () => {
-    if (!user || !contentPlain || !topic || isLocked) return;
+    if (!user || !hasContent || !topic || isLocked) return;
 
     setSaving(true);
     try {
@@ -309,9 +310,9 @@ export default function ForumTopicPage() {
                 />
                 <button
                   onClick={handleReply}
-                  disabled={saving || !contentPlain || isLocked}
+                  disabled={saving || !hasContent || isLocked}
                   className={`mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
-                    saving || !contentPlain || isLocked
+                    saving || !hasContent || isLocked
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-primary text-white hover:bg-primary/80'
                   }`}

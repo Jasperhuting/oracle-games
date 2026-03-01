@@ -37,6 +37,7 @@ export default function ForumCategoryPage() {
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
   const contentPlain = content.replace(/<[^>]+>/g, '').trim();
+  const hasContent = Boolean(contentPlain) || /<img[\s>]/i.test(content);
 
   const currentCategory = useMemo(
     () => categories.find((c) => c.slug === category),
@@ -88,7 +89,7 @@ export default function ForumCategoryPage() {
 
   const handleCreateTopic = async () => {
     if (!currentCategory || !user) return;
-    if (!title.trim() || !contentPlain) return;
+    if (!title.trim() || !hasContent) return;
     setSaving(true);
     setCreateError(null);
     setCreateSuccess(null);
@@ -233,9 +234,9 @@ export default function ForumCategoryPage() {
                 />
                 <button
                   onClick={handleCreateTopic}
-                  disabled={saving || !title.trim() || !contentPlain || !currentCategory}
+                  disabled={saving || !title.trim() || !hasContent || !currentCategory}
                   className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    saving || !title.trim() || !contentPlain || !currentCategory
+                    saving || !title.trim() || !hasContent || !currentCategory
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-primary text-white hover:bg-primary/80'
                   }`}

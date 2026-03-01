@@ -28,6 +28,7 @@ export default function ForumGamePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const contentPlain = content.replace(/<[^>]+>/g, '').trim();
+  const hasContent = Boolean(contentPlain) || /<img[\s>]/i.test(content);
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
@@ -118,7 +119,7 @@ export default function ForumGamePage() {
   }, [divisionOptions]);
 
   const handleCreateTopic = async () => {
-    if (!user || !gameId || !title.trim() || !contentPlain) return;
+    if (!user || !gameId || !title.trim() || !hasContent) return;
     const targetGameId = selectedDivisionGameId || currentGame?.gameIds?.[0] || currentGame?.id || gameId;
 
     setSaving(true);
@@ -352,9 +353,9 @@ export default function ForumGamePage() {
                 />
                 <button
                   onClick={handleCreateTopic}
-                  disabled={saving || !title.trim() || !contentPlain || !currentGame}
+                  disabled={saving || !title.trim() || !hasContent || !currentGame}
                   className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    saving || !title.trim() || !contentPlain || !currentGame
+                    saving || !title.trim() || !hasContent || !currentGame
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-primary text-white hover:bg-primary/80'
                   }`}
