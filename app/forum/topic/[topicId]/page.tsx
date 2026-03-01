@@ -13,7 +13,7 @@ export default function ForumTopicPage() {
   const params = useParams();
   const topicId = String(params?.topicId || '');
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, impersonationStatus } = useAuth();
 
   const [topic, setTopic] = useState<ForumTopic | null>(null);
   const [replies, setReplies] = useState<ForumReply[]>([]);
@@ -25,9 +25,19 @@ export default function ForumTopicPage() {
   const [saving, setSaving] = useState(false);
   const [mutatingTopic, setMutatingTopic] = useState(false);
   const [deletingTopic, setDeletingTopic] = useState(false);
+  const [editingTopic, setEditingTopic] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const isLocked = topic?.status === 'locked';
+  const hasAdminPrivileges = isAdmin || impersonationStatus.isImpersonating;
+  const actingAdminUserId = impersonationStatus.realAdmin?.uid || user?.uid || '';
+  const isOwner = Boolean(user && topic && user.uid === topic.createdBy);
+  const canEditTopic = Boolean(user && topic && (isOwner || hasAdminPrivileges));
+  const editContentPlain = editContent.replace(/<[^>]+>/g, '').trim();
+  const canSaveEdit = Boolean(editTitle.trim()) && (Boolean(editContentPlain) || /<img[\s>]/i.test(editContent));
 
   const loadTopic = useCallback(async () => {
     if (!topicId) return;
@@ -55,6 +65,11 @@ export default function ForumTopicPage() {
     const loadAdmin = async () => {
       if (!user) return;
 
+      if (impersonationStatus.isImpersonating && impersonationStatus.realAdmin?.uid) {
+        setIsAdmin(true);
+        return;
+      }
+
       const res = await fetch(`/api/getUser?userId=${user.uid}`);
       if (!res.ok) {
         setIsAdmin(false);
@@ -66,7 +81,7 @@ export default function ForumTopicPage() {
     };
 
     loadAdmin();
-  }, [user]);
+  }, [user, impersonationStatus.isImpersonating, impersonationStatus.realAdmin?.uid]);
 
   const handleReply = async () => {
     if (!user || !hasContent || !topic || isLocked) return;
@@ -94,7 +109,7 @@ export default function ForumTopicPage() {
   };
 
   const handleTopicUpdate = async (changes: { pinned?: boolean; status?: 'open' | 'locked' }) => {
-    if (!user || !topic || !isAdmin) return;
+    if (!user || !topic || !hasAdminPrivileges) return;
 
     setMutatingTopic(true);
     try {
@@ -102,7 +117,7 @@ export default function ForumTopicPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.uid,
+          userId: actingAdminUserId,
           ...changes,
         }),
       });
@@ -116,7 +131,7 @@ export default function ForumTopicPage() {
   };
 
   const handleDeleteTopic = async () => {
-    if (!user || !topic || !isAdmin || deletingTopic) return;
+    if (!user || !topic || !hasAdminPrivileges || deletingTopic) return;
 
     const confirmed = window.confirm(
       'Weet je zeker dat je dit topic wilt verwijderen? Alle reacties in dit topic worden ook verwijderd.'
@@ -128,7 +143,7 @@ export default function ForumTopicPage() {
       const res = await fetch(`/api/forum/topics/${topic.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid }),
+        body: JSON.stringify({ userId: actingAdminUserId }),
       });
 
       if (res.ok) {
@@ -136,6 +151,52 @@ export default function ForumTopicPage() {
       }
     } finally {
       setDeletingTopic(false);
+    }
+  };
+
+  const handleStartEditTopic = () => {
+    if (!topic) return;
+    setEditTitle(topic.title || '');
+    setEditContent(topic.body || '');
+    setEditError(null);
+    setEditingTopic(true);
+  };
+
+  const handleCancelEditTopic = () => {
+    setEditingTopic(false);
+    setEditError(null);
+    if (topic) {
+      setEditTitle(topic.title || '');
+      setEditContent(topic.body || '');
+    }
+  };
+
+  const handleSaveTopicEdit = async () => {
+    if (!user || !topic || !canEditTopic || !canSaveEdit || mutatingTopic) return;
+
+    setMutatingTopic(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/forum/topics/${topic.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: hasAdminPrivileges ? actingAdminUserId : user.uid,
+          title: editTitle.trim(),
+          content: editContent.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        setEditError(errorData?.error || 'Topic bewerken mislukt.');
+        return;
+      }
+
+      await loadTopic();
+      setEditingTopic(false);
+    } finally {
+      setMutatingTopic(false);
     }
   };
 
@@ -230,9 +291,72 @@ export default function ForumTopicPage() {
                     Preview
                   </span>
                 </div>
-                <div className="mt-4 text-gray-800 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: topic.body }} />
+                {!editingTopic ? (
+                  <div className="mt-4 text-gray-800 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: topic.body }} />
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      placeholder="Titel"
+                      disabled={mutatingTopic}
+                    />
+                    <RichTextEditor
+                      value={editContent}
+                      onChange={setEditContent}
+                      placeholder="Bewerk je topic..."
+                    />
+                    {editError && <p className="text-xs text-red-600">{editError}</p>}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={mutatingTopic || !canSaveEdit}
+                        onClick={handleSaveTopicEdit}
+                        className={`px-3 py-1 text-xs rounded-md border ${
+                          mutatingTopic || !canSaveEdit
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : 'bg-primary text-white border-primary hover:bg-primary/80'
+                        }`}
+                      >
+                        {mutatingTopic ? 'Opslaan...' : 'Sla wijzigingen op'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={mutatingTopic}
+                        onClick={handleCancelEditTopic}
+                        className={`px-3 py-1 text-xs rounded-md border ${
+                          mutatingTopic
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                {isAdmin && (
+                {canEditTopic && !hasAdminPrivileges && isLocked && !editingTopic && (
+                  <div className="mt-3 text-xs text-gray-600 bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
+                    Dit topic is gesloten en kan nu niet meer bewerkt worden.
+                  </div>
+                )}
+
+                {canEditTopic && (!isLocked || hasAdminPrivileges) && !editingTopic && (
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={handleStartEditTopic}
+                      className="px-3 py-1 text-xs rounded-md border bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    >
+                      Bewerk topic
+                    </button>
+                  </div>
+                )}
+
+                {hasAdminPrivileges && (
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <button
                       type="button"

@@ -12,6 +12,21 @@ interface TopResult {
   division?: string;
 }
 
+interface OracleStats {
+  userId: string;
+  playername: string;
+  gamesPlayed: number;
+  averageGameScore: number;
+  oracleRating: number;
+  oracleRank: number;
+}
+
+interface OracleRankResponse {
+  success?: boolean;
+  user?: OracleStats | null;
+  top?: OracleStats[];
+}
+
 interface CarriereCardProps {
   userId: string;
   playername: string;
@@ -25,6 +40,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [topResults, setTopResults] = useState<TopResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
+  const [oracleStats, setOracleStats] = useState<OracleStats | null>(null);
+  const [oracleLoading, setOracleLoading] = useState(true);
+  const [oracleStandingsOpen, setOracleStandingsOpen] = useState(false);
+  const [oracleStandings, setOracleStandings] = useState<OracleStats[]>([]);
+  const [oracleStandingsLoading, setOracleStandingsLoading] = useState(false);
 
   // Update local state when prop changes
   useEffect(() => {
@@ -109,8 +129,27 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
       }
     }
 
+    async function fetchOracleStats() {
+      try {
+        const response = await fetch(`/api/oracle-rank?userId=${userId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data?.success && data?.user) {
+          setOracleStats(data.user);
+        } else {
+          setOracleStats(null);
+        }
+      } catch (error) {
+        console.error('Error fetching oracle rank:', error);
+      } finally {
+        setOracleLoading(false);
+      }
+    }
+
     if (userId) {
       fetchTopResults();
+      fetchOracleStats();
     }
   }, [userId]);
 
@@ -123,6 +162,25 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
   const formatYear = (year: number): string => {
     return `'${String(year).slice(-2)}`;
+  };
+
+  const formatOracleRating = (rating: number): string => {
+    return String(Math.round(rating * 1000));
+  };
+
+  const openOracleStandings = async () => {
+    setOracleStandingsOpen(true);
+    setOracleStandingsLoading(true);
+    try {
+      const response = await fetch(`/api/oracle-rank?userId=${userId}&includeTop=true&topLimit=100`);
+      if (!response.ok) return;
+      const data: OracleRankResponse = await response.json();
+      setOracleStandings(data.top || []);
+    } catch (error) {
+      console.error('Error fetching oracle standings:', error);
+    } finally {
+      setOracleStandingsLoading(false);
+    }
   };
 
   return (
@@ -183,9 +241,24 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Oracle Rank */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600 mb-1">-</div>
+            <div className="text-2xl font-bold text-blue-600 mb-1">
+              {oracleLoading ? '...' : oracleStats?.oracleRank ? `#${oracleStats.oracleRank}` : '-'}
+            </div>
             <div className="text-sm font-medium text-gray-700 mb-1">Oracle Rank</div>
-            <div className="text-xs text-gray-500">Komt binnenkort</div>
+            <div className="text-xs text-gray-500">
+              {oracleLoading
+                ? 'Laden...'
+                : oracleStats
+                  ? `Punten ${formatOracleRating(oracleStats.oracleRating)} (${oracleStats.gamesPlayed} spellen)`
+                  : 'Nog geen resultaten'}
+            </div>
+            <button
+              type="button"
+              onClick={openOracleStandings}
+              className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              Bekijk standings
+            </button>
           </div>
 
           {/* Season Rank */}
@@ -283,6 +356,67 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
               </div>
               <div className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Forum</div>
             </Link>
+          </div>
+        </div>
+      )}
+
+      {oracleStandingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Close standings popup"
+            onClick={() => setOracleStandingsOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+
+          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-xl bg-white border border-gray-200 shadow-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-900">Oracle Standings</h4>
+              <button
+                type="button"
+                onClick={() => setOracleStandingsOpen(false)}
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Sluiten
+              </button>
+            </div>
+
+            <div className="p-4 overflow-auto max-h-[calc(85vh-65px)]">
+              {oracleStandingsLoading ? (
+                <div className="text-sm text-gray-500">Laden...</div>
+              ) : oracleStandings.length === 0 ? (
+                <div className="text-sm text-gray-500">Geen standings beschikbaar</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b border-gray-200">
+                      <th className="py-2 pr-2">#</th>
+                      <th className="py-2 pr-2">Speler</th>
+                      <th className="py-2 pr-2 text-right">Punten</th>
+                      <th className="py-2 pr-2 text-right">Spellen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {oracleStandings.map((entry) => (
+                      <tr
+                        key={entry.userId}
+                        className={`border-b border-gray-100 ${entry.userId === userId ? 'bg-blue-50' : ''}`}
+                      >
+                        <td className="py-2 pr-2 font-semibold text-gray-900">#{entry.oracleRank}</td>
+                        <td className="py-2 pr-2 text-gray-800">
+                          {entry.playername || 'Onbekend'}
+                          {entry.userId === userId && (
+                            <span className="ml-2 text-xs text-blue-700 font-medium">(jij)</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2 text-right text-gray-800">{formatOracleRating(entry.oracleRating)}</td>
+                        <td className="py-2 pr-2 text-right text-gray-600">{entry.gamesPlayed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -168,33 +168,68 @@ export async function PATCH(
     const params = await context.params;
     const topicId = params.topicId;
     const body = await request.json();
-    const { userId, pinned, status } = body || {};
+    const { userId, pinned, status, title, content } = body || {};
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
     const db = getServerFirebase();
-    const adminDoc = await db.collection('users').doc(String(userId)).get();
-    if (!adminDoc.exists || adminDoc.data()?.userType !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
+    const userDoc = await db.collection('users').doc(String(userId)).get();
+    const isAdmin = userDoc.exists && userDoc.data()?.userType === 'admin';
     const topicRef = db.collection('forum_topics').doc(topicId);
     const topicDoc = await topicRef.get();
     if (!topicDoc.exists || topicDoc.data()?.deleted) {
       return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
+    }
+    const topicData = topicDoc.data() || {};
+    const isOwner = String(topicData.createdBy || '') === String(userId);
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const updates: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
+    const hasTitleUpdate = typeof title === 'string';
+    const hasContentUpdate = typeof content === 'string';
+
+    if ((hasTitleUpdate || hasContentUpdate) && !isAdmin && topicData.status === 'locked') {
+      return NextResponse.json({ error: 'Topic is locked' }, { status: 403 });
+    }
+
+    if (hasTitleUpdate) {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) {
+        return NextResponse.json({ error: 'title cannot be empty' }, { status: 400 });
+      }
+      updates.title = trimmedTitle;
+    }
+
+    if (hasContentUpdate) {
+      const trimmedContent = content.trim();
+      const contentPlain = trimmedContent.replace(/<[^>]+>/g, '').trim();
+      const hasMedia = /<img[\s>]/i.test(trimmedContent);
+      if (!contentPlain && !hasMedia) {
+        return NextResponse.json({ error: 'content cannot be empty' }, { status: 400 });
+      }
+      updates.body = trimmedContent;
+      updates.lastReplyPreview = contentPlain.slice(0, 140) || null;
+    }
+
     if (typeof pinned === 'boolean') {
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Only admins can update pinned' }, { status: 403 });
+      }
       updates.pinned = pinned;
     }
 
     if (status === 'open' || status === 'locked') {
+      if (!isAdmin) {
+        return NextResponse.json({ error: 'Only admins can update status' }, { status: 403 });
+      }
       updates.status = status as ForumTopicStatus;
     }
 
