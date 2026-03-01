@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { IconSend, IconX } from '@tabler/icons-react';
+import { createPortal } from 'react-dom';
+import { IconSend, IconX, IconMoodSmile } from '@tabler/icons-react';
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 
 interface ReplyTo {
   messageId: string;
@@ -32,7 +34,11 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   // Focus input when replying
   useEffect(() => {
@@ -40,6 +46,47 @@ export default function ChatInput({
       inputRef.current.focus();
     }
   }, [replyingTo]);
+
+  // Position emoji picker above button
+  useEffect(() => {
+    if (!showEmojiPicker || !emojiButtonRef.current) return;
+
+    const rect = emojiButtonRef.current.getBoundingClientRect();
+    const pickerWidth = 320;
+    const pickerHeight = 400;
+
+    let left = rect.right - pickerWidth;
+    let top = rect.top - pickerHeight - 8;
+
+    if (left < 8) left = 8;
+    if (top < 8) top = rect.bottom + 8;
+
+    setPickerPos({ top, left });
+  }, [showEmojiPicker]);
+
+  // Close picker on outside click
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        pickerRef.current && !pickerRef.current.contains(target) &&
+        emojiButtonRef.current && !emojiButtonRef.current.contains(target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setText((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+    inputRef.current?.focus();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +154,7 @@ export default function ChatInput({
           </div>
           <button
             onClick={onClearReply}
-            className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors flex-shrink-0"
+            className="p-1 rounded hover:bg-blue-100 text-blue-400 hover:text-blue-600 transition-colors shrink-0"
           >
             <IconX className="h-4 w-4" />
           </button>
@@ -127,14 +174,43 @@ export default function ChatInput({
           maxLength={1000}
         />
         <button
+          ref={emojiButtonRef}
+          type="button"
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+          title="Emoji toevoegen"
+        >
+          <IconMoodSmile className="h-5 w-5" />
+        </button>
+        <button
           type="submit"
           disabled={!text.trim() || sending}
-          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex-shrink-0"
+          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors shrink-0"
           title="Verstuur"
         >
           <IconSend className="h-5 w-5" />
         </button>
       </form>
+
+      {/* Emoji picker portal */}
+      {showEmojiPicker &&
+        createPortal(
+          <div
+            ref={pickerRef}
+            className="fixed z-9999 shadow-xl rounded-xl overflow-hidden"
+            style={{ top: pickerPos.top, left: pickerPos.left }}
+          >
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              theme={Theme.LIGHT}
+              width={320}
+              height={400}
+              searchPlaceHolder="Zoek emoji..."
+              previewConfig={{ showPreview: false }}
+            />
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

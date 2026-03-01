@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { IconArrowBackUp, IconTrash, IconVolumeOff } from '@tabler/icons-react';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/lib/types/chat';
+import { AvatarBadge } from '@/components/forum/AvatarBadge';
 import EmojiReactions from './EmojiReactions';
 import MuteUserDialog from './MuteUserDialog';
 
@@ -101,19 +102,13 @@ export default function ChatMessageItem({
       }`}
     >
       {/* Avatar */}
-      {message.userAvatar ? (
-        <img
-          src={message.userAvatar}
-          alt={message.userName}
-          className="h-8 w-8 rounded-full flex-shrink-0 object-cover"
+      <div className="shrink-0">
+        <AvatarBadge
+          name={message.userName}
+          avatarUrl={message.userAvatar}
+          size={32}
         />
-      ) : (
-        <div
-          className={`h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${avatarColor}`}
-        >
-          {message.userName.charAt(0).toUpperCase()}
-        </div>
-      )}
+      </div>
 
       {/* Message content */}
       <div className="flex-1 min-w-0">

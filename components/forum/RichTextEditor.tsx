@@ -1,46 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, List } from 'tabler-icons-react';
-
-const EMOJI_CATEGORIES: { id: string; label: string; emojis: string[] }[] = [
-  {
-    id: 'recent',
-    label: 'Recent',
-    emojis: ['😀', '👍', '🎉', '🔥', '✅', '🚴'],
-  },
-  {
-    id: 'smileys',
-    label: 'Smileys',
-    emojis: [
-      '😀','😁','😂','🤣','😅','😊','😍','😘','😎','🤔','😇','😴','😵','😴','😬','😐','😑','😶',
-      '😮','😯','😲','😳','🥺','😢','😭','😡','🤯','😱','😈','👀','🙌','🙏','👏','👍','👎','🤝',
-    ],
-  },
-  {
-    id: 'sports',
-    label: 'Sport',
-    emojis: [
-      '🚴','🚲','🏁','🏆','🥇','🥈','🥉','⏱️','⏲️','🎯','⚽','🏀','🏈','🎾','🥊','🏋️',
-    ],
-  },
-  {
-    id: 'symbols',
-    label: 'Symbols',
-    emojis: [
-      '✅','❌','⚡','💡','📌','📝','📣','🔔','🔒','🔓','⭐','✨','💬','🧠','❤️','💔',
-    ],
-  },
-  {
-    id: 'nature',
-    label: 'Nature',
-    emojis: ['☀️','🌤️','⛅','🌧️','⛈️','❄️','🌈','🍃','🌿','🌊','🔥'],
-  },
-];
 
 interface RichTextEditorProps {
   value: string;
@@ -50,7 +16,7 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const [showEmojis, setShowEmojis] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('recent');
+  const emojiPickerWrapperRef = useRef<HTMLDivElement | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -80,6 +46,20 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     }
   }, [value, editor]);
 
+  useEffect(() => {
+    if (!showEmojis) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!emojiPickerWrapperRef.current) return;
+      if (!emojiPickerWrapperRef.current.contains(event.target as Node)) {
+        setShowEmojis(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [showEmojis]);
+
   const isActive = useMemo(() => ({
     bold: editor?.isActive('bold'),
     italic: editor?.isActive('italic'),
@@ -94,10 +74,6 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       </div>
     );
   }
-
-  const activeEmojis =
-    EMOJI_CATEGORIES.find((category) => category.id === activeCategory)?.emojis ||
-    EMOJI_CATEGORIES[0].emojis;
 
   return (
     <div className="border border-gray-300 rounded-md bg-white overflow-visible">
@@ -147,7 +123,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         >
           <LinkIcon size={16} />
         </button>
-        <div className="ml-auto relative">
+        <div ref={emojiPickerWrapperRef} className="ml-auto relative">
           <button
             type="button"
             onClick={() => setShowEmojis((prev) => !prev)}
@@ -156,38 +132,15 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
             🙂
           </button>
           {showEmojis && (
-            <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-80">
-              <div className="flex items-center gap-2 px-2 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                {EMOJI_CATEGORIES.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setActiveCategory(category.id)}
-                    className={`px-2 py-1 text-xs rounded ${
-                      activeCategory === category.id
-                        ? 'bg-primary text-white'
-                        : 'text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {category.label}
-                  </button>
-                ))}
-              </div>
-              <div className="p-2 max-h-56 overflow-y-auto grid grid-cols-8 gap-1">
-                {activeEmojis.map((emoji) => (
-                  <button
-                    key={`${activeCategory}-${emoji}`}
-                    type="button"
-                    onClick={() => {
-                      editor.chain().focus().insertContent(emoji).run();
-                      setShowEmojis(false);
-                    }}
-                    className="text-lg hover:bg-gray-100 rounded"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+            <div className="absolute right-0 top-full mt-2 z-50">
+              <EmojiPicker
+                theme={Theme.LIGHT}
+                lazyLoadEmojis
+                onEmojiClick={(emojiData: EmojiClickData) => {
+                  editor.chain().focus().insertContent(emojiData.emoji).run();
+                  setShowEmojis(false);
+                }}
+              />
             </div>
           )}
         </div>

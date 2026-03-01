@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 interface AvatarBadgeProps {
   name?: string | null;
   avatarUrl?: string | null;
@@ -15,16 +17,18 @@ function getInitials(name?: string | null): string {
 }
 
 export function AvatarBadge({ name, avatarUrl, size = 36 }: AvatarBadgeProps) {
+  const [imgError, setImgError] = useState(false);
   const initials = getInitials(name);
   const dimension = `${size}px`;
 
-  if (avatarUrl) {
+  if (avatarUrl && !imgError) {
     return (
       <img
         src={avatarUrl}
         alt={name || 'Avatar'}
         className="rounded-full object-cover border border-gray-200"
         style={{ width: dimension, height: dimension }}
+        onError={() => setImgError(true)}
       />
     );
   }

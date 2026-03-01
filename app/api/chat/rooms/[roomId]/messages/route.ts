@@ -36,14 +36,22 @@ export async function POST(
     }
 
     // Check if user is muted
-    const mutedSnapshot = await db
-      .collection(`chat_rooms/${roomId}/muted_users`)
-      .where('userId', '==', userId)
-      .where('mutedUntil', '>', Timestamp.now())
-      .limit(1)
-      .get();
-    if (!mutedSnapshot.empty) {
-      return NextResponse.json({ error: 'You are muted' }, { status: 403 });
+    try {
+      const mutedSnapshot = await db
+        .collection(`chat_rooms/${roomId}/muted_users`)
+        .where('userId', '==', userId)
+        .get();
+      const now = new Date();
+      const isMuted = mutedSnapshot.docs.some((doc) => {
+        const mutedUntil = doc.data().mutedUntil?.toDate?.() || new Date(doc.data().mutedUntil);
+        return mutedUntil > now;
+      });
+      if (isMuted) {
+        return NextResponse.json({ error: 'You are muted' }, { status: 403 });
+      }
+    } catch (muteCheckError) {
+      // If muted_users subcollection doesn't exist yet, that's fine
+      console.log('Mute check skipped (no muted_users yet):', muteCheckError);
     }
 
     const messageData = {
@@ -67,6 +75,9 @@ export async function POST(
     return NextResponse.json({ id: docRef.id });
   } catch (error) {
     console.error('Error sending message:', error);
-    return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to send message', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }

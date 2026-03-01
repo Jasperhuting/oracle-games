@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconMoodSmile } from '@tabler/icons-react';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 
@@ -19,20 +20,51 @@ export default function EmojiReactions({
 }: EmojiReactionsProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
+
+  // Position the picker relative to the button, rendered via portal
+  useEffect(() => {
+    if (!showPicker || !buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const pickerWidth = 320;
+    const pickerHeight = 400;
+
+    // Position above the button, aligned to the right
+    let left = rect.right - pickerWidth;
+    let top = rect.top - pickerHeight - 4;
+
+    // If it goes off the left edge, align to left of button instead
+    if (left < 8) left = 8;
+
+    // If it goes off the top, show below the button
+    if (top < 8) {
+      top = rect.bottom + 4;
+    }
+
+    setPickerPos({ top, left });
+  }, [showPicker]);
 
   // Close picker when clicking outside
   useEffect(() => {
     if (!showPicker) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        pickerRef.current && !pickerRef.current.contains(target) &&
+        buttonRef.current && !buttonRef.current.contains(target)
+      ) {
         setShowPicker(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showPicker]);
 
   const toggleReaction = async (emoji: string) => {
@@ -82,17 +114,22 @@ export default function EmojiReactions({
         );
       })}
 
-      <div className="relative" ref={pickerRef}>
-        <button
-          onClick={() => setShowPicker(!showPicker)}
-          className="inline-flex items-center justify-center h-6 w-6 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          title="Reactie toevoegen"
-        >
-          <IconMoodSmile className="h-4 w-4" />
-        </button>
+      <button
+        ref={buttonRef}
+        onClick={() => setShowPicker(!showPicker)}
+        className="inline-flex items-center justify-center h-6 w-6 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        title="Reactie toevoegen"
+      >
+        <IconMoodSmile className="h-4 w-4" />
+      </button>
 
-        {showPicker && (
-          <div className="absolute bottom-full right-0 mb-1 z-50">
+      {showPicker &&
+        createPortal(
+          <div
+            ref={pickerRef}
+            className="fixed z-9999 shadow-xl rounded-xl overflow-hidden"
+            style={{ top: pickerPos.top, left: pickerPos.left }}
+          >
             <EmojiPicker
               onEmojiClick={handleEmojiClick}
               theme={Theme.LIGHT}
@@ -101,9 +138,9 @@ export default function EmojiReactions({
               searchPlaceHolder="Zoek emoji..."
               previewConfig={{ showPreview: false }}
             />
-          </div>
+          </div>,
+          document.body
         )}
-      </div>
     </div>
   );
 }
