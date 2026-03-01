@@ -16,7 +16,13 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export const maxDuration = 300; // 5 minutes (Vercel Pro)
-const SCRAPER_TIMEOUT_MS = 25_000;
+const parsePositiveInt = (value: string | undefined, fallback: number): number => {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const SCRAPER_TIMEOUT_MS = parsePositiveInt(process.env.SCRAPER_TIMEOUT_MS, 90_000);
 const MAX_SCRAPE_RETRIES = 3;
 const RETRY_DELAY_MS = 5 * 60 * 1000;
 

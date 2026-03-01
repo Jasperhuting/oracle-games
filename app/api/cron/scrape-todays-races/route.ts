@@ -412,6 +412,9 @@ export async function GET(request: NextRequest) {
           const processUrl = new URL('/api/cron/process-scrape-jobs', request.nextUrl.origin);
           processUrl.searchParams.set('limit', '20');
           const headers: HeadersInit = {};
+          if (process.env.INTERNAL_API_KEY) {
+            headers['x-internal-key'] = process.env.INTERNAL_API_KEY;
+          }
           if (process.env.CRON_SECRET) {
             headers.authorization = `Bearer ${process.env.CRON_SECRET}`;
           } else {

@@ -70,8 +70,17 @@ export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
   const authHeader = request.headers.get('authorization');
   const vercelCronHeader = request.headers.get('x-vercel-cron');
+  const internalKeyHeader = request.headers.get('x-internal-key');
 
-  const isAuthorized = (authHeader && authHeader === expectedAuth) || vercelCronHeader === '1';
+  const hasValidBearer =
+    !!process.env.CRON_SECRET && !!authHeader && authHeader === expectedAuth;
+  const hasValidVercelCronHeader = vercelCronHeader === '1';
+  const hasValidInternalKey =
+    !!process.env.INTERNAL_API_KEY &&
+    !!internalKeyHeader &&
+    internalKeyHeader === process.env.INTERNAL_API_KEY;
+
+  const isAuthorized = hasValidBearer || hasValidVercelCronHeader || hasValidInternalKey;
 
   if (!isAuthorized) {
     console.error('[CRON] Unauthorized access attempt to process-scrape-jobs');

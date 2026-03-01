@@ -24,23 +24,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.CRON_SECRET) {
-      return NextResponse.json(
-        { error: 'CRON_SECRET is not configured' },
-        { status: 500 }
-      );
-    }
-
     const processUrl = new URL('/api/cron/process-scrape-jobs', request.nextUrl.origin);
     if (limit && Number.isFinite(limit) && limit > 0) {
       processUrl.searchParams.set('limit', Math.min(50, Math.floor(limit)).toString());
     }
 
+    const headers: Record<string, string> = {};
+    if (process.env.INTERNAL_API_KEY) {
+      headers['x-internal-key'] = process.env.INTERNAL_API_KEY;
+    }
+    if (process.env.CRON_SECRET) {
+      headers.authorization = `Bearer ${process.env.CRON_SECRET}`;
+    }
+
     const response = await fetch(processUrl.toString(), {
       method: 'GET',
-      headers: {
-        authorization: `Bearer ${process.env.CRON_SECRET}`,
-      },
+      headers,
     });
 
     const result = await response.json().catch(() => ({}));
