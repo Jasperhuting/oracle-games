@@ -14,6 +14,8 @@ interface ChatMessageItemProps {
   currentUserId: string;
   onReply: (msg: { messageId: string; userName: string; text: string }) => void;
   isAdmin?: boolean;
+  resolvedUserName?: string;
+  resolvedUserAvatar?: string;
 }
 
 function formatTimestamp(createdAt: Timestamp | string): string {
@@ -49,7 +51,11 @@ export default function ChatMessageItem({
   currentUserId,
   onReply,
   isAdmin = false,
+  resolvedUserName,
+  resolvedUserAvatar,
 }: ChatMessageItemProps) {
+  const displayUserName = resolvedUserName || message.userName;
+  const displayUserAvatar = resolvedUserAvatar || message.userAvatar || null;
   const timeStr = useMemo(() => formatTimestamp(message.createdAt), [message.createdAt]);
   const isOwn = message.userId === currentUserId;
   const [showMuteDialog, setShowMuteDialog] = useState(false);
@@ -57,6 +63,7 @@ export default function ChatMessageItem({
   const [editText, setEditText] = useState(message.text);
   const [saving, setSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isGifCollapsed, setIsGifCollapsed] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -127,8 +134,8 @@ export default function ChatMessageItem({
       {/* Avatar */}
       <div className="shrink-0">
         <AvatarBadge
-          name={message.userName}
-          avatarUrl={message.userAvatar}
+          name={displayUserName}
+          avatarUrl={displayUserAvatar}
           size={32}
         />
       </div>
@@ -137,7 +144,7 @@ export default function ChatMessageItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-semibold text-gray-900">
-            {message.userName}
+            {displayUserName}
           </span>
           <span className="text-xs text-gray-400">{timeStr}</span>
           {message.editedAt && (
@@ -200,11 +207,22 @@ export default function ChatMessageItem({
               </p>
             )}
             {hasGif && (
-              <img
-                src={message.giphy!.previewUrl || message.giphy!.url}
-                alt={message.giphy!.title || 'GIF'}
-                className="mt-2 max-h-64 max-w-xs rounded-lg border border-gray-200 object-cover"
-              />
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGifCollapsed((prev) => !prev)}
+                  className="mb-1 text-xs text-blue-600 hover:underline"
+                >
+                  {isGifCollapsed ? 'Toon GIF' : 'Klap GIF in'}
+                </button>
+                {!isGifCollapsed && (
+                  <img
+                    src={message.giphy!.previewUrl || message.giphy!.url}
+                    alt={message.giphy!.title || 'GIF'}
+                    className="max-h-64 max-w-xs rounded-lg border border-gray-200 object-cover"
+                  />
+                )}
+              </div>
             )}
           </>
         )}
@@ -245,7 +263,7 @@ export default function ChatMessageItem({
           onClick={() =>
             onReply({
               messageId: message.id,
-              userName: message.userName,
+              userName: displayUserName,
               text: message.text?.trim() || (message.giphy ? '[GIF]' : ''),
             })
           }
@@ -288,7 +306,7 @@ export default function ChatMessageItem({
       {showMuteDialog && (
         <MuteUserDialog
           userId={message.userId}
-          userName={message.userName}
+          userName={displayUserName}
           roomId={roomId}
           mutedBy={currentUserId}
           onClose={() => setShowMuteDialog(false)}

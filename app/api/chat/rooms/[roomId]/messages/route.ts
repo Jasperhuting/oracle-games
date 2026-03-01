@@ -16,9 +16,9 @@ export async function POST(
     const trimmedText = typeof text === 'string' ? text.trim() : '';
     const hasGif = Boolean(giphy?.url);
 
-    if ((!trimmedText && !hasGif) || !userId || !userName) {
+    if ((!trimmedText && !hasGif) || !userId) {
       return NextResponse.json(
-        { error: 'Missing required fields: text or giphy, userId, userName' },
+        { error: 'Missing required fields: text or giphy, userId' },
         { status: 400 }
       );
     }
@@ -56,6 +56,31 @@ export async function POST(
       console.log('Mute check skipped (no muted_users yet):', muteCheckError);
     }
 
+    // Resolve sender profile from users collection to avoid client-side "Anoniem" fallback.
+    let resolvedUserName = 'Anoniem';
+    let resolvedUserAvatar: string | null = userAvatar || null;
+    try {
+      const userDoc = await db.collection('users').doc(String(userId)).get();
+      if (userDoc.exists) {
+        const profile = userDoc.data() || {};
+        resolvedUserName = String(
+          profile.playername ||
+          profile.displayName ||
+          profile.email ||
+          userName ||
+          'Anoniem'
+        );
+        resolvedUserAvatar = profile.avatarUrl || resolvedUserAvatar;
+      } else if (userName) {
+        resolvedUserName = String(userName);
+      }
+    } catch (profileError) {
+      console.log('User profile lookup failed, using request fallback:', profileError);
+      if (userName) {
+        resolvedUserName = String(userName);
+      }
+    }
+
     const messageData = {
       text: trimmedText,
       giphy: hasGif
@@ -69,8 +94,8 @@ export async function POST(
           }
         : null,
       userId,
-      userName,
-      userAvatar: userAvatar || null,
+      userName: resolvedUserName,
+      userAvatar: resolvedUserAvatar,
       replyTo: replyTo || null,
       reactions: {},
       deleted: false,

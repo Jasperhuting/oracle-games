@@ -25,6 +25,8 @@ export default function ChatMessageList({
   isAdmin = false,
 }: ChatMessageListProps) {
   const { messages, loading, hasMore, loadMore } = useChatMessages(roomId);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [userAvatars, setUserAvatars] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -54,6 +56,33 @@ export default function ChatMessageList({
       bottomRef.current?.scrollIntoView({ behavior: 'instant' });
     }
   }, [loading]);
+
+  // Keep user names/avatars fresh from users collection.
+  useEffect(() => {
+    const userIds = Array.from(new Set(messages.map((msg) => msg.userId).filter(Boolean)));
+    if (userIds.length === 0) return;
+
+    let cancelled = false;
+
+    const loadUsers = async () => {
+      try {
+        const res = await fetch(`/api/users/names?ids=${encodeURIComponent(userIds.join(','))}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+
+        setUserNames((prev) => ({ ...prev, ...(data.data || {}) }));
+        setUserAvatars((prev) => ({ ...prev, ...(data.avatars || {}) }));
+      } catch (error) {
+        console.error('Failed to load chat user names/avatars:', error);
+      }
+    };
+
+    void loadUsers();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages]);
 
   const handleLoadMore = async () => {
     const container = containerRef.current;
@@ -113,6 +142,8 @@ export default function ChatMessageList({
               currentUserId={currentUserId}
               onReply={onReply}
               isAdmin={isAdmin}
+              resolvedUserName={userNames[msg.userId]}
+              resolvedUserAvatar={userAvatars[msg.userId]}
             />
           ))}
         </div>
