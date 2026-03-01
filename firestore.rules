@@ -226,6 +226,34 @@ service cloud.firestore {
       allow write: if false; // Only server-side access
     }
 
+    // ========================================================================
+    // MATCH CHAT
+    // ========================================================================
+
+    // Chat Rooms - authenticated users can read, admins manage
+    match /chat_rooms/{roomId} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      // Messages - authenticated users can read and create in open rooms
+      match /messages/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+                        && request.resource.data.userId == request.auth.uid
+                        && get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.status == 'open';
+        allow update: if isAdmin();
+        allow delete: if false;
+      }
+
+      // Muted users - only admins
+      match /muted_users/{mutedId} {
+        allow read: if request.auth != null;
+        allow write: if isAdmin();
+      }
+    }
+
     // Default deny all other collections
     match /{document=**} {
       allow read, write: if false;
