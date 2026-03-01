@@ -3,6 +3,20 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getRiderReferenceDataCached } from '@/lib/firebase/rider-reference-cache';
 
+function toIsoDate(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'object' && value !== null && '_seconds' in value) {
+    const seconds = Number((value as { _seconds?: number })._seconds || 0);
+    const nanos = Number((value as { _nanoseconds?: number })._nanoseconds || 0);
+    return new Date(seconds * 1000 + nanos / 1000000).toISOString();
+  }
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  if (typeof value === 'string') return value;
+  return null;
+}
+
 // GET player's team for a game
 export async function GET(
   request: NextRequest,
@@ -31,7 +45,7 @@ export async function GET(
     // Use shared server cache to avoid full rankings/teams reads per request.
     const { ridersById } = await getRiderReferenceDataCached(db);
 
-    const riders = teamSnapshot.docs.map(doc => {
+    let riders = teamSnapshot.docs.map(doc => {
       const data = doc.data();
       const riderInfo = ridersById.get(data.riderNameId);
       const baseValue = riderInfo?.points || 0;
@@ -52,9 +66,49 @@ export async function GET(
         draftRound: data.draftRound,
         draftPick: data.draftPick,
         racePoints: data.racePoints || null,
-        acquiredAt: data.acquiredAt ? (data.acquiredAt.toDate ? data.acquiredAt.toDate().toISOString() : data.acquiredAt) : null,
+        acquiredAt: toIsoDate(data.acquiredAt),
       };
     });
+
+    // Fallback: some games still keep roster only in bids (active/won), not playerTeams.
+    if (riders.length === 0) {
+      const bidsSnapshot = await db.collection('bids')
+        .where('gameId', '==', gameId)
+        .where('userId', '==', userId)
+        .get();
+
+      const seenRiders = new Set<string>();
+      riders = bidsSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((bid) => bid.status === 'active' || bid.status === 'won')
+        .filter((bid) => {
+          const riderId = String(bid.riderNameId || '');
+          if (!riderId || seenRiders.has(riderId)) return false;
+          seenRiders.add(riderId);
+          return true;
+        })
+        .map((bid) => {
+          const riderNameId = String(bid.riderNameId || '');
+          const riderInfo = ridersById.get(riderNameId);
+          return {
+            id: bid.id,
+            nameId: riderNameId,
+            name: bid.riderName || riderNameId,
+            team: riderInfo?.teamName || bid.riderTeam || '',
+            country: riderInfo?.country || bid.riderCountry || '',
+            rank: riderInfo?.rank || 0,
+            points: 0,
+            jerseyImage: riderInfo?.jerseyImageTeam || null,
+            pricePaid: bid.amount || 0,
+            baseValue: riderInfo?.points || 0,
+            acquisitionType: 'auction',
+            draftRound: null,
+            draftPick: null,
+            racePoints: null,
+            acquiredAt: toIsoDate(bid.bidAt),
+          };
+        });
+    }
 
     return NextResponse.json({
       success: true,

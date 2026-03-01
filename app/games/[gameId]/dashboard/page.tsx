@@ -11,8 +11,6 @@ import { AllTeamsTab } from '@/components/game-dashboard/AllTeamsTab';
 import { SimpleAllTeamsTab } from '@/components/game-dashboard/SimpleAllTeamsTab';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
 import { Game, GameParticipant } from '@/lib/types/games';
-import { fetchTeamsOverviewWithCache } from '@/lib/utils/teamsOverviewCache';
-import { fetchTeamWithCache } from '@/lib/utils/teamCache';
 
 interface TeamRider {
   id: string;
@@ -142,6 +140,22 @@ export default function GameDashboardPage() {
     return standing?.ranking ?? participant.ranking;
   }, [participant, standings]);
 
+  const fetchTeamDirect = async (currentGameId: string, currentUserId: string): Promise<{ riders?: unknown[] }> => {
+    const directResponse = await fetch(`/api/games/${currentGameId}/team?userId=${currentUserId}`);
+    if (!directResponse.ok) {
+      throw new Error('Kon team niet laden');
+    }
+    return (await directResponse.json()) as { riders?: unknown[] };
+  };
+
+  const fetchOverviewDirect = async (currentGameId: string): Promise<{ teams?: unknown[] }> => {
+    const directResponse = await fetch(`/api/games/${currentGameId}/teams-overview`);
+    if (!directResponse.ok) {
+      throw new Error('Kon teams-overview niet laden');
+    }
+    return (await directResponse.json()) as { teams?: unknown[] };
+  };
+
   // Load game data
   useEffect(() => {
     if (authLoading) return;
@@ -163,6 +177,10 @@ export default function GameDashboardPage() {
           throw new Error('Kon game niet laden');
         }
         const gameData = await gameResponse.json();
+        if (gameData.game?.gameType === 'slipstream') {
+          router.replace(`/games/${gameId}/slipstream`);
+          return;
+        }
         setGame(gameData.game);
         if (typeof gameData.game?.year === 'number') {
           setGameYear(gameData.game.year);
@@ -200,13 +218,12 @@ export default function GameDashboardPage() {
         }
         setParticipant(participantData.participants[0]);
 
-        // Load team with race points (IndexedDB cached).
-        const { data: teamData } = await fetchTeamWithCache(gameId, user!.uid, {
-          maxAgeMs: 2 * 60 * 1000,
-        });
+        // Load team directly from API (server route is already optimized with cache).
+        const teamData = await fetchTeamDirect(gameId, user!.uid);
 
+        const riders = Array.isArray(teamData.riders) ? (teamData.riders as TeamRider[]) : [];
         // Sort riders by points (highest first)
-        const sortedRiders = (teamData.riders || []).sort((a: TeamRider, b: TeamRider) => b.points - a.points);
+        const sortedRiders = riders.sort((a: TeamRider, b: TeamRider) => b.points - a.points);
         setMyRiders(sortedRiders);
 
         setMyTeamError(null);
@@ -231,12 +248,20 @@ export default function GameDashboardPage() {
         setStandingsLoading(true);
         setAllTeamsLoading(true);
 
-        const { data } = await fetchTeamsOverviewWithCache(gameId, {
-          maxAgeMs: 2 * 60 * 1000,
-        });
+        let data = await fetchOverviewDirect(gameId);
         if (cancelled) return;
 
-        const teams: AllTeamsTeam[] = (data.teams || []) as AllTeamsTeam[];
+        let teams: AllTeamsTeam[] = (data.teams || []) as AllTeamsTeam[];
+        const allZeroPoints =
+          teams.length > 0 &&
+          teams.every((team) => Number(team.totalPoints || 0) === 0);
+
+        // Guard against stale/incorrect cached standings payloads.
+        if (allZeroPoints) {
+          data = await fetchOverviewDirect(gameId);
+          teams = (data.teams || []) as AllTeamsTeam[];
+        }
+
         const mappedStandings: Standing[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
@@ -256,9 +281,30 @@ export default function GameDashboardPage() {
       } catch (err) {
         console.error('Error loading teams-overview:', err);
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : 'Er is een fout opgetreden';
-        setAllTeamsError(message);
-        setStandingsError(message);
+        try {
+          const directData = await fetchOverviewDirect(gameId);
+          const teams = (directData.teams || []) as AllTeamsTeam[];
+          const mappedStandings: Standing[] = teams.map((team) => ({
+            ranking: team.ranking,
+            playername: team.playername,
+            userId: team.userId,
+            totalPoints: team.totalPoints ?? 0,
+            participantId: team.participantId,
+            eligibleForPrizes: team.eligibleForPrizes,
+            totalPercentageDiff: team.totalPercentageDiff,
+            totalSpent: team.totalSpent,
+            riders: team.riders,
+          }));
+          setAllTeams(teams);
+          setStandings(mappedStandings);
+          setAllTeamsError(null);
+          setStandingsError(null);
+          return;
+        } catch {
+          const message = err instanceof Error ? err.message : 'Er is een fout opgetreden';
+          setAllTeamsError(message);
+          setStandingsError(message);
+        }
       } finally {
         if (cancelled) return;
         setStandingsLoading(false);

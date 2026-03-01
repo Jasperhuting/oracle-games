@@ -32,6 +32,10 @@ export const GameCardActions = ({
       router.push('/f1');
       return;
     }
+    if (targetGame.gameType === 'slipstream') {
+      router.push(`/games/${targetGame.id}/slipstream`);
+      return;
+    }
     const path = isSelectionBasedGame(targetGame.gameType)
       ? `/games/${targetGame.id}/auction`
       : `/games/${targetGame.id}/team`;

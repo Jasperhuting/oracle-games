@@ -8,9 +8,22 @@ type TeamsOverviewPayload = {
 };
 
 const inFlightByGame = new Map<string, Promise<TeamsOverviewPayload>>();
+const CACHE_VERSION_TIMEOUT_MS = 1500;
 
 function getCacheKey(gameId: string): string {
   return `teams_overview_${gameId}`;
+}
+
+async function getSafeCacheVersion(): Promise<number> {
+  if (typeof window === 'undefined') return 1;
+  try {
+    return await Promise.race<number>([
+      getCacheVersionAsync(),
+      new Promise<number>((resolve) => setTimeout(() => resolve(1), CACHE_VERSION_TIMEOUT_MS)),
+    ]);
+  } catch {
+    return 1;
+  }
 }
 
 export async function getCachedTeamsOverview(
@@ -18,7 +31,7 @@ export async function getCachedTeamsOverview(
   maxAgeMs: number
 ): Promise<TeamsOverviewPayload | null> {
   if (typeof window === 'undefined') return null;
-  const version = await getCacheVersionAsync();
+  const version = await getSafeCacheVersion();
   return getFromCache<TeamsOverviewPayload>(getCacheKey(gameId), version, maxAgeMs);
 }
 
@@ -27,7 +40,7 @@ export async function saveCachedTeamsOverview(
   data: TeamsOverviewPayload
 ): Promise<void> {
   if (typeof window === 'undefined') return;
-  const version = await getCacheVersionAsync();
+  const version = await getSafeCacheVersion();
   await saveToCache(getCacheKey(gameId), data, version);
 }
 

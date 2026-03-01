@@ -4,6 +4,20 @@ import type { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firesto
 import { GameData, Team } from '@/lib/types';
 import { getRiderReferenceDataCached } from '@/lib/firebase/rider-reference-cache';
 
+function toIsoDate(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'object' && value !== null && '_seconds' in value) {
+    const seconds = Number((value as { _seconds?: number })._seconds || 0);
+    const nanos = Number((value as { _nanoseconds?: number })._nanoseconds || 0);
+    return new Date(seconds * 1000 + nanos / 1000000).toISOString();
+  }
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  if (typeof value === 'string') return value;
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
@@ -72,7 +86,7 @@ export async function GET(
     const { ridersById } = await getRiderReferenceDataCached(db);
 
     // Create a map of userId -> riders, with deduplication
-    const teamsMap = new Map<string, any[]>();
+    const teamsMap = new Map<string, DocumentData[]>();
     const userRiderTracker = new Map<string, Set<string>>(); // Track unique riderNameId per user
 
     playerTeamsSnapshot.forEach(doc => {
@@ -158,6 +172,67 @@ export async function GET(
         acquisitionType: team.acquisitionType || 'auction'
       });
     });
+
+    // Fallback: if no playerTeams for (some) participants, derive temporary roster from bids.
+    const activeParticipants = participantsSnapshot.docs.map((doc) => ({
+      participantId: doc.id,
+      ...(doc.data() as DocumentData),
+    }));
+    const missingUserIds = new Set(
+      activeParticipants
+        .map((p) => String(p.userId || ''))
+        .filter((uid) => uid && (teamsMap.get(uid)?.length || 0) === 0)
+    );
+
+    if (missingUserIds.size > 0) {
+      const allGameBidsSnapshot = await db
+        .collection('bids')
+        .where('gameId', '==', gameId)
+        .get();
+
+      const fallbackTracker = new Map<string, Set<string>>();
+
+      allGameBidsSnapshot.docs.forEach((doc) => {
+        const bid = doc.data() as DocumentData;
+        const userId = String(bid.userId || '');
+        const riderNameId = String(bid.riderNameId || '');
+        if (!userId || !riderNameId) return;
+        if (!missingUserIds.has(userId)) return;
+        if (bid.status !== 'active' && bid.status !== 'won') return;
+
+        if (!fallbackTracker.has(userId)) {
+          fallbackTracker.set(userId, new Set<string>());
+        }
+        if (fallbackTracker.get(userId)!.has(riderNameId)) return;
+        fallbackTracker.get(userId)!.add(riderNameId);
+
+        if (!teamsMap.has(userId)) {
+          teamsMap.set(userId, []);
+        }
+
+        const riderInfo = ridersById.get(riderNameId);
+        const baseValue = riderInfo?.points || 0;
+        const pricePaid = Number(bid.amount || 0);
+        const percentageDiff = baseValue > 0
+          ? Math.round(((pricePaid - baseValue) / baseValue) * 100)
+          : 0;
+
+        teamsMap.get(userId)?.push({
+          riderId: doc.id,
+          riderNameId,
+          riderName: bid.riderName || riderNameId,
+          riderTeam: riderInfo?.teamName || bid.riderTeam || '',
+          riderCountry: riderInfo?.country || bid.riderCountry || '',
+          baseValue,
+          pricePaid,
+          percentageDiff,
+          pointsScored: 0,
+          pointsBreakdown: [],
+          bidAt: toIsoDate(bid.bidAt),
+          acquisitionType: 'auction',
+        });
+      });
+    }
 
     // Combine participants with their teams and calculate points
     const teams = participantsSnapshot.docs.map((doc) => {

@@ -271,6 +271,9 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
     if (game.sportType === 'f1') {
       return `/f1`;
     }
+    if (game.gameType === 'slipstream') {
+      return `/games/${game.gameId}/slipstream`;
+    }
     return `/games/${game.gameId}/dashboard`;
   };
 

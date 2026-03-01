@@ -8,9 +8,29 @@ type TeamPayload = {
 };
 
 const inFlightByKey = new Map<string, Promise<TeamPayload>>();
+const CACHE_VERSION_TIMEOUT_MS = 1500;
 
 function getCacheKey(gameId: string, userId: string): string {
   return `team_${gameId}_${userId}`;
+}
+
+async function getSafeCacheVersion(): Promise<number> {
+  if (typeof window === 'undefined') return 1;
+  try {
+    return await Promise.race<number>([
+      getCacheVersionAsync(),
+      new Promise<number>((resolve) => setTimeout(() => resolve(1), CACHE_VERSION_TIMEOUT_MS)),
+    ]);
+  } catch {
+    return 1;
+  }
+}
+
+function isValidTeamPayload(value: unknown): value is TeamPayload {
+  if (!value || typeof value !== 'object') return false;
+  const payload = value as TeamPayload;
+  if (payload.riders !== undefined && !Array.isArray(payload.riders)) return false;
+  return true;
 }
 
 export async function getCachedTeam(
@@ -19,8 +39,15 @@ export async function getCachedTeam(
   maxAgeMs: number
 ): Promise<TeamPayload | null> {
   if (typeof window === 'undefined') return null;
-  const version = await getCacheVersionAsync();
-  return getFromCache<TeamPayload>(getCacheKey(gameId, userId), version, maxAgeMs);
+  const version = await getSafeCacheVersion();
+  const cached = await getFromCache<TeamPayload>(getCacheKey(gameId, userId), version, maxAgeMs);
+  if (!cached) return null;
+  if (!isValidTeamPayload(cached)) {
+    // Corrupt or stale shape in cache, discard and refetch.
+    await invalidateTeamCache(gameId, userId);
+    return null;
+  }
+  return cached;
 }
 
 export async function saveCachedTeam(
@@ -29,7 +56,7 @@ export async function saveCachedTeam(
   data: TeamPayload
 ): Promise<void> {
   if (typeof window === 'undefined') return;
-  const version = await getCacheVersionAsync();
+  const version = await getSafeCacheVersion();
   await saveToCache(getCacheKey(gameId, userId), data, version);
 }
 
@@ -69,6 +96,9 @@ export async function fetchTeamWithCache(
       throw new Error('Kon team niet laden');
     }
     const data = (await response.json()) as TeamPayload;
+    if (!isValidTeamPayload(data)) {
+      throw new Error('Ongeldige teamdata ontvangen');
+    }
     await saveCachedTeam(gameId, userId, data);
     return data;
   })();
