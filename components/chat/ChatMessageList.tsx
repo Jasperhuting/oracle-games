@@ -27,6 +27,7 @@ export default function ChatMessageList({
   const { messages, loading, hasMore, loadMore } = useChatMessages(roomId);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [userAvatars, setUserAvatars] = useState<Record<string, string>>({});
+  const [rulesCollapsed, setRulesCollapsed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -84,6 +85,20 @@ export default function ChatMessageList({
     };
   }, [messages]);
 
+  useEffect(() => {
+    if (!roomId) return;
+    const saved = localStorage.getItem(`chat_rules_collapsed_${roomId}`);
+    setRulesCollapsed(saved === '1');
+  }, [roomId]);
+
+  const toggleRules = () => {
+    const next = !rulesCollapsed;
+    setRulesCollapsed(next);
+    if (roomId) {
+      localStorage.setItem(`chat_rules_collapsed_${roomId}`, next ? '1' : '0');
+    }
+  };
+
   const handleLoadMore = async () => {
     const container = containerRef.current;
     if (!container) return;
@@ -114,6 +129,31 @@ export default function ChatMessageList({
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto"
     >
+      <div className="sticky top-0 z-10 border-b border-amber-200 bg-amber-50/95 px-4 py-2 backdrop-blur">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold text-amber-800">
+            Chatregels
+          </p>
+          <button
+            type="button"
+            onClick={toggleRules}
+            className="text-xs font-medium text-amber-700 hover:underline"
+          >
+            {rulesCollapsed ? 'Uitklappen' : 'Inklappen'}
+          </button>
+        </div>
+        {!rulesCollapsed && (
+          <div className="mt-1 text-xs text-amber-900">
+
+            <p>Houd het gezellig en respectvol naar elkaar.</p>
+            <p>Blijf on-topic en praat mee over de wedstrijd of het event.</p>
+            <p>Geen spam, beledigingen of storend gedrag, berichten kunnen worden verwijderd als dat nodig is.</p>
+            <p>Samen maken we er een leuke chat van 🙌</p>
+
+          </div>
+        )}
+      </div>
+
       {/* Load more button */}
       {hasMore && (
         <div className="flex justify-center py-3">

@@ -20,6 +20,9 @@ export default function EmojiReactions({
 }: EmojiReactionsProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [reactorNames, setReactorNames] = useState<Record<string, string>>({});
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
@@ -46,6 +49,36 @@ export default function EmojiReactions({
 
     setPickerPos({ top, left });
   }, [showPicker]);
+
+  // Resolve user IDs in reactions to display names for hover tooltips.
+  useEffect(() => {
+    const userIds = Array.from(
+      new Set(
+        Object.values(reactions)
+          .flat()
+          .filter(Boolean)
+      )
+    );
+    if (userIds.length === 0) return;
+
+    let cancelled = false;
+    const loadNames = async () => {
+      try {
+        const res = await fetch(`/api/users/names?ids=${encodeURIComponent(userIds.join(','))}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setReactorNames((prev) => ({ ...prev, ...(data.data || {}) }));
+      } catch (error) {
+        console.error('Failed to load reaction user names:', error);
+      }
+    };
+
+    void loadNames();
+    return () => {
+      cancelled = true;
+    };
+  }, [reactions]);
 
   // Close picker when clicking outside
   useEffect(() => {
@@ -97,20 +130,49 @@ export default function EmojiReactions({
     <div className="flex items-center flex-wrap gap-1 mt-1">
       {reactionEntries.map(([emoji, users]) => {
         const hasReacted = users.includes(currentUserId);
+        const names = users.map((userId) => reactorNames[userId] || userId);
         return (
-          <button
-            key={emoji}
-            onClick={() => toggleReaction(emoji)}
-            disabled={loading}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
-              hasReacted
-                ? 'bg-blue-50 border-blue-300 text-blue-700'
-                : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <span>{emoji}</span>
-            <span>{users.length}</span>
-          </button>
+          <div key={emoji} className="relative">
+            <button
+              onClick={() => toggleReaction(emoji)}
+              disabled={loading}
+              onMouseEnter={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                const tooltipWidth = 240;
+                const tooltipHeight = 28;
+                const margin = 8;
+                const centeredLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+                const clampedLeft = Math.max(
+                  margin,
+                  Math.min(centeredLeft, window.innerWidth - tooltipWidth - margin)
+                );
+                const top = rect.top - tooltipHeight - 6 >= margin
+                  ? rect.top - tooltipHeight - 6
+                  : Math.min(window.innerHeight - tooltipHeight - margin, rect.bottom + 6);
+                setTooltipPos({ top, left: clampedLeft });
+                setActiveTooltip(emoji);
+              }}
+              onMouseLeave={() => setActiveTooltip((current) => (current === emoji ? null : current))}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
+                hasReacted
+                  ? 'bg-blue-50 border-blue-300 text-blue-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>{emoji}</span>
+              <span>{users.length}</span>
+            </button>
+            {activeTooltip === emoji &&
+              createPortal(
+                <div
+                  className="pointer-events-none fixed z-[10000] w-[240px] rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white shadow-lg"
+                  style={{ top: tooltipPos.top, left: tooltipPos.left }}
+                >
+                  <div className="truncate">{names.join(', ')}</div>
+                </div>,
+                document.body
+              )}
+          </div>
         );
       })}
 

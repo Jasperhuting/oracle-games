@@ -2,9 +2,11 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { IconArrowBackUp, IconTrash, IconVolumeOff, IconPencil, IconCheck, IconX } from '@tabler/icons-react';
+import { IconCameraPlus } from '@tabler/icons-react';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/lib/types/chat';
 import { AvatarBadge } from '@/components/forum/AvatarBadge';
+import { AvatarUpload } from '@/components/account/AvatarUpload';
 import EmojiReactions from './EmojiReactions';
 import MuteUserDialog from './MuteUserDialog';
 
@@ -55,10 +57,12 @@ export default function ChatMessageItem({
   resolvedUserAvatar,
 }: ChatMessageItemProps) {
   const displayUserName = resolvedUserName || message.userName;
-  const displayUserAvatar = resolvedUserAvatar || message.userAvatar || null;
+  const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
+  const displayUserAvatar = customAvatarUrl || resolvedUserAvatar || message.userAvatar || null;
   const timeStr = useMemo(() => formatTimestamp(message.createdAt), [message.createdAt]);
   const isOwn = message.userId === currentUserId;
   const [showMuteDialog, setShowMuteDialog] = useState(false);
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const [saving, setSaving] = useState(false);
@@ -133,11 +137,23 @@ export default function ChatMessageItem({
     >
       {/* Avatar */}
       <div className="shrink-0">
-        <AvatarBadge
-          name={displayUserName}
-          avatarUrl={displayUserAvatar}
-          size={32}
-        />
+        {isOwn && !displayUserAvatar ? (
+          <button
+            type="button"
+            onClick={() => setShowAvatarUpload(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100"
+            title="Avatar uploaden"
+            aria-label="Avatar uploaden"
+          >
+            <IconCameraPlus className="h-4 w-4" />
+          </button>
+        ) : (
+          <AvatarBadge
+            name={displayUserName}
+            avatarUrl={displayUserAvatar}
+            size={32}
+          />
+        )}
       </div>
 
       {/* Message content */}
@@ -311,6 +327,54 @@ export default function ChatMessageItem({
           mutedBy={currentUserId}
           onClose={() => setShowMuteDialog(false)}
         />
+      )}
+
+      {showAvatarUpload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Avatar uploaden</h3>
+              <button
+                type="button"
+                onClick={() => setShowAvatarUpload(false)}
+                className="rounded p-1 text-gray-500 hover:bg-gray-100"
+                aria-label="Sluiten"
+              >
+                <IconX className="h-4 w-4" />
+              </button>
+            </div>
+
+            <AvatarUpload
+              currentAvatarUrl={displayUserAvatar || undefined}
+              onUploadSuccess={async (avatarUrl) => {
+                try {
+                  const response = await fetch('/api/updateUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: currentUserId,
+                      updates: { avatarUrl },
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Could not save avatar');
+                  }
+
+                  setCustomAvatarUrl(avatarUrl);
+                  setShowAvatarUpload(false);
+                } catch (error) {
+                  console.error('Failed to save avatar from chat popup:', error);
+                }
+              }}
+              size={96}
+            />
+
+            <p className="mt-3 text-xs text-gray-500">
+              Je blijft in de chat. Na upload verschijnt je avatar direct.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
