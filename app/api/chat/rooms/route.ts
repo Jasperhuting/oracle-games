@@ -4,12 +4,32 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
+async function getVisibleMessageCount(roomId: string): Promise<number> {
+  const messagesRef = db.collection(`chat_rooms/${roomId}/messages`);
+  const [totalSnapshot, deletedSnapshot] = await Promise.all([
+    messagesRef.count().get(),
+    messagesRef.where('deleted', '==', true).count().get(),
+  ]);
+
+  const total = totalSnapshot.data().count || 0;
+  const deleted = deletedSnapshot.data().count || 0;
+  return Math.max(0, total - deleted);
+}
+
 // GET: List all chat rooms
 export async function GET() {
   try {
     const snapshot = await db.collection('chat_rooms').orderBy('createdAt', 'desc').get();
-    const rooms = snapshot.docs.map((doc) => {
+    const rooms = await Promise.all(snapshot.docs.map(async (doc) => {
       const data = doc.data();
+      const computedMessageCount = await getVisibleMessageCount(doc.id);
+
+      if ((data.messageCount || 0) !== computedMessageCount) {
+        await db.collection('chat_rooms').doc(doc.id).update({
+          messageCount: computedMessageCount,
+        });
+      }
+
       return {
         id: doc.id,
         title: data.title,
@@ -19,9 +39,9 @@ export async function GET() {
         createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
         createdBy: data.createdBy,
         status: data.status,
-        messageCount: data.messageCount || 0,
+        messageCount: computedMessageCount,
       };
-    });
+    }));
     return NextResponse.json({ rooms });
   } catch (error) {
     console.error('Error fetching chat rooms:', error);

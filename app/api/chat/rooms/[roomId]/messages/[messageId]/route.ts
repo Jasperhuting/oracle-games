@@ -13,14 +13,31 @@ export async function PATCH(
     const { roomId, messageId } = await params;
     const body = await request.json();
     const msgRef = db.doc(`chat_rooms/${roomId}/messages/${messageId}`);
+    const roomRef = db.collection('chat_rooms').doc(roomId);
 
     // Soft delete (admin only — enforced by caller)
     if (body.deleted === true) {
-      await msgRef.update({ deleted: true });
-      // Decrement message count
-      await db.collection('chat_rooms').doc(roomId).update({
-        messageCount: FieldValue.increment(-1),
+      let notFound = false;
+      await db.runTransaction(async (tx) => {
+        const msgDoc = await tx.get(msgRef);
+        if (!msgDoc.exists) {
+          notFound = true;
+          return;
+        }
+
+        const wasDeleted = msgDoc.data()?.deleted === true;
+        if (wasDeleted) return;
+
+        tx.update(msgRef, { deleted: true });
+        tx.update(roomRef, {
+          messageCount: FieldValue.increment(-1),
+        });
       });
+
+      if (notFound) {
+        return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+      }
+
       return NextResponse.json({ success: true });
     }
 

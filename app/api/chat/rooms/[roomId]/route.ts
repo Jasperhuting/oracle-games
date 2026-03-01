@@ -4,6 +4,18 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
+async function getVisibleMessageCount(roomId: string): Promise<number> {
+  const messagesRef = db.collection(`chat_rooms/${roomId}/messages`);
+  const [totalSnapshot, deletedSnapshot] = await Promise.all([
+    messagesRef.count().get(),
+    messagesRef.where('deleted', '==', true).count().get(),
+  ]);
+
+  const total = totalSnapshot.data().count || 0;
+  const deleted = deletedSnapshot.data().count || 0;
+  return Math.max(0, total - deleted);
+}
+
 // GET: Single chat room
 export async function GET(
   request: NextRequest,
@@ -16,6 +28,14 @@ export async function GET(
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
     const data = doc.data()!;
+    const computedMessageCount = await getVisibleMessageCount(roomId);
+
+    if ((data.messageCount || 0) !== computedMessageCount) {
+      await db.collection('chat_rooms').doc(roomId).update({
+        messageCount: computedMessageCount,
+      });
+    }
+
     return NextResponse.json({
       id: doc.id,
       title: data.title,
@@ -25,7 +45,7 @@ export async function GET(
       createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
       createdBy: data.createdBy,
       status: data.status,
-      messageCount: data.messageCount || 0,
+      messageCount: computedMessageCount,
     });
   } catch (error) {
     console.error('Error fetching chat room:', error);
