@@ -141,6 +141,11 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
             display: isAdmin || impersonationStatus.isImpersonating
         },
         {
+            name: "Chat",
+            href: "/chat",
+            display: true
+        },
+        {
             name: t('header.menu.myGames'),
             href: "/myGames",
             display: false

@@ -137,6 +137,18 @@ export default function AdminPageClient() {
                                     id: 'feedback',
                                     label: t('admin.tabs.feedback'),
                                     content: <FeedbackTab />
+                                },
+                                {
+                                    id: 'chat',
+                                    label: 'Chat Beheer',
+                                    content: (
+                                        <div className="p-4">
+                                            <p className="text-gray-600 mb-4">Beheer wedstrijd-chatrooms: aanmaken, sluiten, heropenen en modereren.</p>
+                                            <Link href="/admin/chat" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                                                Naar Chat Beheer <ArrowRight size={16} />
+                                            </Link>
+                                        </div>
+                                    )
                                 }
                             ]
                         },
