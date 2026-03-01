@@ -11,11 +11,13 @@ type OracleUserStats = {
   gamesPlayed: number;
   averageGameScore: number;
   oracleRating: number;
+  oraclePoints: number;
   oracleRank: number;
 };
 
 const SMOOTHING_GAMES = 5;
 const BASELINE_SCORE = 0.5;
+const ORACLE_POINTS_SCALE = 100000;
 
 function computeGameScore(rank: number, participantCount: number): number {
   if (participantCount <= 1) {
@@ -57,6 +59,8 @@ export async function GET(request: NextRequest) {
     const requestedUserId = searchParams.get('userId');
     const includeTop = searchParams.get('includeTop') === 'true';
     const topLimit = Math.min(Number(searchParams.get('topLimit') || 10), 100);
+    const yearParam = searchParams.get('year');
+    const yearFilter = yearParam ? Number(yearParam) : null;
 
     const db = getServerFirebase();
     const f1Db = getServerFirebaseF1();
@@ -70,7 +74,9 @@ export async function GET(request: NextRequest) {
         const game = doc.data();
         const gameName = String(game?.name || '').toLowerCase();
         const status = String(game?.status || '').toLowerCase();
-        return !game?.isTest && !gameName.includes('test') && status !== 'cancelled';
+        const gameYear = Number(game?.year);
+        const matchesYear = yearFilter ? Number.isFinite(gameYear) && gameYear === yearFilter : true;
+        return !game?.isTest && !gameName.includes('test') && status !== 'cancelled' && matchesYear;
       })
       .forEach((doc) => {
         relevantGames.set(doc.id, doc.data());
@@ -179,6 +185,7 @@ export async function GET(request: NextRequest) {
       const season = Number(participant.season);
       const userId = String(participant.userId || '');
       if (!Number.isFinite(season) || !userId) continue;
+      if (yearFilter && season !== yearFilter) continue;
 
       if (!f1ParticipantsBySeason.has(season)) {
         f1ParticipantsBySeason.set(season, new Map());
@@ -224,7 +231,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const rankedUsers: OracleUserStats[] = Array.from(userScores.entries())
+    const sortedUsers: OracleUserStats[] = Array.from(userScores.entries())
       .map(([userId, data]) => {
         const gamesPlayed = data.scores.length;
         const averageGameScore =
@@ -242,10 +249,14 @@ export async function GET(request: NextRequest) {
           gamesPlayed,
           averageGameScore,
           oracleRating,
+          oraclePoints: Math.round(oracleRating * ORACLE_POINTS_SCALE),
           oracleRank: 0,
         };
       })
       .sort((a, b) => {
+        if (b.oraclePoints !== a.oraclePoints) {
+          return b.oraclePoints - a.oraclePoints;
+        }
         if (b.oracleRating !== a.oracleRating) {
           return b.oracleRating - a.oracleRating;
         }
@@ -256,11 +267,26 @@ export async function GET(request: NextRequest) {
           return b.gamesPlayed - a.gamesPlayed;
         }
         return a.userId.localeCompare(b.userId);
-      })
-      .map((user, index) => ({
+      });
+
+    const rankedUsers: OracleUserStats[] = [];
+    let previousPoints: number | null = null;
+    let currentRank = 1;
+
+    for (let i = 0; i < sortedUsers.length; i++) {
+      const user = sortedUsers[i];
+      if (i === 0) {
+        currentRank = 1;
+      } else if (previousPoints !== null && user.oraclePoints !== previousPoints) {
+        currentRank = i + 1;
+      }
+
+      rankedUsers.push({
         ...user,
-        oracleRank: index + 1,
-      }));
+        oracleRank: currentRank,
+      });
+      previousPoints = user.oraclePoints;
+    }
 
     const requestedUser = requestedUserId
       ? rankedUsers.find((user) => user.userId === requestedUserId) || null

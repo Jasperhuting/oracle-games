@@ -42,9 +42,12 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
   const [oracleStats, setOracleStats] = useState<OracleStats | null>(null);
   const [oracleLoading, setOracleLoading] = useState(true);
+  const [seasonStats, setSeasonStats] = useState<OracleStats | null>(null);
+  const [seasonLoading, setSeasonLoading] = useState(true);
   const [oracleStandingsOpen, setOracleStandingsOpen] = useState(false);
   const [oracleStandings, setOracleStandings] = useState<OracleStats[]>([]);
   const [oracleStandingsLoading, setOracleStandingsLoading] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   // Update local state when prop changes
   useEffect(() => {
@@ -147,11 +150,30 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
       }
     }
 
+    async function fetchSeasonStats() {
+      try {
+        const response = await fetch(`/api/oracle-rank?userId=${userId}&year=${currentYear}`);
+        if (!response.ok) return;
+
+        const data: OracleRankResponse = await response.json();
+        if (data?.success && data?.user) {
+          setSeasonStats(data.user);
+        } else {
+          setSeasonStats(null);
+        }
+      } catch (error) {
+        console.error('Error fetching season rank:', error);
+      } finally {
+        setSeasonLoading(false);
+      }
+    }
+
     if (userId) {
       fetchTopResults();
       fetchOracleStats();
+      fetchSeasonStats();
     }
-  }, [userId]);
+  }, [userId, currentYear]);
 
   const formatRanking = (ranking: number): string => {
     if (ranking === 1) return '1e';
@@ -165,8 +187,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   };
 
   const formatOracleRating = (rating: number): string => {
-    return String(Math.round(rating * 1000));
+    return new Intl.NumberFormat('nl-NL').format(Math.round(rating * 100000));
   };
+
+  const pointsTooltip =
+    'Punten-berekening: 1) Per spel score = (deelnemers - positie) / (deelnemers - 1). 2) Gemiddelde van je spel-scores. 3) Rating = (spellen/(spellen+5))*gemiddelde + (5/(spellen+5))*0,5. 4) Punten = rating x 100.000.';
 
   const openOracleStandings = async () => {
     setOracleStandingsOpen(true);
@@ -251,6 +276,9 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 : oracleStats
                   ? `Punten ${formatOracleRating(oracleStats.oracleRating)} (${oracleStats.gamesPlayed} spellen)`
                   : 'Nog geen resultaten'}
+              <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>
+                ⓘ
+              </span>
             </div>
             <button
               type="button"
@@ -263,9 +291,20 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
           {/* Season Rank */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600 mb-1">-</div>
+            <div className="text-2xl font-bold text-green-600 mb-1">
+              {seasonLoading ? '...' : seasonStats?.oracleRank ? `#${seasonStats.oracleRank}` : '-'}
+            </div>
             <div className="text-sm font-medium text-gray-700 mb-1">Season Rank</div>
-            <div className="text-xs text-gray-500">Komt binnenkort</div>
+            <div className="text-xs text-gray-500">
+              {seasonLoading
+                ? 'Laden...'
+                : seasonStats
+                  ? `${currentYear}: Punten ${formatOracleRating(seasonStats.oracleRating)} (${seasonStats.gamesPlayed} spellen)`
+                  : `Nog geen resultaten in ${currentYear}`}
+              <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>
+                ⓘ
+              </span>
+            </div>
           </div>
 
           {/* Top Results Count */}
@@ -392,7 +431,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                     <tr className="text-left text-gray-500 border-b border-gray-200">
                       <th className="py-2 pr-2">#</th>
                       <th className="py-2 pr-2">Speler</th>
-                      <th className="py-2 pr-2 text-right">Punten</th>
+                      <th className="py-2 pr-2 text-right">
+                        <span title={pointsTooltip} className="cursor-help">
+                          Punten ⓘ
+                        </span>
+                      </th>
                       <th className="py-2 pr-2 text-right">Spellen</th>
                     </tr>
                   </thead>
@@ -409,7 +452,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                             <span className="ml-2 text-xs text-blue-700 font-medium">(jij)</span>
                           )}
                         </td>
-                        <td className="py-2 pr-2 text-right text-gray-800">{formatOracleRating(entry.oracleRating)}</td>
+                        <td className="py-2 pr-2 text-right text-gray-800">
+                          <span title={pointsTooltip} className="cursor-help">
+                            {formatOracleRating(entry.oracleRating)}
+                          </span>
+                        </td>
                         <td className="py-2 pr-2 text-right text-gray-600">{entry.gamesPlayed}</td>
                       </tr>
                     ))}
