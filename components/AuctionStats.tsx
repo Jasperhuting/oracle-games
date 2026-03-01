@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Collapsible } from "./Collapsible";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { fetchTeamsOverviewWithCache } from "@/lib/utils/teamsOverviewCache";
 
 interface Standing {
   ranking: number;
@@ -49,11 +50,9 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
           setStandingsLoading(true);
           setStandingsError(null);
 
-          const response = await fetch(`/api/games/${gameId}/teams-overview`);
-          if (!response.ok) {
-            throw new Error('Kon tussenstand niet laden');
-          }
-          const data = await response.json();
+          const { data } = await fetchTeamsOverviewWithCache(gameId, {
+            maxAgeMs: 2 * 60 * 1000,
+          });
           const teams = data.teams || [];
 
           const mappedStandings: Standing[] = teams.map((team: any) => ({

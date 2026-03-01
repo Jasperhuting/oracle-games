@@ -22,6 +22,7 @@ import { FullGridMyTeam } from "@/components/full-grid/FullGridMyTeam";
 import { AuctionStats } from "./AuctionStats";
 import Link from "next/link";
 import { Tooltip } from "react-tooltip";
+import { fetchTeamsOverviewWithCache } from "@/lib/utils/teamsOverviewCache";
 
 interface Standing {
   ranking: number;
@@ -222,11 +223,9 @@ export const Bidding = ({
         setStandingsLoading(true);
         setStandingsError(null);
 
-        const response = await fetch(`/api/games/${game.id}/teams-overview`);
-        if (!response.ok) {
-          throw new Error('Kon tussenstand niet laden');
-        }
-        const data = await response.json();
+        const { data } = await fetchTeamsOverviewWithCache(game.id, {
+          maxAgeMs: 2 * 60 * 1000,
+        });
         const teams = data.teams || [];
 
         const mappedStandings: Standing[] = teams.map((team: any) => ({

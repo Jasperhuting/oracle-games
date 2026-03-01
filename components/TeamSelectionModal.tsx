@@ -8,6 +8,7 @@ import { MyTeamSelection } from "./MyTeamSelection";
 import { Rider } from "@/lib/types/rider";
 import { useRankings } from "@/contexts/RankingsContext";
 import { useTranslation } from "react-i18next";
+import { fetchTeamWithCache, invalidateTeamCache } from "@/lib/utils/teamCache";
 
 interface TeamSelectionModalProps {
   gameId: string;
@@ -92,13 +93,12 @@ export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelection
 
         setAvailableRiders(riders);
 
-        // Load current team selection
-        const teamResponse = await fetch(`/api/games/${gameId}/team?userId=${user.uid}`);
-        if (teamResponse.ok) {
-          const teamData = await teamResponse.json();
-          if (teamData.riders) {
-            setSelectedRiders(teamData.riders);
-          }
+        // Load current team selection (IndexedDB cached)
+        const { data: teamData } = await fetchTeamWithCache(gameId, user.uid, {
+          maxAgeMs: 2 * 60 * 1000,
+        });
+        if (teamData.riders) {
+          setSelectedRiders(teamData.riders as Rider[]);
         }
       } catch (error) {
         console.error('Error loading game data:', error);
@@ -145,6 +145,8 @@ export const TeamSelectionModal = ({ gameId, onClose, onSuccess }: TeamSelection
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save team');
       }
+
+      await invalidateTeamCache(gameId, user.uid);
 
       onSuccess();
     } catch (error) {

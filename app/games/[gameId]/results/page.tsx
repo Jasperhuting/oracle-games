@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Game, GameParticipant } from '@/lib/types/games';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { getRaceNamesClient } from '@/lib/race-names';
+import { fetchTeamWithCache } from '@/lib/utils/teamCache';
 
 interface TeamRider {
   id: string;
@@ -88,12 +89,10 @@ export default function TeamResultsPage() {
         }
         setParticipant(participantData.participants[0]);
 
-        // Load team with race points
-        const teamResponse = await fetch(`/api/games/${gameId}/team?userId=${user!.uid}`);
-        if (!teamResponse.ok) {
-          throw new Error('Kon team niet laden');
-        }
-        const teamData = await teamResponse.json();
+        // Load team with race points (IndexedDB cached)
+        const { data: teamData } = await fetchTeamWithCache(gameId, user!.uid, {
+          maxAgeMs: 2 * 60 * 1000,
+        });
 
         // Sort riders by points (highest first)
         const sortedRiders = (teamData.riders || []).sort((a: TeamRider, b: TeamRider) => b.points - a.points);

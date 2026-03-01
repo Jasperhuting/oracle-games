@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { GameData, Team } from '@/lib/types';
+import { getRiderReferenceDataCached } from '@/lib/firebase/rider-reference-cache';
 
 export async function GET(
   request: NextRequest,
@@ -67,66 +68,8 @@ export async function GET(
       }
     });
 
-    // Get all riders from rankings to enrich the data
-    // Use rankings_2026 collection (current year)
-    const rankingsSnapshot = await db.collection('rankings_2026').get();
-    const ridersMap = new Map<string, any>();
-
-    console.log('[TEAMS-OVERVIEW] Total rankings documents:', rankingsSnapshot.size);
-
-    // Build a map of team references to resolve them in batch
-    const teamRefs = new Set<string>();
-    const riderTeamRefs = new Map<string, any>();
-
-    rankingsSnapshot.forEach(doc => {
-      const rider = doc.data();
-      const riderId = rider.nameID || rider.id || doc.id;
-
-      if (riderId) {
-        // Store the team reference for this rider
-        if (rider.team) {
-          riderTeamRefs.set(riderId, rider.team);
-          // Extract team document path from reference
-          if (rider.team.path) {
-            teamRefs.add(rider.team.path);
-          }
-        }
-
-        // Store country and points (base value)
-        ridersMap.set(riderId, {
-          team: '',
-          country: rider.country || '',
-          points: rider.points || 0
-        });
-      }
-    });
-
-    // Fetch all unique team documents
-    const teamsData = new Map<string, string>();
-    const teamPromises = Array.from(teamRefs).map(async (teamPath) => {
-      try {
-        const teamDoc = await db.doc(teamPath).get();
-        if (teamDoc.exists) {
-          const teamData = teamDoc.data();
-          teamsData.set(teamPath, teamData?.name || '');
-        }
-      } catch (error) {
-        console.error('[TEAMS-OVERVIEW] Error fetching team:', teamPath, error);
-      }
-    });
-
-    await Promise.all(teamPromises);
-
-    // Update ridersMap with team names
-    riderTeamRefs.forEach((teamRef, riderId) => {
-      const riderData = ridersMap.get(riderId);
-      if (riderData && teamRef.path) {
-        riderData.team = teamsData.get(teamRef.path) || '';
-      }
-    });
-
-    console.log('[TEAMS-OVERVIEW] Total riders in map:', ridersMap.size);
-    console.log('[TEAMS-OVERVIEW] Total teams resolved:', teamsData.size);
+    // Shared cache prevents expensive full collection reads on every request.
+    const { ridersById } = await getRiderReferenceDataCached(db);
 
     // Create a map of userId -> riders, with deduplication
     const teamsMap = new Map<string, any[]>();
@@ -156,8 +99,8 @@ export async function GET(
       }
 
       // Get rider info from rankings if not in playerTeams
-      const riderInfo = ridersMap.get(team.riderNameId);
-      const riderTeam = team.riderTeam || riderInfo?.team || '';
+      const riderInfo = ridersById.get(team.riderNameId);
+      const riderTeam = team.riderTeam || riderInfo?.teamName || '';
       const riderCountry = team.riderCountry || riderInfo?.country || '';
       const baseValue = riderInfo?.points || 0;
       const pricePaid = team.pricePaid || 0;

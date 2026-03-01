@@ -11,6 +11,8 @@ import { AllTeamsTab } from '@/components/game-dashboard/AllTeamsTab';
 import { SimpleAllTeamsTab } from '@/components/game-dashboard/SimpleAllTeamsTab';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
 import { Game, GameParticipant } from '@/lib/types/games';
+import { fetchTeamsOverviewWithCache } from '@/lib/utils/teamsOverviewCache';
+import { fetchTeamWithCache } from '@/lib/utils/teamCache';
 
 interface TeamRider {
   id: string;
@@ -73,6 +75,7 @@ interface AllTeamsTeam {
   playername: string;
   userId: string;
   ranking: number;
+  eligibleForPrizes?: boolean;
   totalRiders: number;
   totalBaseValue: number;
   totalSpent: number;
@@ -197,12 +200,10 @@ export default function GameDashboardPage() {
         }
         setParticipant(participantData.participants[0]);
 
-        // Load team with race points
-        const teamResponse = await fetch(`/api/games/${gameId}/team?userId=${user!.uid}`);
-        if (!teamResponse.ok) {
-          throw new Error('Kon team niet laden');
-        }
-        const teamData = await teamResponse.json();
+        // Load team with race points (IndexedDB cached).
+        const { data: teamData } = await fetchTeamWithCache(gameId, user!.uid, {
+          maxAgeMs: 2 * 60 * 1000,
+        });
 
         // Sort riders by points (highest first)
         const sortedRiders = (teamData.riders || []).sort((a: TeamRider, b: TeamRider) => b.points - a.points);
@@ -220,21 +221,22 @@ export default function GameDashboardPage() {
     loadMyTeam();
   }, [user, authLoading, gameId]);
 
-  // Load Standings data
+  // Load teams-overview once, then derive both standings and all teams from it.
   useEffect(() => {
     if (!gameId) return;
+    let cancelled = false;
 
-    async function loadStandings() {
+    async function loadOverview() {
       try {
         setStandingsLoading(true);
+        setAllTeamsLoading(true);
 
-        const response = await fetch(`/api/games/${gameId}/teams-overview`);
-        if (!response.ok) {
-          throw new Error('Kon tussenstand niet laden');
-        }
-        const data = await response.json();
-        const teams: AllTeamsTeam[] = data.teams || [];
+        const { data } = await fetchTeamsOverviewWithCache(gameId, {
+          maxAgeMs: 2 * 60 * 1000,
+        });
+        if (cancelled) return;
 
+        const teams: AllTeamsTeam[] = (data.teams || []) as AllTeamsTeam[];
         const mappedStandings: Standing[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
@@ -247,45 +249,28 @@ export default function GameDashboardPage() {
           riders: team.riders,
         }));
 
+        setAllTeams(teams);
         setStandings(mappedStandings);
+        setAllTeamsError(null);
         setStandingsError(null);
       } catch (err) {
-        console.error('Error loading standings:', err);
-        setStandingsError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
+        console.error('Error loading teams-overview:', err);
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : 'Er is een fout opgetreden';
+        setAllTeamsError(message);
+        setStandingsError(message);
       } finally {
+        if (cancelled) return;
         setStandingsLoading(false);
-      }
-    }
-
-    loadStandings();
-  }, [gameId]);
-
-  // Load All Teams data
-  useEffect(() => {
-    if (!user || !gameId) return;
-
-    async function loadAllTeams() {
-      try {
-        setAllTeamsLoading(true);
-
-        const teamsResponse = await fetch(`/api/games/${gameId}/teams-overview`);
-        if (!teamsResponse.ok) {
-          throw new Error('Kon teams niet laden');
-        }
-
-        const data = await teamsResponse.json();
-        setAllTeams(data.teams || []);
-        setAllTeamsError(null);
-      } catch (err) {
-        console.error('Error loading all teams:', err);
-        setAllTeamsError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
-      } finally {
         setAllTeamsLoading(false);
       }
     }
 
-    loadAllTeams();
-  }, [user, gameId]);
+    loadOverview();
+    return () => {
+      cancelled = true;
+    };
+  }, [gameId]);
 
   if (authLoading || loading) {
     return (

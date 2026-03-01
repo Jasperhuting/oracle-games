@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { useRankings } from "@/contexts/RankingsContext";
 import { GameParticipant, Game } from '@/lib/types/games';
+import { fetchTeamWithCache, invalidateTeamCache } from "@/lib/utils/teamCache";
 
 export default function TeamSelectionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -89,13 +90,12 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
 
         setAvailableRiders(riders);
 
-        // Load current team selection
-        const teamResponse = await fetch(`/api/games/${gameId}/team?userId=${user.uid}`);
-        if (teamResponse.ok) {
-          const teamData = await teamResponse.json();
-          if (teamData.riders) {
-            setSelectedRiders(teamData.riders);
-          }
+        // Load current team selection (IndexedDB cached)
+        const { data: teamData } = await fetchTeamWithCache(gameId, user.uid, {
+          maxAgeMs: 2 * 60 * 1000,
+        });
+        if (teamData.riders) {
+          setSelectedRiders(teamData.riders as Rider[]);
         }
       } catch (error) {
         console.error('Error loading game data:', error);
@@ -142,6 +142,8 @@ export default function TeamSelectionPage({ params }: { params: Promise<{ gameId
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save team');
       }
+
+      await invalidateTeamCache(gameId, user.uid);
 
       setInfoDialog({
         title: 'Team saved',

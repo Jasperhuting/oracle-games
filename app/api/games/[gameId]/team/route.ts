@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
-
-const normalizeTeamKey = (value: string): string =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, 'and')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+import { getRiderReferenceDataCached } from '@/lib/firebase/rider-reference-cache';
 
 // GET player's team for a game
 export async function GET(
@@ -35,59 +28,12 @@ export async function GET(
       .where('userId', '==', userId)
       .get();
 
-    // Get rankings to enrich with baseValue (rider's UCI points = their value)
-    const [rankingsSnapshot, teamsSnapshot] = await Promise.all([
-      db.collection('rankings_2026').get(),
-      db.collection('teams').get(),
-    ]);
-    const teamsMap = new Map<string, { name?: string; jerseyImageTeam?: string; teamImage?: string }>();
-    const teamImageByName = new Map<string, string>();
-    teamsSnapshot.forEach(doc => {
-      const data = doc.data();
-      const preferredTeamImage = data.jerseyImageTeam || data.teamImage;
-      teamsMap.set(doc.id, {
-        name: data.name,
-        jerseyImageTeam: data.jerseyImageTeam,
-        teamImage: data.teamImage,
-      });
-      if (data.name && preferredTeamImage) {
-        teamImageByName.set(normalizeTeamKey(data.name), preferredTeamImage);
-      }
-    });
-    const ridersMap = new Map<string, { points: number; teamName?: string; country?: string; rank?: number; jerseyImageTeam?: string }>();
-    rankingsSnapshot.forEach(doc => {
-      const rider = doc.data();
-      const riderId = rider.nameID || rider.id || doc.id;
-      if (riderId) {
-        let teamName: string | undefined;
-        let jerseyImageTeam: string | undefined;
-        if (typeof rider.team === 'string') {
-          teamName = rider.team;
-          jerseyImageTeam = teamImageByName.get(normalizeTeamKey(rider.team));
-        } else if (rider.team && typeof rider.team === 'object') {
-          // Firestore DocumentReference or embedded object
-          if (typeof (rider.team as any).name === 'string') {
-            teamName = (rider.team as any).name;
-            jerseyImageTeam = teamImageByName.get(normalizeTeamKey(teamName));
-          } else if (typeof (rider.team as any).id === 'string') {
-            const teamDoc = teamsMap.get((rider.team as any).id);
-            teamName = teamDoc?.name;
-            jerseyImageTeam = teamDoc?.jerseyImageTeam || teamDoc?.teamImage;
-          }
-        }
-        ridersMap.set(riderId, {
-          points: rider.points || 0,
-          teamName: teamName || undefined,
-          country: rider.country || undefined,
-          rank: rider.rank || undefined,
-          jerseyImageTeam: jerseyImageTeam || rider.team?.jerseyImageTeam || undefined,
-        });
-      }
-    });
+    // Use shared server cache to avoid full rankings/teams reads per request.
+    const { ridersById } = await getRiderReferenceDataCached(db);
 
     const riders = teamSnapshot.docs.map(doc => {
       const data = doc.data();
-      const riderInfo = ridersMap.get(data.riderNameId);
+      const riderInfo = ridersById.get(data.riderNameId);
       const baseValue = riderInfo?.points || 0;
       const teamJerseyImage = riderInfo?.jerseyImageTeam || null;
       return {
