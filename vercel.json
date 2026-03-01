@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/close-expired-chats",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/chat-telegram-summary",
+      "schedule": "*/15 * * * *"
     }
   ],
   "functions": {

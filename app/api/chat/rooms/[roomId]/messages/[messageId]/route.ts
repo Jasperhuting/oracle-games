@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as db } from '@/lib/firebase/server';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,36 @@ export async function PATCH(
     // Soft delete (admin only — enforced by caller)
     if (body.deleted === true) {
       await msgRef.update({ deleted: true });
+      // Decrement message count
+      await db.collection('chat_rooms').doc(roomId).update({
+        messageCount: FieldValue.increment(-1),
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    // Edit message (only by the author)
+    if (body.editText !== undefined && body.userId) {
+      const newText = body.editText.trim();
+      if (!newText) {
+        return NextResponse.json({ error: 'Text cannot be empty' }, { status: 400 });
+      }
+      const msgDoc = await msgRef.get();
+      if (!msgDoc.exists) {
+        return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+      }
+      const msgData = msgDoc.data()!;
+      if (msgData.userId !== body.userId) {
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+      }
+      // Push old text to edit history
+      await msgRef.update({
+        text: newText,
+        editedAt: Timestamp.now(),
+        editHistory: FieldValue.arrayUnion({
+          text: msgData.text,
+          editedAt: Timestamp.now(),
+        }),
+      });
       return NextResponse.json({ success: true });
     }
 

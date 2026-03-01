@@ -15,6 +15,11 @@ export interface ChatRoom {
   messageCount: number;
 }
 
+export interface ChatMessageEdit {
+  text: string;
+  editedAt: Timestamp | string;
+}
+
 export interface ChatMessage {
   id: string;
   text: string;
@@ -28,6 +33,8 @@ export interface ChatMessage {
   } | null;
   reactions: Record<string, string[]>;
   deleted: boolean;
+  editedAt?: Timestamp | string | null;
+  editHistory?: ChatMessageEdit[];
   createdAt: Timestamp | string;
 }
 

@@ -212,6 +212,45 @@ ${statusIcon} <b>Rider Script ${statusText}</b>
 }
 
 /**
+ * Send a chat summary notification to Telegram
+ */
+export async function sendChatSummaryNotification(
+  roomTitle: string,
+  messages: { userName: string; text: string }[],
+  roomId: string
+): Promise<boolean> {
+  const maxMessages = 20;
+  const shown = messages.slice(0, maxMessages);
+  const remaining = messages.length - shown.length;
+
+  const messageLines = shown.map(
+    (m) => `  <b>${escapeHtml(m.userName)}:</b> ${escapeHtml(m.text.length > 100 ? m.text.slice(0, 100) + '...' : m.text)}`
+  ).join('\n');
+
+  let telegramMessage = `
+💬 <b>Chat Update: ${escapeHtml(roomTitle)}</b>
+
+📊 ${messages.length} nieuwe berichten
+
+${messageLines}`;
+
+  if (remaining > 0) {
+    telegramMessage += `\n  ... en ${remaining} meer`;
+  }
+
+  telegramMessage += `\n\n⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}`;
+
+  return sendTelegramMessage(telegramMessage.trim());
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
  * Send a rate limit notification to Telegram
  */
 export async function sendRateLimitNotification(

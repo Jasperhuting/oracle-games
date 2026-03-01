@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { IconArrowBackUp, IconTrash, IconVolumeOff } from '@tabler/icons-react';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import { IconArrowBackUp, IconTrash, IconVolumeOff, IconPencil, IconCheck, IconX } from '@tabler/icons-react';
 import { Timestamp } from 'firebase/firestore';
 import type { ChatMessage } from '@/lib/types/chat';
 import { AvatarBadge } from '@/components/forum/AvatarBadge';
@@ -14,24 +14,6 @@ interface ChatMessageItemProps {
   currentUserId: string;
   onReply: (msg: { messageId: string; userName: string; text: string }) => void;
   isAdmin?: boolean;
-}
-
-function getInitialColor(userId: string): string {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-purple-500',
-    'bg-orange-500',
-    'bg-pink-500',
-    'bg-teal-500',
-    'bg-indigo-500',
-    'bg-red-500',
-  ];
-  return colors[Math.abs(hash) % colors.length];
 }
 
 function formatTimestamp(createdAt: Timestamp | string): string {
@@ -68,10 +50,20 @@ export default function ChatMessageItem({
   onReply,
   isAdmin = false,
 }: ChatMessageItemProps) {
-  const avatarColor = useMemo(() => getInitialColor(message.userId), [message.userId]);
   const timeStr = useMemo(() => formatTimestamp(message.createdAt), [message.createdAt]);
   const isOwn = message.userId === currentUserId;
   const [showMuteDialog, setShowMuteDialog] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.text);
+  const [saving, setSaving] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [isEditing]);
 
   const handleDelete = async () => {
     if (!confirm('Weet je zeker dat je dit bericht wilt verwijderen?')) return;
@@ -86,20 +78,49 @@ export default function ChatMessageItem({
     }
   };
 
+  const handleEdit = async () => {
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === message.text) {
+      setIsEditing(false);
+      setEditText(message.text);
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/chat/rooms/${roomId}/messages/${message.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ editText: trimmed, userId: currentUserId }),
+      });
+      if (res.ok) {
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error('Failed to edit message:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleEdit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditText(message.text);
+    }
+  };
+
   if (message.deleted) {
-    return (
-      <div className="flex items-start gap-3 px-4 py-2">
-        <div className="h-8 w-8 flex-shrink-0" />
-        <p className="text-sm italic text-gray-400">Dit bericht is verwijderd</p>
-      </div>
-    );
+    return null;
   }
+
+  const hasEditHistory = message.editHistory && message.editHistory.length > 0;
 
   return (
     <div
-      className={`group flex items-start gap-3 px-4 py-2 hover:bg-gray-50 transition-colors ${
-        isOwn ? '' : ''
-      }`}
+      className="group flex items-start gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
     >
       {/* Avatar */}
       <div className="shrink-0">
@@ -117,6 +138,15 @@ export default function ChatMessageItem({
             {message.userName}
           </span>
           <span className="text-xs text-gray-400">{timeStr}</span>
+          {message.editedAt && (
+            <button
+              onClick={() => hasEditHistory && setShowHistory(!showHistory)}
+              className={`text-xs text-gray-400 italic ${hasEditHistory ? 'hover:text-gray-600 cursor-pointer' : 'cursor-default'}`}
+              title={hasEditHistory ? 'Bewerkingsgeschiedenis bekijken' : undefined}
+            >
+              (bewerkt)
+            </button>
+          )}
         </div>
 
         {/* Reply reference */}
@@ -131,10 +161,61 @@ export default function ChatMessageItem({
           </div>
         )}
 
-        {/* Text */}
-        <p className="text-sm text-gray-800 break-words whitespace-pre-wrap">
-          {message.text}
-        </p>
+        {/* Text or edit input */}
+        {isEditing ? (
+          <div className="flex items-center gap-2 mt-1">
+            <input
+              ref={editInputRef}
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={handleEditKeyDown}
+              className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              disabled={saving}
+              maxLength={1000}
+            />
+            <button
+              onClick={handleEdit}
+              disabled={saving}
+              className="p-1 rounded hover:bg-green-100 text-green-600 hover:text-green-700 transition-all"
+              title="Opslaan"
+            >
+              <IconCheck className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => { setIsEditing(false); setEditText(message.text); }}
+              className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-all"
+              title="Annuleren"
+            >
+              <IconX className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-800 wrap-break-word whitespace-pre-wrap">
+            {message.text}
+          </p>
+        )}
+
+        {/* Edit history */}
+        {showHistory && hasEditHistory && (
+          <div className="mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+            <p className="text-xs font-medium text-gray-500">Bewerkingsgeschiedenis:</p>
+            {message.editHistory!.map((edit, i) => {
+              const editDate = edit.editedAt instanceof Timestamp
+                ? edit.editedAt.toDate()
+                : new Date(edit.editedAt);
+              return (
+                <div key={i} className="text-xs text-gray-400">
+                  <span className="text-gray-500">
+                    {editDate.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {' — '}
+                  <span className="line-through">{edit.text}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Reactions */}
         <EmojiReactions
@@ -146,7 +227,7 @@ export default function ChatMessageItem({
       </div>
 
       {/* Action buttons */}
-      <div className="opacity-0 group-hover:opacity-100 mt-1 flex items-center gap-0.5 flex-shrink-0">
+      <div className="opacity-0 group-hover:opacity-100 mt-1 flex items-center gap-0.5 shrink-0">
         <button
           onClick={() =>
             onReply({
@@ -160,6 +241,16 @@ export default function ChatMessageItem({
         >
           <IconArrowBackUp className="h-4 w-4" />
         </button>
+
+        {isOwn && !isEditing && (
+          <button
+            onClick={() => { setEditText(message.text); setIsEditing(true); }}
+            className="p-1 rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-all"
+            title="Bewerken"
+          >
+            <IconPencil className="h-4 w-4" />
+          </button>
+        )}
 
         {isAdmin && (
           <>
