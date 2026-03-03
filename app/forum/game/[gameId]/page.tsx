@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { AdminOrImpersonatedGate } from '@/components/AdminOrImpersonatedGate';
 import { AvatarBadge } from '@/components/forum/AvatarBadge';
 import { RichTextEditor } from '@/components/forum/RichTextEditor';
 import { useAuth } from '@/hooks/useAuth';
@@ -252,7 +251,6 @@ export default function ForumGamePage() {
   }, [topics]);
 
   return (
-    <AdminOrImpersonatedGate>
       <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
@@ -486,6 +484,5 @@ export default function ForumGamePage() {
           </div>
         </div>
       </div>
-    </AdminOrImpersonatedGate>
   );
 }

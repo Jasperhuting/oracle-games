@@ -64,6 +64,7 @@ export interface RowProps<T> {
   children: React.ReactNode;
   rightContent?: React.ReactNode;
   className?: string;
+  dataAttributes?: Record<string, string | undefined>;
 }
 
 // Tab Components

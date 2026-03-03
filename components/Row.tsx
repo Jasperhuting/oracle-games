@@ -8,7 +8,8 @@ export function Row<T>({
     index,
     children,
     rightContent,
-    className = ''
+    className = '',
+    dataAttributes
 }: RowProps<T>) {
     const getBackgroundClass = () => {
         if (typeof index === 'number') {
@@ -21,6 +22,7 @@ export function Row<T>({
         <div 
             className={`flex items-center ${rightContent ? 'justify-between' : ''} gap-2 cursor-pointer ${getBackgroundClass()} p-2 ${fullWidth ? 'w-full' : 'w-fit'} ${className}`}
             onMouseDown={() => onSelect(item)}
+            {...(dataAttributes || {})}
         >
             <div className="flex items-center gap-2">
                 {children}

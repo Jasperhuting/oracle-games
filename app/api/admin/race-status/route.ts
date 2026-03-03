@@ -273,6 +273,7 @@ const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
   'asian-cycling-championships-wu23',
   'aveiro-region-champions-classic', // cancelled
   'grand-prix-alaiye1',
+  'aveiro-region-champions-classic', // cancelled
 ]);
 
 /**

@@ -1,0 +1,263 @@
+.og-rider-stats-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  background: #111827;
+  color: #f3f4f6;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.og-rider-stats-panel.og-hidden {
+  display: none;
+}
+
+.og-rider-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(243, 244, 246, 0.15);
+}
+
+.og-rider-stats-close {
+  background: transparent;
+  color: #f3f4f6;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.og-rider-stats-body {
+  padding: 14px;
+}
+
+.og-rider-stats-hint,
+.og-rider-stats-status,
+.og-rider-stats-error {
+  margin: 0;
+  font-size: 13px;
+}
+
+.og-rider-stats-error {
+  color: #fca5a5;
+}
+
+.og-rider-stats-title {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+}
+
+.og-rider-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.og-rider-stats-grid {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.og-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+}
+
+.og-col span {
+  opacity: 0.85;
+}
+
+.og-col strong {
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: left;
+  word-break: break-word;
+}
+
+.og-rider-stats-footer {
+  margin-top: 12px;
+}
+
+.og-rider-stats-footer a {
+  color: #93c5fd;
+  text-decoration: underline;
+  font-size: 13px;
+}
+
+.og-rider-photo-wrap {
+  margin-bottom: 0;
+  width: 140px;
+  height: 140px;
+  flex: 0 0 140px;
+}
+
+.og-rider-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.og-section {
+  margin-top: 12px;
+}
+
+.og-section-title {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.og-specialties {
+  display: grid;
+  gap: 6px;
+}
+
+.og-spec-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1.2fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.og-spec-bar {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.og-spec-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399, #22c55e);
+}
+
+.og-spec-value {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.og-spec-label {
+  opacity: 0.9;
+}
+
+.og-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.og-social-link {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f4f6;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.og-social-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.og-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.og-chip {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+}
+
+.og-chip strong {
+  margin-left: 4px;
+}
+
+.og-top-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.og-top-results li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.og-top-results a {
+  color: #f3f4f6;
+}
+
+.og-result-type {
+  color: #60a5fa;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.og-result-count {
+  color: #facc15;
+  font-weight: 700;
+}
+
+.og-result-year {
+  color: #9ca3af;
+}
+
+.og-pcs-inline-btn {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border: 1px solid #2563eb;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.og-pcs-inline-btn:hover {
+  background: #dbeafe;
+}
+
+@media (max-width: 480px) {
+  .og-rider-summary {
+    flex-direction: column;
+  }
+
+  .og-rider-photo-wrap {
+    width: 100%;
+    height: 180px;
+    flex: none;
+  }
+}

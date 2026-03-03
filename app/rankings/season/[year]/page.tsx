@@ -435,6 +435,8 @@ export default function SeasonLeaderboardPage() {
                           <tr                            
                             className={`p-6 ${hasPointsData ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
                             onClick={() => hasPointsData && toggleRider(rider.id || 'no-id')}
+                            data-rider-id={rider.riderNameId}
+                            data-rider-name={rider.riderName}
                           >
                             <td className="px-4 py-4">
                               <span className={`inline-flex items-center justify-center w-8 h-6 rounded-full text-sm font-bold ${(index + 1) === 1 ? 'bg-yellow-100 text-yellow-800' :
@@ -458,6 +460,8 @@ export default function SeasonLeaderboardPage() {
                                 className="font-medium text-gray-900"
                                 data-tooltip-id={isMine ? 'owned-games-tooltip' : undefined}
                                 data-tooltip-content={isMine ? ownedInGamesLabel : undefined}
+                                data-rider-id={rider.riderNameId}
+                                data-rider-name={rider.riderName}
                               >
                                 {rider.riderName}
                               </div>

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { AdminOrImpersonatedGate } from '@/components/AdminOrImpersonatedGate';
 import { useAuth } from '@/hooks/useAuth';
 import type { ForumCategory, ForumTopic } from '@/lib/types/forum';
 import { AvatarBadge } from '@/components/forum/AvatarBadge';
@@ -149,7 +148,6 @@ export default function ForumCategoryPage() {
   };
 
   return (
-    <AdminOrImpersonatedGate>
       <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
@@ -166,7 +164,7 @@ export default function ForumCategoryPage() {
                   <h1 className="text-2xl font-bold text-gray-900">{label}</h1>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Admin preview — topics zijn alleen zichtbaar voor admins/impersonated.
+                  Publieke categorie — topics zijn zichtbaar voor alle ingelogde gebruikers.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -308,6 +306,5 @@ export default function ForumCategoryPage() {
           </div>
         </div>
       </div>
-    </AdminOrImpersonatedGate>
   );
 }

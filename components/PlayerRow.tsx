@@ -23,6 +23,9 @@ export const PlayerRow = ({
     index: number | boolean, 
     showButton?: boolean 
 }) => {
+    const riderSlug = player?.nameID || player?.id || '';
+    const riderName = player?.name || '';
+
     return (
         <Row
             item={player}
@@ -30,6 +33,11 @@ export const PlayerRow = ({
             isSelected={selectedPlayer}
             fullWidth={fullWidth}
             index={index}
+            dataAttributes={{
+                "data-rider-id": riderSlug,
+                "data-rider-slug": riderSlug,
+                "data-rider-name": riderName
+            }}
             rightContent={
                 <>
                     {player?.team?.teamImage && (
