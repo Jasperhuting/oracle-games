@@ -1,4 +1,6 @@
 (function initOracleRiderStats() {
+  const RIDER_SELECTOR = "[data-rider-name], [data-og-rider-name], [data-rider-id], [data-og-rider-id]";
+
   if (window.__oracleRiderStatsInitialized) {
     return;
   }
@@ -10,20 +12,56 @@
   const panel = createPanel();
   document.body.appendChild(panel.root);
 
-  decorateRiderTargets(panel);
+  decorateRiderTargets(document, panel, RIDER_SELECTOR);
 
-  const observer = new MutationObserver(() => {
-    if (!isExtensionAlive()) {
-      observer.disconnect();
+  const pendingRoots = new Set();
+  let scheduled = false;
+  const scheduleDecorate = (root) => {
+    if (!(root instanceof Element) && root !== document) {
       return;
     }
-    decorateRiderTargets(panel);
+    pendingRoots.add(root);
+    if (scheduled) {
+      return;
+    }
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      if (!isExtensionAlive()) {
+        return;
+      }
+      const roots = Array.from(pendingRoots);
+      pendingRoots.clear();
+      roots.forEach((r) => decorateRiderTargets(r, panel, RIDER_SELECTOR));
+    });
+  };
+
+  const optimizedObserver = new MutationObserver((mutations) => {
+    if (!isExtensionAlive()) {
+      optimizedObserver.disconnect();
+      return;
+    }
+    for (const mutation of mutations) {
+      mutation.addedNodes.forEach((node) => {
+        if (!(node instanceof Element)) {
+          return;
+        }
+        if (node.closest(".og-rider-stats-panel")) {
+          return;
+        }
+        if (!nodeContainsRiderTarget(node, RIDER_SELECTOR)) {
+          return;
+        }
+        scheduleDecorate(node);
+      });
+    }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  optimizedObserver.observe(document.body, { childList: true, subtree: true });
 })();
 
-function decorateRiderTargets(panel) {
-  const elements = document.querySelectorAll("[data-rider-name], [data-og-rider-name]");
+function decorateRiderTargets(root, panel, selector) {
+  const scope = root instanceof Document ? root : root;
+  const elements = scope.querySelectorAll(selector);
   elements.forEach((element) => {
     if (!(element instanceof HTMLElement)) {
       return;
@@ -53,6 +91,14 @@ function decorateRiderTargets(panel) {
     }
 
     const anchor = resolveAnchor(target, element);
+    if (!anchor) {
+      return;
+    }
+    if (anchor.querySelector(".og-pcs-inline-btn")) {
+      target.dataset.ogPcsDecorated = "1";
+      return;
+    }
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "og-pcs-inline-btn";
@@ -74,14 +120,51 @@ function decorateRiderTargets(panel) {
   });
 }
 
+function nodeContainsRiderTarget(node, selector) {
+  if (!(node instanceof Element)) {
+    return false;
+  }
+  if (node.matches(selector)) {
+    return true;
+  }
+  return Boolean(node.querySelector(selector));
+}
+
 function resolveTargetContainer(element) {
   const row = element.closest("tr[data-rider-name], tr[data-og-rider-name]");
   if (row instanceof HTMLElement) {
     return row;
   }
-  const block = element.closest("[data-rider-id][data-rider-name], [data-og-rider-id][data-og-rider-name]");
+
+  const block = element.closest(
+    "[data-rider-id][data-rider-name], [data-og-rider-id][data-og-rider-name], [data-rider-id][data-og-rider-name], [data-og-rider-id][data-rider-name]"
+  );
   if (block instanceof HTMLElement) {
-    return block;
+    const baseId = normalizeSpaces(
+      block.getAttribute("data-rider-id") || block.getAttribute("data-og-rider-id") || ""
+    );
+    const baseName = normalizeSpaces(
+      block.getAttribute("data-rider-name") || block.getAttribute("data-og-rider-name") || ""
+    );
+
+    // Use the outermost ancestor with the same rider identity to prevent duplicate buttons
+    let current = block;
+    let parent = current.parentElement;
+    while (parent) {
+      const parentId = normalizeSpaces(
+        parent.getAttribute("data-rider-id") || parent.getAttribute("data-og-rider-id") || ""
+      );
+      const parentName = normalizeSpaces(
+        parent.getAttribute("data-rider-name") || parent.getAttribute("data-og-rider-name") || ""
+      );
+      if ((baseId && parentId === baseId) || (baseName && parentName === baseName)) {
+        current = parent;
+        parent = parent.parentElement;
+        continue;
+      }
+      break;
+    }
+    return current;
   }
   return element instanceof HTMLElement ? element : null;
 }
@@ -90,7 +173,21 @@ function resolveAnchor(target, source) {
   if (target.tagName === "TR") {
     return target.querySelector("td:nth-child(2)") || target;
   }
-  return source instanceof HTMLElement ? source : target;
+
+  const rowLike =
+    target.closest(
+      "div[class*='w-full'][class*='items-center'], div[class*='cursor-pointer'], li, [role='option']"
+    ) || target;
+
+  if (!(rowLike instanceof HTMLElement)) {
+    return source instanceof HTMLElement ? source : target;
+  }
+
+  if (getComputedStyle(rowLike).display.includes("flex")) {
+    return rowLike;
+  }
+
+  return source instanceof HTMLElement ? source : rowLike;
 }
 
 function loadRiderStats(panel, rider) {

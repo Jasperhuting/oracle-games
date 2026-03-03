@@ -61,7 +61,13 @@ export const BiddingListViewWorldTour = ({
           const riderNameId = rider?.nameID || rider?.id || '';
 
           return rider ?
-            <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 p-2 flex flex-col gap-2">
+            <div
+              key={myBidRider.id}
+              className="bg-white px-2 relative border rounded-lg border-gray-200 p-2 flex flex-col gap-2"
+              data-rider-id={riderNameId}
+              data-rider-slug={riderNameId}
+              data-rider-name={rider.name || ''}
+            >
               <div className="flex items-center min-w-0">
                 {qualifiesAsNeoProf(rider, game.config) && <Star size={15} color="#ff9900" className="flex-shrink-0" />}
                 <span className={`truncate font-medium ${qualifiesAsNeoProf(rider, game.config) ? 'ml-1' : ''}`}>

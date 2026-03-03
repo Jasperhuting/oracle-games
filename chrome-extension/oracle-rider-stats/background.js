@@ -56,7 +56,7 @@ async function tryFetchProfile(url) {
   }
 
   const html = await response.text();
-  if (!html || /page not found|404/i.test(html)) {
+  if (!html) {
     return null;
   }
 
@@ -71,12 +71,18 @@ async function searchRiderSlug(riderName) {
   }
 
   const html = await response.text();
-  const href = extractFirstMatch(html, /<a[^>]*href=["']([^"']*\/rider\/[^"']+)["'][^>]*>/i) || "";
-  const slugMatch = href.match(/\/rider\/([^/?#]+)/i);
+  const href =
+    extractFirstMatch(html, /<a[^>]*href=["']([^"']*(?:\/|^)rider\/[^"']+)["'][^>]*>/i) || "";
+  const slugMatch = href.match(/(?:\/|^)rider\/([^/?#]+)/i);
   return slugMatch ? sanitizeSlug(slugMatch[1]) : null;
 }
 
 function parseRiderPage(html, requestedUrl) {
+  const pageTitle = cleanText(extractFirstMatch(html, /<title[^>]*>([\s\S]*?)<\/title>/i) || "");
+  if (/page not found|not found|404/i.test(pageTitle)) {
+    return null;
+  }
+
   const canonicalHref =
     extractFirstMatch(html, /<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i) || requestedUrl;
   const canonicalUrl = canonicalHref.startsWith("http") ? canonicalHref : `${PCS_BASE_URL}${canonicalHref}`;
@@ -94,6 +100,10 @@ function parseRiderPage(html, requestedUrl) {
 
   const rank = quickInfo["PCS Rank"] || quickInfo["UCI Rank"] || "";
   const points = quickInfo["PCS Points"] || quickInfo["UCI Points"] || "";
+
+  if (!fullName && !Object.keys(infoList).length && !Object.keys(quickInfo).length) {
+    return null;
+  }
 
   return {
     name: fullName || "",

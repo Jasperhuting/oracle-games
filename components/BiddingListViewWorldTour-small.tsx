@@ -322,7 +322,13 @@ export const BiddingListViewWorldTourSmall = ({
           const riderNameId = rider?.nameID || rider?.id || '';
 
           return rider ?
-            <div key={myBidRider.id} className="bg-white px-2 relative border rounded-lg border-gray-200 flex flex-row gap-2 items-center justify-between">
+            <div
+              key={myBidRider.id}
+              className="bg-white px-2 relative border rounded-lg border-gray-200 flex flex-row gap-2 items-center justify-between"
+              data-rider-id={riderNameId}
+              data-rider-slug={riderNameId}
+              data-rider-name={rider.name || ''}
+            >
               <div className="flex items-center">
                  {rider.rank && (
                 <span className="text-gray-500 text-xs whitespace-nowrap min-w-[34px] mr-2">

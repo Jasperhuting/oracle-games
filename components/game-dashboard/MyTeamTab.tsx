@@ -263,11 +263,17 @@ export function MyTeamTab({
               <div
                 key={rider.id}
                 className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                data-rider-id={rider.nameId || rider.id || ''}
+                data-rider-slug={rider.nameId || rider.id || ''}
+                data-rider-name={rider.name || ''}
               >
                 {/* Rider Header */}
                 <div
                   onClick={() => hasRacePoints && toggleRider(rider.id)}
                   className={`p-4 ${hasRacePoints ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+                  data-rider-id={rider.nameId || rider.id || ''}
+                  data-rider-slug={rider.nameId || rider.id || ''}
+                  data-rider-name={rider.name || ''}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">

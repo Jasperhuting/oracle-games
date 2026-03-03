@@ -96,6 +96,9 @@ export function FullGridMyTeam({
               <div
                 key={rider.riderNameId}
                 className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
+                data-rider-id={rider.riderNameId}
+                data-rider-slug={rider.riderNameId}
+                data-rider-name={rider.riderName}
               >
             {/* Jersey */}
             <div className="w-6 h-6 flex-shrink-0">
@@ -165,6 +168,9 @@ export function FullGridMyTeam({
               <div
                 key={rider.riderNameId}
                 className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
+                data-rider-id={rider.riderNameId}
+                data-rider-slug={rider.riderNameId}
+                data-rider-name={rider.riderName}
               >
                 {/* Jersey */}
                 <div className="w-6 h-6 flex-shrink-0">

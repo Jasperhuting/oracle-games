@@ -69,6 +69,8 @@ export const PlayerCard = (
     const isSold = player?.isSold;
     const soldTo = player?.soldTo;
     const isSoldFor = player?.pricePaid;
+    const riderSlug = player?.nameID || player?.id || '';
+    const riderName = player?.name || '';
     const pointsValueRaw = player?.effectiveMinBid ?? player?.points ?? 1;
     const displayPointsValue = pointsValueRaw === 0 ? 1 : pointsValueRaw;
 
@@ -80,7 +82,12 @@ export const PlayerCard = (
         : null;
     
     return (
-        <div className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && !myTeam && "opacity-60 bg-gray-50", className)}>        
+        <div
+            className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && !myTeam && "opacity-60 bg-gray-50", className)}
+            data-rider-id={riderSlug}
+            data-rider-slug={riderSlug}
+            data-rider-name={riderName}
+        >        
             <div className="flex items-center justify-start gap-3 divide-[#CAC4D0] divide-x-2 pb-2">
                 <span className="pr-0 min-w-[55px]">
                     {jerseyUrl ? (

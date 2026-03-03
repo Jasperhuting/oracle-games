@@ -82,6 +82,9 @@ export function FullGridRiderList({
                   ? 'bg-gray-50 opacity-60'
                   : 'hover:bg-gray-50'
               }`}
+              data-rider-id={rider.riderNameId}
+              data-rider-slug={rider.riderNameId}
+              data-rider-name={rider.riderName}
             >
               {/* Jersey */}
               <div className="w-8 h-8 flex-shrink-0">

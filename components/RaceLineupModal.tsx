@@ -286,6 +286,9 @@ export const RaceLineupModal = ({ gameId, onClose, onSuccess }: RaceLineupModalP
                             <div
                               key={rider.id || index}
                               className="grid grid-cols-12 gap-4 p-3 border-b border-gray-100 hover:bg-gray-50 items-center"
+                              data-rider-id={String(rider.id || rider.nameID || '')}
+                              data-rider-slug={String(rider.id || rider.nameID || '')}
+                              data-rider-name={rider.name || ''}
                             >
                               <div className="col-span-1 text-sm">{rider.rank || '-'}</div>
                               <div className="col-span-4 text-sm font-medium truncate" title={rider.name}>

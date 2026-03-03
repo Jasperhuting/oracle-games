@@ -30,11 +30,11 @@ export const PlayerRowBids = ({
 }) => {
     const isSold = player?.isSold;
     const soldTo = player?.soldTo;
+    const riderSlug = player?.nameID || player?.id || '';
+    const riderName = player?.name || '';
     const showsPoints = game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid';
     const pointsValueRaw = player?.effectiveMinBid ?? player?.points ?? 1;
     const displayPointsValue = pointsValueRaw === 0 ? 1 : pointsValueRaw;
-
-    console.log('player', player)
 
     return (
         <Row
@@ -44,6 +44,11 @@ export const PlayerRowBids = ({
             fullWidth={fullWidth}
             index={index}
             className={isSold ? 'opacity-60 bg-gray-50' : ''}
+            dataAttributes={{
+                "data-rider-id": riderSlug,
+                "data-rider-slug": riderSlug,
+                "data-rider-name": riderName
+            }}
             rightContent={<>            {showPoints && (
                 <span className="text-xs mt-1 text-gray-500 justify-center font-bold w-[80px] break-keep whitespace-nowrap">
                     {showsPoints ? 
