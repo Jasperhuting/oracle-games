@@ -14,6 +14,7 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
     const [coffeeExpanded, setCoffeeExpanded] = useState(false);
     const [prizesExpanded, setPrizesExpanded] = useState(false);
     const [showPrizesModal, setShowPrizesModal] = useState(false);
+    const [hideSponsorButtons, setHideSponsorButtons] = useState(false);
     const { user } = useAuth();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +29,29 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const updateBottomState = () => {
+            const threshold = 140;
+            const viewportBottom = window.scrollY + window.innerHeight;
+            const pageBottom = document.documentElement.scrollHeight;
+            const hide = viewportBottom >= pageBottom - threshold;
+            setHideSponsorButtons(hide);
+            if (hide) {
+                setCoffeeExpanded(false);
+                setPrizesExpanded(false);
+            }
+        };
+
+        updateBottomState();
+        window.addEventListener('scroll', updateBottomState, { passive: true });
+        window.addEventListener('resize', updateBottomState);
+
+        return () => {
+            window.removeEventListener('scroll', updateBottomState);
+            window.removeEventListener('resize', updateBottomState);
+        };
     }, []);
 
     const handleCoffeeClick = async () => {
@@ -169,55 +193,60 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
                     </div>
                 </div>
             )}
-            {/* Buy me a coffee button */}
-            <a
-                href="https://buymeacoffee.com/jasperh"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleCoffeeButtonClick}
-                className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-[#FFDD00] hover:bg-[#FFED4E] overflow-hidden ${coffeeExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
-            >
-                <Image
-                    src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
-                    alt="Buy me a coffee"
-                    width={24}
-                    height={24}
-                    className="flex-shrink-0"
-                />
-                <span className={`text-sm text-black font-medium whitespace-nowrap transition-all duration-300 ${coffeeExpanded ? 'opacity-100 max-w-[150px]' : 'opacity-0 max-w-0'}`}>
-                    Buy me a coffee
-                </span>
-            </a>
+            {!hideSponsorButtons && (
+                <>
+                    {/* Buy me a coffee button */}
+                    <a
+                        href="https://buymeacoffee.com/jasperh"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleCoffeeButtonClick}
+                        className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-[#FFDD00] hover:bg-[#FFED4E] overflow-hidden ${coffeeExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
+                    >
+                        <Image
+                            src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
+                            alt="Buy me a coffee"
+                            width={24}
+                            height={24}
+                            className="flex-shrink-0"
+                        />
+                        <span className={`text-sm text-black font-medium whitespace-nowrap transition-all duration-300 ${coffeeExpanded ? 'opacity-100 max-w-[150px]' : 'opacity-0 max-w-0'}`}>
+                            Buy me a coffee
+                        </span>
+                    </a>
 
-            {/* Berc Bike prizes button */}
-            <button
-                onClick={handlePrizesButtonClick}
-                className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-white hover:bg-emerald-50 overflow-hidden border border-emerald-200 ${prizesExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
-            >
-                <div className="flex-shrink-0 w-9 h-9 bg-white flex items-center justify-center overflow-hidden">
-                    <Image
-                        src="/berc-bike-logo.jpg"
-                        alt="Berc Bike"
-                        width={36}
-                        height={36}
-                        className="w-fit h-fit object-contain"
-                    />
-                </div>
-                <span className={`text-sm text-emerald-700 font-medium whitespace-nowrap transition-all duration-300 ${prizesExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0'}`}>
-                    Prijzen
-                </span>
-            </button>
+                    {/* Berc Bike prizes button */}
+                    <button
+                        onClick={handlePrizesButtonClick}
+                        className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-white hover:bg-emerald-50 overflow-hidden border border-emerald-200 ${prizesExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
+                    >
+                        <div className="flex-shrink-0 w-9 h-9 bg-white flex items-center justify-center overflow-hidden">
+                            <Image
+                                src="/berc-bike-logo.jpg"
+                                alt="Berc Bike"
+                                width={36}
+                                height={36}
+                                className="w-fit h-fit object-contain"
+                            />
+                        </div>
+                        <span className={`text-sm text-emerald-700 font-medium whitespace-nowrap transition-all duration-300 ${prizesExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0'}`}>
+                            Prijzen
+                        </span>
+                    </button>
+                </>
+            )}
 
-            {/* Feedback button */}
-            <button
-                onClick={handleFeedbackButtonClick}
-                className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-primary hover:bg-[#357771] overflow-hidden ${feedbackExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
-            >
-                <MessageCircle size={24} className="text-white flex-shrink-0" />
-                <span className={`text-sm text-white font-medium whitespace-nowrap transition-all duration-300 ${feedbackExpanded ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0'}`}>
-                    Feedback
-                </span>
-            </button>
+            {!hideSponsorButtons && (
+                <button
+                    onClick={handleFeedbackButtonClick}
+                    className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-primary hover:bg-[#357771] overflow-hidden ${feedbackExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
+                >
+                    <MessageCircle size={24} className="text-white flex-shrink-0" />
+                    <span className={`text-sm text-white font-medium whitespace-nowrap transition-all duration-300 ${feedbackExpanded ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0'}`}>
+                        Feedback
+                    </span>
+                </button>
+            )}
         </div>
     );
 }
