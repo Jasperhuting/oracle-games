@@ -74,6 +74,12 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
                 </Link>
             </div>
 
+            <div className="mb-4 rounded-lg border border-amber-500/50 bg-amber-900/30 px-4 py-3 text-amber-100">
+                <p className="text-sm font-medium">
+                    Let op: door een systeemfout tellen de punten van ronde 1 helaas niet mee.
+                </p>
+            </div>
+
             {/* Race cards - hide on standings page */}
             {!isStandingsPage && (
                 <div title="races" className="flex w-full overflow-x-scroll gap-1 mb-6 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
