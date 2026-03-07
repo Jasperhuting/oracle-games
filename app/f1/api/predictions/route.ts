@@ -1,9 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebaseF1, getServerAuth } from '@/lib/firebase/server';
 import { F1Prediction, F1ActivityLog, F1_COLLECTIONS, createPredictionDocId, createRaceDocId, createParticipantDocId } from '../../types';
+import { Timestamp } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
 
 const f1Db = getServerFirebaseF1();
+
+type PredictionSnapshot = {
+  finishOrder: string[];
+  polePosition: string | null;
+  fastestLap: string | null;
+  dnf1: string | null;
+  dnf2: string | null;
+};
+
+function toPredictionSnapshot(data: {
+  finishOrder: string[];
+  polePosition: string | null;
+  fastestLap: string | null;
+  dnf1: string | null;
+  dnf2: string | null;
+}): PredictionSnapshot {
+  return {
+    finishOrder: data.finishOrder,
+    polePosition: data.polePosition,
+    fastestLap: data.fastestLap,
+    dnf1: data.dnf1,
+    dnf2: data.dnf2,
+  };
+}
 
 // Helper to get user from session
 async function getUserFromSession(): Promise<string | null> {
@@ -196,55 +221,74 @@ export async function POST(request: NextRequest) {
     const docId = createPredictionDocId(userId, prediction.season, prediction.round);
     const docRef = f1Db.collection(F1_COLLECTIONS.PREDICTIONS).doc(docId);
     const existingDoc = await docRef.get();
+    const existingData = existingDoc.exists ? existingDoc.data() as F1Prediction : null;
+    const isUpdate = existingDoc.exists;
 
     const now = new Date();
+    const nowTs = Timestamp.fromDate(now);
+    const previousSnapshot = existingData
+      ? toPredictionSnapshot({
+          finishOrder: existingData.finishOrder,
+          polePosition: existingData.polePosition,
+          fastestLap: existingData.fastestLap,
+          dnf1: existingData.dnf1,
+          dnf2: existingData.dnf2,
+        })
+      : null;
+    const nextSnapshot = toPredictionSnapshot({
+      finishOrder: prediction.finishOrder,
+      polePosition: prediction.polePosition,
+      fastestLap: prediction.fastestLap,
+      dnf1: prediction.dnf1,
+      dnf2: prediction.dnf2,
+    });
+
     const predictionData = {
       ...prediction,
       userId,
       raceId,
       isLocked: false,
       updatedAt: now,
-      ...(existingDoc.exists ? {} : { submittedAt: now }),
+      ...(isUpdate ? {} : { submittedAt: now }),
     };
 
-    await docRef.set(predictionData, { merge: true });
+    // Write prediction + immutable history + activity log atomically.
+    const batch = f1Db.batch();
+    batch.set(docRef, predictionData, { merge: true });
 
-    // Log activity for debugging
-    try {
-      const isUpdate = existingDoc.exists;
-      const existingData = existingDoc.exists ? existingDoc.data() as F1Prediction : null;
+    const revisionRef = docRef.collection('history').doc();
+    batch.set(revisionRef, {
+      userId,
+      season: prediction.season,
+      round: prediction.round,
+      raceId,
+      operation: isUpdate ? 'update' : 'create',
+      source: 'api',
+      before: previousSnapshot,
+      after: nextSnapshot,
+      createdAt: nowTs,
+      raceStatusAtSave: raceData.status || null,
+      predictionDeadlineAtSave: raceData.predictionDeadline || null,
+    });
 
-      const activityLog: Omit<F1ActivityLog, 'id'> = {
-        userId,
-        season: prediction.season,
-        activityType: isUpdate ? 'prediction_updated' : 'prediction_saved',
-        timestamp: now as unknown as import('firebase/firestore').Timestamp,
-        round: prediction.round,
-        raceId,
-        prediction: {
-          finishOrder: prediction.finishOrder,
-          polePosition: prediction.polePosition,
-          fastestLap: prediction.fastestLap,
-          dnf1: prediction.dnf1,
-          dnf2: prediction.dnf2,
-        },
-        isUpdate,
-        ...(isUpdate && existingData ? {
-          previousPrediction: {
-            finishOrder: existingData.finishOrder,
-            polePosition: existingData.polePosition,
-            fastestLap: existingData.fastestLap,
-            dnf1: existingData.dnf1,
-            dnf2: existingData.dnf2,
-          },
-        } : {}),
-      };
+    const activityLog: Omit<F1ActivityLog, 'id'> = {
+      userId,
+      season: prediction.season,
+      activityType: isUpdate ? 'prediction_updated' : 'prediction_saved',
+      timestamp: nowTs as unknown as import('firebase/firestore').Timestamp,
+      round: prediction.round,
+      raceId,
+      prediction: nextSnapshot,
+      isUpdate,
+      ...(isUpdate && previousSnapshot ? { previousPrediction: previousSnapshot } : {}),
+    };
+    const activityRef = f1Db.collection(F1_COLLECTIONS.ACTIVITY_LOGS).doc();
+    batch.set(activityRef, {
+      ...activityLog,
+      revisionId: revisionRef.id,
+    });
 
-      await f1Db.collection(F1_COLLECTIONS.ACTIVITY_LOGS).add(activityLog);
-    } catch (logError) {
-      // Don't fail the prediction save if logging fails
-      console.error('Error logging prediction activity:', logError);
-    }
+    await batch.commit();
 
     return NextResponse.json({ success: true, data: { id: docId } });
   } catch (error) {

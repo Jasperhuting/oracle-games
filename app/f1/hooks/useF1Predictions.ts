@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  collection, 
-  query, 
+  collection,
+  query,
   where, 
   onSnapshot,
   doc,
-  setDoc,
-  Timestamp,
 } from 'firebase/firestore';
 import { f1Db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -75,27 +73,34 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
     setError(null);
 
     try {
-      const docId = createPredictionDocId(user.uid, season, round);
-      const docRef = doc(f1Db, F1_COLLECTIONS.PREDICTIONS, docId);
       const raceId = createRaceDocId(season, round);
-
-      const now = Timestamp.now();
-      const predictionData: F1Prediction = {
-        userId: user.uid,
-        raceId,
-        season,
-        round,
-        finishOrder: data.finishOrder.slice(0, 10), // Ensure only 10 positions are saved
-        polePosition: data.polePosition,
-        fastestLap: data.fastestLap,
-        dnf1: data.dnf1,
-        dnf2: data.dnf2,
-        submittedAt: prediction?.submittedAt || now,
-        updatedAt: now,
-        isLocked: false,
+      const payload = {
+        prediction: {
+          raceId,
+          season,
+          round,
+          finishOrder: data.finishOrder.slice(0, 10),
+          polePosition: data.polePosition,
+          fastestLap: data.fastestLap,
+          dnf1: data.dnf1,
+          dnf2: data.dnf2,
+          isLocked: false,
+        },
       };
 
-      await setDoc(docRef, predictionData, { merge: true });
+      const response = await fetch('/f1/api/predictions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'Failed to save prediction');
+      }
+
       return true;
     } catch (err) {
       console.error('Error saving prediction:', err);
@@ -104,7 +109,7 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
     } finally {
       setSaving(false);
     }
-  }, [user?.uid, season, round, prediction?.submittedAt]);
+  }, [user?.uid, season, round]);
 
   return { 
     prediction, 
