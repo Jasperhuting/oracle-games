@@ -73,7 +73,7 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
             <div className="flex items-center gap-2">
               <Link
                 href={`/user/${userId}`}
-                className={`${isCurrentUser ? 'font-bold' : 'font-medium'} text-gray-900 hover:text-primary hover:underline cursor-pointer`}
+                className={`${isCurrentUser ? 'font-bold' : 'font-medium'} text-gray-900 hover:text-primary hover:underline cursor-pointer whitespace-nowrap truncate max-w-[150px] md:max-w-max`}
               >
                 {info.getValue()}
               </Link>

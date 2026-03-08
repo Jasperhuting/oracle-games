@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { auth } from '@/lib/firebase/client';
 import { 
   collection,
   query,
@@ -88,11 +89,17 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
         },
       };
 
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'content-type': 'application/json',
+      };
+      if (idToken) {
+        headers.Authorization = `Bearer ${idToken}`;
+      }
+
       const response = await fetch('/f1/api/predictions', {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 

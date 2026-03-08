@@ -367,10 +367,11 @@ export default function TeamsOverviewPage() {
           {/* Sort Controls - only show for players view */}
           {viewMode === 'players' && (
             <div className="space-y-4">
-              <div className="flex gap-2 items-center">
+              <div className="overflow-x-auto">
+                <div className="flex w-max min-w-full gap-2 items-center pb-1">
                 <button
                   onClick={() => setSortBy('ranking')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                  className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                     sortBy === 'ranking'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300'
@@ -412,7 +413,7 @@ export default function TeamsOverviewPage() {
                 {/* Sort Direction Toggle */}
                 <button
                   onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-                  className="ml-2 px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  className="ml-2 px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap flex items-center gap-2"
                   title={sortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
                 >
                   {sortDirection === 'asc' ? (
@@ -431,6 +432,7 @@ export default function TeamsOverviewPage() {
                     </>
                   )}
                 </button>
+                </div>
               </div>
 
               {/* Group by Cycling Team Toggle */}
@@ -513,7 +515,7 @@ export default function TeamsOverviewPage() {
                         <h3 className="text-lg font-semibold text-gray-900">
                           {team.playername}
                         </h3>
-                        <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                           <span>{team.totalRiders} renners</span>
                           <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
                           <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
@@ -673,7 +675,7 @@ export default function TeamsOverviewPage() {
                                     <div className="font-semibold text-gray-900">
                                       {cyclingTeam}
                                     </div>
-                                    <div className="flex gap-4 text-sm text-gray-600">
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
                                       <span>{riders.length} renners</span>
                                       <span>Waarde: {teamTotalBaseValue.toLocaleString()}</span>
                                       <span>Betaald: €{teamTotalPricePaid.toLocaleString()}</span>
@@ -805,7 +807,7 @@ export default function TeamsOverviewPage() {
                         <h3 className="text-lg font-semibold text-gray-900">
                           {team.teamName}
                         </h3>
-                        <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                           <span>
                             {team.uniqueRiders} renners
                             {team.totalRiders !== team.uniqueRiders && (
@@ -965,11 +967,12 @@ export default function TeamsOverviewPage() {
         {viewMode === 'all' && (
           <>
             {/* Sort Controls for All view */}
-            <div className="flex gap-2 items-center mb-4">
+            <div className="overflow-x-auto mb-4">
+              <div className="flex w-max min-w-full gap-2 items-center pb-1">
               <span className="text-sm text-gray-600">Sorteer op:</span>
               <button
                 onClick={() => setAllViewSortBy('points')}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                   allViewSortBy === 'points'
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-700 border border-gray-300'
@@ -1037,12 +1040,13 @@ export default function TeamsOverviewPage() {
               {allViewSearch && (
                 <button
                   onClick={() => setAllViewSearch('')}
-                  className="px-2 py-1.5 text-gray-400 hover:text-gray-600"
-                  title="Wis zoekterm"
-                >
-                  ✕
-                </button>
-              )}
+                className="px-2 py-1.5 text-gray-400 hover:text-gray-600"
+                title="Wis zoekterm"
+              >
+                ✕
+              </button>
+            )}
+              </div>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <Tooltip

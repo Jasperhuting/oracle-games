@@ -405,7 +405,7 @@ export default function GameDashboardPage() {
 
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {game?.name || 'Game Dashboard'}
@@ -426,7 +426,7 @@ export default function GameDashboardPage() {
               {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && (
                 <Link
                   href="/games"
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
                 >
                   Terug naar Games
                 </Link>

@@ -392,7 +392,7 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
             </div>
 
             {/* Driver slot */}
-            <div className={`flex-1 h-7 md:h-8 rounded flex items-center gap-1 md:gap-1.5 px-1 md:px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600 hover:border-gray-400'}`}>
+            <div className={`flex-1 h-10 rounded flex items-center gap-1 px-1.5 transition-colors ${driver ? 'bg-gray-800' : 'bg-gray-800/50 border border-dashed border-gray-600 hover:border-gray-400'}`}>
                 {driver ? (
                     <>
                         <span
@@ -1326,7 +1326,7 @@ export default function RacePage() {
                 {/* F1-styled info bar with actions */}
                 <div className="w-full bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg p-3 md:p-4 mb-4 border border-gray-700">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                        <div className="md:flex items-center gap-3 hidden">
                             <div className="w-1 h-8 bg-red-600 rounded-full hidden md:block"></div>
                             <p className="text-gray-300 text-sm md:text-base">
                                 <span className="text-white font-semibold">Tip:</span> Sleep de coureurs naar de startgrid om je voorspelling te maken.

@@ -275,7 +275,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             setViewMode('players');
             setGroupByCyclingTeam(false);
           }}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
             viewMode === 'players'
               ? 'bg-blue-600 text-white'
               : 'bg-white text-gray-700 border border-gray-300'
@@ -285,7 +285,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
         </button>
         <button
           onClick={() => setViewMode('all')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
             viewMode === 'all'
               ? 'bg-blue-600 text-white'
               : 'bg-white text-gray-700 border border-gray-300'
@@ -295,7 +295,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
         </button>
         <button
           onClick={() => setViewMode('compare')}
-          className={`px-4 py-2 rounded-lg transition-colors ${
+          className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
             viewMode === 'compare'
               ? 'bg-blue-600 text-white'
               : 'bg-white text-gray-700 border border-gray-300'
@@ -308,10 +308,11 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
       {/* Sort Controls - only show for players view */}
       {viewMode === 'players' && (
         <div className="space-y-4 mb-4">
-          <div className="flex gap-2 items-center">
+          <div className="overflow-x-auto">
+            <div className="flex w-max min-w-full gap-2 items-center pb-1">
             <button
               onClick={() => setSortBy('ranking')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                 sortBy === 'ranking'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300'
@@ -321,7 +322,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setSortBy('points')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                 sortBy === 'points'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300'
@@ -331,7 +332,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setSortBy('value')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                 sortBy === 'value'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300'
@@ -341,7 +342,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setSortBy('percentage')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
                 sortBy === 'percentage'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300'
@@ -352,7 +353,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
 
             <button
               onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-              className="ml-2 px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="ml-2 px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap flex items-center gap-2"
               title={sortDirection === 'asc' ? t('global.ascending') : t('global.descending')}
             >
               {sortDirection === 'asc' ? (
@@ -371,6 +372,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                 </>
               )}
             </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -446,7 +448,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                         <h3 className="text-lg font-semibold text-gray-900">
                           {team.playername}
                         </h3>
-                        <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                           <span>{team.totalRiders} renners</span>
                           <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
                           <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
@@ -565,7 +567,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                                 <div className="px-4 py-3 bg-gray-100">
                                   <div className="flex items-center justify-between">
                                     <div className="font-semibold text-gray-900">{cyclingTeam}</div>
-                                    <div className="flex gap-4 text-sm text-gray-600">
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
                                       <span>{riders.length} renners</span>
                                       <span>Waarde: {teamTotalBaseValue.toLocaleString()}</span>
                                       <span>Betaald: €{teamTotalPricePaid.toLocaleString()}</span>
@@ -628,7 +630,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{team.teamName}</h3>
-                      <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
                         <span>
                           {team.uniqueRiders} renners
                           {team.totalRiders !== team.uniqueRiders && (
@@ -752,11 +754,12 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
       {/* All Riders View */}
       {viewMode === 'all' && (
         <>
-          <div className="flex gap-2 items-center mb-4">
+          <div className="overflow-x-auto mb-4">
+            <div className="flex w-max min-w-full gap-2 items-center pb-1">
             <span className="text-sm text-gray-600">Sorteer op:</span>
             <button
               onClick={() => setAllViewSortBy('points')}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'points' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
@@ -764,7 +767,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setAllViewSortBy('value')}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'value' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
@@ -772,7 +775,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setAllViewSortBy('roi')}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'roi' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
@@ -780,7 +783,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setAllViewSortBy('owners')}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'owners' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
@@ -788,7 +791,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setAllViewSortBy('team')}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'team' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
@@ -796,7 +799,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </button>
             <button
               onClick={() => setAllViewSortDirection(allViewSortDirection === 'asc' ? 'desc' : 'asc')}
-              className="ml-2 px-3 py-1.5 rounded-lg text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-1"
+              className="ml-2 px-3 py-1.5 rounded-lg text-sm bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap flex items-center gap-1"
             >
               {allViewSortDirection === 'asc' ? (
                 <>
@@ -830,6 +833,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                 ✕
               </button>
             )}
+            </div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <Tooltip

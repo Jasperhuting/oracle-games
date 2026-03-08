@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Lato } from "next/font/google";
 import "./globals.css";
-import { Toaster } from 'react-hot-toast';
-import { LayoutShell } from "@/components/LayoutShell";
-import { AuthGuard } from "@/components/AuthGuard";
-import MessageNotification from "@/components/MessageNotification";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
-import { RankingsProvider } from "@/contexts/RankingsContext";
-import LanguageWrapper from "@/components/LanguageWrapper";
-import { PlayerTeamsProvider } from "@/contexts/PlayerTeamsContext";
+import AppShellProviders from "@/components/AppShellProviders";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,23 +38,7 @@ export default function RootLayout({
         style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}
       >
         <SpeedInsights />
-        <LanguageWrapper>
-          <ImpersonationProvider>
-            <RankingsProvider autoLoad={true}>
-              <PlayerTeamsProvider autoLoad={true}>
-              <Toaster position="top-center" />
-              <MessageNotification />
-              <AuthGuard>
-                <LayoutShell>
-                  <main>
-                    {children}
-                  </main>
-                </LayoutShell>
-              </AuthGuard>
-              </PlayerTeamsProvider>
-            </RankingsProvider>
-          </ImpersonationProvider>
-        </LanguageWrapper>
+        <AppShellProviders>{children}</AppShellProviders>
       </body>
     </html>
   );

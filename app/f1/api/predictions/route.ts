@@ -30,14 +30,26 @@ function toPredictionSnapshot(data: {
   };
 }
 
-// Helper to get user from session
-async function getUserFromSession(): Promise<string | null> {
+// Helper to get current user ID from Authorization header or session cookie
+async function getCurrentUserId(request: NextRequest): Promise<string | null> {
   try {
+    const auth = getServerAuth();
+
+    // First try Authorization header (ID token)
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const idToken = authHeader.substring(7);
+      if (idToken) {
+        const decoded = await auth.verifyIdToken(idToken);
+        return decoded.uid;
+      }
+    }
+
+    // Fallback to session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('session')?.value;
     if (!sessionCookie) return null;
 
-    const auth = getServerAuth();
     const decodedToken = await auth.verifySessionCookie(sessionCookie);
     return decodedToken.uid;
   } catch {
@@ -50,7 +62,7 @@ async function getUserFromSession(): Promise<string | null> {
 // GET /api/f1/predictions?userId=xxx&round=1 (specific user's prediction, only if race is done)
 export async function GET(request: NextRequest) {
   try {
-    const currentUserId = await getUserFromSession();
+    const currentUserId = await getCurrentUserId(request);
     
     const { searchParams } = new URL(request.url);
     const season = parseInt(searchParams.get('season') || new Date().getFullYear().toString());
@@ -150,7 +162,7 @@ export async function GET(request: NextRequest) {
 // POST /api/f1/predictions
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserFromSession();
+    const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

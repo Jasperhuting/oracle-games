@@ -619,7 +619,7 @@ export const Bidding = ({
                                   <div className="flex items-center gap-2">
                                     <Link
                                       href={`/user/${row.userId}`}
-                                      className="font-medium text-gray-900 hover:text-primary hover:underline"
+                                      className="font-medium text-gray-900 hover:text-primary hover:underline whitespace-nowrap truncate"
                                     >
                                       {row.playername}
                                     </Link>

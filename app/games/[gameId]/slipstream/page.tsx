@@ -505,7 +505,7 @@ export default function SlipstreamPage() {
             </div>
             <Link
               href="/games"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
             >
               Back
             </Link>

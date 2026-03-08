@@ -3,13 +3,13 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-
-const publicRoutes = ['/login', '/register', '/reset-password', '/verify-email'];
+import { isPublicRoute } from '@/lib/constants/routes';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isPublic = isPublicRoute(pathname);
 
   // Check if user is fully authenticated (logged in AND email verified)
   // Google users are always verified, email users need to verify
@@ -18,7 +18,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading) {
       // If user is not fully authenticated and trying to access protected route
-      if (!isFullyAuthenticated && !publicRoutes.includes(pathname)) {
+      if (!isFullyAuthenticated && !isPublic) {
         // If user exists but email not verified, redirect to verify-email
         if (user && !user.emailVerified) {
           router.push('/verify-email');
@@ -27,11 +27,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         }
       }
       // If user is fully authenticated and trying to access auth routes (except verify-email with unverified user)
-      else if (isFullyAuthenticated && publicRoutes.includes(pathname)) {
+      else if (isFullyAuthenticated && isPublic) {
         router.push('/home');
       }
     }
-  }, [user, loading, pathname, router, isFullyAuthenticated]);
+  }, [user, loading, isPublic, router, isFullyAuthenticated]);
+
+  // Public routes should render immediately, even when auth check is still in-flight.
+  if (isPublic) {
+    return <>{children}</>;
+  }
 
   // Show loading state while checking auth
   if (loading) {
@@ -43,12 +48,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Don't render protected content if not fully authenticated
-  if (!isFullyAuthenticated && !publicRoutes.includes(pathname)) {
-    return null;
-  }
-
-  // Don't render auth pages if fully authenticated
-  if (isFullyAuthenticated && publicRoutes.includes(pathname)) {
+  if (!isFullyAuthenticated) {
     return null;
   }
 
