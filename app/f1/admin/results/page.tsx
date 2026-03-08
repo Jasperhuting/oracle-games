@@ -7,6 +7,12 @@ import Link from "next/link";
 import { ArrowLeft, Check, Trophy } from "tabler-icons-react";
 
 type Driver = LegacyDriver;
+type ActivePicker =
+    | { type: "finish"; position: number }
+    | { type: "pole" }
+    | { type: "fastest" }
+    | { type: "dnf" }
+    | null;
 
 export default function AdminResultsPage() {
     const { races, loading: racesLoading } = useF1Races(2026);
@@ -20,8 +26,8 @@ export default function AdminResultsPage() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Position picker state
-    const [activePosition, setActivePosition] = useState<number | null>(null);
+    // Picker state (finish, pole, fastest lap, dnf)
+    const [activePicker, setActivePicker] = useState<ActivePicker>(null);
     const [search, setSearch] = useState("");
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -29,15 +35,15 @@ export default function AdminResultsPage() {
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setActivePosition(null);
+                setActivePicker(null);
                 setSearch("");
             }
         };
-        if (activePosition !== null) {
+        if (activePicker !== null) {
             document.addEventListener("mousedown", handleClickOutside);
         }
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [activePosition]);
+    }, [activePicker]);
 
     const handleSelectDriver = (position: number, driver: Driver) => {
         setResultGrid(prev => {
@@ -50,7 +56,7 @@ export default function AdminResultsPage() {
             newGrid[position - 1] = driver;
             return newGrid;
         });
-        setActivePosition(null);
+        setActivePicker(null);
         setSearch("");
     };
 
@@ -68,6 +74,31 @@ export default function AdminResultsPage() {
                 ? prev.filter(d => d !== shortName)
                 : [...prev, shortName]
         );
+    };
+
+    const getDriverByShortName = (shortName: string | null) => {
+        if (!shortName) return null;
+        return drivers.find(d => d.shortName === shortName) ?? null;
+    };
+
+    const matchesSearch = (driver: Driver) => {
+        const q = search.toLowerCase();
+        return (
+            driver.firstName.toLowerCase().includes(q) ||
+            driver.lastName.toLowerCase().includes(q) ||
+            driver.shortName.toLowerCase().includes(q)
+        );
+    };
+
+    const getAvailableFinishDrivers = (position: number) => {
+        const currentDriver = resultGrid[position - 1];
+        const usedDrivers = new Set(
+            resultGrid
+                .map((d, idx) => (idx !== position - 1 ? d?.shortName : null))
+                .filter((value): value is string => Boolean(value))
+        );
+
+        return drivers.filter(d => d.shortName === currentDriver?.shortName || !usedDrivers.has(d.shortName));
     };
 
     const handleSubmitResults = async () => {
@@ -113,18 +144,12 @@ export default function AdminResultsPage() {
             } else {
                 setMessage({ type: 'error', text: data.error || 'Er ging iets mis' });
             }
-        } catch (error) {
+        } catch {
             setMessage({ type: 'error', text: 'Netwerkfout bij opslaan' });
         } finally {
             setSaving(false);
         }
     };
-
-    const filteredDrivers = drivers.filter(d =>
-        d.firstName.toLowerCase().includes(search.toLowerCase()) ||
-        d.lastName.toLowerCase().includes(search.toLowerCase()) ||
-        d.shortName.toLowerCase().includes(search.toLowerCase())
-    );
 
     const getPositionStyle = (position: number) => {
         if (position === 1) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-black';
@@ -241,13 +266,14 @@ export default function AdminResultsPage() {
                     <div className="space-y-1">
                         {Array.from({ length: 22 }, (_, i) => i + 1).map(position => {
                             const driver = resultGrid[position - 1];
-                            const isActive = activePosition === position;
+                            const isActive = activePicker?.type === "finish" && activePicker.position === position;
+                            const filteredDrivers = getAvailableFinishDrivers(position).filter(matchesSearch);
 
                             return (
                                 <div key={position} className="relative">
                                     <div
                                         onClick={() => {
-                                            setActivePosition(isActive ? null : position);
+                                            setActivePicker(isActive ? null : { type: "finish", position });
                                             setSearch("");
                                         }}
                                         className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
@@ -321,6 +347,9 @@ export default function AdminResultsPage() {
                                                         <span className="text-gray-400 text-sm">{d.lastName}</span>
                                                     </div>
                                                 ))}
+                                                {filteredDrivers.length === 0 && (
+                                                    <div className="px-3 py-2 text-sm text-gray-500">Geen coureurs gevonden</div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
@@ -333,55 +362,235 @@ export default function AdminResultsPage() {
                 {/* Extra info */}
                 <div className="space-y-4">
                     {/* Pole Position */}
-                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative">
                         <h3 className="text-sm font-semibold text-yellow-400 mb-3">Pole Position</h3>
-                        <select
-                            value={polePosition || ''}
-                            onChange={(e) => setPolePosition(e.target.value || null)}
-                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                        <div
+                            onClick={() => {
+                                setActivePicker(activePicker?.type === "pole" ? null : { type: "pole" });
+                                setSearch("");
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                activePicker?.type === "pole" ? "bg-gray-700 ring-2 ring-yellow-500" : "bg-gray-900 hover:bg-gray-700"
+                            }`}
                         >
-                            <option value="">Selecteer coureur</option>
-                            {drivers.map(d => (
-                                <option key={d.shortName} value={d.shortName}>{d.shortName} - {d.lastName}</option>
-                            ))}
-                        </select>
+                            {getDriverByShortName(polePosition) ? (
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <span
+                                        className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0"
+                                        style={{ backgroundColor: getDriverByShortName(polePosition)!.teamColor }}
+                                    >
+                                        <img
+                                            src={getDriverByShortName(polePosition)!.image}
+                                            alt={getDriverByShortName(polePosition)!.lastName}
+                                            className="w-8 h-auto absolute top-0 left-0"
+                                        />
+                                    </span>
+                                    <span className="text-white text-sm font-medium">{getDriverByShortName(polePosition)!.shortName}</span>
+                                    <span className="text-gray-400 text-sm truncate">{getDriverByShortName(polePosition)!.lastName}</span>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPolePosition(null);
+                                        }}
+                                        className="ml-auto text-gray-500 hover:text-red-400 text-sm"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ) : (
+                                <span className="text-gray-500 text-sm">Klik om coureur te selecteren</span>
+                            )}
+                        </div>
+
+                        {activePicker?.type === "pole" && (
+                            <div className="absolute top-full left-4 right-4 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-hidden">
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Zoek coureur..."
+                                    className="w-full px-3 py-2 bg-gray-800 border-b border-gray-700 text-white text-sm focus:outline-none"
+                                    autoFocus
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <div className="max-h-48 overflow-y-auto">
+                                    {drivers.filter(matchesSearch).map(d => (
+                                        <div
+                                            key={d.shortName}
+                                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setPolePosition(d.shortName);
+                                                setActivePicker(null);
+                                                setSearch("");
+                                            }}
+                                        >
+                                            <span
+                                                className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0"
+                                                style={{ backgroundColor: d.teamColor }}
+                                            >
+                                                <img src={d.image} alt={d.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                            </span>
+                                            <span className="text-white text-sm font-medium">{d.shortName}</span>
+                                            <span className="text-gray-400 text-sm">{d.lastName}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Fastest Lap */}
-                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative">
                         <h3 className="text-sm font-semibold text-purple-400 mb-3">Snelste Ronde</h3>
-                        <select
-                            value={fastestLap || ''}
-                            onChange={(e) => setFastestLap(e.target.value || null)}
-                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                        <div
+                            onClick={() => {
+                                setActivePicker(activePicker?.type === "fastest" ? null : { type: "fastest" });
+                                setSearch("");
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                activePicker?.type === "fastest" ? "bg-gray-700 ring-2 ring-purple-500" : "bg-gray-900 hover:bg-gray-700"
+                            }`}
                         >
-                            <option value="">Selecteer coureur</option>
-                            {drivers.map(d => (
-                                <option key={d.shortName} value={d.shortName}>{d.shortName} - {d.lastName}</option>
-                            ))}
-                        </select>
+                            {getDriverByShortName(fastestLap) ? (
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <span
+                                        className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0"
+                                        style={{ backgroundColor: getDriverByShortName(fastestLap)!.teamColor }}
+                                    >
+                                        <img
+                                            src={getDriverByShortName(fastestLap)!.image}
+                                            alt={getDriverByShortName(fastestLap)!.lastName}
+                                            className="w-8 h-auto absolute top-0 left-0"
+                                        />
+                                    </span>
+                                    <span className="text-white text-sm font-medium">{getDriverByShortName(fastestLap)!.shortName}</span>
+                                    <span className="text-gray-400 text-sm truncate">{getDriverByShortName(fastestLap)!.lastName}</span>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setFastestLap(null);
+                                        }}
+                                        className="ml-auto text-gray-500 hover:text-red-400 text-sm"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ) : (
+                                <span className="text-gray-500 text-sm">Klik om coureur te selecteren</span>
+                            )}
+                        </div>
+
+                        {activePicker?.type === "fastest" && (
+                            <div className="absolute top-full left-4 right-4 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-hidden">
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Zoek coureur..."
+                                    className="w-full px-3 py-2 bg-gray-800 border-b border-gray-700 text-white text-sm focus:outline-none"
+                                    autoFocus
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <div className="max-h-48 overflow-y-auto">
+                                    {drivers.filter(matchesSearch).map(d => (
+                                        <div
+                                            key={d.shortName}
+                                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setFastestLap(d.shortName);
+                                                setActivePicker(null);
+                                                setSearch("");
+                                            }}
+                                        >
+                                            <span
+                                                className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0"
+                                                style={{ backgroundColor: d.teamColor }}
+                                            >
+                                                <img src={d.image} alt={d.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                            </span>
+                                            <span className="text-white text-sm font-medium">{d.shortName}</span>
+                                            <span className="text-gray-400 text-sm">{d.lastName}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* DNF Drivers */}
-                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative">
                         <h3 className="text-sm font-semibold text-red-400 mb-3">DNF Coureurs</h3>
-                        <div className="flex flex-wrap gap-2">
-                            {resultGrid.filter(d => d !== null).map(driver => driver && (
-                                <button
-                                    key={driver.shortName}
-                                    onClick={() => toggleDnf(driver.shortName)}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                                        dnfDrivers.includes(driver.shortName)
-                                            ? 'bg-red-600 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                    }`}
-                                >
-                                    {driver.shortName}
-                                </button>
-                            ))}
+                        <div
+                            onClick={() => {
+                                setActivePicker(activePicker?.type === "dnf" ? null : { type: "dnf" });
+                                setSearch("");
+                            }}
+                            className={`min-h-11 flex flex-wrap items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                activePicker?.type === "dnf" ? "bg-gray-700 ring-2 ring-red-500" : "bg-gray-900 hover:bg-gray-700"
+                            }`}
+                        >
+                            {dnfDrivers.length > 0 ? (
+                                dnfDrivers.map(shortName => (
+                                    <span
+                                        key={shortName}
+                                        className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-900/60 text-red-200 text-xs"
+                                    >
+                                        {shortName}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleDnf(shortName);
+                                            }}
+                                            className="text-red-300 hover:text-white"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-gray-500 text-sm">Klik om DNF coureurs te selecteren (meerdere mogelijk)</span>
+                            )}
                         </div>
-                        {resultGrid.filter(d => d !== null).length === 0 && (
-                            <p className="text-gray-500 text-sm">Vul eerst de finish volgorde in</p>
+
+                        {activePicker?.type === "dnf" && (
+                            <div className="absolute top-full left-4 right-4 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 max-h-64 overflow-hidden">
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Zoek coureur..."
+                                    className="w-full px-3 py-2 bg-gray-800 border-b border-gray-700 text-white text-sm focus:outline-none"
+                                    autoFocus
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <div className="max-h-48 overflow-y-auto">
+                                    {drivers.filter(matchesSearch).map(d => {
+                                        const selected = dnfDrivers.includes(d.shortName);
+                                        return (
+                                            <div
+                                                key={d.shortName}
+                                                className={`flex items-center gap-2 px-3 py-2 cursor-pointer ${selected ? "bg-red-900/30" : "hover:bg-gray-800"}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleDnf(d.shortName);
+                                                }}
+                                            >
+                                                <span
+                                                    className="w-6 h-6 rounded-full overflow-hidden relative flex-shrink-0"
+                                                    style={{ backgroundColor: d.teamColor }}
+                                                >
+                                                    <img src={d.image} alt={d.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                                </span>
+                                                <span className="text-white text-sm font-medium">{d.shortName}</span>
+                                                <span className="text-gray-400 text-sm">{d.lastName}</span>
+                                                {selected && <span className="ml-auto text-red-300 text-xs">Geselecteerd</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         )}
                     </div>
 

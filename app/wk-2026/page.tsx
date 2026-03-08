@@ -17,7 +17,7 @@ export interface TeamInPoule {
     position: number | null; // 0, 1, 2, or 3 for positions within a poule
 }
 
-export const WK2026Page = () => {
+const WK2026Page = () => {
     const [teams, setTeams] = useState<TeamInPoule[]>([]);
     const [draggedTeam, setDraggedTeam] = useState<TeamInPoule | null>(null);
 
@@ -338,3 +338,4 @@ export const WK2026Page = () => {
     );
 };
 
+export default WK2026Page;

@@ -26,7 +26,6 @@ import { BidBackupTab } from "@/components/BidBackupTab";
 import { FinalizeOverviewTab } from "@/components/FinalizeOverviewTab";
 import { SimulateResultsTab } from "@/components/SimulateResultsTab";
 import { TodosTab } from "@/components/TodosTab";
-import { F1ResultsTab } from "@/components/F1ResultsTab";
 import { CacheToolsTab } from "@/components/CacheToolsTab";
 import { JobsDashboard } from "@/components/admin/JobsDashboard";
 import { useAuth } from "@/hooks/useAuth";
@@ -196,11 +195,6 @@ export default function AdminPageClient() {
                                     label: '🎲 Simuleer Results',
                                     content: <SimulateResultsTab />
                                 },
-                                {
-                                    id: 'f1-results',
-                                    label: '🏎️ F1 Uitslagen',
-                                    content: <F1ResultsTab />
-                                }
                             ]
                         },
                         {
