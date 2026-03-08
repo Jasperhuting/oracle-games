@@ -17,18 +17,39 @@ export async function GET(request: NextRequest) {
 
     console.log('[CRON] Checking for expired chat rooms');
 
-    const now = Timestamp.now();
+    const now = new Date();
     const snapshot = await db
       .collection('chat_rooms')
       .where('status', '==', 'open')
-      .where('closesAt', '<=', now)
       .get();
 
+    const batch = db.batch();
     let closed = 0;
     for (const doc of snapshot.docs) {
-      await doc.ref.update({ status: 'closed' });
+      const closesAtRaw = doc.data().closesAt;
+      const closesAt =
+        closesAtRaw instanceof Timestamp
+          ? closesAtRaw.toDate()
+          : closesAtRaw?.toDate?.() instanceof Date
+            ? closesAtRaw.toDate()
+            : new Date(closesAtRaw);
+
+      if (!(closesAt instanceof Date) || Number.isNaN(closesAt.getTime())) {
+        console.warn(`[CRON] Skipping chat room with invalid closesAt: ${doc.id}`);
+        continue;
+      }
+
+      if (closesAt > now) {
+        continue;
+      }
+
+      batch.update(doc.ref, { status: 'closed' });
       closed++;
       console.log(`[CRON] Closed chat room: ${doc.id} (${doc.data().title})`);
+    }
+
+    if (closed > 0) {
+      await batch.commit();
     }
 
     console.log(`[CRON] Closed ${closed} expired chat rooms`);
