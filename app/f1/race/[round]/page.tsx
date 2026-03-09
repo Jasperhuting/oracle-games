@@ -216,78 +216,6 @@ interface StartingGridElementProps {
     disabled?: boolean;
 }
 
-// Combined grid element showing actual result vs prediction with position difference
-interface CombinedGridElementProps {
-    actualDriver: Driver | null;
-    predictedDriver: Driver | null;
-    position: number;
-    predictedPosition: number | null; // Position where this actual driver was predicted
-}
-
-const CombinedGridElement = ({ actualDriver, predictedDriver, position, predictedPosition }: CombinedGridElementProps) => {
-    if (!actualDriver) return null;
-
-    const isCorrect = predictedDriver?.shortName === actualDriver.shortName;
-    const positionDiff = predictedPosition ? predictedPosition - position : null;
-
-    // Podium colors for top 3
-    const getPositionStyle = () => {
-        if (position === 1) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-black';
-        if (position === 2) return 'bg-gradient-to-r from-gray-400 to-gray-300 text-black';
-        if (position === 3) return 'bg-gradient-to-r from-amber-700 to-amber-600 text-white';
-        return 'bg-gray-700 text-white';
-    };
-
-    return (
-        <div className={`relative flex items-center gap-1 p-0.5 rounded ${isCorrect ? 'ring-1 ring-green-500/50' : ''}`}>
-            {/* Position number */}
-            <div className={`w-6 h-6 flex items-center justify-center rounded text-xs font-black ${getPositionStyle()}`}>
-                {position}
-            </div>
-
-            {/* Driver slot */}
-            <div className={`flex-1 h-8 rounded flex items-center gap-1.5 px-1.5 bg-gray-800 ${isCorrect ? 'bg-green-900/30' : ''}`}>
-                <span
-                    className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0"
-                    style={{ backgroundColor: actualDriver.teamColor }}
-                >
-                    <img
-                        src={actualDriver.image}
-                        alt={actualDriver.lastName}
-                        className="w-7 h-auto absolute top-0 left-0 pointer-events-none"
-                    />
-                </span>
-                <div className="flex flex-col flex-1 min-w-0">
-                    <span className={`text-xs font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>
-                        {actualDriver.shortName}
-                    </span>
-                    {!isCorrect && predictedDriver && (
-                        <span className="text-[9px] text-gray-500 line-through">
-                            {predictedDriver.shortName}
-                        </span>
-                    )}
-                </div>
-                <div
-                    className="w-0.5 h-4 rounded-full"
-                    style={{ backgroundColor: actualDriver.teamColor }}
-                />
-            </div>
-
-            {/* Position difference badge */}
-            {positionDiff !== null && positionDiff !== 0 && (
-                <div className={`absolute -right-1 -top-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${positionDiff > 0 ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-                    {positionDiff > 0 ? `+${positionDiff}` : positionDiff}
-                </div>
-            )}
-            {isCorrect && (
-                <div className="absolute -right-1 -top-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold bg-green-600 text-white">
-                    ✓
-                </div>
-            )}
-        </div>
-    );
-};
-
 const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDragEnd, onSelect, availableDrivers, allSelectedDrivers, disabled }: StartingGridElementProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -552,13 +480,16 @@ export default function RacePage() {
     const getMockResult = (raceRound: number, driversList: Driver[]): (Driver | null)[] => {
         if (raceRound === 0 && driversList.length > 0) {
             const resultOrder = ['NOR', 'VER', 'HAM', 'LEC', 'RUS', 'PIA', 'ALO', 'SAI', 'GAS', 'STR'];
-            return resultOrder.map(shortName => driversList.find(d => d.shortName === shortName) || null);
+            return [
+                ...resultOrder.map(shortName => driversList.find(d => d.shortName === shortName) || null),
+                ...Array(12).fill(null)
+            ];
         }
-        return Array(10).fill(null);
+        return Array(22).fill(null);
     };
 
     const [grid, setGrid] = useState<(Driver | null)[]>(Array(10).fill(null));
-    const [actualResult, setActualResult] = useState<(Driver | null)[]>(Array(10).fill(null));
+    const [actualResult, setActualResult] = useState<(Driver | null)[]>(Array(22).fill(null));
     
     // Extra predictions - declare before useEffects that use them
     const [fastestLap, setFastestLap] = useState<string | null>(null);
@@ -600,13 +531,12 @@ export default function RacePage() {
                 const loadedResult = raceResult.finishOrder.map(shortName => 
                     drivers.find(d => d.shortName === shortName) || null
                 );
-                // Keep only the first 10 positions for display
-                setActualResult(loadedResult.slice(0, 10));
+                setActualResult(loadedResult);
             } else if (round === 0) {
                 // Use mock data for test race (round 0)
                 setActualResult(getMockResult(round, drivers as Driver[]));
             } else {
-                setActualResult(Array(10).fill(null));
+                setActualResult(Array(22).fill(null));
             }
         }
     }, [drivers, raceResult, resultLoading, round]);
@@ -838,6 +768,7 @@ export default function RacePage() {
     };
 
     const pointsData = calculatePoints();
+    const top10ActualResult = actualResult.slice(0, 10);
 
     if (raceLoading || driversLoading) {
         return (
@@ -891,7 +822,7 @@ export default function RacePage() {
             {isRaceDone ? (
                 <div className="flex flex-col gap-6">
                     {/* F1-styled Podium */}
-                    {actualResult[0] && actualResult[1] && actualResult[2] && (
+                    {top10ActualResult[0] && top10ActualResult[1] && top10ActualResult[2] && (
                         <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg p-4 md:p-6 border border-gray-700">
                             {/* Podium header */}
                             <div className="flex items-center justify-center gap-2 mb-6">
@@ -905,14 +836,14 @@ export default function RacePage() {
                                 <div className="flex flex-col items-center flex-1 max-w-[140px] md:max-w-[180px]">
                                     <div className="w-full mb-2">
                                         <div className="bg-gray-800 rounded-t-lg p-2 text-center border-t border-x border-gray-600">
-                                            <span className="text-white font-bold text-xs md:text-sm">{actualResult[1].shortName}</span>
-                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{actualResult[1].team}</span>
+                                            <span className="text-white font-bold text-xs md:text-sm">{top10ActualResult[1].shortName}</span>
+                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{top10ActualResult[1].team}</span>
                                         </div>
                                     </div>
                                     <div className="bg-gradient-to-b from-gray-400 to-gray-500 w-full h-20 md:h-24 flex flex-col items-center justify-center rounded-t-lg relative">
                                         <span className="text-4xl md:text-5xl font-black text-white drop-shadow-lg">2</span>
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gray-400" style={{ backgroundColor: actualResult[1].teamColor }}>
-                                            <img src={actualResult[1].image} alt={actualResult[1].lastName} className="w-10 md:w-12 h-auto absolute top-0 left-0" />
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gray-400" style={{ backgroundColor: top10ActualResult[1].teamColor }}>
+                                            <img src={top10ActualResult[1].image} alt={top10ActualResult[1].lastName} className="w-10 md:w-12 h-auto absolute top-0 left-0" />
                                         </div>
                                     </div>
                                 </div>
@@ -921,14 +852,14 @@ export default function RacePage() {
                                 <div className="flex flex-col items-center flex-1 max-w-[160px] md:max-w-[200px]">
                                     <div className="w-full mb-2">
                                         <div className="bg-gray-800 rounded-t-lg p-2 text-center border-t border-x border-yellow-500">
-                                            <span className="text-yellow-400 font-bold text-xs md:text-sm">{actualResult[0].shortName}</span>
-                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{actualResult[0].team}</span>
+                                            <span className="text-yellow-400 font-bold text-xs md:text-sm">{top10ActualResult[0].shortName}</span>
+                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{top10ActualResult[0].team}</span>
                                         </div>
                                     </div>
                                     <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 w-full h-28 md:h-36 flex flex-col items-center justify-center rounded-t-lg relative">
                                         <span className="text-5xl md:text-6xl font-black text-white drop-shadow-lg">1</span>
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-yellow-400" style={{ backgroundColor: actualResult[0].teamColor }}>
-                                            <img src={actualResult[0].image} alt={actualResult[0].lastName} className="w-12 md:w-14 h-auto absolute top-0 left-0" />
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-yellow-400" style={{ backgroundColor: top10ActualResult[0].teamColor }}>
+                                            <img src={top10ActualResult[0].image} alt={top10ActualResult[0].lastName} className="w-12 md:w-14 h-auto absolute top-0 left-0" />
                                         </div>
                                     </div>
                                 </div>
@@ -937,14 +868,14 @@ export default function RacePage() {
                                 <div className="flex flex-col items-center flex-1 max-w-[130px] md:max-w-[160px]">
                                     <div className="w-full mb-2">
                                         <div className="bg-gray-800 rounded-t-lg p-2 text-center border-t border-x border-amber-600">
-                                            <span className="text-amber-500 font-bold text-xs md:text-sm">{actualResult[2].shortName}</span>
-                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{actualResult[2].team}</span>
+                                            <span className="text-amber-500 font-bold text-xs md:text-sm">{top10ActualResult[2].shortName}</span>
+                                            <span className="text-gray-400 text-xs ml-1 hidden md:inline">{top10ActualResult[2].team}</span>
                                         </div>
                                     </div>
                                     <div className="bg-gradient-to-b from-amber-600 to-amber-800 w-full h-16 md:h-20 flex flex-col items-center justify-center rounded-t-lg relative">
                                         <span className="text-3xl md:text-4xl font-black text-white drop-shadow-lg">3</span>
-                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-7 h-7 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-amber-600" style={{ backgroundColor: actualResult[2].teamColor }}>
-                                            <img src={actualResult[2].image} alt={actualResult[2].lastName} className="w-9 md:w-11 h-auto absolute top-0 left-0" />
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-7 h-7 md:w-9 md:h-9 rounded-full overflow-hidden border-2 border-amber-600" style={{ backgroundColor: top10ActualResult[2].teamColor }}>
+                                            <img src={top10ActualResult[2].image} alt={top10ActualResult[2].lastName} className="w-9 md:w-11 h-auto absolute top-0 left-0" />
                                         </div>
                                     </div>
                                 </div>
@@ -1003,19 +934,33 @@ export default function RacePage() {
                                     <div className="flex items-center gap-2">
                                         {(() => {
                                             const poleDriver = drivers.find(d => d.shortName === raceResult.polePosition) as LegacyDriver | undefined;
+                                            const predictedPoleDriver = polePosition ? drivers.find(d => d.shortName === polePosition) as LegacyDriver | undefined : undefined;
                                             const isCorrect = polePosition === raceResult.polePosition;
                                             return (
-                                                <>
-                                                    {poleDriver && (
-                                                        <span style={{ backgroundColor: poleDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-8 h-8 relative flex-shrink-0">
-                                                            <img src={poleDriver.image} alt={poleDriver.lastName} className="w-10 h-auto absolute top-0 -left-0" />
-                                                        </span>
-                                                    )}
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="text-white font-bold text-sm truncate">{raceResult.polePosition}</div>
-                                                        {isCorrect && <div className="text-green-400 text-xs">✓ -2 strafpunten</div>}
+                                                <div className="flex-1 min-w-0 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {poleDriver && (
+                                                            <span style={{ backgroundColor: poleDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-8 h-8 relative flex-shrink-0">
+                                                                <img src={poleDriver.image} alt={poleDriver.lastName} className="w-10 h-auto absolute top-0 -left-0" />
+                                                            </span>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-white font-bold text-sm truncate">{raceResult.polePosition}</div>
+                                                            <div className="text-[11px] text-gray-500 uppercase tracking-wide">Officieel</div>
+                                                        </div>
                                                     </div>
-                                                </>
+                                                    <div className={`flex items-center gap-2 rounded px-2 py-1 ${isCorrect ? 'bg-green-900/30 border border-green-500/40' : 'bg-white/5 border border-white/10'}`}>
+                                                        {predictedPoleDriver && (
+                                                            <span style={{ backgroundColor: predictedPoleDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-7 h-7 relative flex-shrink-0">
+                                                                <img src={predictedPoleDriver.image} alt={predictedPoleDriver.lastName} className="w-9 h-auto absolute top-0 -left-0" />
+                                                            </span>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-white text-sm truncate">{polePosition || 'Niet ingevuld'}</div>
+                                                            <div className="text-[11px] text-gray-400">Jouw voorspelling {isCorrect ? '• ✓ -2 strafpunten' : ''}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             );
                                         })()}
                                     </div>
@@ -1027,19 +972,33 @@ export default function RacePage() {
                                     <div className="flex items-center gap-2">
                                         {(() => {
                                             const flDriver = drivers.find(d => d.shortName === raceResult.fastestLap) as LegacyDriver | undefined;
+                                            const predictedFastestDriver = fastestLap ? drivers.find(d => d.shortName === fastestLap) as LegacyDriver | undefined : undefined;
                                             const isCorrect = fastestLap === raceResult.fastestLap;
                                             return (
-                                                <>
-                                                    {flDriver && (
-                                                        <span style={{ backgroundColor: flDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-8 h-8 relative flex-shrink-0">
-                                                            <img src={flDriver.image} alt={flDriver.lastName} className="w-10 h-auto absolute top-0 -left-0" />
-                                                        </span>
-                                                    )}
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="text-white font-bold text-sm truncate">{raceResult.fastestLap}</div>
-                                                        {isCorrect && <div className="text-green-400 text-xs">✓ -2 strafpunten</div>}
+                                                <div className="flex-1 min-w-0 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {flDriver && (
+                                                            <span style={{ backgroundColor: flDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-8 h-8 relative flex-shrink-0">
+                                                                <img src={flDriver.image} alt={flDriver.lastName} className="w-10 h-auto absolute top-0 -left-0" />
+                                                            </span>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-white font-bold text-sm truncate">{raceResult.fastestLap}</div>
+                                                            <div className="text-[11px] text-gray-500 uppercase tracking-wide">Officieel</div>
+                                                        </div>
                                                     </div>
-                                                </>
+                                                    <div className={`flex items-center gap-2 rounded px-2 py-1 ${isCorrect ? 'bg-green-900/30 border border-green-500/40' : 'bg-white/5 border border-white/10'}`}>
+                                                        {predictedFastestDriver && (
+                                                            <span style={{ backgroundColor: predictedFastestDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-7 h-7 relative flex-shrink-0">
+                                                                <img src={predictedFastestDriver.image} alt={predictedFastestDriver.lastName} className="w-9 h-auto absolute top-0 -left-0" />
+                                                            </span>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-white text-sm truncate">{fastestLap || 'Niet ingevuld'}</div>
+                                                            <div className="text-[11px] text-gray-400">Jouw voorspelling {isCorrect ? '• ✓ -2 strafpunten' : ''}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             );
                                         })()}
                                     </div>
@@ -1049,112 +1008,152 @@ export default function RacePage() {
                                 <div className="bg-black/50 rounded-lg p-3 border border-red-500/30 col-span-2">
                                     <div className="text-red-400 text-xs font-bold mb-1 uppercase tracking-wider">Did Not Finish ({raceResult.dnfDrivers?.length || 0})</div>
                                     {raceResult.dnfDrivers && raceResult.dnfDrivers.length > 0 ? (
-                                        <div className="flex flex-wrap gap-2">
-                                            {raceResult.dnfDrivers.map((dnfShortName) => {
-                                                const dnfDriver = drivers.find(d => d.shortName === dnfShortName) as LegacyDriver | undefined;
-                                                const isCorrect = dnf1 === dnfShortName || dnf2 === dnfShortName;
-                                                return (
-                                                    <div key={dnfShortName} className={`flex items-center gap-1 px-2 py-1 rounded ${isCorrect ? 'bg-green-900/50 border border-green-500/50' : 'bg-red-900/30'}`}>
-                                                        {dnfDriver && (
-                                                            <span style={{ backgroundColor: dnfDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-6 h-6 relative flex-shrink-0">
-                                                                <img src={dnfDriver.image} alt={dnfDriver.lastName} className="w-8 h-auto absolute top-0 -left-0" />
-                                                            </span>
-                                                        )}
-                                                        <span className="text-white text-sm font-medium">{dnfShortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">✓</span>}
-                                                    </div>
-                                                );
-                                            })}
+                                        <div className="space-y-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {raceResult.dnfDrivers.map((dnfShortName) => {
+                                                    const dnfDriver = drivers.find(d => d.shortName === dnfShortName) as LegacyDriver | undefined;
+                                                    const isCorrect = dnf1 === dnfShortName || dnf2 === dnfShortName;
+                                                    return (
+                                                        <div key={dnfShortName} className={`flex items-center gap-1 px-2 py-1 rounded ${isCorrect ? 'bg-green-900/50 border border-green-500/50' : 'bg-red-900/30'}`}>
+                                                            {dnfDriver && (
+                                                                <span style={{ backgroundColor: dnfDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-6 h-6 relative flex-shrink-0">
+                                                                    <img src={dnfDriver.image} alt={dnfDriver.lastName} className="w-8 h-auto absolute top-0 -left-0" />
+                                                                </span>
+                                                            )}
+                                                            <span className="text-white text-sm font-medium">{dnfShortName}</span>
+                                                            {isCorrect && <span className="text-green-400 text-xs">✓</span>}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div>
+                                                <div className="text-[11px] text-gray-500 uppercase tracking-wide mb-2">Jouw voorspelling</div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {[dnf1, dnf2].filter(Boolean).length > 0 ? (
+                                                        [dnf1, dnf2].filter(Boolean).map((predictedDnf) => {
+                                                            const predictedDriver = drivers.find(d => d.shortName === predictedDnf) as LegacyDriver | undefined;
+                                                            const isCorrect = predictedDnf ? raceResult.dnfDrivers.includes(predictedDnf) : false;
+                                                            return (
+                                                                <div key={`predicted-${predictedDnf}`} className={`flex items-center gap-1 px-2 py-1 rounded ${isCorrect ? 'bg-green-900/50 border border-green-500/50' : 'bg-white/5 border border-white/10'}`}>
+                                                                    {predictedDriver && (
+                                                                        <span style={{ backgroundColor: predictedDriver.teamColor || '#666' }} className="rounded-full overflow-hidden w-6 h-6 relative flex-shrink-0">
+                                                                            <img src={predictedDriver.image} alt={predictedDriver.lastName} className="w-8 h-auto absolute top-0 -left-0" />
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="text-white text-sm font-medium">{predictedDnf}</span>
+                                                                    {isCorrect && <span className="text-green-400 text-xs">✓ -2</span>}
+                                                                </div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="text-gray-500 text-sm">Geen DNF voorspeld</div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="text-gray-500 text-sm">Geen uitvallers</div>
+                                        <div className="space-y-2">
+                                            <div className="text-gray-500 text-sm">Geen uitvallers</div>
+                                            <div className="text-[11px] text-gray-400">Jouw voorspelling: {[dnf1, dnf2].filter(Boolean).join(', ') || 'geen'}</div>
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Combined Results Grid - F1 style */}
-                    <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg p-4 border border-gray-700">
-                        {/* Header */}
-                        <div className="flex items-center justify-center gap-2 mb-4 pb-3 border-b border-gray-700">
-                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
-                            <span className="text-white font-black text-lg tracking-tight uppercase">Resultaat vs Voorspelling</span>
-                            <div className="w-1 h-6 bg-red-600 rounded-full"></div>
-                        </div>
-
-                        {/* Checkered flag pattern at top */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')] rounded-t-lg"></div>
-
-                        {/* Grid positions - 2 column F1-style staggered layout */}
-                        <div className="flex flex-col gap-0.5">
-                            {Array.from({ length: 5 }, (_, rowIndex) => {
-                                const leftPosition = rowIndex * 2 + 1; // 1, 3, 5, 7, 9
-                                const rightPosition = rowIndex * 2 + 2; // 2, 4, 6, 8, 10
-                                const leftActualDriver = actualResult[leftPosition - 1];
-                                const rightActualDriver = actualResult[rightPosition - 1];
-                                const leftPredictedDriver = grid[leftPosition - 1];
-                                const rightPredictedDriver = grid[rightPosition - 1];
-                                // Where did user predict this actual driver would finish?
-                                const leftPredictedPos = leftActualDriver ? grid.findIndex(d => d?.shortName === leftActualDriver.shortName) + 1 : null;
-                                const rightPredictedPos = rightActualDriver ? grid.findIndex(d => d?.shortName === rightActualDriver.shortName) + 1 : null;
-
-                                return (
-                                    <div key={rowIndex} className="flex gap-1">
-                                        {/* Left side - odd positions */}
-                                        <div className="flex-1">
-                                            <CombinedGridElement
-                                                actualDriver={leftActualDriver}
-                                                predictedDriver={leftPredictedDriver}
-                                                position={leftPosition}
-                                                predictedPosition={leftPredictedPos || null}
-                                            />
-                                        </div>
-                                        {/* Right side - even positions (slightly offset down) */}
-                                        <div className="flex-1 mt-3">
-                                            <CombinedGridElement
-                                                actualDriver={rightActualDriver}
-                                                predictedDriver={rightPredictedDriver}
-                                                position={rightPosition}
-                                                predictedPosition={rightPredictedPos || null}
-                                            />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Legend */}
-                        <div className="mt-4 pt-3 border-t border-gray-700 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-400">
-                            <div className="flex items-center gap-1">
-                                <div className="w-4 h-4 rounded-full bg-green-600 flex items-center justify-center text-[8px] text-white">✓</div>
-                                <span>Correct</span>
+                    {pointsData && (
+                        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                            <div className="relative px-4 py-4 border-b border-gray-700">
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')]"></div>
+                                <div className="flex items-center justify-center gap-2 pt-1">
+                                    <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                                    <h3 className="text-white font-black text-lg tracking-tight uppercase">Jouw voorspelde top 10 vs einduitslag</h3>
+                                    <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                                <div className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-[8px] text-white">+3</div>
-                                <span>Te laag voorspeld</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <div className="w-4 h-4 rounded-full bg-green-600 flex items-center justify-center text-[8px] text-white">-2</div>
-                                <span>Te hoog voorspeld</span>
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[640px]">
+                                    <thead className="bg-black/30">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Voorspeld</th>
+                                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Coureur</th>
+                                            <th className="px-4 py-3 text-center text-xs font-bold text-gray-300 uppercase tracking-wider">Werkelijk</th>
+                                            <th className="px-4 py-3 text-center text-xs font-bold text-gray-300 uppercase tracking-wider">Verschil</th>
+                                            <th className="px-4 py-3 text-center text-xs font-bold text-gray-300 uppercase tracking-wider">Strafpunten</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-700">
+                                        {pointsData.positionResults.map(({ driver, predictedPos, actualPos, diff, penalty }) => {
+                                            const isDnf = raceResult?.dnfDrivers?.includes(driver.shortName) ?? false;
+                                            const rowColor = penalty === 0
+                                                ? 'bg-green-950/40'
+                                                : penalty >= 10
+                                                    ? 'bg-red-950/40'
+                                                    : 'bg-yellow-950/30';
+
+                                            return (
+                                                <tr key={`prediction-${driver.shortName}`} className={rowColor}>
+                                                    <td className="px-4 py-3">
+                                                        <span className="inline-flex items-center justify-center min-w-10 h-10 rounded-full bg-gray-800 border border-gray-600 text-sm font-black text-white">
+                                                            P{predictedPos}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <span style={{ backgroundColor: driver.teamColor || '#666' }} className="rounded-full overflow-hidden bg-gray-200 w-[36px] h-[36px] relative">
+                                                                <img src={driver.image} alt={driver.lastName} className="w-[50px] h-auto absolute top-0 -left-0" />
+                                                            </span>
+                                                            <div>
+                                                                <div className="font-semibold text-white">{driver.firstName} {driver.lastName}</div>
+                                                                <div className="text-xs text-gray-400">{driver.shortName}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className={`font-semibold ${actualPos && actualPos <= 10 ? 'text-white' : 'text-amber-400'}`}>
+                                                            {isDnf ? 'DNF' : actualPos ? `P${actualPos}` : 'Niet geklasseerd'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center text-sm text-gray-300">
+                                                        {isDnf ? 'uitgevallen' : diff === null ? '-' : diff === 0 ? 'exact' : `${diff} plaatsen`}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className={`inline-flex min-w-12 justify-center rounded-full px-2 py-1 text-sm font-black ${penalty === 0 ? 'bg-green-600/20 text-green-300' : penalty < 10 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-600/20 text-red-300'}`}>
+                                                            {penalty > 0 ? `+${penalty}` : '0'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Full results table sorted by actual ranking - desktop only */}
-                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden mb-10">
+                    <div className="hidden md:block bg-gradient-to-b from-gray-900 to-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-10">
+                        <div className="relative px-4 py-4 border-b border-gray-700">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')]"></div>
+                            <div className="flex items-center justify-center gap-2 pt-1">
+                                <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                                <h3 className="text-white font-black text-lg tracking-tight uppercase">Volledige officiële uitslag</h3>
+                                <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                            </div>
+                        </div>
                         <table className="w-full">
-                            <thead className="bg-gray-100">
+                            <thead className="bg-black/30">
                                 <tr>
-                                    <th className="px-2 py-3 text-left text-sm font-semibold text-gray-700 w-12">Pos</th>
-                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Coureur</th>
-                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Team</th>
-                                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">#</th>
-                                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Voorspeld</th>
-                                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Strafpunten</th>
+                                    <th className="px-2 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider w-12">Pos</th>
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Coureur</th>
+                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">Team</th>
+                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-300 uppercase tracking-wider">#</th>
+                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-300 uppercase tracking-wider">Jouw voorspelling</th>
+                                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-300 uppercase tracking-wider">Strafpunten</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-700">
                                 {actualResult.map((driver, index) => {
                                     if (!driver) return null;
                                     const actualPos = index + 1;
@@ -1174,12 +1173,18 @@ export default function RacePage() {
                                     }
                                     
                                     // Row color based on penalty
-                                    const rowColor = isCorrect ? 'bg-green-50' : penalty >= 10 ? 'bg-red-50' : penalty > 0 ? 'bg-yellow-50' : '';
+                                    const rowColor = isCorrect
+                                        ? 'bg-green-950/35'
+                                        : penalty >= 10
+                                            ? 'bg-red-950/35'
+                                            : penalty > 0
+                                                ? 'bg-yellow-950/25'
+                                                : 'bg-transparent';
 
                                     return (
                                         <tr key={driver.shortName} className={rowColor}>
                                             <td className="px-2 py-3 w-12">
-                                                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${actualPos === 1 ? 'bg-yellow-400 text-yellow-800' : actualPos === 2 ? 'bg-gray-300 text-gray-700' : actualPos === 3 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${actualPos === 1 ? 'bg-yellow-400 text-yellow-800' : actualPos === 2 ? 'bg-gray-300 text-gray-700' : actualPos === 3 ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-200 border border-gray-600'}`}>
                                                     {actualPos}
                                                 </span>
                                             </td>
@@ -1189,12 +1194,12 @@ export default function RacePage() {
                                                     <img src={driver.image} alt={driver.lastName} className="w-[50px] h-auto absolute top-0 -left-0" />
                                                     </span>
                                                     <div>
-                                                        <div className="font-semibold text-gray-900">{driver.firstName} {driver.lastName}</div>
-                                                        <div className="text-xs text-gray-500">{driver.shortName}</div>
+                                                        <div className="font-semibold text-white">{driver.firstName} {driver.lastName}</div>
+                                                        <div className="text-xs text-gray-400">{driver.shortName}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                            <td className="px-4 py-3 text-sm text-gray-300">
                                                 <div className="flex items-center gap-2">
                                                     <span
                                                         className="w-1 h-8 rounded"
@@ -1204,26 +1209,26 @@ export default function RacePage() {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-center font-mono text-sm text-white flex justify-center items-center">
-                                                {driver.numberImage ? <span className="bg-gray-300 rounded-full p-2">
+                                                {driver.numberImage ? <span className="bg-gray-700 rounded-full p-2 border border-gray-600">
                                                     <img className="w-[14px] h-[14px]" src={driver.numberImage} alt={driver.lastName} />
-                                                </span> : <span className="text-xl w-[30px] tabular-nums justify-center items-center content-center flex font-bold h-[30px] p-3 font-sans rounded-full bg-gray-300">{driver.number}</span>}
+                                                </span> : <span className="text-xl w-[30px] tabular-nums justify-center items-center content-center flex font-bold h-[30px] p-3 font-sans rounded-full bg-gray-700 border border-gray-600">{driver.number}</span>}
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {predictedPos > 0 ? (
-                                                    <span className={`font-mono text-sm ${isCorrect ? 'text-green-600 font-bold' : 'text-gray-600'}`}>
+                                                    <span className={`font-mono text-sm ${isCorrect ? 'text-green-300 font-bold' : 'text-gray-300'}`}>
                                                         P{predictedPos}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                    <span className="text-gray-500">Niet voorspeld</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {predictedPos > 0 ? (
-                                                    <span className={`font-bold ${penalty === 0 ? 'text-green-600' : penalty < 10 ? 'text-yellow-700' : 'text-red-600'}`}>
+                                                    <span className={`inline-flex min-w-12 justify-center rounded-full px-2 py-1 text-sm font-black ${penalty === 0 ? 'bg-green-600/20 text-green-300' : penalty < 10 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-600/20 text-red-300'}`}>
                                                         {penalty > 0 ? `+${penalty}` : '0'}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-gray-400">-</span>
+                                                    <span className="text-gray-500">-</span>
                                                 )}
                                             </td>
                                         </tr>
