@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Tabs } from '@/components/Tabs';
 import { MyTeamTab } from '@/components/game-dashboard/MyTeamTab';
-import { StandingsTab } from '@/components/game-dashboard/StandingsTab';
+import { GameStandingsView } from '@/components/game-dashboard/GameStandingsView';
 import { AllTeamsTab } from '@/components/game-dashboard/AllTeamsTab';
 import { SimpleAllTeamsTab } from '@/components/game-dashboard/SimpleAllTeamsTab';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
@@ -362,12 +362,16 @@ export default function GameDashboardPage() {
       id: 'klassement',
       label: 'Klassement',
       content: (
-        <StandingsTab
+        <GameStandingsView
           standings={standings}
+          gameId={gameId}
+          gameName={game?.name}
+          gameYear={gameYear}
           gameType={game?.gameType ?? null}
           loading={standingsLoading}
           error={standingsError}
           currentUserId={user?.uid}
+          embedded
         />
       ),
     },

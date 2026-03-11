@@ -3,7 +3,6 @@
 import { UserList } from "@/components/UserList";
 import { NestedTabs } from "@/components/NestedTabs";
 import { GamesTab } from "@/components/GamesTab";
-import { ForumTab } from "@/components/ForumTab";
 import { ActivityLogTab } from "@/components/ActivityLogTab";
 import { DeploymentsTab } from "@/components/DeploymentsTab";
 import { AddGameTab } from "@/components/AddGameTab";
@@ -127,11 +126,6 @@ export default function AdminPageClient() {
                                     id: 'messaging',
                                     label: t('admin.tabs.messaging'),
                                     content: <MessagingTab />
-                                },
-                                {
-                                    id: 'forum',
-                                    label: t('admin.tabs.forum'),
-                                    content: <ForumTab />
                                 },
                                 {
                                     id: 'feedback',
