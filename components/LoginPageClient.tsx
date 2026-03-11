@@ -2,6 +2,7 @@
 
 import { LoginForm } from "@/components/LoginForm";
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 export default function LoginPageClient() {
@@ -21,6 +22,13 @@ export default function LoginPageClient() {
                 <div className="flex flex-col items-center mt-4">
                     <span className="font-bold">{t('login.title')}</span>
                     <span className="font-light">{t('login.description')}</span>
+                </div>
+                <div className="mt-3 w-[300px] text-center text-sm text-gray-600">
+                    Wil je eerst even zien wat de website is?{" "}
+                    <Link href="/preview" className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+                        Bekijk dan de previewpagina
+                    </Link>
+                    .
                 </div>
 
                 <div className="my-4 w-[300px]">

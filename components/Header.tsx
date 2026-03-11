@@ -128,12 +128,12 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
         {
             name: 'Nieuws',
             href: "/news",
-            display: true
+            display: !!user
         },
         {
             name: t('header.menu.games'),
             href: "/games",
-            display: true
+            display: !!user
         },
         {
             name: t('header.menu.riderPoints'),
@@ -148,7 +148,7 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
         {
             name: "Chat",
             href: "/chat",
-            display: true
+            display: !!user
         },
         {
             name: t('header.menu.myGames'),

@@ -35,9 +35,6 @@ export default async function NewsOverviewPage() {
               Productupdates, wedstrijdverslagen, uitslagen en andere belangrijke momenten op een plek.
             </p>
           </div>
-          <Link href="/games" className="text-sm font-semibold text-primary hover:text-primary-hover">
-            Naar games
-          </Link>
         </div>
 
         {items.length > 0 ? (

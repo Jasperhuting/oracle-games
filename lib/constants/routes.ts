@@ -1,7 +1,7 @@
 export const PUBLIC_ROUTES = ['/login', '/register', '/reset-password', '/verify-email'] as const;
 
 // Accessible to everyone — no redirect regardless of auth status
-const OPEN_ROUTE_PREFIXES = ['/preview', '/news'];
+const OPEN_ROUTE_PREFIXES = ['/preview'];
 
 export function isPublicRoute(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
