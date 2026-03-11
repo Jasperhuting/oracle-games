@@ -8,6 +8,7 @@ export interface NewsItem {
   title: string;
   summary: string;
   content: string;
+  viewCount: number;
   category: string;
   status: NewsStatus;
   headerLayout: NewsHeaderLayout;

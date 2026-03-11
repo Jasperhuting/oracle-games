@@ -8703,6 +8703,7 @@ __metadata:
     react-datepicker: "npm:^8.10.0"
     react-dom: "npm:19.2.1"
     react-hook-form: "npm:^7.66.0"
+    react-hook-reading-time: "npm:^1.0.0"
     react-hot-toast: "npm:^2.6.0"
     react-i18next: "npm:^16.4.1"
     react-intersection-observer: "npm:^10.0.0"
@@ -9594,6 +9595,16 @@ __metadata:
   peerDependencies:
     react: ^16.8.0 || ^17 || ^18 || ^19
   checksum: 10c0/bff61c229f5f2516e650325e0c450146cb8a08dc323e5e9aa0753eb937be0b66fe17f40a7b4be9aabc2b5cb770d03de07db7f4912c6c9452a86924072cc1cb46
+  languageName: node
+  linkType: hard
+
+"react-hook-reading-time@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "react-hook-reading-time@npm:1.0.0"
+  peerDependencies:
+    react: ^16.13.1
+    react-dom: ^16.13.1
+  checksum: 10c0/2122ee30e6d0673a670caf42f2c2fc6230e98193329ec1066ebf92353b8bfcaa9f8b892b99c12fc5d3aa54a4fa56112c9cfb70be67bdebb537cf10ba54d4e120
   languageName: node
   linkType: hard
 

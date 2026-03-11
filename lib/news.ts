@@ -6,6 +6,7 @@ const DEFAULT_HEADER_LAYOUT: NewsHeaderLayout = 'full';
 const DEFAULT_STATUS: NewsStatus = 'draft';
 
 const stringOrEmpty = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+const numberOrZero = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 
 export function serializeFirestoreDate(value: unknown): string | null {
   if (!value) return null;
@@ -28,6 +29,7 @@ export function serializeNewsItem(id: string, data: Record<string, unknown> | un
     title,
     summary,
     content: stringOrEmpty(data?.content),
+    viewCount: numberOrZero(data?.viewCount),
     category: stringOrEmpty(data?.category),
     status: data?.status === 'published' ? 'published' : 'draft',
     headerLayout: data?.headerLayout === 'image-left' || data?.headerLayout === 'image-right' ? data.headerLayout : DEFAULT_HEADER_LAYOUT,

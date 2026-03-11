@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
 
     await docRef.set({
       ...normalized,
+      viewCount: 0,
       createdAt: now,
       updatedAt: now,
       createdBy: userId,
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       success: true,
       item: serializeNewsItem(docRef.id, {
         ...normalized,
+        viewCount: 0,
         createdAt: now,
         updatedAt: now,
         createdBy: userId,

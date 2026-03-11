@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { slugifyNewsTitle } from '@/lib/news-utils';
+import { getNewsReadingTimeMinutes } from '@/lib/news-reading-time';
 import { NewsHeaderLayout, NewsItem, NewsStatus } from '@/lib/types/news';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { NewsHero } from '@/components/news/NewsHero';
 import { NewsImageUpload } from '@/components/news/NewsImageUpload';
+import { useReadingTime } from 'react-hook-reading-time';
 
 type MessageState = { type: 'success' | 'error'; text: string } | null;
 
@@ -83,6 +85,7 @@ function buildPreviewItem(form: NewsFormState, selectedId: string | null): NewsI
     title: form.title || 'Nieuwsbericht zonder titel',
     summary: form.summary,
     content: form.content,
+    viewCount: 0,
     category: form.category,
     status: form.status,
     headerLayout: form.headerLayout,
@@ -110,6 +113,36 @@ function formatSidebarDate(item: NewsItem) {
     month: 'short',
     year: 'numeric',
   }).format(new Date(value));
+}
+
+function NewsSidebarCard({ item, active, onSelect }: { item: NewsItem; active: boolean; onSelect: () => void }) {
+  const reading = useReadingTime(item.content || '');
+  const readingMinutes = Math.max(1, Math.ceil(reading.minutes || getNewsReadingTimeMinutes(item.content || '')));
+
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full rounded-xl border p-4 text-left transition-colors ${
+        active ? 'border-primary bg-primary-light' : 'border-gray-200 bg-white hover:border-gray-300'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold text-gray-900">{item.title}</span>
+        <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${
+          item.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+        }`}>
+          {item.status}
+        </span>
+      </div>
+      <div className="mt-2 text-xs uppercase tracking-[0.2em] text-gray-500">
+        {item.category || 'Nieuws'} · {formatSidebarDate(item)}
+      </div>
+      <div className="mt-2 text-xs font-medium text-gray-500">
+        {item.viewCount} weergaven · {readingMinutes} min leestijd
+      </div>
+      {item.summary && <p className="mt-3 line-clamp-3 text-sm text-gray-600">{item.summary}</p>}
+    </button>
+  );
 }
 
 export function NewsAdminTab() {
@@ -299,28 +332,7 @@ export function NewsAdminTab() {
             <div className="space-y-3">
               {items.map((item) => {
                 const active = item.id === selectedId;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleSelectItem(item)}
-                    className={`w-full rounded-xl border p-4 text-left transition-colors ${
-                      active ? 'border-primary bg-primary-light' : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-gray-900">{item.title}</span>
-                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${
-                        item.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.2em] text-gray-500">
-                      {item.category || 'Nieuws'} · {formatSidebarDate(item)}
-                    </div>
-                    {item.summary && <p className="mt-3 line-clamp-3 text-sm text-gray-600">{item.summary}</p>}
-                  </button>
-                );
+                return <NewsSidebarCard key={item.id} item={item} active={active} onSelect={() => handleSelectItem(item)} />;
               })}
             </div>
           )}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { adminDb } from '@/lib/firebase/server';
 import { serializeNewsItem, sortNewsItems } from '@/lib/news';
+import { NewsArticleClientMeta } from '@/components/news/NewsArticleClientMeta';
 import { NewsHero } from '@/components/news/NewsHero';
 
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,8 @@ export default async function NewsDetailPage(
                 <span>{item.category || 'Nieuws'}</span>
                 <span className="h-1 w-1 rounded-full bg-gray-300" />
                 <span>{formatPublishedAt(item.publishedAt)}</span>
+                <span className="h-1 w-1 rounded-full bg-gray-300" />
+                <NewsArticleClientMeta newsId={item.id} content={item.content} initialViewCount={item.viewCount} />
               </div>
 
               <div className="page-content text-gray-800" dangerouslySetInnerHTML={{ __html: item.content }} />

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { adminDb } from '@/lib/firebase/server';
 import { serializeNewsItem, sortNewsItems } from '@/lib/news';
+import { getNewsReadingTimeMinutes } from '@/lib/news-reading-time';
 import { NewsHero } from '@/components/news/NewsHero';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,7 @@ export default async function NewsOverviewPage() {
         year: 'numeric',
       }).format(new Date(item.publishedAt)));
     }
+    parts.push(`${getNewsReadingTimeMinutes(item.content)} min leestijd`);
     return parts.join(' · ');
   };
 
