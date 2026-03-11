@@ -4,9 +4,19 @@ import { getRiders, getStageResult, getRaceResult, getTourGCResult } from '@/lib
 import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
+import { classifyScrapeError } from '@/lib/scraper/browserHelper';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  let requestPayload: {
+    race?: string;
+    year?: number | string;
+    type?: string;
+    stage?: number | string;
+    userId?: string;
+    userEmail?: string;
+    userName?: string;
+  } = {};
   
   // Initialize Firebase Admin with error handling
   let db;
@@ -27,7 +37,8 @@ export async function POST(request: NextRequest) {
         success: false,
       }, { status: 500 });
     }
-    const { race, year, type, stage, userId, userEmail, userName } = await request.json();
+    requestPayload = await request.json();
+    const { race, year, type, stage, userId, userEmail, userName } = requestPayload;
 
     // Validation
     if (!race || !year || !type) {
@@ -315,6 +326,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Scraper error:', error);
+    const classifiedError = classifyScrapeError(error);
 
     // Calculate execution time for failed scrape
     const executionTimeMs = Date.now() - startTime;
@@ -324,9 +336,15 @@ export async function POST(request: NextRequest) {
       if (db) {
         await db.collection('activityLogs').add({
           action: 'SCRAPE_FAILED',
-          userId: 'unknown',
+          userId: requestPayload.userId || 'unknown',
           details: {
-            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            scrapeType: requestPayload.type || 'unknown',
+            race: requestPayload.race || 'unknown',
+            year: Number(requestPayload.year || 0),
+            stage: requestPayload.stage ?? null,
+            errorMessage: classifiedError.message,
+            errorCategory: classifiedError.category,
+            retryable: classifiedError.retryable,
             executionTimeMs,
           },
           timestamp: Timestamp.now(),
@@ -339,24 +357,11 @@ export async function POST(request: NextRequest) {
     // Send admin notification for scrape failure
     if (isNotificationsEnabled()) {
       try {
-        // Extract race/year/stage from request body if possible
-        let race = 'unknown';
-        let year = 0;
-        let stage: number | string | undefined;
-        try {
-          const body = await request.clone().json();
-          race = body.race || 'unknown';
-          year = body.year || 0;
-          stage = body.stage;
-        } catch {
-          // Ignore JSON parse errors
-        }
-
         await sendAdminNotification('scrape_failed', {
-          race,
-          year,
-          stage,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          race: requestPayload.race || 'unknown',
+          year: Number(requestPayload.year || 0),
+          stage: requestPayload.stage,
+          error: classifiedError.message,
         });
       } catch (notifyError) {
         console.error('[SCRAPER] Failed to send admin notification:', notifyError);
@@ -364,7 +369,9 @@ export async function POST(request: NextRequest) {
     }
 
     return Response.json({
-      error: error instanceof Error ? error.message : 'Unknown scraping error',
+      error: classifiedError.message,
+      errorCategory: classifiedError.category,
+      retryable: classifiedError.retryable,
       success: false,
     }, { status: 500 });
   }

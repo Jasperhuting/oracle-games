@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 import { type StartlistResult, type Team, type Rider } from './types';
-import { launchBrowser } from './browserHelper';
+import { fetchPageHtml } from './browserHelper';
 
 
 export interface GetRidersOptions {
@@ -20,30 +20,13 @@ export async function getRiders({ race, year }: GetRidersOptions): Promise<Start
   }
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/startlist`;
-
-  const browser = await launchBrowser();
-
-  let html: string;
-  try {
-    const page = await browser.newPage();
-
-    // Set viewport and user agent
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    console.log(`[getRiders] Navigating to: ${url}`);
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 60000
-    });
-
-    // Wait for the page content to load
-    await page.waitForSelector('.startlist_v4', { timeout: 30000 });
-
-    html = await page.content();
-  } finally {
-    await browser.close();
-  }
+  const html = await fetchPageHtml({
+    url,
+    selectors: ['.startlist_v4', 'h1', '.page-title'],
+    noDataTexts: ['Startlist not available', 'No data', 'Not started', 'No startlist'],
+    noDataErrorMessage: `No startlist available for ${race} ${year}.`,
+    logLabel: 'getRiders',
+  });
   const $ = cheerio.load(html);
 
   const riders: Team[] = [];

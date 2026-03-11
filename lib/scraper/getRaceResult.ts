@@ -8,7 +8,7 @@ import {
   scrapeYouthClassification,
   scrapeTeamClassification,
 } from './getStageResultsItems';
-import { launchBrowser } from './browserHelper';
+import { fetchPageHtml } from './browserHelper';
 
 export interface GetRaceResultOptions {
   race: string;
@@ -29,54 +29,22 @@ export async function getRaceResult({ race, year, riders }: GetRaceResultOptions
 
   const yearNum = Number(year);
   if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 3000) {
-    throw new Error('Year must be a valid year, e.g., 2025');
+    throw new Error('Year must be a valid year, e.g., 2026');
   }
 
   const url = `https://www.procyclingstats.com/race/${race}/${yearNum}/result`;
-
-  const browser = await launchBrowser();
-
-  let html: string;
-  try {
-    const page = await browser.newPage();
-
-    // Set viewport and user agent
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    console.log(`[getRaceResult] Navigating to: ${url}`);
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 60000
-    });
-
-    // Wait for the page content to load
-    try {
-      await page.waitForSelector('.page-title', { timeout: 10000 });
-    } catch (error) {
-      // Try alternative selectors if page-title is not found
-      try {
-        await page.waitForSelector('h1', { timeout: 5000 });
-      } catch (h1Error) {
-        // Check if page shows "no results" or similar message
-        const content = await page.content();
-        const $ = cheerio.load(content);
-        
-        if ($('body').text().includes('No results') || 
-            $('body').text().includes('Results not available') ||
-            $('body').text().includes('No data') ||
-            $('body').text().includes('Not started')) {
-          throw new Error(`No results available for ${race} ${year}. The race may not have finished yet.`);
-        }
-        
-        throw new Error(`Page structure changed or no content found for ${race} ${year}`);
-      }
-    }
-
-    html = await page.content();
-  } finally {
-    await browser.close();
-  }
+  const html = await fetchPageHtml({
+    url,
+    selectors: ['.page-title', 'h1', '.result-cont', 'table.results'],
+    noDataTexts: [
+      'Results not available',
+      'No data',
+      'Not started',
+      'No results',
+    ],
+    noDataErrorMessage: `No results available for ${race} ${year}. The race may not have finished yet.`,
+    logLabel: 'getRaceResult',
+  });
 
   const $ = cheerio.load(html);
 

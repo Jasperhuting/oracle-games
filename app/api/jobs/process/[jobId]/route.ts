@@ -7,11 +7,12 @@ import {
   updateJobProgress,
   updateJob,
 } from '@/lib/firebase/job-queue';
-import { getStageResult, getRiders, getRaceResult, type RaceSlug } from '@/lib/scraper';
+import { getStageResult, getRiders, getRaceResult, getTourGCResult, type RaceSlug } from '@/lib/scraper';
 import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendTelegramMessage } from '@/lib/telegram';
 import { cleanFirebaseData } from '@/lib/firebase/utils';
+import { classifyScrapeError } from '@/lib/scraper/browserHelper';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -191,11 +192,11 @@ export async function POST(
         estimatedCostEur,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const classifiedError = classifyScrapeError(error);
+      const errorMessage = classifiedError.message;
+      const shouldRetry = job?.type === 'scraper' && classifiedError.retryable;
 
-      const isTimeout = typeof errorMessage === 'string' && errorMessage.includes('timed out after');
-      if (isTimeout && job?.type === 'scraper') {
+      if (shouldRetry) {
         const retryCount = typeof (job as any).retryCount === 'number' ? (job as any).retryCount : 0;
         if (retryCount < MAX_SCRAPE_RETRIES) {
           const nextRunAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
@@ -213,6 +214,7 @@ export async function POST(
             retryCount: retryCount + 1,
             nextRunAt,
             error: errorMessage,
+            errorCategory: classifiedError.category,
           }, { status: 202 });
         }
       }
@@ -233,6 +235,9 @@ export async function POST(
           ...job.data,
           executionTimeMs,
           errorMessage,
+          errorCategory: classifiedError.category,
+          retryable: classifiedError.retryable,
+          retryCount: typeof (job as any).retryCount === 'number' ? (job as any).retryCount : 0,
         },
         timestamp: Timestamp.now(),
       });
@@ -340,7 +345,8 @@ type ScrapeResult = {
   stage?: number;
   resultPreview?: string[];
   retryable?: boolean;
-  failureReason?: 'validation' | 'unsupported';
+  failureReason?: 'validation' | 'unsupported' | 'resource' | 'navigation' | 'timeout' | 'availability' | 'unknown';
+  errorCategory?: 'resource' | 'navigation' | 'timeout' | 'availability' | 'validation' | 'unknown';
 };
 
 const getRiderDisplayName = (row: any): string => {
@@ -371,7 +377,7 @@ const getTopResultsPreview = (data: any, maxRows = 3): string[] => {
 
 async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResult> {
   const { type, race, year, stage } = job.data as {
-    type: 'startlist' | 'stage-result' | 'stage' | 'result';
+    type: 'startlist' | 'stage-result' | 'stage' | 'result' | 'tour-gc';
     race: string;
     year: number;
     stage?: number;
@@ -400,6 +406,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       message: save.success ? 'Startlist scraped' : (save.error || 'Validation failed'),
       riderCount: 'riders' in result ? result.riders.length : 0,
       retryable: !save.success,
+      errorCategory: save.success ? undefined : 'validation',
     };
     if (!save.success) {
       startlistResult.failureReason = 'validation';
@@ -476,6 +483,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       stage,
       resultPreview: save.success ? getTopResultsPreview(result) : [],
       retryable: !save.success,
+      errorCategory: save.success ? undefined : 'validation',
     };
     if (!save.success) {
       stageResult.failureReason = 'validation';
@@ -549,15 +557,91 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       resultPreview: save.success ? getTopResultsPreview(result) : [],
       retryable: !save.success,
+      errorCategory: save.success ? undefined : 'validation',
     };
     if (!save.success) {
       resultResult.failureReason = 'validation';
     }
     return resultResult;
+  } else if (type === 'tour-gc') {
+    result = await withTimeout(getTourGCResult({
+      race: race as RaceSlug,
+      year,
+    }), `tour-gc scrape ${race}`);
+
+    const key: ScraperDataKey = {
+      race,
+      year,
+      type: 'tour-gc',
+    };
+
+    const save = await saveScraperDataValidated(key, result);
+    await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (save.success) {
+      try {
+        const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
+        const calculatePoints = calculatePointsModule.POST;
+
+        const mockRequest = new NextRequest('http://localhost:3000/api/games/calculate-points', {
+          method: 'POST',
+          body: JSON.stringify({
+            raceSlug: race,
+            stage: 'tour-gc',
+            year,
+            force: true,
+          }),
+        });
+
+        const calculatePointsResponse = await calculatePoints(mockRequest);
+        const pointsResult = await calculatePointsResponse.json();
+
+        await logPointsCalculation({
+          jobId,
+          race,
+          year,
+          stage: 'tour-gc',
+          type: 'tour-gc',
+          status: calculatePointsResponse.status,
+          success: calculatePointsResponse.status === 200,
+          error: calculatePointsResponse.status === 200 ? null : pointsResult?.error || 'Unknown error',
+        });
+      } catch (error) {
+        console.error(`[jobs/process] Error calculating points for ${race} tour-gc:`, error);
+        await logPointsCalculation({
+          jobId,
+          race,
+          year,
+          stage: 'tour-gc',
+          type: 'tour-gc',
+          status: 500,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    const gcResult: ScrapeResult = {
+      success: save.success,
+      message: save.success ? 'Tour GC scraped' : (save.error || 'Validation failed'),
+      riderCount: Array.isArray(result.generalClassification) ? result.generalClassification.length : 0,
+      retryable: !save.success,
+      errorCategory: save.success ? undefined : 'validation',
+    };
+    if (!save.success) {
+      gcResult.failureReason = 'validation';
+    }
+    return gcResult;
   }
 
   await updateJobProgress(jobId, 1, 1, 'Completed');
-  return { success: false, message: 'Unsupported scrape type', riderCount: 0, retryable: false, failureReason: 'unsupported' };
+  return {
+    success: false,
+    message: 'Unsupported scrape type',
+    riderCount: 0,
+    retryable: false,
+    failureReason: 'unsupported',
+    errorCategory: 'unknown',
+  };
 }
 
 async function updateBatchFromJob(job: any, result: any, status: 'completed' | 'failed') {

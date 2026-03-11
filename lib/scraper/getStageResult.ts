@@ -8,7 +8,7 @@ import {
   scrapeYouthClassification,
   scrapeTeamClassification,
 } from './getStageResultsItems';
-import { launchBrowser } from './browserHelper';
+import { fetchPageHtml } from './browserHelper';
 
 export interface GetStageResultOptions {
   race: string;
@@ -31,30 +31,13 @@ export async function getStageResult({ race, year, stage, riders }: GetStageResu
   const url = stage === 0 ? 
     `https://www.procyclingstats.com/race/${race}/${yearNum}/prologue/result` :
     `https://www.procyclingstats.com/race/${race}/${yearNum}/stage-${stage}`;
-
-  const browser = await launchBrowser();
-
-  let html: string;
-  try {
-    const page = await browser.newPage();
-
-    // Set viewport and user agent
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    console.log(`[getStageResult] Navigating to: ${url}`);
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 60000
-    });
-
-    // Wait for the page content to load
-    await page.waitForSelector('.page-title', { timeout: 30000 });
-
-    html = await page.content();
-  } finally {
-    await browser.close();
-  }
+  const html = await fetchPageHtml({
+    url,
+    selectors: ['.page-title', 'h1', '.result-cont', 'table.results'],
+    noDataTexts: ['Results not available', 'No data', 'Not started', 'No results'],
+    noDataErrorMessage: `No stage results available for ${race} ${year} stage ${stage}.`,
+    logLabel: 'getStageResult',
+  });
   
   const $ = cheerio.load(html);
 
