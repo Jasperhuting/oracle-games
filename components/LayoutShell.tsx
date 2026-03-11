@@ -19,15 +19,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [showBercPopup, setShowBercPopup] = useState(false);
     const [hideSponsorButtons, setHideSponsorButtons] = useState(false);
-    // Initialize banner state from cookie immediately to prevent layout shift
-    const [showBanner, setShowBanner] = useState(() => {
-        if (typeof document !== 'undefined') {
-            const cookies = document.cookie.split('; ');
-            const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
-            return hideBannerCookie ? hideBannerCookie.split('=')[1] !== 'true' : true;
-        }
-        return true;
-    });
+    // Keep the first client render identical to SSR; cookie sync happens after mount.
+    const [showBanner, setShowBanner] = useState(true);
 
     // Check if user has previously hidden the banner
     useEffect(() => {

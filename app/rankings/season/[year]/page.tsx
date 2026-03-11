@@ -51,6 +51,10 @@ interface PaginationInfo {
   nextOffset: number | null;
 }
 
+const EXCLUDED_SEASON_RANKING_GAME_IDS = new Set([
+  '9sE6IT8YcoyirLQPlcn5',
+]);
+
 export default function SeasonLeaderboardPage() {
 
   const params = useParams();
@@ -64,7 +68,35 @@ export default function SeasonLeaderboardPage() {
   const [selectedTooltipGame, setSelectedTooltipGame] = useState<string>('');
 
   const { user } = useAuth();
-  const { riders: allPlayerTeams, uniqueRiders: rankingsRiders, loading: rankingsLoading, total: totalRiders } = usePlayerTeams(user?.uid);
+  const { riders: allPlayerTeams, uniqueRiders: rankingsRiders, loading: rankingsLoading } = usePlayerTeams(user?.uid);
+
+  const filteredPlayerTeams = useMemo(
+    () => allPlayerTeams.filter((team) => !EXCLUDED_SEASON_RANKING_GAME_IDS.has(team.gameId)),
+    [allPlayerTeams]
+  );
+
+  const filteredRankingsRiders = useMemo(() => {
+    const uniqueRidersMap = new Map<string, typeof allPlayerTeams[number]>();
+
+    filteredPlayerTeams.forEach((rider) => {
+      if (!rider.riderNameId) return;
+
+      const existing = uniqueRidersMap.get(rider.riderNameId);
+      if (!existing) {
+        uniqueRidersMap.set(rider.riderNameId, rider);
+        return;
+      }
+
+      const existingIsPreferred = existing.userId === user?.uid;
+      const riderIsPreferred = rider.userId === user?.uid;
+
+      if (!existingIsPreferred && riderIsPreferred) {
+        uniqueRidersMap.set(rider.riderNameId, rider);
+      }
+    });
+
+    return Array.from(uniqueRidersMap.values());
+  }, [filteredPlayerTeams, user?.uid]);
 
   const [gamesById, setGamesById] = useState<Record<string, { name?: string; division?: string }>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
@@ -95,14 +127,14 @@ export default function SeasonLeaderboardPage() {
     }
 
     async function loadUserNames() {
-      if (allPlayerTeams.length === 0) {
+      if (filteredPlayerTeams.length === 0) {
         setUserNamesLoading(false);
         return;
       }
       
       try {
         // Get unique user IDs
-        const uniqueUserIds = [...new Set(allPlayerTeams.map(pt => pt.userId))];
+        const uniqueUserIds = [...new Set(filteredPlayerTeams.map(pt => pt.userId))];
         
         // Fetch user names for all unique users
         const userNamePromises = uniqueUserIds.map(async (userId) => {
@@ -156,12 +188,12 @@ export default function SeasonLeaderboardPage() {
     return () => {
       isCancelled = true;
     };
-  }, [allPlayerTeams]);
+  }, [filteredPlayerTeams, year]);
 
   const allPlayerTeamsByRiderNameId = useMemo(() => {
     const map = new Map<string, Array<{userId: string, gameId: string, userName?: string}>>();
     
-    allPlayerTeams.forEach((pt) => {
+    filteredPlayerTeams.forEach((pt) => {
       if (!pt.riderNameId) return;
 
       const existing = map.get(pt.riderNameId) ?? [];
@@ -174,13 +206,13 @@ export default function SeasonLeaderboardPage() {
     });
 
     return map;
-  }, [allPlayerTeams, userNames]);
+  }, [filteredPlayerTeams, userNames]);
 
   const myGameIdsByRiderNameId = useMemo(() => {
     const map = new Map<string, Set<string>>();
     if (!user?.uid) return map;
 
-    allPlayerTeams.forEach((pt) => {
+    filteredPlayerTeams.forEach((pt) => {
       if (pt.userId !== user.uid) return;
       if (!pt.riderNameId) return;
 
@@ -190,7 +222,7 @@ export default function SeasonLeaderboardPage() {
     });
 
     return map;
-  }, [allPlayerTeams, user?.uid]);
+  }, [filteredPlayerTeams, user?.uid]);
 
   const toggleRider = (riderId: string) => {
     const newExpanded = new Set(expandedRiders);
@@ -350,7 +382,7 @@ export default function SeasonLeaderboardPage() {
             <div className="flex w-full gap-4 mb-6">
               <div className="bg-white p-4 rounded-lg border border-gray-200 flex-1">
                 <div className="text-sm text-gray-600">Totaal Renners</div>
-                <div className="text-2xl font-bold text-gray-900">{totalRiders}</div>
+                <div className="text-2xl font-bold text-gray-900">{filteredPlayerTeams.length}</div>
               </div>
             </div>
           </div>
@@ -360,7 +392,7 @@ export default function SeasonLeaderboardPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
               <div className="text-gray-600">Laden...</div>
             </div>
-          ) : rankingsRiders.length === 0 ? (
+          ) : filteredRankingsRiders.length === 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
               <p className="text-gray-600">Geen seizoenspunten gevonden voor {year}</p>
               <p className="text-sm text-gray-500 mt-2">
@@ -396,7 +428,7 @@ export default function SeasonLeaderboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {rankingsRiders.map((rider, index) => {
+                    {filteredRankingsRiders.map((rider, index) => {
                       const isExpanded = expandedRiders.has(rider.id || 'no-id');
                       const myGameIds = Array.from(myGameIdsByRiderNameId.get(rider.riderNameId) ?? []);
                       const isMine = myGameIds.length > 0;

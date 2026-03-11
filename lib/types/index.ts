@@ -17,6 +17,7 @@ export * from './messaging';
 export * from './user';
 export * from './context';
 export * from './hooks';
+export * from './news';
 
 // Export page types
 export * from './pages';

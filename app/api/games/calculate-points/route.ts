@@ -11,7 +11,7 @@ import {
   getFullGridGCPoints
 } from '@/lib/utils/pointsCalculation';
 import { AuctioneerConfig } from '@/lib/types/games';
-import { ClassificationRider } from '@/lib/scraper/types';
+import type { ClassificationRider, StageResult as ScrapedStageResult } from '@/lib/scraper/types';
 import { scrapeRidersWithPoints } from '@/lib/firebase/rider-points-service';
 import { validateStageResult, generateDataHash } from '@/lib/validation/scraper-validation';
 import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
@@ -26,6 +26,17 @@ interface StageResult {
   time?: string;
   gap?: string;
   name?: string; // Full name from scraper
+}
+
+function parsePcsPoints(value: number | string | undefined): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string' && value !== '-') {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
 }
 
 interface GameConfig {
@@ -129,7 +140,7 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     // Generate hash for idempotency check
-    const inputDataHash = generateDataHash(stageData as any);
+    const inputDataHash = generateDataHash(stageData as ScrapedStageResult);
 
     // Check for existing calculation with same hash (idempotency)
     const existingCalcSnapshot = await db.collection('pointsCalculationLogs')
@@ -162,7 +173,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate stage data before calculation
-    const validationResult = validateStageResult(stageData as any);
+    const validationResult = validateStageResult(stageData as ScrapedStageResult);
 
     if (!validationResult.valid) {
       console.error(`[CALCULATE_POINTS] Validation failed for ${docId}:`, validationResult.errors);
@@ -332,7 +343,7 @@ export async function POST(request: NextRequest) {
     // Collect all rider nameIDs from results
     // Handle both regular stage results and TTT (Team Time Trial) results
     const riderNameIds = new Set<string>();
-    const tttRiderPointsMap = new Map<string, { points: string; place: number }>(); // For TTT: nameId -> points
+    const tttRiderPointsMap = new Map<string, { points: string; place: number }>(); // For TTT: nameId -> PCS points + team place
     
     for (const result of stageResults) {
       // Check if this is a TTT result (has 'riders' array)
@@ -439,7 +450,7 @@ export async function POST(request: NextRequest) {
 
           // Get multipliers for this game
           const multipliers = getMultipliers(gameConfig);
-          const useDirectPcsPoints = gameConfig.isSeasonGame;
+          const useDirectPcsPoints = gameConfig.isSeasonGame || Boolean(tttData);
           const isFullGrid = gameConfig.gameType === 'full-grid';
           const fullGridScale = isFullGrid ? getFullGridScale(gameConfig) : 2;
 
@@ -487,11 +498,11 @@ export async function POST(request: NextRequest) {
               let stagePoints: number;
 
               if (isFullGrid) {
-                stagePoints = getFullGridStagePoints(fullGridScale, finishPosition);
+                stagePoints = tttData
+                  ? parsePcsPoints(riderResult.points)
+                  : getFullGridStagePoints(fullGridScale, finishPosition);
               } else if (useDirectPcsPoints) {
-                const pcsPoints = typeof riderResult.points === 'number' ? riderResult.points :
-                  (typeof riderResult.points === 'string' && riderResult.points !== '-' ? parseInt(riderResult.points) : 0);
-                stagePoints = pcsPoints;
+                stagePoints = parsePcsPoints(riderResult.points);
               } else {
                 stagePoints = calculateStagePoints(finishPosition);
               }
@@ -561,42 +572,42 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Update PlayerTeam if rider scored any points
-          if (riderTotalPoints > 0) {
-            // Build pointsBreakdown entry
-            const existingBreakdown: PointsEvent[] = Array.isArray(teamData.pointsBreakdown)
-              ? teamData.pointsBreakdown
-              : [];
+          const existingBreakdown: PointsEvent[] = Array.isArray(teamData.pointsBreakdown)
+            ? teamData.pointsBreakdown
+            : [];
+          const hadExistingEntry = existingBreakdown.some(
+            (event) => event.raceSlug === raceName && event.stage === stage.toString()
+          );
 
-            const newPointsEvent: PointsEvent = {
-              raceSlug: raceName,
-              stage: stage.toString(),
-              total: riderTotalPoints,
-              calculatedAt: new Date().toISOString(),
-            };
-
-            // Add optional breakdown fields
-            if (stagePointsBreakdown.stageResult) newPointsEvent.stageResult = stagePointsBreakdown.stageResult;
-            if (stagePointsBreakdown.stagePosition) newPointsEvent.stagePosition = stagePointsBreakdown.stagePosition;
-            if (stagePointsBreakdown.gcPoints) newPointsEvent.gcPoints = stagePointsBreakdown.gcPoints;
-            if (stagePointsBreakdown.gcPosition) newPointsEvent.gcPosition = stagePointsBreakdown.gcPosition;
-            if (stagePointsBreakdown.pointsClass) newPointsEvent.pointsClass = stagePointsBreakdown.pointsClass;
-            if (stagePointsBreakdown.mountainsClass) newPointsEvent.mountainsClass = stagePointsBreakdown.mountainsClass;
-            if (stagePointsBreakdown.youthClass) newPointsEvent.youthClass = stagePointsBreakdown.youthClass;
-
-            // Remove existing entry for this race/stage (prevents duplicates on re-scrape)
+          if (riderTotalPoints > 0 || hadExistingEntry) {
             const updatedBreakdown = existingBreakdown.filter(
               (event) => !(event.raceSlug === raceName && event.stage === stage.toString())
             );
-            updatedBreakdown.push(newPointsEvent);
 
-            // Calculate pointsScored from pointsBreakdown (source of truth)
+            if (riderTotalPoints > 0) {
+              const newPointsEvent: PointsEvent = {
+                raceSlug: raceName,
+                stage: stage.toString(),
+                total: riderTotalPoints,
+                calculatedAt: new Date().toISOString(),
+              };
+
+              if (stagePointsBreakdown.stageResult) newPointsEvent.stageResult = stagePointsBreakdown.stageResult;
+              if (stagePointsBreakdown.stagePosition) newPointsEvent.stagePosition = stagePointsBreakdown.stagePosition;
+              if (stagePointsBreakdown.gcPoints) newPointsEvent.gcPoints = stagePointsBreakdown.gcPoints;
+              if (stagePointsBreakdown.gcPosition) newPointsEvent.gcPosition = stagePointsBreakdown.gcPosition;
+              if (stagePointsBreakdown.pointsClass) newPointsEvent.pointsClass = stagePointsBreakdown.pointsClass;
+              if (stagePointsBreakdown.mountainsClass) newPointsEvent.mountainsClass = stagePointsBreakdown.mountainsClass;
+              if (stagePointsBreakdown.youthClass) newPointsEvent.youthClass = stagePointsBreakdown.youthClass;
+
+              updatedBreakdown.push(newPointsEvent);
+            }
+
             const calculatedPoints = updatedBreakdown.reduce(
               (sum, event) => sum + (event.total || 0),
               0
             );
 
-            // Update PlayerTeam with only the essential fields
             await teamDoc.ref.update({
               pointsScored: calculatedPoints,
               pointsBreakdown: updatedBreakdown,
@@ -605,7 +616,9 @@ export async function POST(request: NextRequest) {
             results.playerTeamsUpdated++;
             results.pointsAwarded += riderTotalPoints;
 
-            console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Updated: ${riderTotalPoints} pts (new total: ${calculatedPoints})`);
+            console.log(
+              `[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Updated: ${riderTotalPoints} pts (new total: ${calculatedPoints})`
+            );
           }
         }
       } catch (error) {
@@ -720,4 +733,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

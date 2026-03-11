@@ -20,6 +20,17 @@ interface StageResult {
   name?: string;
 }
 
+function parsePcsPoints(value: number | string | undefined): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string' && value !== '-') {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
 interface GameConfig {
   gameId: string;
   gameName: string;
@@ -154,9 +165,25 @@ export async function POST(request: NextRequest) {
       return shouldCountForPoints(raceSlug, stage, gameConfig.countingRaces);
     };
 
-    // Collect all rider nameIDs from results
+    // Collect all rider nameIDs from results, including riders nested in TTT team rows
     const riderNameIds = new Set<string>();
+    const tttRiderPointsMap = new Map<string, { points: string; place: number }>();
     for (const result of stageResults) {
+      if ('riders' in result && Array.isArray(result.riders)) {
+        const teamPlace = result.place || 0;
+        for (const rider of result.riders) {
+          const nameId = rider.shortName?.toLowerCase().replace(/\s+/g, '-');
+          if (nameId && nameId !== '-') {
+            riderNameIds.add(nameId);
+            tttRiderPointsMap.set(nameId, {
+              points: rider.points || '-',
+              place: teamPlace,
+            });
+          }
+        }
+        continue;
+      }
+
       const nameId = result.nameID || result.shortName?.toLowerCase().replace(/\s+/g, '-');
       if (nameId && nameId !== '-') {
         riderNameIds.add(nameId);
@@ -171,18 +198,24 @@ export async function POST(request: NextRequest) {
     // For each rider in the results, find their playerTeams
     for (const riderNameId of riderNameIds) {
       // Find the rider's result
-      const riderResult = stageResults.find(r =>
-        r.nameID === riderNameId ||
-        r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
-      );
+      const tttData = tttRiderPointsMap.get(riderNameId);
+      const riderResult = tttData
+        ? {
+            nameID: riderNameId,
+            shortName: riderNameId,
+            place: tttData.place,
+            points: tttData.points,
+          }
+        : stageResults.find(r =>
+            r.nameID === riderNameId ||
+            r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
+          );
 
       if (!riderResult || !riderResult.place) continue;
 
       // Calculate points for this rider
       const finishPosition = riderResult.place;
-      const pcsPoints = typeof riderResult.points === 'number' ? riderResult.points :
-        (typeof riderResult.points === 'string' && riderResult.points !== '-' ?
-          parseInt(riderResult.points) : 0);
+      const pcsPoints = parsePcsPoints(riderResult.points);
 
       // Find all playerTeams with this rider
       const playerTeamsSnapshot = await db.collection('playerTeams')
@@ -220,7 +253,7 @@ export async function POST(request: NextRequest) {
         // Calculate points based on game type
         let stagePoints = 0;
         if (raceCountsForGame) {
-          if (gameConfig.isSeasonGame) {
+          if (gameConfig.isSeasonGame || tttData) {
             // Season games use PCS points directly
             stagePoints = pcsPoints;
           } else {

@@ -148,7 +148,7 @@ export default function ForumCategoryPage() {
   };
 
   return (
-      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
+      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-[radial-gradient(circle_at_top_left,_rgba(254,226,226,0.65),_transparent_30%),linear-gradient(180deg,#fff7f7_0%,#f6fbff_55%,#f8fafc_100%)]">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
             <Link href="/forum" className="text-sm text-gray-600 hover:text-gray-900 underline">

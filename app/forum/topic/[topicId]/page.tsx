@@ -238,7 +238,7 @@ export default function ForumTopicPage() {
   };
 
   return (
-      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
+      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-[radial-gradient(circle_at_top_left,_rgba(186,230,253,0.5),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(220,252,231,0.5),_transparent_24%),linear-gradient(180deg,#f6fbff_0%,#f8fafc_100%)]">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
             <Link

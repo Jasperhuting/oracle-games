@@ -3,13 +3,14 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { isPublicRoute } from '@/lib/constants/routes';
+import { isPublicRoute, isOpenRoute } from '@/lib/constants/routes';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isPublic = isPublicRoute(pathname);
+  const isOpen = isOpenRoute(pathname);
 
   // Check if user is fully authenticated (logged in AND email verified)
   // Google users are always verified, email users need to verify
@@ -17,6 +18,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
+      // Open routes (e.g. /preview) are accessible to everyone — no redirect
+      if (isOpen) return;
+
       // If user is not fully authenticated and trying to access protected route
       if (!isFullyAuthenticated && !isPublic) {
         // If user exists but email not verified, redirect to verify-email
@@ -31,10 +35,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         router.push('/home');
       }
     }
-  }, [user, loading, isPublic, router, isFullyAuthenticated]);
+  }, [user, loading, isPublic, isOpen, router, isFullyAuthenticated]);
 
-  // Public routes should render immediately, even when auth check is still in-flight.
-  if (isPublic) {
+  // Open and public routes should render immediately, even when auth check is still in-flight.
+  if (isOpen || isPublic) {
     return <>{children}</>;
   }
 

@@ -28,6 +28,7 @@ import { SimulateResultsTab } from "@/components/SimulateResultsTab";
 import { TodosTab } from "@/components/TodosTab";
 import { CacheToolsTab } from "@/components/CacheToolsTab";
 import { JobsDashboard } from "@/components/admin/JobsDashboard";
+import { NewsAdminTab } from "@/components/NewsAdminTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -235,6 +236,11 @@ export default function AdminPageClient() {
                                     id: 'pages-editor',
                                     label: t('admin.tabs.pagesEditor'),
                                     content: <PageEditor />
+                                },
+                                {
+                                    id: 'news',
+                                    label: 'Nieuws',
+                                    content: <NewsAdminTab />
                                 },
                                 {
                                     id: 'translations',

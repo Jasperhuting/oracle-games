@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Dev (productie DB)",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH && node node_modules/.bin/next dev --turbopack --port 3210"],
+      "port": 3210,
+      "autoPort": false
+    },
+    {
+      "name": "Dev (staging DB)",
+      "runtimeExecutable": "/opt/homebrew/bin/yarn",
+      "runtimeArgs": ["dev:staging"],
+      "port": 3210
+    },
+    {
+      "name": "Dev (emulator)",
+      "runtimeExecutable": "/opt/homebrew/bin/yarn",
+      "runtimeArgs": ["dev:emulator"],
+      "port": 3210
+    },
+    {
+      "name": "Dev (emulator testpoort)",
+      "runtimeExecutable": "/opt/homebrew/bin/yarn",
+      "runtimeArgs": ["dev:emulator:test"],
+      "port": 3310
+    }
+  ]
+}

@@ -126,6 +126,11 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
 
     const MenuItems = [
         {
+            name: 'Nieuws',
+            href: "/news",
+            display: true
+        },
+        {
             name: t('header.menu.games'),
             href: "/games",
             display: true
