@@ -6,9 +6,30 @@ import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Button } from "./Button";
 import Link from "next/link";
-import { EmailUserModal } from "./EmailUserModal";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { User } from "@/lib/types/user";
+
+type LoginPatternBucket = {
+  label: string;
+  count: number;
+};
+
+type LoginPatternsData = {
+  history: {
+    days: number;
+    totalLogins: number;
+    uniqueUsers: number;
+    since: string | null;
+    daily: LoginPatternBucket[];
+    hourly: LoginPatternBucket[];
+    weekday: LoginPatternBucket[];
+  };
+  snapshot: {
+    totalUsersWithLastLogin: number;
+    hourly: LoginPatternBucket[];
+    weekday: LoginPatternBucket[];
+  };
+};
 
 export const UserList = () => {
   const { user } = useAuth();
@@ -23,8 +44,6 @@ export const UserList = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [changingUserTypeId, setChangingUserTypeId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<{ email: string; name: string } | null>(null);
 
   // Confirm dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -33,6 +52,8 @@ export const UserList = () => {
   const [pendingAction, setPendingAction] = useState<{userId: string; newUserType?: string} | null>(null);
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
   const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
+  const [loginPatterns, setLoginPatterns] = useState<LoginPatternsData | null>(null);
+  const [loginPatternsLoading, setLoginPatternsLoading] = useState(false);
 
   // Check if user is admin
   useEffect(() => {
@@ -52,6 +73,29 @@ export const UserList = () => {
     
     checkAdmin();
   }, [user]);
+
+  useEffect(() => {
+    const fetchLoginPatterns = async () => {
+      if (!user || !isAdmin) return;
+
+      setLoginPatternsLoading(true);
+      try {
+        const response = await fetch(`/api/admin/login-patterns?userId=${user.uid}&days=90`);
+        if (!response.ok) {
+          throw new Error('Kon loginpatronen niet laden');
+        }
+
+        const data = await response.json();
+        setLoginPatterns(data);
+      } catch (err) {
+        console.error('Error fetching login patterns:', err);
+      } finally {
+        setLoginPatternsLoading(false);
+      }
+    };
+
+    fetchLoginPatterns();
+  }, [user, isAdmin]);
 
   // Set up Firestore realtime listener
   useEffect(() => {
@@ -222,11 +266,6 @@ export const UserList = () => {
     }
   };
 
-  const closeEmailModal = () => {
-    setEmailModalOpen(false);
-    setSelectedUser(null);
-  };
-
   const impersonateUser = async (userId: string) => {
     if (!user) return;
 
@@ -332,6 +371,31 @@ export const UserList = () => {
     return (user.playername || nameParts || user.email || '').toLowerCase();
   };
 
+  const renderMiniBarChart = (items: LoginPatternBucket[], barColorClass: string) => {
+    const maxCount = Math.max(...items.map((item) => item.count), 0);
+
+    return (
+      <div className="grid grid-cols-7 md:grid-cols-12 gap-2 items-end">
+        {items.map((item) => {
+          const height = maxCount > 0 ? Math.max((item.count / maxCount) * 100, item.count > 0 ? 12 : 4) : 4;
+          return (
+            <div key={item.label} className="flex flex-col items-center gap-1">
+              <div className="text-[10px] text-gray-500">{item.count}</div>
+              <div className="w-full h-24 flex items-end">
+                <div
+                  className={`w-full rounded-t ${barColorClass}`}
+                  style={{ height: `${height}%` }}
+                  title={`${item.label}: ${item.count}`}
+                />
+              </div>
+              <div className="text-[10px] text-gray-600">{item.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     let compareValue = 0;
 
@@ -364,6 +428,71 @@ export const UserList = () => {
 
   return (
     <div className="space-y-4">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">Login Analyse</h2>
+            <p className="text-sm text-gray-600">
+              Patronen op basis van echte login-events vanaf nu, plus een snapshot van de laatst bekende login per gebruiker.
+            </p>
+          </div>
+          {loginPatternsLoading && (
+            <div className="text-sm text-gray-500">Analyse laden...</div>
+          )}
+        </div>
+
+        {loginPatterns && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="text-sm text-gray-600">Logins laatste {loginPatterns.history.days} dagen</div>
+                <div className="text-2xl font-bold text-gray-900">{loginPatterns.history.totalLogins}</div>
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="text-sm text-gray-600">Unieke gebruikers</div>
+                <div className="text-2xl font-bold text-blue-600">{loginPatterns.history.uniqueUsers}</div>
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="text-sm text-gray-600">Users met bekende laatste login</div>
+                <div className="text-2xl font-bold text-primary">{loginPatterns.snapshot.totalUsersWithLastLogin}</div>
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="text-sm text-gray-600">Event-data beschikbaar sinds</div>
+                <div className="text-sm font-medium text-gray-900">
+                  {loginPatterns.history.since ? formatDate(loginPatterns.history.since) : 'Nog geen login-events'}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Login-events per uur</h3>
+                <p className="text-xs text-gray-500 mb-4">Historische login-events, tijdzone Europe/Amsterdam.</p>
+                {renderMiniBarChart(loginPatterns.history.hourly, 'bg-blue-500')}
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Laatst bekende login per uur</h3>
+                <p className="text-xs text-gray-500 mb-4">Snapshot op basis van `users.lastLoginAt` voor alle users.</p>
+                {renderMiniBarChart(loginPatterns.snapshot.hourly, 'bg-emerald-500')}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Login-events per weekdag</h3>
+                <p className="text-xs text-gray-500 mb-4">Maandag tot en met zondag.</p>
+                {renderMiniBarChart(loginPatterns.history.weekday, 'bg-violet-500')}
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Laatste login per weekdag</h3>
+                <p className="text-xs text-gray-500 mb-4">Handig als snelle indicatie voordat er genoeg eventhistorie is.</p>
+                {renderMiniBarChart(loginPatterns.snapshot.weekday, 'bg-amber-500')}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Header with stats */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between">

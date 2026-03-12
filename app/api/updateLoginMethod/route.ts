@@ -26,10 +26,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userData = userDoc.data();
+
     // Update existing user document
     await userRef.update({
       lastLoginMethod: loginMethod,
       lastLoginAt: Timestamp.now(),
+    });
+
+    await db.collection('activityLogs').add({
+      action: 'USER_LOGIN',
+      userId,
+      userEmail: userData?.email || null,
+      userName: userData?.playername || null,
+      details: {
+        loginMethod,
+      },
+      timestamp: Timestamp.now(),
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
     });
 
     return NextResponse.json({ success: true });
