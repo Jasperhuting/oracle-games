@@ -17,7 +17,8 @@ const F1DriverPicker = ({
     onChange,
     placeholder = "Selecteer coureur",
     excludeDrivers = [],
-    theme = "dark"
+    theme = "dark",
+    disabled = false,
 }: {
     drivers: Driver[];
     value: string | null;
@@ -25,6 +26,7 @@ const F1DriverPicker = ({
     placeholder?: string;
     excludeDrivers?: string[];
     theme?: "dark" | "purple" | "red";
+    disabled?: boolean;
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -53,7 +55,16 @@ const F1DriverPicker = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (disabled) {
+            setIsOpen(false);
+            setIsDragOver(false);
+            setSearch("");
+        }
+    }, [disabled]);
+
     const handleDragOver = (e: React.DragEvent) => {
+        if (disabled) return;
         e.preventDefault();
         setIsDragOver(true);
     };
@@ -63,6 +74,7 @@ const F1DriverPicker = ({
     };
 
     const handleDrop = (e: React.DragEvent) => {
+        if (disabled) return;
         e.preventDefault();
         setIsDragOver(false);
         const driverData = e.dataTransfer.getData("application/json");
@@ -94,8 +106,9 @@ const F1DriverPicker = ({
         >
             {selectedDriver ? (
                 <div
-                    className={`flex items-center gap-2 ${bgColor} rounded px-2 py-1.5 h-[38px] ${isDragOver ? `ring-2 ${dragOverColor}` : ''} cursor-pointer`}
+                    className={`flex items-center gap-2 ${bgColor} rounded px-2 py-1.5 h-[38px] ${isDragOver ? `ring-2 ${dragOverColor}` : ''} ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                     onClick={() => {
+                        if (disabled) return;
                         setIsOpen(true);
                         setSearch("");
                     }}
@@ -108,9 +121,11 @@ const F1DriverPicker = ({
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
+                            if (disabled) return;
                             onChange(null);
                         }}
-                        className="ml-auto text-gray-400 hover:text-white flex-shrink-0"
+                        disabled={disabled}
+                        className="ml-auto text-gray-400 hover:text-white flex-shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         ✕
                     </button>
@@ -121,9 +136,13 @@ const F1DriverPicker = ({
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        onFocus={() => setIsOpen(true)}
+                        onFocus={() => {
+                            if (disabled) return;
+                            setIsOpen(true);
+                        }}
                         placeholder={placeholder}
-                        className={`w-full px-2 py-1.5 ${bgColor} text-white border ${borderColor} rounded text-sm focus:outline-none focus:ring-2 ${focusRing} h-[38px] ${isDragOver ? 'pointer-events-none' : ''}`}
+                        disabled={disabled}
+                        className={`w-full px-2 py-1.5 ${bgColor} text-white border ${borderColor} rounded text-sm focus:outline-none focus:ring-2 ${focusRing} h-[38px] ${isDragOver ? 'pointer-events-none' : ''} ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
                     />
                     {isDragOver && (
                         <div className="absolute inset-0 flex items-center justify-center rounded bg-black/50 pointer-events-none">
@@ -468,6 +487,7 @@ export default function RacePage() {
     const isPredictionDeadlinePassed = race?.predictionDeadline
         ? new Date() > race.predictionDeadline.toDate()
         : false;
+    const isPredictionLocked = isRaceDone || isPredictionDeadlinePassed;
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     // Mock predictions for testing - round 0
@@ -573,6 +593,7 @@ export default function RacePage() {
     }, [draggedFromGrid]);
 
     const handleDropOnGrid = (position: number, droppedDriver: Driver) => {
+        if (isPredictionLocked) return;
         setGrid((prevGrid) => {
             const newGrid = [...prevGrid];
             const existingDriver = newGrid[position - 1];
@@ -589,6 +610,7 @@ export default function RacePage() {
     };
 
     const handleSelectOnGrid = (position: number, selectedDriver: Driver | null) => {
+        if (isPredictionLocked) return;
         setGrid((prevGrid) => {
             const newGrid = [...prevGrid];
             
@@ -616,6 +638,7 @@ export default function RacePage() {
     const sortedDrivers = [...drivers].sort((a, b) => (a.team || '').localeCompare(b.team || ''));
 
     const handleDragStartFromGrid = (position: number, e: React.DragEvent) => {
+        if (isPredictionLocked) return;
         setDraggedFromGrid(position);
         const driver = grid[position - 1];
         if (driver) {
@@ -628,6 +651,7 @@ export default function RacePage() {
     };
 
     const handleDragStartFromCard = (e: React.DragEvent, driver: Driver) => {
+        if (isPredictionLocked) return;
         e.dataTransfer.setData("application/json", JSON.stringify(driver));
         setDraggedFromGrid(null);
         setDraggingDriver(driver.shortName);
@@ -659,6 +683,14 @@ export default function RacePage() {
     };
 
     const handleGridDragEnd = (e: React.DragEvent, position: number) => {
+        if (isPredictionLocked) {
+            setDraggingDriver(null);
+            setDraggedFromGrid(null);
+            setDraggingDriverData(null);
+            setIsOutsideGrid(false);
+            setDragPosition(null);
+            return;
+        }
         if (e.dataTransfer.dropEffect === 'none') {
             setGrid((prevGrid) => {
                 const newGrid = [...prevGrid];
@@ -681,7 +713,7 @@ export default function RacePage() {
             return;
         }
 
-        if (isPredictionDeadlinePassed) {
+        if (isPredictionLocked) {
             setSaveMessage({ type: 'error', text: 'De deadline voor deze F1-voorspelling is voorbij' });
             return;
         }
@@ -1268,6 +1300,7 @@ export default function RacePage() {
                                         drivers={drivers}
                                         value={polePosition}
                                         onChange={setPolePosition}
+                                        disabled={isPredictionLocked}
                                         theme="dark"
                                         placeholder="Selecteer coureur"
                                     />
@@ -1290,6 +1323,7 @@ export default function RacePage() {
                                         drivers={drivers}
                                         value={fastestLap}
                                         onChange={setFastestLap}
+                                        disabled={isPredictionLocked}
                                         theme="purple"
                                         placeholder="Selecteer coureur"
                                     />
@@ -1309,6 +1343,7 @@ export default function RacePage() {
                                         drivers={drivers}
                                         value={dnf1}
                                         onChange={setDnf1}
+                                        disabled={isPredictionLocked}
                                         theme="red"
                                         placeholder="Selecteer coureur"
                                         excludeDrivers={dnf2 ? [dnf2] : []}
@@ -1329,6 +1364,7 @@ export default function RacePage() {
                                         drivers={drivers}
                                         value={dnf2}
                                         onChange={setDnf2}
+                                        disabled={isPredictionLocked}
                                         theme="red"
                                         placeholder="Selecteer coureur"
                                         excludeDrivers={dnf1 ? [dnf1] : []}
@@ -1353,15 +1389,20 @@ export default function RacePage() {
                                 <div className="flex gap-2 md:gap-3">
                                     <button
                                         onClick={() => setGrid(Array(10).fill(null))}
-                                        className="cursor-pointer flex-1 md:flex-none px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                        disabled={saving || isPredictionLocked}
+                                        className={`flex-1 md:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
+                                            saving || isPredictionLocked
+                                                ? 'bg-gray-600 cursor-not-allowed'
+                                                : 'cursor-pointer bg-gray-700 hover:bg-gray-600'
+                                        }`}
                                     >
                                         Reset
                                     </button>
                                     <button
                                         onClick={handleSavePrediction}
-                                        disabled={saving || isRaceDone || isPredictionDeadlinePassed}
+                                        disabled={saving || isPredictionLocked}
                                         className={`cursor-pointer flex-1 md:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
-                                            saving || isRaceDone || isPredictionDeadlinePassed
+                                            saving || isPredictionLocked
                                                 ? 'bg-gray-600 cursor-not-allowed' 
                                                 : 'bg-red-600 hover:bg-red-500'
                                         }`}
@@ -1463,10 +1504,10 @@ export default function RacePage() {
                             return (
                                 <div key={driver.lastName} className="relative">
                                     <div
-                                        draggable={!isOnGrid}
+                                        draggable={!isOnGrid && !isPredictionLocked}
                                         onDragStart={(e) => handleDragStartFromCard(e, driver)}
                                         onDragEnd={handleDragEnd}
-                                        className={`select-none transition-opacity duration-200 cursor-grab active:cursor-grabbing touch-none h-full group ${isOnGrid ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
+                                        className={`select-none transition-opacity duration-200 touch-none h-full group ${isOnGrid || isPredictionLocked ? 'opacity-30 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing hover:opacity-80'} ${isDragging ? 'opacity-50' : ''}`}
                                     >
                                         <div className="pointer-events-none h-full">
                                             <DriverCard driver={driver} />
@@ -1514,7 +1555,7 @@ export default function RacePage() {
                                                 onSelect={handleSelectOnGrid}
                                                 availableDrivers={availableDriversForGrid}
                                                 allSelectedDrivers={grid.filter((d): d is Driver => d !== null)}
-                                                disabled={false}
+                                                disabled={isPredictionLocked}
                                             />
                                         </div>
                                         {/* Right side - even positions (slightly offset down) */}
@@ -1529,7 +1570,7 @@ export default function RacePage() {
                                                 onSelect={handleSelectOnGrid}
                                                 availableDrivers={availableDriversForGrid}
                                                 allSelectedDrivers={grid.filter((d): d is Driver => d !== null)}
-                                                disabled={false}
+                                                disabled={isPredictionLocked}
                                             />
                                         </div>
                                     </div>
