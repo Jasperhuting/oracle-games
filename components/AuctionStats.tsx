@@ -5,6 +5,7 @@ import { Collapsible } from "./Collapsible";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchTeamsOverviewWithCache } from "@/lib/utils/teamsOverviewCache";
+import { formatStandingsScore } from "@/lib/utils";
 
 interface Standing {
   ranking: number;
@@ -194,7 +195,7 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
                             </Link>
                           </td>
                           <td className="py-2 text-right font-semibold text-primary">
-                            {row.totalPoints.toLocaleString()}
+                            {formatStandingsScore(row.totalPoints)}
                           </td>
                         </tr>
                       ))}

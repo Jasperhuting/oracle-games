@@ -13,6 +13,7 @@ import {
   SortingState,
 } from '@tanstack/react-table';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
+import { formatStandingsScore } from '@/lib/utils';
 
 export interface GameStandingRow {
   ranking: number;
@@ -137,7 +138,7 @@ export function GameStandingsView({
           id: 'achievedPoints',
           header: 'Punten',
           cell: (info) => (
-            <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
+            <span className="font-semibold text-primary">{formatStandingsScore(info.getValue())}</span>
           ),
           size: 140,
         }
@@ -209,7 +210,7 @@ export function GameStandingsView({
         columnHelper.accessor('totalPoints', {
           header: 'Punten',
           cell: (info) => (
-            <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
+            <span className="font-semibold text-primary">{formatStandingsScore(info.getValue())}</span>
           ),
           size: 100,
         })

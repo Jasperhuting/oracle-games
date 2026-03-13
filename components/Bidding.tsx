@@ -1,7 +1,7 @@
 import CurrencyInput from "react-currency-input-field";
 import { Button } from "./Button";
 import { PlayerCard } from "./PlayerCard";
-import { formatDate, qualifiesAsNeoProf } from "@/lib/utils";
+import { formatDate, formatStandingsScore, qualifiesAsNeoProf } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { CurrencyEuro, GridDots, List, SortAscending, SortDescending } from "tabler-icons-react";
 import { AuctionPeriod, Bid } from "@/lib/types";
@@ -639,7 +639,7 @@ export const Bidding = ({
                                   </div>
                                 </td>
                                 <td className="py-2 text-right font-semibold text-primary">
-                                  {row.totalPoints.toLocaleString()}
+                                  {formatStandingsScore(row.totalPoints)}
                                 </td>
                               </tr>
                             ))}

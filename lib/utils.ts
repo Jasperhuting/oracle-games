@@ -65,3 +65,10 @@ export  const formatDate = (dateString: string) => {
       minute: '2-digit',
     });
   };
+
+export const formatStandingsScore = (value: number): string => {
+  return value.toLocaleString('en-US', {
+    useGrouping: false,
+    maximumFractionDigits: 20,
+  });
+};

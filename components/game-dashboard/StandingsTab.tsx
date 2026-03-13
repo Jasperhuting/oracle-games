@@ -11,6 +11,7 @@ import {
   createColumnHelper,
   SortingState,
 } from '@tanstack/react-table';
+import { formatStandingsScore } from '@/lib/utils';
 
 interface Standing {
   ranking: number;
@@ -100,7 +101,7 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
           id: 'achievedPoints',
           header: 'Punten',
           cell: (info) => (
-            <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
+            <span className="font-semibold text-primary">{formatStandingsScore(info.getValue())}</span>
           ),
           size: 140,
         }
@@ -169,7 +170,7 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
         id: 'totalPoints',
         header: 'Punten',
         cell: (info) => (
-          <span className="font-semibold text-primary">{info.getValue().toLocaleString()}</span>
+          <span className="font-semibold text-primary">{formatStandingsScore(info.getValue())}</span>
         ),
         size: 100,
       }),
@@ -185,7 +186,7 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
           id: 'avgPointsPerRider',
           header: 'Gem./renner',
           cell: (info) => (
-            <span className="font-medium text-gray-700">{info.getValue().toLocaleString()}</span>
+            <span className="font-medium text-gray-700">{formatStandingsScore(info.getValue())}</span>
           ),
           size: 110,
         }

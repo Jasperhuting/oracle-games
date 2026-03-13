@@ -231,7 +231,7 @@ export default function ForumTopicPage() {
             </button>
           )}
         </div>
-        <div className="text-gray-800 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: reply.body }} />
+        <div className="forum-rich-content overflow-x-auto text-gray-800" dangerouslySetInnerHTML={{ __html: reply.body }} />
         {renderReplies(reply.id, depth + 1)}
       </div>
     ));
@@ -290,7 +290,7 @@ export default function ForumTopicPage() {
                   </span>
                 </div>
                 {!editingTopic ? (
-                  <div className="mt-4 text-gray-800 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: topic.body }} />
+                  <div className="forum-rich-content mt-4 overflow-x-auto text-gray-800" dangerouslySetInnerHTML={{ __html: topic.body }} />
                 ) : (
                   <div className="mt-4 space-y-3">
                     <input
