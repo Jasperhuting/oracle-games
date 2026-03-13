@@ -3,40 +3,11 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import type { Editor } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
-import {
-  TableView,
-  addColumnAfter,
-  addColumnBefore,
-  addRowAfter,
-  addRowBefore,
-  columnResizing,
-  deleteColumn,
-  deleteRow,
-  deleteTable,
-  goToNextCell,
-  mergeCells,
-  splitCell,
-  tableEditing,
-  toggleHeaderColumn,
-  toggleHeaderRow,
-} from 'prosemirror-tables';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     forumTable: {
       insertTable: (options?: { rows?: number; cols?: number; withHeaderRow?: boolean }) => ReturnType;
-      addColumnBefore: () => ReturnType;
-      addColumnAfter: () => ReturnType;
-      deleteColumn: () => ReturnType;
-      addRowBefore: () => ReturnType;
-      addRowAfter: () => ReturnType;
-      deleteRow: () => ReturnType;
-      deleteTable: () => ReturnType;
-      mergeCells: () => ReturnType;
-      splitCell: () => ReturnType;
-      toggleHeaderRow: () => ReturnType;
-      toggleHeaderColumn: () => ReturnType;
-      goToNextCell: (direction: number) => ReturnType;
     };
     forumImage: {
       setImage: (options: { src: string; alt?: string | null; title?: string | null }) => ReturnType;
@@ -123,16 +94,8 @@ export const ForumTable = Node.create({
   addOptions() {
     return {
       HTMLAttributes: {},
-      resizable: true,
     };
   },
-
-  extendNodeSchema() {
-    return {
-      tableRole: 'table',
-    };
-  },
-
   parseHTML() {
     return [{ tag: 'table' }];
   },
@@ -157,78 +120,7 @@ export const ForumTable = Node.create({
 
           return true;
         },
-      addColumnBefore:
-        () =>
-        ({ state, dispatch }) =>
-          addColumnBefore(state, dispatch),
-      addColumnAfter:
-        () =>
-        ({ state, dispatch }) =>
-          addColumnAfter(state, dispatch),
-      deleteColumn:
-        () =>
-        ({ state, dispatch }) =>
-          deleteColumn(state, dispatch),
-      addRowBefore:
-        () =>
-        ({ state, dispatch }) =>
-          addRowBefore(state, dispatch),
-      addRowAfter:
-        () =>
-        ({ state, dispatch }) =>
-          addRowAfter(state, dispatch),
-      deleteRow:
-        () =>
-        ({ state, dispatch }) =>
-          deleteRow(state, dispatch),
-      deleteTable:
-        () =>
-        ({ state, dispatch }) =>
-          deleteTable(state, dispatch),
-      mergeCells:
-        () =>
-        ({ state, dispatch }) =>
-          mergeCells(state, dispatch),
-      splitCell:
-        () =>
-        ({ state, dispatch }) =>
-          splitCell(state, dispatch),
-      toggleHeaderRow:
-        () =>
-        ({ state, dispatch }) =>
-          toggleHeaderRow(state, dispatch),
-      toggleHeaderColumn:
-        () =>
-        ({ state, dispatch }) =>
-          toggleHeaderColumn(state, dispatch),
-      goToNextCell:
-        (direction) =>
-        ({ state, dispatch }) =>
-          goToNextCell(direction as -1 | 1)(state, dispatch),
     };
-  },
-
-  addKeyboardShortcuts() {
-    return {
-      Tab: () => this.editor.commands.goToNextCell(1),
-      'Shift-Tab': () => this.editor.commands.goToNextCell(-1),
-    };
-  },
-
-  addProseMirrorPlugins() {
-    const plugins = [tableEditing()];
-
-    if (this.options.resizable) {
-      plugins.unshift(
-        columnResizing({
-          View: TableView,
-          cellMinWidth: 120,
-          lastColumnResizable: true,
-        })
-      );
-    }
-
-    return plugins;
   },
 });
 
@@ -236,12 +128,6 @@ export const ForumTableRow = Node.create({
   name: 'tableRow',
 
   content: '(tableCell | tableHeader)*',
-
-  extendNodeSchema() {
-    return {
-      tableRole: 'row',
-    };
-  },
 
   parseHTML() {
     return [{ tag: 'tr' }];
@@ -285,12 +171,6 @@ export const ForumTableCell = Node.create({
     return cellAttributes;
   },
 
-  extendNodeSchema() {
-    return {
-      tableRole: 'cell',
-    };
-  },
-
   parseHTML() {
     return [{ tag: 'td' }];
   },
@@ -309,12 +189,6 @@ export const ForumTableHeader = Node.create({
 
   addAttributes() {
     return cellAttributes;
-  },
-
-  extendNodeSchema() {
-    return {
-      tableRole: 'header_cell',
-    };
   },
 
   parseHTML() {

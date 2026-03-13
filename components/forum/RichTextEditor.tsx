@@ -106,8 +106,6 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     table: editor?.isActive('table'),
   }), [editor]);
 
-  const tableControlsDisabled = !editor?.isActive('table');
-
   const toolbarButtonClass = (active = false) =>
     `px-2.5 py-1.5 rounded text-xs font-medium border transition-colors ${
       active
@@ -237,97 +235,20 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
           </button>
           {showTableMenu && (
             <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
                 <button
                   type="button"
                   onClick={() => {
                     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
                     setShowTableMenu(false);
                   }}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                  className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
                 >
                   Nieuwe tabel
                 </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().toggleHeaderRow().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Header rij
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().addColumnBefore().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Kolom links
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().addColumnAfter().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Kolom rechts
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().addRowBefore().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Rij boven
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().addRowAfter().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Rij onder
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().mergeCells().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Cellen samen
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().splitCell().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-gray-50"
-                >
-                  Cel splitsen
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().deleteColumn().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-red-200 px-2 py-1.5 text-xs text-red-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-50"
-                >
-                  Kolom weg
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().deleteRow().run()}
-                  disabled={tableControlsDisabled}
-                  className="rounded-md border border-red-200 px-2 py-1.5 text-xs text-red-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-50"
-                >
-                  Rij weg
-                </button>
-                <button
-                  type="button"
-                  onClick={() => editor.chain().focus().deleteTable().run()}
-                  disabled={tableControlsDisabled}
-                  className="col-span-2 rounded-md border border-red-200 px-2 py-1.5 text-xs text-red-700 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-50"
-                >
-                  Verwijder tabel
-                </button>
+                <p className="text-[11px] leading-relaxed text-gray-500">
+                  Plakken vanuit Excel, Numbers of Google Sheets blijft ondersteund.
+                </p>
               </div>
             </div>
           )}
