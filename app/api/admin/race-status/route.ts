@@ -204,7 +204,7 @@ const KNOWN_RACE_STAGES: Record<string, number> = {
   'le-tour-de-filipinas': 3,
   'tour-of-rwanda': 8,
   'giro-di-sardegna': 5,
-  'istrian-spring-tour': 4,
+  'istrian-spring-tour': 3,
   'tour-of-rhodes': 4
 };
 
@@ -216,6 +216,7 @@ const RACES_WITH_PROLOGUE: Set<string> = new Set([
   'pune-grand-tour',
   'santos-tour-down-under',
   'deutschland-tour',
+  'istrian-spring-tour',
   // Grand tours sometimes have prologues
 ]);
 

@@ -465,6 +465,9 @@ export default function RacePage() {
     const { result: raceResult, loading: resultLoading } = useF1RaceResult(2026, round);
 
     const isRaceDone = race?.status === 'done';
+    const isPredictionDeadlinePassed = race?.predictionDeadline
+        ? new Date() > race.predictionDeadline.toDate()
+        : false;
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     // Mock predictions for testing - round 0
@@ -678,6 +681,11 @@ export default function RacePage() {
             return;
         }
 
+        if (isPredictionDeadlinePassed) {
+            setSaveMessage({ type: 'error', text: 'De deadline voor deze F1-voorspelling is voorbij' });
+            return;
+        }
+
         // Allow partial predictions - no minimum requirement
         const filledPositions = grid.filter(d => d !== null).length;
         if (filledPositions > 10) {
@@ -687,7 +695,7 @@ export default function RacePage() {
 
         const finishOrder = grid.slice(0, 10).map(d => d?.shortName || '').filter(name => name !== '');
         
-        const success = await savePrediction({
+        const result = await savePrediction({
             finishOrder,
             polePosition,
             fastestLap,
@@ -695,10 +703,13 @@ export default function RacePage() {
             dnf2,
         });
 
-        if (success) {
+        if (result.success) {
             setSaveMessage({ type: 'success', text: 'Voorspelling opgeslagen!' });
         } else {
-            setSaveMessage({ type: 'error', text: 'Er ging iets mis bij het opslaan' });
+            const errorText = result.error === 'Prediction deadline passed'
+                ? 'De deadline voor deze F1-voorspelling is voorbij'
+                : result.error || 'Er ging iets mis bij het opslaan';
+            setSaveMessage({ type: 'error', text: errorText });
         }
 
         // Clear message after 3 seconds
@@ -1348,9 +1359,9 @@ export default function RacePage() {
                                     </button>
                                     <button
                                         onClick={handleSavePrediction}
-                                        disabled={saving || isRaceDone}
+                                        disabled={saving || isRaceDone || isPredictionDeadlinePassed}
                                         className={`cursor-pointer flex-1 md:flex-none px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors ${
-                                            saving || isRaceDone 
+                                            saving || isRaceDone || isPredictionDeadlinePassed
                                                 ? 'bg-gray-600 cursor-not-allowed' 
                                                 : 'bg-red-600 hover:bg-red-500'
                                         }`}
@@ -1372,6 +1383,11 @@ export default function RacePage() {
                                 {!isAuthenticated && !predictionLoading && (
                                     <div className="mt-3 px-4 py-2 rounded-lg text-sm bg-yellow-900/50 text-yellow-400 border border-yellow-700">
                                         Log in om je voorspelling op te slaan
+                                    </div>
+                                )}
+                                {isAuthenticated && isPredictionDeadlinePassed && (
+                                    <div className="mt-3 px-4 py-2 rounded-lg text-sm bg-yellow-900/50 text-yellow-400 border border-yellow-700">
+                                        De deadline voor deze F1-voorspelling is voorbij
                                     </div>
                                 )}
                             </>

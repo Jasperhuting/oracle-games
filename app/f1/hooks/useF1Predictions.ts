@@ -65,9 +65,11 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
     fastestLap: string | null;
     dnf1: string | null;
     dnf2: string | null;
-  }) => {
+  }): Promise<{ success: boolean; error?: string }> => {
     if (!user?.uid) {
-      throw new Error('Not authenticated');
+      const authError = 'Not authenticated';
+      setError(new Error(authError));
+      return { success: false, error: authError };
     }
 
     setSaving(true);
@@ -108,11 +110,12 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
         throw new Error(result?.error || 'Failed to save prediction');
       }
 
-      return true;
+      return { success: true };
     } catch (err) {
       console.error('Error saving prediction:', err);
-      setError(err as Error);
-      return false;
+      const nextError = err instanceof Error ? err : new Error('Failed to save prediction');
+      setError(nextError);
+      return { success: false, error: nextError.message };
     } finally {
       setSaving(false);
     }
