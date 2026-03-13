@@ -30,6 +30,22 @@ export interface SaveResult {
   error?: string;
 }
 
+export function isEmptyScrapeValidationFailure(save: Pick<SaveResult, 'success' | 'validation' | 'error'>): boolean {
+  if (save.success) {
+    return false;
+  }
+
+  const tooFewRidersError = save.validation?.errors.find((error) =>
+    error.message.includes('Too few riders: 0')
+  );
+
+  if (tooFewRidersError) {
+    return true;
+  }
+
+  return (save.error || '').includes('Validation failed: Too few riders: 0');
+}
+
 export function generateDocumentId(key: ScraperDataKey): string {
   if (key.type === 'startlist') {
     return `${key.race}-${key.year}-startlist`;
@@ -306,6 +322,75 @@ export async function saveScraperDataValidated(
       validation,
       previousDataBackedUp,
       backupDocId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+export async function saveEmptyScraperDataMarker(
+  key: ScraperDataKey,
+  message: string
+): Promise<{ success: boolean; docId: string; error?: string }> {
+  const db = getServerFirebase();
+  const docId = generateDocumentId(key);
+  const docRef = db.collection('scraper-data').doc(docId);
+
+  const nowIso = new Date().toISOString();
+  const base = {
+    race: key.race,
+    year: key.year,
+    source: '',
+    count: 0,
+    scrapedAt: nowIso,
+    updatedAt: nowIso,
+    key: {
+      race: key.race,
+      year: key.year,
+      type: key.type,
+      ...(key.stage !== undefined && { stage: key.stage }),
+    },
+    _validation: {
+      valid: true,
+      errorCount: 0,
+      warningCount: 0,
+      metadata: {
+        riderCount: 0,
+        hasResults: false,
+        hasGC: false,
+        hasPointsClassification: false,
+        hasMountainsClassification: false,
+        hasYouthClassification: false,
+        hasTeamClassification: false,
+        validatedAt: nowIso,
+      },
+      validatedAt: nowIso,
+    },
+    _empty: true,
+    _emptyReason: message,
+  };
+
+  const docData = key.type === 'startlist'
+    ? {
+        ...base,
+        riders: [],
+      }
+    : {
+        ...base,
+        stageResults: [],
+        generalClassification: [],
+        pointsClassification: [],
+        mountainsClassification: [],
+        youthClassification: [],
+        teamClassification: [],
+      };
+
+  try {
+    await docRef.set(cleanFirebaseData(docData) as DocumentData, { merge: true });
+    return { success: true, docId };
+  } catch (error) {
+    return {
+      success: false,
+      docId,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }

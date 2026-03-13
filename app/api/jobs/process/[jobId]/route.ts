@@ -1,14 +1,19 @@
 import { NextRequest } from 'next/server';
 import {
   getJob,
-  startJob,
+  claimPendingJob,
   completeJob,
   failJob,
   updateJobProgress,
   updateJob,
 } from '@/lib/firebase/job-queue';
 import { getStageResult, getRiders, getRaceResult, getTourGCResult, type RaceSlug } from '@/lib/scraper';
-import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import {
+  saveScraperDataValidated,
+  saveEmptyScraperDataMarker,
+  isEmptyScrapeValidationFailure,
+  type ScraperDataKey,
+} from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendTelegramMessage } from '@/lib/telegram';
 import { cleanFirebaseData } from '@/lib/firebase/utils';
@@ -84,8 +89,18 @@ export async function POST(
       });
     }
 
-    // Start the job
-    await startJob(jobId);
+    const claimResult = await claimPendingJob(jobId);
+    if (!claimResult.job) {
+      return Response.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    if (!claimResult.claimed) {
+      return Response.json({
+        message: 'Job already being handled',
+        status: claimResult.job.status,
+      });
+    }
+
     const startTime = Date.now();
 
     // Log scrape start
@@ -195,6 +210,46 @@ export async function POST(
       const classifiedError = classifyScrapeError(error);
       const errorMessage = classifiedError.message;
       const shouldRetry = job?.type === 'scraper' && classifiedError.retryable;
+
+      if (job?.type === 'scraper' && classifiedError.category === 'availability') {
+        const { race, year, stage, type } = job.data as {
+          race: string;
+          year: number;
+          stage?: number;
+          type: 'startlist' | 'stage-result' | 'stage' | 'result' | 'tour-gc';
+        };
+        const markerType = type === 'stage-result' ? 'stage' : type;
+
+        if (markerType === 'startlist' || markerType === 'stage' || markerType === 'result' || markerType === 'tour-gc') {
+          await saveEmptyScraperDataMarker({
+            race,
+            year,
+            type: markerType,
+            stage: markerType === 'stage' ? stage : undefined,
+          }, errorMessage);
+        }
+
+        const emptyResult: ScrapeResult = {
+          success: true,
+          message: errorMessage,
+          riderCount: 0,
+          stage,
+          resultPreview: [],
+          retryable: false,
+          failureReason: 'availability',
+          errorCategory: classifiedError.category,
+        };
+
+        await completeJob(jobId, emptyResult);
+        await updateBatchFromJob(job, emptyResult, 'completed');
+
+        return Response.json({
+          success: true,
+          jobId,
+          status: 'completed',
+          result: emptyResult,
+        });
+      }
 
       if (shouldRetry) {
         const retryCount = typeof (job as any).retryCount === 'number' ? (job as any).retryCount : 0;
@@ -401,6 +456,13 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (isEmptyScrapeValidationFailure(save)) {
+      return {
+        success: true,
+        message: 'No startlist available yet',
+        riderCount: 0,
+      };
+    }
     const startlistResult: ScrapeResult = {
       success: save.success,
       message: save.success ? 'Startlist scraped' : (save.error || 'Validation failed'),
@@ -428,6 +490,15 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (isEmptyScrapeValidationFailure(save)) {
+      return {
+        success: true,
+        message: `No stage data available yet for stage ${stage}`,
+        riderCount: 0,
+        stage,
+        resultPreview: [],
+      };
+    }
     if (save.success) {
       try {
         const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
@@ -503,6 +574,14 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (isEmptyScrapeValidationFailure(save)) {
+      return {
+        success: true,
+        message: 'No race result available yet',
+        riderCount: 0,
+        resultPreview: [],
+      };
+    }
     if (save.success) {
       try {
         const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
@@ -577,6 +656,14 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
 
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
+    if (isEmptyScrapeValidationFailure(save)) {
+      return {
+        success: true,
+        message: 'No tour GC available yet',
+        riderCount: 0,
+        resultPreview: [],
+      };
+    }
     if (save.success) {
       try {
         const calculatePointsModule = await import('@/app/api/games/calculate-points/route');

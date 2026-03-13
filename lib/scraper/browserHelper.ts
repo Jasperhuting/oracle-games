@@ -17,7 +17,11 @@ const isProduction =
 const SCRAPER_LOCK_COLLECTION = "runtimeLocks";
 const LOCK_TTL_MS = parsePositiveInt(
   process.env.SCRAPER_BROWSER_LOCK_TTL_MS,
-  10 * 60 * 1000
+  2 * 60 * 1000
+);
+const LOCK_REFRESH_INTERVAL_MS = Math.max(
+  10 * 1000,
+  Math.min(30 * 1000, Math.floor(LOCK_TTL_MS / 3))
 );
 const LOCK_ACQUIRE_TIMEOUT_MS = parsePositiveInt(
   process.env.SCRAPER_BROWSER_ACQUIRE_TIMEOUT_MS,
@@ -70,6 +74,37 @@ type ScrapeLease = {
   release: () => Promise<void>;
 };
 
+function startLeaseHeartbeat(params: {
+  ref: FirebaseFirestore.DocumentReference;
+  token: string;
+}) {
+  const db = getServerFirebase();
+  const timer = setInterval(() => {
+    void db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(params.ref);
+      const data = snap.data() as { token?: string } | undefined;
+
+      if (!snap.exists || data?.token !== params.token) {
+        return;
+      }
+
+      transaction.set(
+        params.ref,
+        {
+          expiresAt: new Date(Date.now() + LOCK_TTL_MS).toISOString(),
+          lastRefreshedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    }).catch((error) => {
+      console.warn("[scraper] Failed to refresh scraper lease heartbeat:", error);
+    });
+  }, LOCK_REFRESH_INTERVAL_MS);
+
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
 async function acquireScrapeLease(): Promise<ScrapeLease> {
   const db = getServerFirebase();
   const token = randomUUID();
@@ -108,10 +143,13 @@ async function acquireScrapeLease(): Promise<ScrapeLease> {
       });
 
       if (acquired) {
+        const stopHeartbeat = startLeaseHeartbeat({ ref, token });
+
         return {
           token,
           slotId,
           release: async () => {
+            stopHeartbeat();
             await db.runTransaction(async (transaction) => {
               const snap = await transaction.get(ref);
               const data = snap.data() as { token?: string } | undefined;
@@ -382,6 +420,7 @@ export async function fetchPageHtml(options: {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const browser = await launchBrowser();
     let page: Page | null = null;
+    let browserReleased = false;
 
     try {
       page = await browser.newPage();
@@ -419,6 +458,7 @@ export async function fetchPageHtml(options: {
       }
 
       await browser.close();
+      browserReleased = true;
       if (!isTransientScrapeError(error) || attempt >= maxAttempts) {
         throw error;
       }
@@ -429,6 +469,15 @@ export async function fetchPageHtml(options: {
       if (page && !page.isClosed()) {
         try {
           await page.close();
+        } catch {
+          await browser.disconnect();
+          browserReleased = true;
+        }
+      }
+
+      if (!browserReleased) {
+        try {
+          await browser.close();
         } catch {
           await browser.disconnect();
         }
@@ -465,6 +514,10 @@ export function classifyScrapeError(error: unknown): {
   }
 
   if (
+    message.includes("No stage results available") ||
+    message.includes("No race result available") ||
+    message.includes("No startlist available") ||
+    message.includes("No tour GC available") ||
     message.includes("No results available") ||
     message.includes("No GC results available") ||
     message.includes("Not started")

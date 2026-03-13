@@ -100,6 +100,44 @@ export async function startJob(jobId: string): Promise<void> {
   });
 }
 
+export async function claimPendingJob(jobId: string): Promise<{
+  claimed: boolean;
+  job: Job | null;
+}> {
+  const jobRef = db.collection(JOBS_COLLECTION).doc(jobId);
+
+  return db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(jobRef);
+    if (!snapshot.exists) {
+      return { claimed: false, job: null };
+    }
+
+    const job = snapshot.data() as Job;
+    if (job.status !== 'pending') {
+      return { claimed: false, job };
+    }
+
+    const startedAt = new Date().toISOString();
+    transaction.update(jobRef, {
+      status: 'running',
+      startedAt,
+      completedAt: null,
+      error: null,
+    });
+
+    return {
+      claimed: true,
+      job: {
+        ...job,
+        status: 'running',
+        startedAt,
+        completedAt: undefined,
+        error: undefined,
+      },
+    };
+  });
+}
+
 /**
  * Mark job as completed with optional result
  */

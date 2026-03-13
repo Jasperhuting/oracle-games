@@ -1,7 +1,12 @@
 import { NextRequest } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getRiders, getStageResult, getRaceResult, getTourGCResult } from '@/lib/scraper';
-import { saveScraperDataValidated, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import {
+  saveScraperDataValidated,
+  saveEmptyScraperDataMarker,
+  isEmptyScrapeValidationFailure,
+  type ScraperDataKey,
+} from '@/lib/firebase/scraper-service';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
 import { classifyScrapeError } from '@/lib/scraper/browserHelper';
@@ -238,6 +243,16 @@ export async function POST(request: NextRequest) {
     // Save to Firebase (this will overwrite existing data)
     const save = await saveScraperDataValidated(key, scraperData);
     if (!save.success) {
+      if (isEmptyScrapeValidationFailure(save)) {
+        return Response.json({
+          success: true,
+          empty: true,
+          message: 'No scraper data available yet',
+          details: save.error || null,
+          validation: save.validation || null,
+          key,
+        });
+      }
       console.error('[SCRAPER] Failed to save data to Firebase:', save.error);
       return Response.json({ 
         error: 'Failed to save data to Firebase',
@@ -327,6 +342,26 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Scraper error:', error);
     const classifiedError = classifyScrapeError(error);
+
+    if (classifiedError.category === 'availability') {
+      const { race, year, type, stage } = requestPayload;
+      if (race && year && type && ['startlist', 'stage', 'result', 'tour-gc'].includes(type)) {
+        await saveEmptyScraperDataMarker({
+          race,
+          year: Number(year),
+          type: type as 'startlist' | 'stage' | 'result' | 'tour-gc',
+          stage: type === 'stage' ? Number(stage) : undefined,
+        }, classifiedError.message);
+      }
+
+      return Response.json({
+        success: true,
+        empty: true,
+        message: classifiedError.message,
+        errorCategory: classifiedError.category,
+        retryable: false,
+      });
+    }
 
     // Calculate execution time for failed scrape
     const executionTimeMs = Date.now() - startTime;

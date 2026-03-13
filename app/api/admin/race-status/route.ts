@@ -216,7 +216,6 @@ const RACES_WITH_PROLOGUE: Set<string> = new Set([
   'pune-grand-tour',
   'santos-tour-down-under',
   'deutschland-tour',
-  'istrian-spring-tour',
   // Grand tours sometimes have prologues
 ]);
 
@@ -823,6 +822,7 @@ export async function GET(request: NextRequest) {
       const stages: StageStatus[] = [];
       let scrapedStages = 0;
       let failedStages = 0;
+      let emptyStages = 0;
       let lastScrapedAt: string | null = null;
       let hasValidationErrors = false;
 
@@ -841,6 +841,8 @@ export async function GET(request: NextRequest) {
           if (isFailed) {
             failedStages++;
             totalStagesFailed++;
+          } else if (isEmpty) {
+            emptyStages++;
           } else if (!isEmpty) {
             scrapedStages++;
             totalStagesScraped++;
@@ -1007,7 +1009,7 @@ export async function GET(request: NextRequest) {
       stages.length = 0;
       stages.push(...deduplicatedStages);
 
-      const pendingStages = totalStages - scrapedStages - failedStages;
+      const pendingStages = totalStages - scrapedStages - failedStages - emptyStages;
 
       races.push({
         raceSlug,
