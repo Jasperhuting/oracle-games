@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
+const BLOCKED_EMAIL_DOMAINS = new Set(['esims.nl']);
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -12,6 +14,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      );
+    }
+
+    const emailDomain = String(email).toLowerCase().split('@')[1] || '';
+    if (BLOCKED_EMAIL_DOMAINS.has(emailDomain)) {
+      return NextResponse.json(
+        { error: 'Registratie met dit e-maildomein is niet toegestaan' },
+        { status: 403 }
       );
     }
 

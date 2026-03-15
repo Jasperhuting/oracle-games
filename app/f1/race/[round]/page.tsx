@@ -9,6 +9,8 @@ import Link from "next/link";
 
 // Alias for backward compatibility
 type Driver = LegacyDriver;
+const CANCELED_ROUNDS = new Set([4, 5]);
+const CANCELLATION_REASON = "Deze Grand Prix is afgelast vanwege de oorlog in het Midden-Oosten en telt niet mee voor het spel.";
 
 // Compact driver picker for F1 cards
 const F1DriverPicker = ({
@@ -476,6 +478,7 @@ const StartingGridElement = ({ driver, even, position, onDrop, onDragStart, onDr
 export default function RacePage() {
     const params = useParams();
     const round = parseInt(params.round as string);
+    const isCanceledRace = CANCELED_ROUNDS.has(round);
     
     // Fetch data from Firestore
     const { race, loading: raceLoading } = useF1Race(2026, round);
@@ -826,6 +829,29 @@ export default function RacePage() {
             <div>
                 <h1 className="text-3xl font-bold mb-6 text-white">Race niet gevonden</h1>
                 <Link href="/f1" className="text-blue-500 hover:underline">Terug naar overzicht</Link>
+            </div>
+        );
+    }
+
+    if (isCanceledRace) {
+        return (
+            <div className="max-w-3xl">
+                <div className="bg-gradient-to-r from-red-950/60 via-gray-900 to-red-950/60 rounded-xl border border-red-700/50 p-6 md:p-8">
+                    <div className="inline-flex rounded-full bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white mb-4">
+                        Afgelast
+                    </div>
+                    <h1 className="text-3xl font-black text-white mb-2">{race.name}</h1>
+                    <p className="text-gray-300 mb-4">{race.subName}</p>
+                    <p className="text-red-200 text-base mb-6">{CANCELLATION_REASON}</p>
+                    <div className="flex flex-wrap gap-3">
+                        <Link
+                            href="/f1"
+                            className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
+                        >
+                            Terug naar F1-overzicht
+                        </Link>
+                    </div>
+                </div>
             </div>
         );
     }

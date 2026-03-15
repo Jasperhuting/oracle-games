@@ -44,6 +44,180 @@ export default function AdminPageClient() {
     const [isProgrammer, setIsProgrammer] = useState(false);
     const [checking, setChecking] = useState(true);
 
+    const groups = [
+        {
+            id: 'community',
+            label: 'Gebruikers & Community',
+            tabs: [
+                {
+                    id: 'users',
+                    label: t('admin.tabs.users'),
+                    content: <UserList />
+                },
+                {
+                    id: 'messaging',
+                    label: t('admin.tabs.messaging'),
+                    content: <MessagingTab />
+                },
+                {
+                    id: 'feedback',
+                    label: t('admin.tabs.feedback'),
+                    content: <FeedbackTab />
+                },
+                {
+                    id: 'chat',
+                    label: 'Chat Beheer',
+                    content: (
+                        <div className="p-4">
+                            <p className="text-gray-600 mb-4">Beheer wedstrijd-chatrooms: aanmaken, sluiten, heropenen en modereren.</p>
+                            <Link href="/admin/chat" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                                Naar Chat Beheer <ArrowRight size={16} />
+                            </Link>
+                        </div>
+                    )
+                }
+            ]
+        },
+        {
+            id: 'games',
+            label: 'Games Management',
+            tabs: [
+                {
+                    id: 'races',
+                    label: t('admin.tabs.races'),
+                    content: <GamesTab />
+                },
+                {
+                    id: 'add-game',
+                    label: t('admin.tabs.addRace'),
+                    content: <AddGameTab />
+                },
+                {
+                    id: 'create-game',
+                    label: t('admin.tabs.createGame'),
+                    content: <CreateGameTab />
+                },
+                {
+                    id: 'games-management',
+                    label: t('admin.tabs.manageGames'),
+                    content: <GamesManagementTab />
+                },
+                {
+                    id: 'scrape-races',
+                    label: t('admin.tabs.scrapeRaces'),
+                    content: <RacesScraperTab />
+                },
+                {
+                    id: 'bid-backup',
+                    label: 'Bid Backup',
+                    content: <BidBackupTab />
+                },
+                {
+                    id: 'finalize-overview',
+                    label: 'Finalize Overzicht',
+                    content: <FinalizeOverviewTab />
+                },
+                {
+                    id: 'simulate-results',
+                    label: '🎲 Simuleer Results',
+                    content: <SimulateResultsTab />
+                },
+            ]
+        },
+        {
+            id: 'content',
+            label: 'Content Management',
+            tabs: [
+                {
+                    id: 'riders',
+                    label: t('admin.tabs.manageRiders'),
+                    content: <RidersManagementTab />
+                },
+                {
+                    id: 'add-rider',
+                    label: 'Voeg Renner Toe',
+                    content: <AddRiderTab />
+                },
+                {
+                    id: 'enrich-team',
+                    label: 'Verrijk Team',
+                    content: <EnrichTeamTab />
+                },
+                {
+                    id: 'enrich-riders',
+                    label: 'Verrijk Renners',
+                    content: <EnrichRidersTab />
+                },
+                {
+                    id: 'game-categories',
+                    label: 'Game Categories',
+                    content: <GameCategoriesTab />
+                },
+                {
+                    id: 'game-rules',
+                    label: t('admin.tabs.gameRules'),
+                    content: <GameRulesTab />
+                },
+                {
+                    id: 'pages-editor',
+                    label: t('admin.tabs.pagesEditor'),
+                    content: <PageEditor />
+                },
+                {
+                    id: 'news',
+                    label: 'Nieuws',
+                    content: <NewsAdminTab />
+                },
+                {
+                    id: 'translations',
+                    label: t('admin.tabs.translations'),
+                    content: <TranslationsTab isProgrammer={isProgrammer} />
+                },
+                {
+                    id: 'email-templates',
+                    label: 'Email Templates',
+                    content: <EmailTemplatesTab />
+                }
+            ]
+        },
+        {
+            id: 'system',
+            label: 'Systeem',
+            tabs: [
+                {
+                    id: 'todos',
+                    label: 'Todo\'s',
+                    content: <TodosTab />
+                },
+                {
+                    id: 'deployments',
+                    label: t('admin.tabs.deployments'),
+                    content: <DeploymentsTab />
+                },
+                {
+                    id: 'activity',
+                    label: t('admin.tabs.activityLog'),
+                    content: <ActivityLogTab />
+                },
+                {
+                    id: 'migrations',
+                    label: t('admin.tabs.dataMigrations'),
+                    content: <DataMigrationsTab />
+                },
+                {
+                    id: 'jobs',
+                    label: 'Jobs',
+                    content: <JobsDashboard />
+                },
+                {
+                    id: 'cache-tools',
+                    label: 'Cache',
+                    content: <CacheToolsTab />
+                }
+            ]
+        }
+    ];
+
 
     useEffect(() => {
         const checkAdminStatus = async () => {
@@ -112,179 +286,7 @@ export default function AdminPageClient() {
                 <NestedTabs
                     defaultGroup="community"
                     defaultTab="users"
-                    groups={[
-                        {
-                            id: 'community',
-                            label: 'Gebruikers & Community',
-                            tabs: [
-                                {
-                                    id: 'users',
-                                    label: t('admin.tabs.users'),
-                                    content: <UserList />
-                                },
-                                {
-                                    id: 'messaging',
-                                    label: t('admin.tabs.messaging'),
-                                    content: <MessagingTab />
-                                },
-                                {
-                                    id: 'feedback',
-                                    label: t('admin.tabs.feedback'),
-                                    content: <FeedbackTab />
-                                },
-                                {
-                                    id: 'chat',
-                                    label: 'Chat Beheer',
-                                    content: (
-                                        <div className="p-4">
-                                            <p className="text-gray-600 mb-4">Beheer wedstrijd-chatrooms: aanmaken, sluiten, heropenen en modereren.</p>
-                                            <Link href="/admin/chat" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                                                Naar Chat Beheer <ArrowRight size={16} />
-                                            </Link>
-                                        </div>
-                                    )
-                                }
-                            ]
-                        },
-                        {
-                            id: 'games',
-                            label: 'Games Management',
-                            tabs: [
-                                {
-                                    id: 'races',
-                                    label: t('admin.tabs.races'),
-                                    content: <GamesTab />
-                                },
-                                {
-                                    id: 'add-game',
-                                    label: t('admin.tabs.addRace'),
-                                    content: <AddGameTab />
-                                },
-                                {
-                                    id: 'create-game',
-                                    label: t('admin.tabs.createGame'),
-                                    content: <CreateGameTab />
-                                },
-                                {
-                                    id: 'games-management',
-                                    label: t('admin.tabs.manageGames'),
-                                    content: <GamesManagementTab />
-                                },
-                                {
-                                    id: 'scrape-races',
-                                    label: t('admin.tabs.scrapeRaces'),
-                                    content: <RacesScraperTab />
-                                },
-                                {
-                                    id: 'bid-backup',
-                                    label: 'Bid Backup',
-                                    content: <BidBackupTab />
-                                },
-                                {
-                                    id: 'finalize-overview',
-                                    label: 'Finalize Overzicht',
-                                    content: <FinalizeOverviewTab />
-                                },
-                                {
-                                    id: 'simulate-results',
-                                    label: '🎲 Simuleer Results',
-                                    content: <SimulateResultsTab />
-                                },
-                            ]
-                        },
-                        {
-                            id: 'content',
-                            label: 'Content Management',
-                            tabs: [
-                                {
-                                    id: 'riders',
-                                    label: t('admin.tabs.manageRiders'),
-                                    content: <RidersManagementTab />
-                                },
-                                {
-                                    id: 'add-rider',
-                                    label: 'Voeg Renner Toe',
-                                    content: <AddRiderTab />
-                                },
-                                {
-                                    id: 'enrich-team',
-                                    label: 'Verrijk Team',
-                                    content: <EnrichTeamTab />
-                                },
-                                {
-                                    id: 'enrich-riders',
-                                    label: 'Verrijk Renners',
-                                    content: <EnrichRidersTab />
-                                },
-                                {
-                                    id: 'game-categories',
-                                    label: 'Game Categories',
-                                    content: <GameCategoriesTab />
-                                },
-                                {
-                                    id: 'game-rules',
-                                    label: t('admin.tabs.gameRules'),
-                                    content: <GameRulesTab />
-                                },
-                                {
-                                    id: 'pages-editor',
-                                    label: t('admin.tabs.pagesEditor'),
-                                    content: <PageEditor />
-                                },
-                                {
-                                    id: 'news',
-                                    label: 'Nieuws',
-                                    content: <NewsAdminTab />
-                                },
-                                {
-                                    id: 'translations',
-                                    label: t('admin.tabs.translations'),
-                                    content: <TranslationsTab isProgrammer={isProgrammer} />
-                                },
-                                {
-                                    id: 'email-templates',
-                                    label: 'Email Templates',
-                                    content: <EmailTemplatesTab />
-                                }
-                            ]
-                        },
-                        {
-                            id: 'system',
-                            label: 'Systeem',
-                            tabs: [
-                                {
-                                    id: 'todos',
-                                    label: 'Todo\'s',
-                                    content: <TodosTab />
-                                },
-                                {
-                                    id: 'deployments',
-                                    label: t('admin.tabs.deployments'),
-                                    content: <DeploymentsTab />
-                                },
-                                {
-                                    id: 'activity',
-                                    label: t('admin.tabs.activityLog'),
-                                    content: <ActivityLogTab />
-                                },
-                                {
-                                    id: 'migrations',
-                                    label: t('admin.tabs.dataMigrations'),
-                                    content: <DataMigrationsTab />
-                                },
-                                {
-                                    id: 'jobs',
-                                    label: 'Jobs',
-                                    content: <JobsDashboard />
-                                },
-                                {
-                                    id: 'cache-tools',
-                                    label: 'Cache',
-                                    content: <CacheToolsTab />
-                                }
-                            ]
-                        }
-                    ]}
+                    groups={groups}
                 />
             </div>
         </div>

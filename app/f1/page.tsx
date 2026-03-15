@@ -1,38 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
     useReactTable,
     getCoreRowModel,
     flexRender,
     createColumnHelper,
 } from "@tanstack/react-table";
-import { useF1Races, useF1UserPredictions, useF1LegacyDrivers, useF1UserStanding, useF1RaceResults, useF1Participant } from "./hooks";
-import { F1Race, F1Prediction, F1RaceResult, LegacyDriver } from "./types";
+import { useF1Races, useF1UserPredictions, useF1UserStanding, useF1RaceResults, useF1Participant, useF1Standings } from "./hooks";
+import { F1Race, F1Prediction, F1RaceResult } from "./types";
 import Link from "next/link";
 import { Check, Clock, Edit, UserPlus } from "tabler-icons-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface RaceTableRow {
     race: F1Race;
-    status: "done" | "upcoming" | "open";
+    status: "done" | "upcoming" | "open" | "canceled";
     prediction: string | null;
     actualResult: string | null;
     points: number | null;
+    cancellationReason: string | null;
+    raceRank: {
+        position: number;
+        total: number;
+    } | null;
 }
 
 const columnHelper = createColumnHelper<RaceTableRow>();
+const CANCELED_ROUNDS = new Set([4, 5]);
+const CANCELLATION_REASON = "Afgelast vanwege de oorlog in het Midden-Oosten";
 
 const F1Page = () => {
     const { user, loading: authLoading } = useAuth();
     const { races, loading: racesLoading } = useF1Races(2026);
     const { predictions, loading: predictionsLoading } = useF1UserPredictions(2026);
     const { standing, loading: standingLoading } = useF1UserStanding(2026);
+    const { standings, loading: standingsLoading } = useF1Standings(2026);
     const { results: raceResults, loading: resultsLoading } = useF1RaceResults(2026);
-    const { drivers } = useF1LegacyDrivers();
     const { isParticipant, loading: participantLoading } = useF1Participant(user?.uid || null, 2026);
     const [isJoining, setIsJoining] = useState(false);
-    const now = new Date();
 
     const handleJoinF1 = async () => {
         if (!user) return;
@@ -85,15 +91,65 @@ const F1Page = () => {
         return finishOrder.slice(0, 3).map((shortName, i) => `${i + 1}. ${shortName}`).join(', ');
     };
 
+    const formatDeadline = (race: F1Race) => {
+        const deadlineSource = race.predictionDeadline?.toDate?.() ?? new Date(race.startDate);
+
+        return deadlineSource.toLocaleString("nl-NL", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const getRaceRank = useCallback((round: number, status: RaceTableRow["status"], points: number | null) => {
+        if (!user?.uid || status !== "done" || round === 1 || points === null) return null;
+
+        const raceKey = `2026_${String(round).padStart(2, '0')}`;
+        const participantsWithPoints = standings
+            .map((item) => ({
+                userId: item.userId,
+                points: item.racePoints?.[raceKey],
+            }))
+            .filter((item): item is { userId: string; points: number } => typeof item.points === "number")
+            .sort((a, b) => a.points - b.points);
+
+        if (participantsWithPoints.length === 0) return null;
+
+        let position = 0;
+        let previousPoints: number | null = null;
+
+        for (let index = 0; index < participantsWithPoints.length; index += 1) {
+            const item = participantsWithPoints[index];
+            if (previousPoints === null || item.points !== previousPoints) {
+                position = index + 1;
+                previousPoints = item.points;
+            }
+
+            if (item.userId === user.uid) {
+                return {
+                    position,
+                    total: participantsWithPoints.length,
+                };
+            }
+        }
+
+        return null;
+    }, [standings, user?.uid]);
+
     const tableData: RaceTableRow[] = useMemo(() => {
+        const currentTime = Date.now();
+
         return races.map((race) => {
             const raceEndDate = new Date(race.endDate);
             const raceStartDate = new Date(race.startDate);
 
-            let status: "done" | "upcoming" | "open";
-            if (race.status === "done") {
+            let status: "done" | "upcoming" | "open" | "canceled";
+            if (CANCELED_ROUNDS.has(race.round)) {
+                status = "canceled";
+            } else if (race.status === "done") {
                 status = "done";
-            } else if (raceStartDate <= now && raceEndDate >= now) {
+            } else if (raceStartDate.getTime() <= currentTime && raceEndDate.getTime() >= currentTime) {
                 status = "open";
             } else {
                 status = "upcoming";
@@ -101,7 +157,10 @@ const F1Page = () => {
 
             const prediction = predictionsByRound[race.round];
             const result = resultsByRound[race.round];
-            const racePoints = standing?.racePoints?.[`2026_${String(race.round).padStart(2, '0')}`] ?? null;
+            const racePoints = status === "canceled"
+                ? null
+                : standing?.racePoints?.[`2026_${String(race.round).padStart(2, '0')}`] ?? null;
+            const raceRank = getRaceRank(race.round, status, racePoints);
 
             return {
                 race,
@@ -109,9 +168,11 @@ const F1Page = () => {
                 prediction: prediction ? formatTop3(prediction.finishOrder) : null,
                 actualResult: result ? formatTop3(result.finishOrder) : null,
                 points: racePoints,
+                cancellationReason: status === "canceled" ? CANCELLATION_REASON : null,
+                raceRank,
             };
         });
-    }, [races, predictionsByRound, resultsByRound, standing]);
+    }, [getRaceRank, races, predictionsByRound, resultsByRound, standing]);
 
     const columns = useMemo(
         () => [
@@ -144,6 +205,15 @@ const F1Page = () => {
                     );
                 },
             }),
+            columnHelper.display({
+                id: "deadline",
+                header: "Deadline",
+                cell: (info) => (
+                    <span className="text-sm text-gray-300">
+                        {formatDeadline(info.row.original.race)}
+                    </span>
+                ),
+            }),
             columnHelper.accessor("status", {
                 header: "Status",
                 cell: (info) => {
@@ -152,6 +222,12 @@ const F1Page = () => {
                         return (
                             <span className="inline-flex items-center gap-1 text-green-500 text-sm">
                                 <Check size={16} /> Afgelopen
+                            </span>
+                        );
+                    } else if (status === "canceled") {
+                        return (
+                            <span className="inline-flex items-center gap-1 text-red-400 text-sm">
+                                <Clock size={16} /> Afgelast
                             </span>
                         );
                     } else if (status === "open") {
@@ -174,6 +250,10 @@ const F1Page = () => {
                 cell: (info) => {
                     const prediction = info.getValue();
                     const status = info.row.original.status;
+
+                    if (status === "canceled") {
+                        return <span className="text-red-300 text-sm">Telt niet mee</span>;
+                    }
 
                     if (prediction) {
                         return <span className="text-sm text-gray-300">{prediction}</span>;
@@ -208,6 +288,10 @@ const F1Page = () => {
                     const result = info.getValue();
                     const status = info.row.original.status;
 
+                    if (status === "canceled") {
+                        return <span className="text-red-300 text-sm">Geen uitslag</span>;
+                    }
+
                     if (result) {
                         return <span className="text-sm text-gray-300">{result}</span>;
                     } else if (status === "done") {
@@ -223,6 +307,10 @@ const F1Page = () => {
                     const points = info.getValue();
                     const status = info.row.original.status;
 
+                    if (status === "canceled") {
+                        return <span className="text-red-300 text-sm">Telt niet mee</span>;
+                    }
+
                     if (points !== null) {
                         return (
                             <span className={`font-bold text-sm ${points !== 0 ? "text-red-400" : "text-gray-500"}`}>
@@ -236,17 +324,42 @@ const F1Page = () => {
                     }
                 },
             }),
+            columnHelper.accessor("raceRank", {
+                header: "Plaats die ronde",
+                cell: (info) => {
+                    const raceRank = info.getValue();
+
+                    if (!raceRank) {
+                        if (info.row.original.status === "canceled") {
+                            return <span className="text-red-300 text-sm">Telt niet mee</span>;
+                        }
+                        return <span className="text-gray-600 text-sm">-</span>;
+                    }
+
+                    return (
+                        <span className="inline-flex rounded-full border border-blue-700/50 bg-blue-900/30 px-2.5 py-1 text-xs font-semibold text-blue-200">
+                            {raceRank.position}/{raceRank.total}
+                        </span>
+                    );
+                },
+            }),
             columnHelper.display({
                 id: "actions",
                 header: "",
-                cell: (info) => (
-                    <Link
-                        href={`/f1/race/${info.row.original.race.round}`}
-                        className="text-blue-400 hover:text-blue-300 text-sm"
-                    >
-                        Bekijken →
-                    </Link>
-                ),
+                cell: (info) => {
+                    if (info.row.original.status === "canceled") {
+                        return <span className="text-red-300 text-sm">Afgelast</span>;
+                    }
+
+                    return (
+                        <Link
+                            href={`/f1/race/${info.row.original.race.round}`}
+                            className="text-blue-400 hover:text-blue-300 text-sm"
+                        >
+                            Bekijken →
+                        </Link>
+                    );
+                },
             }),
         ],
         [isParticipant]
@@ -258,9 +371,10 @@ const F1Page = () => {
         getCoreRowModel: getCoreRowModel(),
     });
 
-    const totalPoints = tableData.reduce((sum, row) => sum + (row.points || 0), 0);
-    const completedRaces = tableData.filter((row) => row.status === "done").length;
-    const predictedRaces = tableData.filter((row) => row.prediction !== null).length;
+    const activeRaceRows = tableData.filter((row) => row.status !== "canceled");
+    const totalPoints = activeRaceRows.reduce((sum, row) => sum + (row.points || 0), 0);
+    const completedRaces = activeRaceRows.filter((row) => row.status === "done").length;
+    const predictedRaces = activeRaceRows.filter((row) => row.prediction !== null).length;
 
     // Mobile card component for races
     const RaceCard = ({ row }: { row: RaceTableRow }) => {
@@ -272,6 +386,12 @@ const F1Page = () => {
                 return (
                     <span className="inline-flex items-center gap-1 text-green-400 text-xs bg-green-900/30 px-2 py-1 rounded-full">
                         <Check size={14} /> Afgelopen
+                    </span>
+                );
+            } else if (row.status === "canceled") {
+                return (
+                    <span className="inline-flex items-center gap-1 text-red-300 text-xs bg-red-900/30 px-2 py-1 rounded-full">
+                        <Clock size={14} /> Afgelast
                     </span>
                 );
             } else if (row.status === "open") {
@@ -289,9 +409,12 @@ const F1Page = () => {
             }
         };
 
-        return (
-            <Link href={`/f1/race/${row.race.round}`} className="block">
-                <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 hover:bg-gray-750 hover:border-gray-600 transition-all">
+        const cardContent = (
+            <div className={`rounded-lg border p-4 transition-all ${
+                row.status === "canceled"
+                    ? "bg-red-950/20 border-red-700/50"
+                    : "bg-gray-800 border-gray-700 hover:bg-gray-750 hover:border-gray-600"
+            }`}>
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                             <span className="text-sm bg-gray-700 text-white rounded-full w-8 h-8 flex-shrink-0 flex items-center justify-center tabular-nums font-bold">
@@ -303,17 +426,41 @@ const F1Page = () => {
                                 <div className="text-xs text-gray-400 mt-1">
                                     {startDate.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} - {endDate.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
                                 </div>
+                                <div className="text-xs text-gray-300 mt-1">
+                                    Deadline: {formatDeadline(row.race)}
+                                </div>
+                                {row.cancellationReason && (
+                                    <div className="mt-2 inline-flex rounded-md border border-red-700/50 bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-200">
+                                        {row.cancellationReason}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
                             {getStatusBadge()}
-                            {row.points !== null && (
+                            {row.status === "canceled" ? (
+                                <span className="text-sm font-semibold text-red-300">Telt niet mee</span>
+                            ) : row.points !== null && (
                                 <span className={`text-lg font-bold ${row.points !== 0 ? "text-red-400" : "text-gray-500"}`}>
                                     {row.points} pt
                                 </span>
                             )}
                         </div>
                     </div>
+                    {row.status === "canceled" && (
+                        <div className="mt-3 flex items-center justify-between border-t border-red-800/40 pt-3">
+                            <span className="text-xs uppercase tracking-wide text-red-200/70">Status</span>
+                            <span className="text-sm font-semibold text-red-300">Deze race telt niet mee</span>
+                        </div>
+                    )}
+                    {row.raceRank && (
+                        <div className="mt-3 flex items-center justify-between border-t border-gray-700 pt-3">
+                            <span className="text-xs uppercase tracking-wide text-gray-500">Plaats die ronde</span>
+                            <span className="inline-flex rounded-full border border-blue-700/50 bg-blue-900/30 px-2.5 py-1 text-xs font-semibold text-blue-200">
+                                {row.raceRank.position}/{row.raceRank.total}
+                            </span>
+                        </div>
+                    )}
                     {!isParticipant && !row.prediction && row.status !== "done" && (
                         <div className="mt-3 pt-3 border-t border-gray-700">
                             <span className="text-gray-500 text-sm">Meld je eerst aan</span>
@@ -334,11 +481,20 @@ const F1Page = () => {
                         </div>
                     )}
                 </div>
+        );
+
+        if (row.status === "canceled") {
+            return cardContent;
+        }
+
+        return (
+            <Link href={`/f1/race/${row.race.round}`} className="block">
+                {cardContent}
             </Link>
         );
     };
 
-    const loading = authLoading || racesLoading || predictionsLoading || standingLoading || resultsLoading || participantLoading;
+    const loading = authLoading || racesLoading || predictionsLoading || standingLoading || standingsLoading || resultsLoading || participantLoading;
 
     if (loading) {
         return (
@@ -399,11 +555,11 @@ const F1Page = () => {
                 </div>
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 md:p-4">
                     <div className="text-xs md:text-sm text-gray-400">Races</div>
-                    <div className="text-xl md:text-3xl font-bold text-white">{completedRaces}/{races.length}</div>
+                    <div className="text-xl md:text-3xl font-bold text-white">{completedRaces}/{activeRaceRows.length}</div>
                 </div>
                 <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 md:p-4">
                     <div className="text-xs md:text-sm text-gray-400">Ingevuld</div>
-                    <div className="text-xl md:text-3xl font-bold text-white">{predictedRaces}/{races.length}</div>
+                    <div className="text-xl md:text-3xl font-bold text-white">{predictedRaces}/{activeRaceRows.length}</div>
                 </div>
             </div>
 

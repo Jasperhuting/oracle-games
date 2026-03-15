@@ -73,7 +73,12 @@ export default async function NewsDetailPage(
                         {relatedItem.category || 'Nieuws'}
                       </div>
                       <div className="mt-2 text-base font-semibold text-gray-900">{relatedItem.title}</div>
-                      {relatedItem.summary && <p className="mt-2 text-sm text-gray-600">{relatedItem.summary}</p>}
+                      {relatedItem.summary && (
+                        <div
+                          className="page-content mt-2 text-sm text-gray-600"
+                          dangerouslySetInnerHTML={{ __html: relatedItem.summary }}
+                        />
+                      )}
                     </Link>
                   ))}
                 </div>

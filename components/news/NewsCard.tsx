@@ -34,7 +34,12 @@ export function NewsCard({ item }: { item: NewsItem }) {
               {item.title}
             </Link>
           </h2>
-          {item.summary && <p className="text-base leading-7 text-gray-700">{item.summary}</p>}
+          {item.summary && (
+            <div
+              className="page-content text-base leading-7 text-gray-700"
+              dangerouslySetInnerHTML={{ __html: item.summary }}
+            />
+          )}
         </div>
 
         <Link href={`/news/${item.slug}`} className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary-hover">

@@ -22,6 +22,11 @@ declare global {
 export function NewsImageUpload({ currentImageUrl, onUploadSuccess }: NewsImageUploadProps) {
   const [isLoading, setIsLoading] = useState(false);
   const widgetRef = useRef<{ open: () => void } | null>(null);
+  const onUploadSuccessRef = useRef(onUploadSuccess);
+
+  useEffect(() => {
+    onUploadSuccessRef.current = onUploadSuccess;
+  }, [onUploadSuccess]);
 
   useEffect(() => {
     const existingScript = document.querySelector('script[src="https://upload-widget.cloudinary.com/global/all.js"]');
@@ -77,7 +82,7 @@ export function NewsImageUpload({ currentImageUrl, onUploadSuccess }: NewsImageU
           }
 
           if (result.event === 'success') {
-            onUploadSuccess(result.info.secure_url);
+            onUploadSuccessRef.current(result.info.secure_url);
             setIsLoading(false);
           }
         }
@@ -96,7 +101,7 @@ export function NewsImageUpload({ currentImageUrl, onUploadSuccess }: NewsImageU
         script.parentNode.removeChild(script);
       }
     };
-  }, [onUploadSuccess]);
+  }, []);
 
   const handleOpen = () => {
     if (!widgetRef.current) return;
@@ -142,7 +147,7 @@ export function NewsImageUpload({ currentImageUrl, onUploadSuccess }: NewsImageU
         {currentImageUrl && (
           <button
             type="button"
-            onClick={() => onUploadSuccess('')}
+            onClick={() => onUploadSuccessRef.current('')}
             className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
           >
             Verwijder afbeelding

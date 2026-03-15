@@ -39,9 +39,10 @@ function HeroCopy({ item, compact = false, titleHref, titleMeta, readMoreHref }:
           </div>
         )}
         {(item.heroText || item.summary) && (
-          <p className={`${compact ? 'text-base sm:text-lg' : 'text-base sm:text-lg'} max-w-3xl text-gray-700`}>
-            {item.heroText || item.summary}
-          </p>
+          <div
+            className={`page-content ${compact ? 'text-base sm:text-lg' : 'text-base sm:text-lg'} max-w-3xl text-gray-700`}
+            dangerouslySetInnerHTML={{ __html: item.heroText || item.summary }}
+          />
         )}
       </div>
       {item.heroPrimaryLinkLabel && item.heroPrimaryLinkUrl && (
@@ -132,9 +133,10 @@ export function NewsHero({ item, compact = false, titleHref, titleMeta, readMore
                 </div>
               )}
               {(item.heroText || item.summary) && (
-                <p className={`${compact ? 'text-base sm:text-lg' : 'text-base sm:text-lg'} max-w-3xl text-slate-100/90`}>
-                  {item.heroText || item.summary}
-                </p>
+                <div
+                  className={`page-content ${compact ? 'text-base sm:text-lg' : 'text-base sm:text-lg'} max-w-3xl text-slate-100/90`}
+                  dangerouslySetInnerHTML={{ __html: item.heroText || item.summary }}
+                />
               )}
             </div>
             {item.heroPrimaryLinkLabel && item.heroPrimaryLinkUrl && (

@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
 import { RegisterFormProps } from "@/lib/types/component-props";
 
+const BLOCKED_EMAIL_DOMAINS = new Set(["esims.nl"]);
+
 export const RegisterForm = () => {
 
 
@@ -22,6 +24,12 @@ export const RegisterForm = () => {
 
     const onSubmit: SubmitHandler<RegisterFormProps> = async (data) => {
         if (isSubmitting) return;
+
+        const emailDomain = data.email.toLowerCase().split("@")[1] || "";
+        if (BLOCKED_EMAIL_DOMAINS.has(emailDomain)) {
+            setError("Registratie met dit e-maildomein is niet toegestaan");
+            return;
+        }
         
         setIsSubmitting(true);
         setError(null);
@@ -101,6 +109,14 @@ export const RegisterForm = () => {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
+
+            const emailDomain = user.email?.toLowerCase().split("@")[1] || "";
+            if (BLOCKED_EMAIL_DOMAINS.has(emailDomain)) {
+                await user.delete();
+                setError("Registratie met dit e-maildomein is niet toegestaan");
+                setIsGoogleLoading(false);
+                return;
+            }
 
             console.log('Google signup successful:', user.email);
             

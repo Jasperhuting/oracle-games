@@ -4,10 +4,12 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { RichTextEditorProps } from '@/lib/types/component-props';
 
-export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
+export const RichTextEditor = ({ content, onChange, placeholder, compact = false }: RichTextEditorProps) => {
+  const lastEmittedContentRef = useRef(content);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -21,11 +23,14 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const nextHtml = editor.getHTML();
+      lastEmittedContentRef.current = nextHtml;
+      onChange(nextHtml);
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose-base max-w-none focus:outline-none min-h-[300px] p-4',
+        class: `prose prose-sm sm:prose-base max-w-none focus:outline-none p-4 ${compact ? 'min-h-[140px]' : 'min-h-[300px]'}`,
+        'data-placeholder': placeholder || '',
       },
     },
     immediatelyRender: false,
@@ -33,8 +38,17 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
 
   // Update editor content when prop changes externally
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (!editor) {
+      return;
+    }
+
+    if (content === lastEmittedContentRef.current) {
+      return;
+    }
+
+    if (content !== editor.getHTML()) {
       editor.commands.setContent(content);
+      lastEmittedContentRef.current = content;
     }
   }, [content, editor]);
 

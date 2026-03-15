@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { slugifyNewsTitle } from '@/lib/news-utils';
+import { slugifyNewsTitle, stripHtml } from '@/lib/news-utils';
 import { getNewsReadingTimeMinutes } from '@/lib/news-reading-time';
 import { NewsHeaderLayout, NewsItem, NewsStatus } from '@/lib/types/news';
 import { RichTextEditor } from '@/components/RichTextEditor';
@@ -140,7 +140,7 @@ function NewsSidebarCard({ item, active, onSelect }: { item: NewsItem; active: b
       <div className="mt-2 text-xs font-medium text-gray-500">
         {item.viewCount} weergaven · {readingMinutes} min leestijd
       </div>
-      {item.summary && <p className="mt-3 line-clamp-3 text-sm text-gray-600">{item.summary}</p>}
+      {item.summary && <p className="mt-3 line-clamp-3 text-sm text-gray-600">{stripHtml(item.summary)}</p>}
     </button>
   );
 }
@@ -212,7 +212,7 @@ export function NewsAdminTab() {
     loadItems();
   }, [loadItems]);
 
-  const updateField = <K extends keyof NewsFormState>(key: K, value: NewsFormState[K]) => {
+  const updateField = useCallback(<K extends keyof NewsFormState>(key: K, value: NewsFormState[K]) => {
     setForm((current) => {
       const next = { ...current, [key]: value };
       if (key === 'title' && !slugTouched) {
@@ -220,7 +220,19 @@ export function NewsAdminTab() {
       }
       return next;
     });
-  };
+  }, [slugTouched]);
+
+  const handleSummaryChange = useCallback((value: string) => {
+    updateField('summary', value);
+  }, [updateField]);
+
+  const handleContentChange = useCallback((value: string) => {
+    updateField('content', value);
+  }, [updateField]);
+
+  const handleHeroImageUpload = useCallback((url: string) => {
+    updateField('heroImageUrl', url);
+  }, [updateField]);
 
   const handleSelectItem = (item: NewsItem) => {
     setSelectedId(item.id);
@@ -388,12 +400,11 @@ export function NewsAdminTab() {
 
               <label className="space-y-2 md:col-span-2">
                 <span className="text-sm font-medium text-gray-700">Samenvatting</span>
-                <textarea
-                  value={form.summary}
-                  onChange={(event) => updateField('summary', event.target.value)}
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-primary"
+                <RichTextEditor
+                  content={form.summary}
+                  onChange={handleSummaryChange}
                   placeholder="Korte intro voor de overzichtspagina en header."
+                  compact
                 />
               </label>
 
@@ -464,7 +475,7 @@ export function NewsAdminTab() {
                 <span className="text-sm font-medium text-gray-700">Headerafbeelding</span>
                 <NewsImageUpload
                   currentImageUrl={form.heroImageUrl}
-                  onUploadSuccess={(url) => updateField('heroImageUrl', url)}
+                  onUploadSuccess={handleHeroImageUpload}
                 />
               </label>
 
@@ -505,7 +516,7 @@ export function NewsAdminTab() {
               <h3 className="text-lg font-bold text-gray-900">Inhoud</h3>
               <p className="mt-1 text-sm text-gray-600">Gebruik de WYSIWYG-editor om het bericht op te maken.</p>
             </div>
-            <RichTextEditor content={form.content} onChange={(value) => updateField('content', value)} />
+            <RichTextEditor content={form.content} onChange={handleContentChange} />
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-6">

@@ -137,4 +137,5 @@ export interface RichTextEditorProps {
   content: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  compact?: boolean;
 }
