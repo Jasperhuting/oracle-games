@@ -141,15 +141,17 @@ export async function POST(request: NextRequest) {
       await predDoc.ref.update({ isLocked: true });
     }
 
-    // Apply missing prediction penalty to active participants without a prediction
+    // Apply missing prediction penalty to participants without a prediction.
+    // NOTE: Some historical participant docs did not have a `status` field yet,
+    // so we include all season participants and only skip explicit inactives.
     const participantsSnapshot = await f1Db
       .collection(F1_COLLECTIONS.PARTICIPANTS)
       .where('season', '==', result.season)
-      .where('status', '==', 'active')
       .get();
 
     for (const participantDoc of participantsSnapshot.docs) {
-      const participant = participantDoc.data() as { userId: string };
+      const participant = participantDoc.data() as { userId: string; status?: 'active' | 'inactive' };
+      if (participant.status === 'inactive') continue;
       if (predictedUserIds.has(participant.userId)) continue;
 
       pointsUpdates.push({
@@ -171,12 +173,15 @@ export async function POST(request: NextRequest) {
 
       if (standingDoc.exists) {
         const existing = standingDoc.data() as F1Standing;
-        const newRacePoints = { ...existing.racePoints, [raceId]: update.points };
+        const hasRacePoints = typeof existing.racePoints === 'object' && existing.racePoints !== null;
+        const previousRacePoints = hasRacePoints ? existing.racePoints : {};
+        const newRacePoints = { ...previousRacePoints, [raceId]: update.points };
         const newTotalPoints = Object.values(newRacePoints).reduce((a, b) => a + b, 0);
+        const newRacesParticipated = Object.keys(newRacePoints).length;
 
         await standingRef.update({
           totalPoints: newTotalPoints,
-          racesParticipated: existing.racesParticipated + 1,
+          racesParticipated: newRacesParticipated,
           racePoints: newRacePoints,
           lastRacePoints: update.points,
           lastRaceRound: result.round,
