@@ -134,20 +134,39 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, data: doc.data() as F1Prediction });
       }
     } else {
-      // Get all own predictions for season - requires auth
+      // Get all predictions for a season.
+      // Own predictions: all races.
+      // Other user's predictions: only races that are already done.
       if (!currentUserId) {
         return NextResponse.json(
           { success: false, error: 'Unauthorized' },
           { status: 401 }
         );
       }
-      
+
+      const requestedUserId = targetUserId || currentUserId;
       const snapshot = await predictionsRef
-        .where('userId', '==', currentUserId)
-        .where('season', '==', season)
+        .where('userId', '==', requestedUserId)
         .get();
 
-      const predictions = snapshot.docs.map(doc => doc.data() as F1Prediction);
+      let predictions = snapshot.docs
+        .map(doc => doc.data() as F1Prediction)
+        .filter((prediction) =>
+          prediction.season === season ||
+          prediction.raceId?.startsWith(`${season}_`)
+        );
+
+      if (requestedUserId !== currentUserId) {
+        const racesSnapshot = await f1Db
+          .collection(F1_COLLECTIONS.RACES)
+          .where('season', '==', season)
+          .where('status', '==', 'done')
+          .get();
+
+        const doneRaceIds = new Set(racesSnapshot.docs.map((doc) => doc.id));
+        predictions = predictions.filter((prediction) => doneRaceIds.has(prediction.raceId));
+      }
+
       return NextResponse.json({ success: true, data: predictions });
     }
   } catch (error) {

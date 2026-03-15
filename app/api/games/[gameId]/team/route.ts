@@ -65,6 +65,7 @@ export async function GET(
         acquisitionType: data.acquisitionType,
         draftRound: data.draftRound,
         draftPick: data.draftPick,
+        pointsBreakdown: data.pointsBreakdown || [],
         racePoints: data.racePoints || null,
         acquiredAt: toIsoDate(data.acquiredAt),
       };
@@ -104,6 +105,7 @@ export async function GET(
             acquisitionType: 'auction',
             draftRound: null,
             draftPick: null,
+            pointsBreakdown: [],
             racePoints: null,
             acquiredAt: toIsoDate(bid.bidAt),
           };

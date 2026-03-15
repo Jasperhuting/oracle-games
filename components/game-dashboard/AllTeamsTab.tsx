@@ -94,7 +94,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ranking' | 'points' | 'value' | 'percentage'>('ranking');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [viewMode, setViewMode] = useState<'players' | 'cycling-teams' | 'all' | 'compare'>('players');
+  const [viewMode, setViewMode] = useState<'players' | 'all' | 'compare'>('players');
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
   const [allViewSortBy, setAllViewSortBy] = useState<'points' | 'value' | 'roi' | 'owners' | 'team'>('points');
   const [allViewSortDirection, setAllViewSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -269,45 +269,53 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
   return (
     <div>
       {/* View Mode Toggle */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => {
-            setViewMode('players');
-            setGroupByCyclingTeam(false);
-          }}
-          className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-            viewMode === 'players'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300'
-          }`}
-        >
-          Deelnemers
-        </button>
-        <button
-          onClick={() => setViewMode('all')}
-          className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-            viewMode === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300'
-          }`}
-        >
-          Renners
-        </button>
-        <button
-          onClick={() => setViewMode('compare')}
-          className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
-            viewMode === 'compare'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300'
-          }`}
-        >
-          Vergelijken
-        </button>
+      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50/70 p-3">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+          Weergave
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => {
+              setViewMode('players');
+              setGroupByCyclingTeam(false);
+            }}
+            className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              viewMode === 'players'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 border border-blue-200'
+            }`}
+          >
+            Deelnemers
+          </button>
+          <button
+            onClick={() => setViewMode('all')}
+            className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              viewMode === 'all'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 border border-blue-200'
+            }`}
+          >
+            Renners
+          </button>
+          <button
+            onClick={() => setViewMode('compare')}
+            className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              viewMode === 'compare'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 border border-blue-200'
+            }`}
+          >
+            Head-to-head
+          </button>
+        </div>
       </div>
 
       {/* Sort Controls - only show for players view */}
       {viewMode === 'players' && (
-        <div className="space-y-4 mb-4">
+        <div className="mb-4 space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+            Sorteer deelnemers
+          </div>
           <div className="overflow-x-auto">
             <div className="flex w-max min-w-full gap-2 items-center pb-1">
             <button
@@ -612,145 +620,6 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
         </div>
       )}
 
-      {/* Teams List - Per Wielerteam */}
-      {viewMode === 'cycling-teams' && (
-        <div className="space-y-4">
-          {cyclingTeams.map((team) => {
-            const isExpanded = expandedTeams.has(team.teamName);
-
-            return (
-              <div
-                key={team.teamName}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden"
-              >
-                <div
-                  onClick={() => toggleTeam(team.teamName)}
-                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{team.teamName}</h3>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
-                        <span>
-                          {team.uniqueRiders} renners
-                          {team.totalRiders !== team.uniqueRiders && (
-                            <span className="text-gray-400"> ({team.totalRiders}x gekozen)</span>
-                          )}
-                        </span>
-                        <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
-                        <span>Betaald: €{team.totalPricePaid.toLocaleString()}</span>
-                        <span className={`font-medium ${
-                          team.totalPercentageDiff > 0 ? 'text-red-600' : team.totalPercentageDiff < 0 ? 'text-green-600' : 'text-gray-600'
-                        }`}>
-                          Verschil: {team.totalPercentageDiff > 0 ? '+' : ''}{team.totalPercentageDiff}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-gray-500">
-                      <svg
-                        className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {isExpanded && team.riders.length > 0 && (
-                  <div className="border-t border-gray-200">
-                    <Tooltip
-                      id="owner-tooltip"
-                      className="!opacity-100 !z-50 !max-w-xs"
-                      clickable={true}
-                      delayHide={300}
-                      render={({ content }) => {
-                        const owners = content?.split('|||') || [];
-                        return (
-                          <div className="max-h-48 overflow-y-auto">
-                            {owners.map((ownerData, idx) => {
-                              const [playername, ownerId] = ownerData.split('::');
-                              const isCurrentUser = ownerId === currentUserId;
-                              return (
-                                <div key={idx} className="py-0.5">
-                                  {isCurrentUser && <span className="text-yellow-400 mr-1">★</span>}
-                                  {playername}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      }}
-                    />
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eigenaar(s)</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {[...team.riders].sort((a: any, b: any) => {
-                          if (b.pointsScored !== a.pointsScored) {
-                            return b.pointsScored - a.pointsScored;
-                          }
-                          return b.baseValue - a.baseValue;
-                        }).map((rider: any) => {
-                          const ownerCount = rider.owners?.length || 1;
-                          const sortedOwners = [...(rider.owners || [])].sort((a: any, b: any) => {
-                            if (a.userId === currentUserId) return -1;
-                            if (b.userId === currentUserId) return 1;
-                            return 0;
-                          });
-                          const firstOwner = sortedOwners[0] || { playername: 'Unknown', userId: '' };
-                          const currentUserIsOwner = sortedOwners.some((o: any) => o.userId === currentUserId);
-                          const allOwnersData = sortedOwners.slice(1).map((o: any) => `${o.playername}::${o.userId}`).join('|||') || '';
-
-                          return (
-                            <tr key={rider.riderId || rider.riderNameId} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                                {currentUserIsOwner && <span className="text-yellow-500 mr-1">★</span>}
-                                {rider.riderName}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">
-                                <div className="flex items-center gap-2">
-                                  {ownerCount === 1 ? (
-                                    <span>{firstOwner.playername}</span>
-                                  ) : (
-                                    <span
-                                      className="cursor-help border-b border-dashed border-gray-400"
-                                      data-tooltip-id="owner-tooltip"
-                                      data-tooltip-content={allOwnersData}
-                                    >
-                                      {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
-                                    </span>
-                                  )}
-                                  <span className="text-xs text-gray-400">
-                                    ({teams.length > 0 ? Math.round((ownerCount / teams.length) * 100) : 0}%)
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600"><Flag countryCode={rider.riderCountry} /></td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* All Riders View */}
       {viewMode === 'all' && (
         <>
@@ -983,10 +852,6 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
 
             const myPointsScored = myTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
             const theirPointsScored = theirTeam.riders.reduce((sum, r) => sum + r.pointsScored, 0);
-            const sharedRiders = compareRiders.filter(r => r.inMyTeam && r.inTheirTeam);
-            const onlyMine = compareRiders.filter(r => r.inMyTeam && !r.inTheirTeam);
-            const onlyTheirs = compareRiders.filter(r => !r.inMyTeam && r.inTheirTeam);
-
             const isMarginalGains = game?.gameType === 'marginal-gains';
             const myPricePaid = myTeam.totalSpent ?? 0;
             const theirPricePaid = theirTeam.totalSpent ?? 0;
@@ -1004,7 +869,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
 
             return (
               <>
-                <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <div className="text-sm text-blue-600">Jij <span className="font-medium">#{myTeam.ranking}</span></div>
                     <div className={`text-2xl font-bold ${myTotalClass}`}>
@@ -1013,13 +878,6 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                     <div className="text-xs text-blue-500">
                       {myTeam.riders.length} renners
                       {isMarginalGains && <span className="ml-2">({myPointsScored} pts - €{myPricePaid})</span>}
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
-                    <div className="text-sm text-gray-600">Gedeelde renners</div>
-                    <div className="text-2xl font-bold text-gray-900">{sharedRiders.length}</div>
-                    <div className="text-xs text-gray-500">
-                      Alleen jij: {onlyMine.length} | Alleen {theirTeam.playername}: {onlyTheirs.length}
                     </div>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">

@@ -168,7 +168,7 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
       ),
       columnHelper.accessor('totalPoints', {
         id: 'totalPoints',
-        header: 'Punten',
+        header: 'Totaal',
         cell: (info) => (
           <span className="font-semibold text-primary">{formatStandingsScore(info.getValue())}</span>
         ),
@@ -214,7 +214,7 @@ export function StandingsTab({ standings, gameType, loading, error, currentUserI
     // For other games: hide avgPointsPerRider, and hide percentage for auctioneer
     return allColumns.filter((col) => {
       if (col.id === 'avgPointsPerRider') return false;
-      if (gameType === 'auctioneer' && col.id === 'percentage') return false;
+      if (gameType === 'auctioneer' && (col.id === 'percentage' || col.id === 'totalPoints')) return false;
       return true;
     });
   }, [allColumns, gameType]);

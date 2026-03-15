@@ -6,8 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
-import { useTranslation } from 'react-i18next';
-import { Game, GameParticipant } from '@/lib/types/games';
+import { Game, GameParticipant, PointsEvent } from '@/lib/types/games';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { getRaceNamesClient } from '@/lib/race-names';
 import { fetchTeamWithCache } from '@/lib/utils/teamCache';
@@ -23,6 +22,7 @@ interface TeamRider {
   jerseyImage?: string;
   pricePaid?: number;
   acquisitionType?: string;
+  pointsBreakdown?: PointsEvent[];
   racePoints?: Record<string, {
     totalPoints: number;
     stagePoints: Record<string, {
@@ -45,8 +45,6 @@ export default function TeamResultsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const gameId = params?.gameId as string;
-  const { t } = useTranslation();
-
   const [game, setGame] = useState<Game | null>(null);
   const [participant, setParticipant] = useState<GameParticipant | null>(null);
   const [riders, setRiders] = useState<TeamRider[]>([]);
@@ -55,7 +53,12 @@ export default function TeamResultsPage() {
   const [expandedRiders, setExpandedRiders] = useState<Set<string>>(new Set());
   const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
   const hasAnyRacePoints = useMemo(
-    () => riders.some((rider) => rider.racePoints && Object.keys(rider.racePoints).length > 0),
+    () =>
+      riders.some(
+        (rider) =>
+          (rider.pointsBreakdown && rider.pointsBreakdown.length > 0) ||
+          (rider.racePoints && Object.keys(rider.racePoints).length > 0)
+      ),
     [riders]
   );
 
@@ -219,7 +222,9 @@ export default function TeamResultsPage() {
           ) : (
             riders.map((rider) => {
               const isExpanded = expandedRiders.has(rider.id);
-              const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
+              const hasPointsData =
+                (rider.pointsBreakdown && rider.pointsBreakdown.length > 0) ||
+                (rider.racePoints && Object.keys(rider.racePoints).length > 0);
 
               return (
                 <div
@@ -228,8 +233,8 @@ export default function TeamResultsPage() {
                 >
                   {/* Rider Header */}
                   <div
-                    onClick={() => hasRacePoints && toggleRider(rider.id)}
-                    className={`p-4 ${hasRacePoints ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+                    onClick={() => hasPointsData && toggleRider(rider.id)}
+                    className={`p-4 ${hasPointsData ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -259,7 +264,7 @@ export default function TeamResultsPage() {
                           </div>
                           <div className="text-xs text-gray-500">punten</div>
                         </div>
-                        {hasRacePoints && (
+                        {hasPointsData && (
                           <div className="text-gray-400">
                             <svg
                               className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -281,9 +286,10 @@ export default function TeamResultsPage() {
                   </div>
 
                   {/* Race Points Breakdown (Expanded) */}
-                  {isExpanded && hasRacePoints && (
+                  {isExpanded && hasPointsData && (
                     <div className="border-t border-gray-200 p-4 bg-gray-50">
                       <RacePointsBreakdown
+                        pointsBreakdown={rider.pointsBreakdown}
                         racePoints={rider.racePoints}
                         riderName={rider.name}
                         raceNames={raceNames}

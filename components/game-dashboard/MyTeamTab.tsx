@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
-import { Game, GameParticipant } from '@/lib/types/games';
+import { Game, GameParticipant, PointsEvent } from '@/lib/types/games';
 import { getRaceNamesClient } from '@/lib/race-names';
 
 type SortOption = 'points' | 'value' | 'roi' | 'pricePaid' | 'name';
@@ -23,6 +23,7 @@ interface TeamRider {
   baseValue?: number;
   acquisitionType?: string;
   acquiredAt?: string;
+  pointsBreakdown?: PointsEvent[];
   racePoints?: Record<string, {
     totalPoints: number;
     stagePoints: Record<string, {
@@ -75,10 +76,15 @@ export function MyTeamTab({
   };
 
   const isMarginalGains = game?.gameType === 'marginal-gains';
-  const isAuctioneer = game?.gameType === 'auctioneer';
+  const isSingleOwnerGame = game?.gameType === 'auctioneer' || game?.gameType === 'full-grid';
   const isSelectionGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
   const hasAnyRacePoints = useMemo(
-    () => riders.some((rider) => rider.racePoints && Object.keys(rider.racePoints).length > 0),
+    () =>
+      riders.some(
+        (rider) =>
+          (rider.pointsBreakdown && rider.pointsBreakdown.length > 0) ||
+          (rider.racePoints && Object.keys(rider.racePoints).length > 0)
+      ),
     [riders]
   );
 
@@ -254,7 +260,9 @@ export function MyTeamTab({
         ) : (
           sortedRiders.map((rider) => {
             const isExpanded = expandedRiders.has(rider.id);
-            const hasRacePoints = rider.racePoints && Object.keys(rider.racePoints).length > 0;
+            const hasPointsData =
+              (rider.pointsBreakdown && rider.pointsBreakdown.length > 0) ||
+              (rider.racePoints && Object.keys(rider.racePoints).length > 0);
             const riderRoi = getRiderRoi(rider);
             const roiColorClass = riderRoi > 0 ? 'text-green-600' : riderRoi < 0 ? 'text-red-600' : 'text-gray-600';
             const riderPopularity = riderSelectionStats?.[rider.nameId] || riderSelectionStats?.[rider.id];
@@ -269,8 +277,8 @@ export function MyTeamTab({
               >
                 {/* Rider Header */}
                 <div
-                  onClick={() => hasRacePoints && toggleRider(rider.id)}
-                  className={`p-4 ${hasRacePoints ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+                  onClick={() => hasPointsData && toggleRider(rider.id)}
+                  className={`p-4 ${hasPointsData ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
                   data-rider-id={rider.nameId || rider.id || ''}
                   data-rider-slug={rider.nameId || rider.id || ''}
                   data-rider-name={rider.name || ''}
@@ -307,7 +315,7 @@ export function MyTeamTab({
                                rider.acquisitionType}
                             </span>
                           )}
-                          {riderPopularity && !isAuctioneer && (
+                          {riderPopularity && !isSingleOwnerGame && (
                             <span className="text-blue-600">
                               Gekozen door {riderPopularity.percentage}% ({riderPopularity.selectedBy}/{riderPopularity.totalTeams})
                             </span>
@@ -331,7 +339,7 @@ export function MyTeamTab({
                         </div>
                         <div className="text-xs text-gray-500">punten</div>
                       </div>
-                      {hasRacePoints && (
+                      {hasPointsData && (
                         <div className="text-gray-400">
                           <svg
                             className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -353,9 +361,10 @@ export function MyTeamTab({
                 </div>
 
                 {/* Race Points Breakdown (Expanded) */}
-                {isExpanded && hasRacePoints && (
+                {isExpanded && hasPointsData && (
                   <div className="border-t border-gray-200 p-4 bg-gray-50">
                     <RacePointsBreakdown
+                      pointsBreakdown={rider.pointsBreakdown}
                       racePoints={rider.racePoints}
                       riderName={rider.name}
                       raceNames={raceNames}

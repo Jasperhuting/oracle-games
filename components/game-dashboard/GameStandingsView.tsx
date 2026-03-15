@@ -208,7 +208,8 @@ export function GameStandingsView({
           }
         ),
         columnHelper.accessor('totalPoints', {
-          header: 'Punten',
+          id: 'totalPoints',
+          header: 'Totaal',
           cell: (info) => (
             <span className="font-semibold text-primary">{formatStandingsScore(info.getValue())}</span>
           ),
@@ -218,7 +219,7 @@ export function GameStandingsView({
     }
 
     if (gameType === 'auctioneer') {
-      return allColumns.filter((column) => column.id !== 'percentage');
+      return allColumns.filter((column) => column.id !== 'percentage' && column.id !== 'totalPoints');
     }
 
     return allColumns;

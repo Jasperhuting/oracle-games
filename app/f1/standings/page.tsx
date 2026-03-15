@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useEffect, Suspense } from "react";
+import { useMemo, useState, useEffect, Suspense, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
     useReactTable,
@@ -10,11 +11,10 @@ import {
     createColumnHelper,
     SortingState,
 } from "@tanstack/react-table";
-import Link from "next/link";
-import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World, Eye, Search, Settings, UserPlus, UserMinus, Lock, LockOpen } from "tabler-icons-react";
-import { useF1Standings, useF1SubLeagues, useF1LegacyDrivers, useF1RaceResult, useF1Participants } from "../hooks";
+import { Trophy, ChevronUp, ChevronDown, Users, Plus, X, Copy, Check, World, Search, Settings, UserPlus, UserMinus, Lock, LockOpen } from "tabler-icons-react";
+import { useF1Standings, useF1SubLeagues, useF1Participants, useF1UserPredictions, useF1RaceResults, useF1Races, useF1LegacyDrivers } from "../hooks";
 import { useUserNames } from "../hooks/useUserNames";
-import { F1Standing, F1SubLeague, F1Prediction, LegacyDriver, F1Participant } from "../types";
+import { F1SubLeague, F1Prediction, LegacyDriver } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase/client";
 
@@ -29,15 +29,50 @@ interface Player {
     lastRacePoints: number | null;
 }
 
+interface CompareRaceRow {
+    raceId: string;
+    round: number;
+    raceName: string;
+    raceSubName: string;
+    resultFinishOrder: string[];
+    dnfDrivers: string[];
+    resultPolePosition: string | null;
+    resultFastestLap: string | null;
+    myPrediction: string | null;
+    myFinishOrder: string[];
+    myPolePosition: string | null;
+    myFastestLap: string | null;
+    myDnfs: string[];
+    theirPrediction: string | null;
+    theirFinishOrder: string[];
+    theirPolePosition: string | null;
+    theirFastestLap: string | null;
+    theirDnfs: string[];
+    myPoints: number | null;
+    theirPoints: number | null;
+}
+
+interface ComparePositionRow {
+    driver: LegacyDriver | null;
+    predictedPos: number;
+    actualPos: number | null;
+    penalty: number;
+    isDnf: boolean;
+}
+
 const columnHelper = createColumnHelper<Player>();
 
 const StandingsPage = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
 
+    const { races, loading: racesLoading } = useF1Races(2026);
     const { standings, loading: standingsLoading } = useF1Standings(2026);
     const { participants, loading: participantsLoading } = useF1Participants(2026);
     const { subLeagues, loading: subLeaguesLoading } = useF1SubLeagues();
+    const { predictions: myPredictions, loading: myPredictionsLoading } = useF1UserPredictions(2026);
+    const { results: raceResults, loading: raceResultsLoading } = useF1RaceResults(2026);
+    const { drivers: legacyDrivers, loading: legacyDriversLoading } = useF1LegacyDrivers(2026);
 
     // Get user IDs from participants (not just standings) to fetch display names
     const userIds = useMemo(() => participants.map(p => p.userId), [participants]);
@@ -68,7 +103,6 @@ const StandingsPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [showBrowseModal, setShowBrowseModal] = useState(false);
-    const [showManageModal, setShowManageModal] = useState(false);
     const [newPouleName, setNewPouleName] = useState("");
     const [newPouleIsPublic, setNewPouleIsPublic] = useState(false);
     const [newPouleDescription, setNewPouleDescription] = useState("");
@@ -76,22 +110,24 @@ const StandingsPage = () => {
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+    const [selectedComparePlayerId, setSelectedComparePlayerId] = useState<string | null>(null);
+    const [selectedCompareRound, setSelectedCompareRound] = useState<number | null>(null);
+    const [comparePredictions, setComparePredictions] = useState<F1Prediction[]>([]);
+    const [compareLoading, setCompareLoading] = useState(false);
     const [publicSubLeagues, setPublicSubLeagues] = useState<F1SubLeague[]>([]);
     const [pendingUserNames, setPendingUserNames] = useState<Record<string, string>>({});
-    const [playerPrediction, setPlayerPrediction] = useState<F1Prediction | null>(null);
-    const [predictionLoading, setPredictionLoading] = useState(false);
     const [browseLoading, setBrowseLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [requestingJoin, setRequestingJoin] = useState<string | null>(null);
     const [managingSubLeague, setManagingSubLeague] = useState<F1SubLeague | null>(null);
+    const [isClient, setIsClient] = useState(false);
 
     // Get current user
     const { user } = useAuth();
 
-    // Fetch drivers and race result for prediction modal
-    const { drivers } = useF1LegacyDrivers();
-    const { result: raceResult } = useF1RaceResult(2026, 1);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     // Calculate total pending requests for user's subleagues (for badge)
     const totalPendingRequests = useMemo(() => {
@@ -164,6 +200,21 @@ const StandingsPage = () => {
         });
     }, [participants, standings, userNames, userAvatars]);
 
+    const standingsByUserId = useMemo(
+        () => new Map(standings.map((standing) => [standing.userId, standing])),
+        [standings]
+    );
+
+    const driversByShortName = useMemo(
+        () => new Map(legacyDrivers.map((driver) => [driver.shortName, driver])),
+        [legacyDrivers]
+    );
+
+    const hasFinishedRace = useMemo(
+        () => races.some((race) => race.status === 'done'),
+        [races]
+    );
+
     // Filter players based on selected subpoule
     const filteredPlayers = useMemo(() => {
         if (!selectedSubpoule) return players;
@@ -224,13 +275,21 @@ const StandingsPage = () => {
             columnHelper.accessor("name", {
                 header: "Speler",
                 cell: (info) => {
+                    if (!hasFinishedRace) {
+                        return <span className="font-semibold text-white">{info.getValue()}</span>;
+                    }
+
                     return (
-                        <Link
-                            href={`/user/${info.row.original.id}`}
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenComparison(info.row.original.id);
+                            }}
                             className="font-semibold text-white hover:text-red-300 hover:underline"
                         >
                             {info.getValue()}
-                        </Link>
+                        </button>
                     );
                 },
             }),
@@ -272,7 +331,7 @@ const StandingsPage = () => {
                 },
             }),
         ],
-        []
+        [hasFinishedRace]
     );
 
     const table = useReactTable({
@@ -560,23 +619,292 @@ const StandingsPage = () => {
     };
 
     // Fetch prediction when player is selected
-    const handleViewPrediction = async (player: Player) => {
-        setSelectedPlayer(player);
-        setPredictionLoading(true);
-        setPlayerPrediction(null);
-        
+    const handleOpenComparison = async (playerId: string) => {
+        setSelectedComparePlayerId(playerId);
+        setSelectedCompareRound(null);
+        setCompareLoading(true);
+        setComparePredictions([]);
+
         try {
-            const response = await fetch(`/f1/api/predictions?userId=${player.id}&round=1`);
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: HeadersInit = {};
+            if (idToken) {
+                headers.Authorization = `Bearer ${idToken}`;
+            }
+
+            const response = await fetch(`/f1/api/predictions?season=2026&userId=${playerId}`, { headers });
             const data = await response.json();
             if (data.success && data.data) {
-                setPlayerPrediction(data.data);
+                setComparePredictions(data.data);
+            } else {
+                console.error('Failed to fetch compare predictions:', data?.error || 'Unknown error');
             }
         } catch (error) {
-            console.error('Failed to fetch prediction:', error);
+            console.error('Failed to fetch compare predictions:', error);
         } finally {
-            setPredictionLoading(false);
+            setCompareLoading(false);
         }
     };
+
+    const formatTop3 = (finishOrder: string[] | undefined): string | null => {
+        if (!finishOrder || finishOrder.length === 0) return null;
+        return finishOrder.slice(0, 3).map((shortName, index) => `${index + 1}. ${shortName}`).join(', ');
+    };
+
+    const comparePlayer = selectedComparePlayerId
+        ? players.find((player) => player.id === selectedComparePlayerId) || null
+        : null;
+
+    const compareRows = useMemo<CompareRaceRow[]>(() => {
+        if (!comparePlayer) return [];
+
+        const myPredictionsByRound = new Map(myPredictions.map((prediction) => [prediction.round, prediction]));
+        const comparePredictionsByRound = new Map(comparePredictions.map((prediction) => [prediction.round, prediction]));
+        const myStanding = user?.uid ? standingsByUserId.get(user.uid) : undefined;
+        const theirStanding = standingsByUserId.get(comparePlayer.id);
+
+        return races
+            .filter((race) => race.status === 'done')
+            .sort((a, b) => a.round - b.round)
+            .map((race) => {
+                const raceId = `2026_${String(race.round).padStart(2, '0')}`;
+                const result = raceResults.find((item) => item.round === race.round);
+                const myPrediction = myPredictionsByRound.get(race.round);
+                const theirPrediction = comparePredictionsByRound.get(race.round);
+
+                return {
+                    raceId,
+                    round: race.round,
+                    raceName: race.name,
+                    raceSubName: race.subName,
+                    resultFinishOrder: result?.finishOrder ?? [],
+                    dnfDrivers: result?.dnfDrivers ?? [],
+                    resultPolePosition: result?.polePosition ?? null,
+                    resultFastestLap: result?.fastestLap ?? null,
+                    myPrediction: formatTop3(myPrediction?.finishOrder),
+                    myFinishOrder: myPrediction?.finishOrder?.slice(0, 10) ?? [],
+                    myPolePosition: myPrediction?.polePosition ?? null,
+                    myFastestLap: myPrediction?.fastestLap ?? null,
+                    myDnfs: [myPrediction?.dnf1, myPrediction?.dnf2].filter((value): value is string => Boolean(value)),
+                    theirPrediction: formatTop3(theirPrediction?.finishOrder),
+                    theirFinishOrder: theirPrediction?.finishOrder?.slice(0, 10) ?? [],
+                    theirPolePosition: theirPrediction?.polePosition ?? null,
+                    theirFastestLap: theirPrediction?.fastestLap ?? null,
+                    theirDnfs: [theirPrediction?.dnf1, theirPrediction?.dnf2].filter((value): value is string => Boolean(value)),
+                    myPoints: myStanding?.racePoints?.[raceId] ?? null,
+                    theirPoints: theirStanding?.racePoints?.[raceId] ?? null,
+                };
+            });
+    }, [comparePlayer, comparePredictions, myPredictions, raceResults, races, standingsByUserId, user?.uid]);
+
+    useEffect(() => {
+        if (compareRows.length === 0) {
+            setSelectedCompareRound(null);
+            return;
+        }
+
+        const hasSelectedRound = selectedCompareRound !== null
+            && compareRows.some((row) => row.round === selectedCompareRound);
+
+        if (!hasSelectedRound) {
+            setSelectedCompareRound(compareRows[compareRows.length - 1].round);
+        }
+    }, [compareRows, selectedCompareRound]);
+
+    const selectedCompareRow = useMemo(
+        () => compareRows.find((row) => row.round === selectedCompareRound) ?? compareRows[compareRows.length - 1] ?? null,
+        [compareRows, selectedCompareRound]
+    );
+
+    const buildComparisonRows = useCallback((predictionFinishOrder: string[], actualFinishOrder: string[], dnfDrivers: string[]): ComparePositionRow[] => {
+        return predictionFinishOrder.slice(0, 10).map((shortName, index) => {
+            const actualPos = actualFinishOrder.indexOf(shortName);
+            const isDnf = dnfDrivers.includes(shortName);
+            const penalty = isDnf
+                ? 10
+                : actualPos === -1
+                    ? 10
+                    : Math.min(10, Math.abs(index - actualPos));
+
+            return {
+                driver: driversByShortName.get(shortName) ?? null,
+                predictedPos: index + 1,
+                actualPos: actualPos === -1 ? null : actualPos + 1,
+                penalty,
+                isDnf,
+            };
+        });
+    }, [driversByShortName]);
+
+    const myComparePositionRows = useMemo(
+        () => selectedCompareRow
+            ? buildComparisonRows(selectedCompareRow.myFinishOrder, selectedCompareRow.resultFinishOrder, selectedCompareRow.dnfDrivers)
+            : [],
+        [buildComparisonRows, selectedCompareRow]
+    );
+
+    const theirComparePositionRows = useMemo(
+        () => selectedCompareRow
+            ? buildComparisonRows(selectedCompareRow.theirFinishOrder, selectedCompareRow.resultFinishOrder, selectedCompareRow.dnfDrivers)
+            : [],
+        [buildComparisonRows, selectedCompareRow]
+    );
+
+    const renderComparisonTable = (title: string, playerName: string, points: number | null, rows: ComparePositionRow[]) => (
+        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div className="relative px-4 py-4 border-b border-gray-700">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')]"></div>
+                <div className="flex flex-col gap-2 pt-1 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                        <h3 className="text-white font-black text-base tracking-tight uppercase">{title}</h3>
+                        <div className="w-1 h-6 bg-red-600 rounded-full"></div>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                        <span className="text-white font-semibold">{playerName}</span>
+                        <span className="ml-2 text-red-400 font-black">{points ?? '-'}</span>
+                        <span className="ml-1">strafpunten</span>
+                    </div>
+                </div>
+            </div>
+
+            {rows.length > 0 ? (
+                <div className="overflow-x-auto xl:overflow-visible">
+                    <table className="w-full table-fixed min-w-[640px] xl:min-w-0">
+                        <thead className="bg-black/30">
+                            <tr>
+                                <th className="w-[96px] px-3 py-3 text-left text-[11px] font-bold text-gray-300 uppercase tracking-wider">Voorspeld</th>
+                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-300 uppercase tracking-wider">Coureur</th>
+                                <th className="w-[92px] px-3 py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-wider">Werkelijk</th>
+                                <th className="w-[110px] px-3 py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-wider">Verschil</th>
+                                <th className="w-[118px] px-3 py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-wider">Strafpunten</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-700">
+                            {rows.map(({ driver, predictedPos, actualPos, penalty, isDnf }) => {
+                                const rowColor = penalty === 0
+                                    ? 'bg-green-950/35'
+                                    : penalty >= 10
+                                        ? 'bg-red-950/35'
+                                        : 'bg-yellow-950/25';
+
+                                return (
+                                    <tr key={`${title}-${driver?.shortName ?? predictedPos}`} className={rowColor}>
+                                        <td className="px-3 py-2.5">
+                                            <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-full bg-gray-800 border border-gray-600 px-2 text-sm font-black text-white">
+                                                P{predictedPos}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2.5">
+                                            {driver ? (
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <span
+                                                        style={{ backgroundColor: driver.teamColor || '#666' }}
+                                                        className="rounded-full overflow-hidden bg-gray-200 w-[34px] h-[34px] relative shrink-0"
+                                                    >
+                                                        <img src={driver.image} alt={driver.lastName} className="w-[46px] h-auto absolute top-0 left-0" />
+                                                    </span>
+                                                    <div className="min-w-0">
+                                                        <div className="truncate font-semibold text-white text-[15px] leading-tight">{driver.firstName} {driver.lastName}</div>
+                                                        <div className="text-xs text-gray-400">{driver.shortName}</div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <div className="font-semibold text-white">Onbekende coureur</div>
+                                                    <div className="text-xs text-gray-400">Niet gevonden</div>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <span className={`font-semibold text-[15px] ${actualPos && actualPos <= 10 ? 'text-white' : 'text-amber-400'}`}>
+                                                {isDnf ? 'DNF' : actualPos ? `P${actualPos}` : 'Niet geklasseerd'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center text-sm text-gray-300">
+                                            {isDnf ? 'uitgevallen' : actualPos === null ? '-' : penalty === 0 ? 'exact' : `${penalty} plaatsen`}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <span className={`inline-flex min-w-11 justify-center rounded-full px-2 py-1 text-sm font-black ${
+                                                penalty === 0 ? 'bg-green-600/20 text-green-300' : penalty < 10 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-600/20 text-red-300'
+                                            }`}>
+                                                {penalty > 0 ? `+${penalty}` : '0'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div className="px-4 py-8 text-center text-gray-400">Niet ingevuld</div>
+            )}
+        </div>
+    );
+
+    const renderDriverTag = (shortName: string | null, label: string, actualValue?: string | null) => {
+        const driver = shortName ? driversByShortName.get(shortName) ?? null : null;
+        const isCorrect = shortName && actualValue && shortName === actualValue;
+
+        return (
+            <div className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-3">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">{label}</div>
+                {driver ? (
+                    <div className="flex items-center gap-3">
+                        <span
+                            style={{ backgroundColor: driver.teamColor || '#666' }}
+                            className="rounded-full overflow-hidden bg-gray-200 w-9 h-9 relative shrink-0"
+                        >
+                            <img src={driver.image} alt={driver.lastName} className="w-[50px] h-auto absolute top-0 left-0" />
+                        </span>
+                        <div className="min-w-0">
+                            <div className={`font-semibold ${isCorrect ? 'text-green-300' : 'text-white'}`}>{driver.firstName} {driver.lastName}</div>
+                            <div className="text-xs text-gray-400">{driver.shortName}</div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-sm text-gray-500">Niet ingevuld</div>
+                )}
+            </div>
+        );
+    };
+
+    const renderDnfTags = (shortNames: string[], actualDnfs: string[]) => (
+            <div className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-3">
+                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">DNFs</div>
+            {shortNames.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                    {shortNames.map((shortName) => {
+                        const driver = driversByShortName.get(shortName) ?? null;
+                        const isCorrect = actualDnfs.includes(shortName);
+                        return (
+                            <div
+                                key={shortName}
+                                className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 ${
+                                    isCorrect
+                                        ? 'border-green-500/40 bg-green-500/10 text-green-200'
+                                        : 'border-gray-600 bg-gray-900 text-gray-200'
+                                }`}
+                            >
+                                {driver && (
+                                    <span
+                                        style={{ backgroundColor: driver.teamColor || '#666' }}
+                                        className="rounded-full overflow-hidden bg-gray-200 w-6 h-6 relative shrink-0"
+                                    >
+                                        <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
+                                    </span>
+                                )}
+                                <span className="text-sm font-medium">{shortName}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="text-sm text-gray-500">Niet ingevuld</div>
+            )}
+        </div>
+    );
 
     // Mobile card component
     const PlayerCard = ({ player, position }: { player: Player; position: number }) => {
@@ -597,7 +925,10 @@ const StandingsPage = () => {
         return (
             <div 
                 className={`bg-gray-800 rounded-lg p-4 border-l-4 ${getBorderStyle()} cursor-pointer hover:bg-gray-700/50 transition-colors`}
-                onClick={() => handleViewPrediction(player)}
+                onClick={() => {
+                    if (!hasFinishedRace) return;
+                    handleOpenComparison(player.id);
+                }}
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -627,7 +958,7 @@ const StandingsPage = () => {
                             <div className="text-2xl font-black text-red-400">{player.totalPoints}</div>
                             <div className="text-xs text-gray-400">strafpunten</div>
                         </div>
-                        <Eye size={18} className="text-gray-500" />
+                        {hasFinishedRace && <Users size={18} className="text-gray-500" />}
                     </div>
                 </div>
                 <div className="flex justify-between mt-3 pt-3 border-t border-gray-700 text-sm">
@@ -644,7 +975,7 @@ const StandingsPage = () => {
         );
     };
 
-    if (standingsLoading || participantsLoading || subLeaguesLoading || namesLoading) {
+    if (racesLoading || standingsLoading || participantsLoading || subLeaguesLoading || namesLoading || legacyDriversLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <div className="text-gray-400">Laden...</div>
@@ -893,8 +1224,11 @@ const StandingsPage = () => {
                         {table.getRowModel().rows.map((row) => (
                             <tr 
                                 key={row.id} 
-                                className="hover:bg-gray-700/50 transition-colors cursor-pointer"
-                                onClick={() => handleViewPrediction(row.original)}
+                                className={hasFinishedRace ? "hover:bg-gray-700/50 transition-colors cursor-pointer" : ""}
+                                onClick={() => {
+                                    if (!hasFinishedRace) return;
+                                    handleOpenComparison(row.original.id);
+                                }}
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <td key={cell.id} className={`py-3 ${
@@ -1058,177 +1392,162 @@ const StandingsPage = () => {
                 </div>
             )}
 
-            {/* Player Prediction Modal */}
-            {selectedPlayer && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-                    <div className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl border border-gray-700 my-8">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-lg">
-                                    {selectedPlayer.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">{selectedPlayer.name}</h2>
-                                    <p className="text-gray-400 text-sm">Voorspelling Race 1</p>
-                                </div>
+            {/* Compare Modal */}
+            {isClient && comparePlayer && createPortal(
+                <div className="fixed inset-0 bg-black/70 z-[9999] p-4">
+                    <div className="mx-auto flex h-[calc(100vh-2rem)] w-full max-w-[96vw] 2xl:max-w-[1800px] flex-col overflow-hidden rounded-xl border border-gray-700 bg-gray-800">
+                        <div className="flex items-center justify-between border-b border-gray-700 px-6 py-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Vergelijk voorspellingen</h2>
+                                <p className="text-gray-400 text-sm">Per race jouw voorspelling versus een andere speler</p>
                             </div>
                             <button
-                                onClick={() => setSelectedPlayer(null)}
+                                onClick={() => setSelectedComparePlayerId(null)}
                                 className="text-gray-400 hover:text-white"
                             >
                                 <X size={24} />
                             </button>
                         </div>
 
-                        {predictionLoading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <div className="text-gray-400">Laden...</div>
+                        <div className="flex-1 overflow-y-auto px-6 py-5">
+                            <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] mb-4">
+                                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                                    <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Jij</div>
+                                    <div className="text-lg font-semibold text-white">{players.find((player) => player.id === user?.uid)?.name || 'Jij'}</div>
+                                    <div className="text-3xl font-black text-red-400 mt-2">{standingsByUserId.get(user?.uid || '')?.totalPoints ?? 0}</div>
+                                    <div className="text-sm text-gray-400">strafpunten totaal</div>
+                                </div>
+                                <div className="hidden md:flex items-center justify-center text-gray-500 font-bold">VS</div>
+                                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Vergelijk met</div>
+                                            <div className="text-lg font-semibold text-white">{comparePlayer.name}</div>
+                                        </div>
+                                        <select
+                                            value={comparePlayer.id}
+                                            onChange={(event) => handleOpenComparison(event.target.value)}
+                                            className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                                        >
+                                            {players
+                                                .filter((player) => player.id !== user?.uid)
+                                                .map((player) => (
+                                                    <option key={player.id} value={player.id}>
+                                                        {player.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                    <div className="text-3xl font-black text-red-400 mt-2">{standingsByUserId.get(comparePlayer.id)?.totalPoints ?? 0}</div>
+                                    <div className="text-sm text-gray-400">strafpunten totaal</div>
+                                </div>
                             </div>
-                        ) : playerPrediction ? (
-                            <div className="space-y-4">
-                                {/* Points summary */}
-                                <div className="bg-gray-900 rounded-lg p-4 text-center">
-                                    <div className="text-3xl font-black text-green-500">{selectedPlayer.lastRacePoints || 0}</div>
-                                    <div className="text-sm text-gray-400">strafpunten deze race</div>
+
+                            {compareLoading || myPredictionsLoading || raceResultsLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <div className="text-gray-400">Laden...</div>
                                 </div>
-
-                                {/* Bonus predictions */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-gray-900 rounded-lg p-3">
-                                        <div className="text-xs text-gray-500 uppercase mb-1">Pole Position</div>
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const driver = drivers.find(d => d.shortName === playerPrediction.polePosition);
-                                                const isCorrect = raceResult?.polePosition === playerPrediction.polePosition;
-                                                return driver ? (
-                                                    <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
-                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
-                                                        </span>
-                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
-                                                    </>
-                                                ) : <span className="text-gray-500">-</span>;
-                                            })()}
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="bg-gray-900 rounded-lg border border-gray-700 p-4">
+                                        <div className="text-xs uppercase tracking-wide text-gray-500 mb-3">Kies wedstrijd</div>
+                                        <div className="flex gap-2 overflow-x-auto pb-1">
+                                            {compareRows.map((row) => (
+                                                <button
+                                                    key={row.raceId}
+                                                    type="button"
+                                                    onClick={() => setSelectedCompareRound(row.round)}
+                                                    className={`min-w-fit rounded-lg border px-3 py-2 text-left transition-colors ${
+                                                        selectedCompareRow?.round === row.round
+                                                            ? 'border-red-500 bg-red-600 text-white'
+                                                            : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600 hover:text-white'
+                                                    }`}
+                                                >
+                                                    <div className="text-sm font-semibold">{row.raceName}</div>
+                                                    <div className={`text-xs ${selectedCompareRow?.round === row.round ? 'text-red-100' : 'text-gray-500'}`}>
+                                                        Race {row.round}
+                                                    </div>
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                    <div className="bg-gray-900 rounded-lg p-3">
-                                        <div className="text-xs text-gray-500 uppercase mb-1">Snelste Ronde</div>
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const driver = drivers.find(d => d.shortName === playerPrediction.fastestLap);
-                                                const isCorrect = raceResult?.fastestLap === playerPrediction.fastestLap;
-                                                return driver ? (
-                                                    <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
-                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
-                                                        </span>
-                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
-                                                    </>
-                                                ) : <span className="text-gray-500">-</span>;
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* DNF predictions */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-gray-900 rounded-lg p-3">
-                                        <div className="text-xs text-red-400 uppercase mb-1">DNF #1</div>
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const driver = drivers.find(d => d.shortName === playerPrediction.dnf1);
-                                                const isCorrect = raceResult?.dnfDrivers?.includes(playerPrediction.dnf1 || '');
-                                                return driver ? (
-                                                    <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
-                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
-                                                        </span>
-                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
-                                                    </>
-                                                ) : <span className="text-gray-500">-</span>;
-                                            })()}
-                                        </div>
-                                    </div>
-                                    <div className="bg-gray-900 rounded-lg p-3">
-                                        <div className="text-xs text-red-400 uppercase mb-1">DNF #2</div>
-                                        <div className="flex items-center gap-2">
-                                            {(() => {
-                                                const driver = drivers.find(d => d.shortName === playerPrediction.dnf2);
-                                                const isCorrect = raceResult?.dnfDrivers?.includes(playerPrediction.dnf2 || '');
-                                                return driver ? (
-                                                    <>
-                                                        <span className="w-6 h-6 rounded-full overflow-hidden relative transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
-                                                            <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
-                                                        </span>
-                                                        <span className={`font-bold ${isCorrect ? 'text-green-400' : 'text-white'}`}>{driver.shortName}</span>
-                                                        {isCorrect && <span className="text-green-400 text-xs">-2</span>}
-                                                    </>
-                                                ) : <span className="text-gray-500">-</span>;
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Finish order - compact grid */}
-                                <div>
-                                    <div className="text-sm text-gray-400 mb-2">Voorspelde volgorde (Top 10)</div>
-                                    <div className="grid grid-cols-2 gap-1 max-h-80 overflow-y-auto">
-                                        {playerPrediction.finishOrder.slice(0, 10).map((shortName, index) => {
-                                            const driver = drivers.find(d => d.shortName === shortName);
-                                            const actualPosIndex = raceResult?.finishOrder.indexOf(shortName) ?? -1;
-                                            const predictedPos = index + 1;
-                                            const actualPos = actualPosIndex !== -1 ? actualPosIndex + 1 : null;
-                                            const diff = actualPos !== null ? Math.abs(actualPos - predictedPos) : null;
-                                            const isDnf = raceResult?.dnfDrivers?.includes(shortName) ?? false;
-                                            
-                                            let penalty = 0;
-                                            if (actualPos === null || isDnf) {
-                                                penalty = 10;
-                                            } else if (diff !== null) {
-                                                penalty = Math.min(10, diff);
-                                            }
-
-                                            const bgColor = penalty === 0 ? 'bg-green-900/50' : penalty < 10 ? 'bg-yellow-900/30' : 'bg-red-900/40';
-
-                                            return (
-                                                <div key={index} className={`flex items-center gap-2 p-1.5 rounded ${bgColor}`}>
-                                                    <span className="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold bg-gray-700 text-white">
-                                                        {predictedPos}
-                                                    </span>
-                                                    {driver && (
-                                                        <>
-                                                            <span className="w-5 h-5 rounded-full overflow-hidden relative flex-shrink-0 transition-transform duration-200 ease-out hover:scale-110 hover:-translate-x-2 hover:-translate-y-2 cursor-pointer" style={{ backgroundColor: (driver as LegacyDriver).teamColor || '#666' }}>
-                                                                <img src={driver.image} alt={driver.lastName} className="w-7 h-auto absolute top-0 left-0" />
-                                                            </span>
-                                                            <span className="text-xs text-white font-medium">{driver.shortName}</span>
-                                                        </>
-                                                    )}
-                                                    {penalty > 0 && (
-                                                        <span className="text-xs text-red-400 ml-auto">+{penalty}</span>
-                                                    )}
+                                    {selectedCompareRow ? (
+                                        <div className="space-y-4">
+                                            <div className="bg-gray-900 rounded-lg border border-gray-700 p-5">
+                                                <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+                                                    <div>
+                                                        <div className="text-xl font-bold text-white">{selectedCompareRow.raceName}</div>
+                                                        <div className="text-sm text-gray-500">{selectedCompareRow.raceSubName}</div>
+                                                    </div>
+                                                    <div className="text-sm text-gray-400">Race {selectedCompareRow.round}</div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-gray-400">
-                                Geen voorspelling gevonden voor deze race
-                            </div>
-                        )}
+                                            </div>
 
-                        <button
-                            onClick={() => setSelectedPlayer(null)}
-                            className="w-full mt-4 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-                        >
-                            Sluiten
-                        </button>
+                                            <div className="grid gap-4 xl:grid-cols-2">
+                                                {renderComparisonTable(
+                                                    'Jouw voorspelde top 10 vs einduitslag',
+                                                    players.find((player) => player.id === user?.uid)?.name || 'Jij',
+                                                    selectedCompareRow.myPoints,
+                                                    myComparePositionRows
+                                                )}
+                                                {renderComparisonTable(
+                                                    `${comparePlayer.name} top 10 vs einduitslag`,
+                                                    comparePlayer.name,
+                                                    selectedCompareRow.theirPoints,
+                                                    theirComparePositionRows
+                                                )}
+                                            </div>
+
+                                            <div className="grid gap-4 xl:grid-cols-2">
+                                                <div className="bg-gray-900 rounded-xl border border-gray-700 p-4 space-y-3">
+                                                    <div className="text-sm font-bold uppercase tracking-wide text-white">Jouw extra voorspellingen</div>
+                                                    <div className="grid gap-3 md:grid-cols-2">
+                                                        {renderDriverTag(selectedCompareRow.myPolePosition, 'Pole position', selectedCompareRow.resultPolePosition)}
+                                                        {renderDriverTag(selectedCompareRow.myFastestLap, 'Snelste ronde', selectedCompareRow.resultFastestLap)}
+                                                    </div>
+                                                    {renderDnfTags(selectedCompareRow.myDnfs, selectedCompareRow.dnfDrivers)}
+                                                </div>
+
+                                                <div className="bg-gray-900 rounded-xl border border-gray-700 p-4 space-y-3">
+                                                    <div className="text-sm font-bold uppercase tracking-wide text-white">{comparePlayer.name} extra voorspellingen</div>
+                                                    <div className="grid gap-3 md:grid-cols-2">
+                                                        {renderDriverTag(selectedCompareRow.theirPolePosition, 'Pole position', selectedCompareRow.resultPolePosition)}
+                                                        {renderDriverTag(selectedCompareRow.theirFastestLap, 'Snelste ronde', selectedCompareRow.resultFastestLap)}
+                                                    </div>
+                                                    {renderDnfTags(selectedCompareRow.theirDnfs, selectedCompareRow.dnfDrivers)}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-gray-900 rounded-xl border border-gray-700 p-4">
+                                                <div className="text-sm font-bold uppercase tracking-wide text-white mb-3">Officiële bonusuitslag</div>
+                                                <div className="grid gap-3 md:grid-cols-3">
+                                                    {renderDriverTag(selectedCompareRow.resultPolePosition, 'Pole position')}
+                                                    {renderDriverTag(selectedCompareRow.resultFastestLap, 'Snelste ronde')}
+                                                    {renderDnfTags(selectedCompareRow.dnfDrivers, selectedCompareRow.dnfDrivers)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-gray-900 rounded-lg border border-gray-700 p-8 text-center text-gray-400">
+                                            Geen afgeronde races beschikbaar om te vergelijken.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="border-t border-gray-700 px-6 py-4">
+                            <button
+                                onClick={() => setSelectedComparePlayerId(null)}
+                                className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                            >
+                                Sluiten
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Browse Public Poules Modal */}

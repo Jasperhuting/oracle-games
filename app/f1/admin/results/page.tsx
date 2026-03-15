@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useF1Races, useF1LegacyDrivers } from "../../hooks";
 import { F1Race, LegacyDriver } from "../../types";
 import Link from "next/link";
@@ -76,10 +76,57 @@ export default function AdminResultsPage() {
         );
     };
 
-    const getDriverByShortName = (shortName: string | null) => {
+    const getDriverByShortName = useCallback((shortName: string | null) => {
         if (!shortName) return null;
         return drivers.find(d => d.shortName === shortName) ?? null;
-    };
+    }, [drivers]);
+
+    useEffect(() => {
+        if (!selectedRace || drivers.length === 0) return;
+
+        let cancelled = false;
+
+        const loadExistingResult = async () => {
+            try {
+                const response = await fetch(`/api/f1/results?season=2026&round=${selectedRace.round}`);
+                const data = await response.json();
+
+                if (cancelled) return;
+
+                const existingResult = data?.success ? data.data : null;
+
+                if (!existingResult) {
+                    setResultGrid(Array(22).fill(null));
+                    setPolePosition(null);
+                    setFastestLap(null);
+                    setDnfDrivers([]);
+                    return;
+                }
+
+                const mappedGrid = Array.from({ length: 22 }, (_, index) => {
+                    const shortName = existingResult.finishOrder?.[index] || null;
+                    return shortName ? getDriverByShortName(shortName) : null;
+                });
+
+                setResultGrid(mappedGrid);
+                setPolePosition(existingResult.polePosition || null);
+                setFastestLap(existingResult.fastestLap || null);
+                setDnfDrivers(existingResult.dnfDrivers || []);
+            } catch {
+                if (cancelled) return;
+                setResultGrid(Array(22).fill(null));
+                setPolePosition(null);
+                setFastestLap(null);
+                setDnfDrivers([]);
+            }
+        };
+
+        loadExistingResult();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedRace, drivers, getDriverByShortName]);
 
     const matchesSearch = (driver: Driver) => {
         const q = search.toLowerCase();
@@ -245,7 +292,14 @@ export default function AdminResultsPage() {
         <div className="max-w-6xl mx-auto" ref={containerRef}>
             <div className="flex items-center gap-3 mb-6">
                 <button 
-                    onClick={() => setSelectedRace(null)}
+                    onClick={() => {
+                        setSelectedRace(null);
+                        setResultGrid(Array(22).fill(null));
+                        setPolePosition(null);
+                        setFastestLap(null);
+                        setDnfDrivers([]);
+                        setMessage(null);
+                    }}
                     className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                 >
                     <ArrowLeft size={24} className="text-gray-400" />
