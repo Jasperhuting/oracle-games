@@ -210,6 +210,9 @@ const StandingsPage = () => {
         [legacyDrivers]
     );
 
+    const currentUserAvatarUrl = user?.uid ? userAvatars[user.uid] : undefined;
+    const shouldPromptAvatar = Boolean(user?.uid && !currentUserAvatarUrl && participants.some((participant) => participant.userId === user.uid));
+
     const hasFinishedRace = useMemo(
         () => races.some((race) => race.status === 'done'),
         [races]
@@ -282,9 +285,23 @@ const StandingsPage = () => {
                             <div className="flex items-center gap-2">
                                 <span className="font-semibold text-white">{info.getValue()}</span>
                                 {isCurrentUser && (
-                                    <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
-                                        Jij
-                                    </span>
+                                    <>
+                                        <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
+                                            Jij
+                                        </span>
+                                        {shouldPromptAvatar && (
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    router.push("/account/settings");
+                                                }}
+                                                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20"
+                                            >
+                                                Voeg avatar toe
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         );
@@ -297,6 +314,18 @@ const StandingsPage = () => {
                                 <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
                                     Jij
                                 </span>
+                                {shouldPromptAvatar && (
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            router.push("/account/settings");
+                                        }}
+                                        className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20"
+                                    >
+                                        Voeg avatar toe
+                                    </button>
+                                )}
                             </div>
                         );
                     }
@@ -356,7 +385,7 @@ const StandingsPage = () => {
                 },
             }),
         ],
-        [hasFinishedRace, user?.uid]
+        [hasFinishedRace, router, shouldPromptAvatar, user?.uid]
     );
 
     const table = useReactTable({
@@ -989,9 +1018,23 @@ const StandingsPage = () => {
                             <div className="flex items-center gap-2">
                                 <div className="font-semibold text-white">{player.name}</div>
                                 {player.id === user?.uid && (
-                                    <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
-                                        Jij
-                                    </span>
+                                    <>
+                                        <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
+                                            Jij
+                                        </span>
+                                        {shouldPromptAvatar && (
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    router.push("/account/settings");
+                                                }}
+                                                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20"
+                                            >
+                                                Voeg avatar toe
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                             <div className="text-xs text-gray-400">{player.racesParticipated} races</div>
@@ -1177,6 +1220,24 @@ const StandingsPage = () => {
                         </div>
                     );
                 })()}
+
+                {shouldPromptAvatar && (
+                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-gray-900 to-amber-500/5 px-4 py-4">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <div className="text-sm font-semibold text-white">Val meer op in de F1-stand</div>
+                                <div className="text-sm text-amber-100/80">Voeg een avatar toe zodat andere deelnemers je direct herkennen in het klassement en in vergelijkingen.</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => router.push("/account/settings")}
+                                className="inline-flex items-center justify-center rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-300 transition-colors"
+                            >
+                                Avatar instellen
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {hasFinishedRace && (
                     <div className="rounded-lg border border-sky-500/25 bg-sky-500/10 px-4 py-3">

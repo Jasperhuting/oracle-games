@@ -21,7 +21,7 @@ type LoginPatternsResponse = {
     weekday: CountBucket[];
   };
   snapshot: {
-    totalUsersWithLastLogin: number;
+    totalUsersWithLastActive: number;
     hourly: CountBucket[];
     weekday: CountBucket[];
   };
@@ -158,10 +158,10 @@ export async function GET(request: NextRequest) {
       .map(([label, count]) => ({ label, count }));
 
     const usersSnapshot = await db.collection('users').get();
-    const lastLoginDates = usersSnapshot.docs
-      .map((doc) => timestampToDate(doc.data().lastLoginAt))
+    const lastActiveDates = usersSnapshot.docs
+      .map((doc) => timestampToDate(doc.data().lastActiveAt || doc.data().lastLoginAt))
       .filter((date): date is Date => date !== null);
-    const snapshotAggregates = aggregateDates(lastLoginDates);
+    const snapshotAggregates = aggregateDates(lastActiveDates);
 
     const response: LoginPatternsResponse = {
       history: {
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
         weekday: historyAggregates.weekday,
       },
       snapshot: {
-        totalUsersWithLastLogin: lastLoginDates.length,
+        totalUsersWithLastActive: lastActiveDates.length,
         hourly: snapshotAggregates.hourly,
         weekday: snapshotAggregates.weekday,
       },

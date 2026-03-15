@@ -25,7 +25,7 @@ type LoginPatternsData = {
     weekday: LoginPatternBucket[];
   };
   snapshot: {
-    totalUsersWithLastLogin: number;
+    totalUsersWithLastActive: number;
     hourly: LoginPatternBucket[];
     weekday: LoginPatternBucket[];
   };
@@ -40,7 +40,7 @@ export const UserList = () => {
   const [filterType, setFilterType] = useState<string>("all");
   const [showDeleted, setShowDeleted] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [sortBy, setSortBy] = useState<'createdAt' | 'lastLoginAt' | 'user'>('createdAt');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'lastActiveAt' | 'user'>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [changingUserTypeId, setChangingUserTypeId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -401,8 +401,8 @@ export const UserList = () => {
 
     if (sortBy === 'createdAt') {
       compareValue = getDateValue(a.createdAt) - getDateValue(b.createdAt);
-    } else if (sortBy === 'lastLoginAt') {
-      compareValue = getDateValue(a.lastLoginAt) - getDateValue(b.lastLoginAt);
+    } else if (sortBy === 'lastActiveAt') {
+      compareValue = getDateValue(a.lastActiveAt) - getDateValue(b.lastActiveAt);
     } else {
       compareValue = getUserLabel(a).localeCompare(getUserLabel(b));
     }
@@ -433,7 +433,7 @@ export const UserList = () => {
           <div>
             <h2 className="text-xl font-semibold">Login Analyse</h2>
             <p className="text-sm text-gray-600">
-              Patronen op basis van echte login-events vanaf nu, plus een snapshot van de laatst bekende login per gebruiker.
+              Patronen op basis van echte login-events, plus een snapshot van de laatst bekende activiteit per gebruiker.
             </p>
           </div>
           {loginPatternsLoading && (
@@ -454,7 +454,7 @@ export const UserList = () => {
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
                 <div className="text-sm text-gray-600">Users met bekende laatste login</div>
-                <div className="text-2xl font-bold text-primary">{loginPatterns.snapshot.totalUsersWithLastLogin}</div>
+                <div className="text-2xl font-bold text-primary">{loginPatterns.snapshot.totalUsersWithLastActive}</div>
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
                 <div className="text-sm text-gray-600">Event-data beschikbaar sinds</div>
@@ -471,8 +471,8 @@ export const UserList = () => {
                 {renderMiniBarChart(loginPatterns.history.hourly, 'bg-blue-500')}
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">Laatst bekende login per uur</h3>
-                <p className="text-xs text-gray-500 mb-4">Snapshot op basis van `users.lastLoginAt` voor alle users.</p>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Laatst bekende activiteit per uur</h3>
+                <p className="text-xs text-gray-500 mb-4">Snapshot op basis van `users.lastActiveAt` voor alle users.</p>
                 {renderMiniBarChart(loginPatterns.snapshot.hourly, 'bg-emerald-500')}
               </div>
             </div>
@@ -484,7 +484,7 @@ export const UserList = () => {
                 {renderMiniBarChart(loginPatterns.history.weekday, 'bg-violet-500')}
               </div>
               <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">Laatste login per weekdag</h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Laatste activiteit per weekdag</h3>
                 <p className="text-xs text-gray-500 mb-4">Handig als snelle indicatie voordat er genoeg eventhistorie is.</p>
                 {renderMiniBarChart(loginPatterns.snapshot.weekday, 'bg-amber-500')}
               </div>
@@ -523,11 +523,11 @@ export const UserList = () => {
             </select>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'createdAt' | 'lastLoginAt' | 'user')}
+              onChange={(e) => setSortBy(e.target.value as 'createdAt' | 'lastActiveAt' | 'user')}
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="createdAt">Sorteer: Aangemaakt</option>
-              <option value="lastLoginAt">Sorteer: Laatste login</option>
+              <option value="lastActiveAt">Sorteer: Laatste activiteit</option>
               <option value="user">Sorteer: Gebruiker</option>
             </select>
             <button
@@ -571,7 +571,7 @@ export const UserList = () => {
                   Auth Methode
                 </th>
                 <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Laatste Login
+                  Laatste Activiteit
                 </th>
                 <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aangemaakt
@@ -648,7 +648,7 @@ export const UserList = () => {
                     </td>
                     <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
                       <div className="text-xs sm:text-sm text-gray-500">
-                        {formatDate(user.lastLoginAt?.toDate().toISOString() || '')}
+                        {formatDate(user.lastActiveAt?.toDate().toISOString() || '')}
                       </div>
                     </td>
                     <td className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">

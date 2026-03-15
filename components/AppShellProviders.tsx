@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { LayoutShell } from '@/components/LayoutShell';
 import { AuthGuard } from '@/components/AuthGuard';
 import MessageNotification from '@/components/MessageNotification';
+import { LastActiveTracker } from '@/components/LastActiveTracker';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
 import { RankingsProvider } from '@/contexts/RankingsContext';
 import LanguageWrapper from '@/components/LanguageWrapper';
@@ -21,6 +22,7 @@ export default function AppShellProviders({ children }: { children: React.ReactN
         <RankingsProvider autoLoad={!isPublic}>
           <PlayerTeamsProvider autoLoad={!isPublic}>
             <Toaster position="top-center" />
+            {!isPublic && <LastActiveTracker />}
             {!isPublic && <MessageNotification />}
             <AuthGuard>
               {isPublic ? (

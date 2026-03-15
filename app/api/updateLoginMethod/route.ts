@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     await userRef.update({
       lastLoginMethod: loginMethod,
       lastLoginAt: Timestamp.now(),
+      lastActiveAt: Timestamp.now(),
     });
 
     await db.collection('activityLogs').add({

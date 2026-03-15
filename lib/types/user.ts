@@ -17,6 +17,7 @@ export interface User {
   authMethod?: string;
   lastLoginMethod?: string;
   lastLoginAt?: Timestamp;
+  lastActiveAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt?: string;
   blocked?: boolean;

@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       authMethod: authMethod || 'email', // 'email', 'google', or 'passkey'
       lastLoginMethod: authMethod || 'email',
       lastLoginAt: Timestamp.now(),
+      lastActiveAt: Timestamp.now(),
     });
 
     // Log the registration activity
