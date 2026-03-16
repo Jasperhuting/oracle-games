@@ -6,6 +6,8 @@ import {
 } from "firebase-admin/app";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
+import type { Firestore } from "firebase-admin/firestore";
+import type { Auth } from "firebase-admin/auth";
 
 // Track if emulators have been configured
 let emulatorsConfigured = false;
@@ -40,7 +42,7 @@ function initializeFirebaseAdmin() {
     console.log("🔧 Initializing Firebase Admin for emulator use (no credentials needed)");
     return initializeAdminApp({
       projectId: emulatorProjectId,
-      credential: emulatorCredential as any,
+      credential: emulatorCredential as unknown as Parameters<typeof initializeAdminApp>[0]["credential"],
     });
   }
 
@@ -82,7 +84,7 @@ export function getServerFirebase() {
   if (!app) {
     throw new Error("Firebase Admin not initialized — missing env vars.");
   }
-  return getAdminFirestore();
+  return getAdminFirestore(app);
 }
 
 export function getServerFirebaseFootball() {
@@ -112,7 +114,33 @@ export function getServerAuth() {
   return getAdminAuth(app);
 }
 
-export const adminDb = getServerFirebase();
-export const adminFootballDb = getServerFirebaseFootball();
-export const adminF1Db = getServerFirebaseF1();
-export const adminAuth = getServerAuth();
+function createLazyProxy<T extends object>(factory: () => T): T {
+  return new Proxy({} as T, {
+    get(_target, prop, receiver) {
+      return Reflect.get(factory() as object, prop, receiver);
+    },
+    set(_target, prop, value, receiver) {
+      return Reflect.set(factory() as object, prop, value, receiver);
+    },
+    has(_target, prop) {
+      return prop in factory();
+    },
+    ownKeys() {
+      return Reflect.ownKeys(factory() as object);
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      const descriptor = Object.getOwnPropertyDescriptor(factory() as object, prop);
+      return descriptor
+        ? {
+            ...descriptor,
+            configurable: true,
+          }
+        : undefined;
+    },
+  });
+}
+
+export const adminDb = createLazyProxy<Firestore>(() => getServerFirebase());
+export const adminFootballDb = createLazyProxy<Firestore>(() => getServerFirebaseFootball());
+export const adminF1Db = createLazyProxy<Firestore>(() => getServerFirebaseF1());
+export const adminAuth = createLazyProxy<Auth>(() => getServerAuth());
