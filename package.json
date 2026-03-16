@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "next dev --turbopack --port 3210",
     "dev:staging": "dotenv -e .env.staging -- next dev --turbopack --port 3210",
-    "dev:emulator": "dotenv -e .env.emulator -- next dev --turbopack --port 3210",
-    "dev:emulator:test": "dotenv -e .env.emulator -- next dev --turbopack --port 3310",
+    "dev:emulator": "USE_FIREBASE_EMULATORS=true FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 GCLOUD_PROJECT=oracle-games-b6af6 GOOGLE_CLOUD_PROJECT=oracle-games-b6af6 dotenv -e .env.emulator -- next dev --turbopack --port 3210",
+    "dev:emulator:test": "USE_FIREBASE_EMULATORS=true FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 GCLOUD_PROJECT=oracle-games-b6af6 GOOGLE_CLOUD_PROJECT=oracle-games-b6af6 dotenv -e .env.emulator -- next dev --turbopack --port 3310",
     "prod": "next dev --turbopack --port 3210",
     "build": "next build",
     "start": "next start",

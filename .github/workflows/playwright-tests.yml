@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+      USE_FIREBASE_EMULATORS: 'true'
+      NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true'
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      GCLOUD_PROJECT: oracle-games-b6af6
+      GOOGLE_CLOUD_PROJECT: oracle-games-b6af6
 
     steps:
       - name: Checkout code
