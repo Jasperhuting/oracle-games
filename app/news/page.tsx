@@ -7,12 +7,18 @@ import { NewsHero } from '@/components/news/NewsHero';
 export const dynamic = 'force-dynamic';
 
 export default async function NewsOverviewPage() {
-  const snapshot = await adminDb.collection('newsItems').get();
-  const items = sortNewsItems(
-    snapshot.docs
-      .map((doc) => serializeNewsItem(doc.id, doc.data()))
-      .filter((item) => item.status === 'published')
-  );
+  let items: ReturnType<typeof sortNewsItems> = [];
+
+  try {
+    const snapshot = await adminDb.collection('newsItems').get();
+    items = sortNewsItems(
+      snapshot.docs
+        .map((doc) => serializeNewsItem(doc.id, doc.data()))
+        .filter((item) => item.status === 'published')
+    );
+  } catch (error) {
+    console.error('[NEWS_OVERVIEW] Failed to load news items:', error);
+  }
 
   const formatMeta = (item: (typeof items)[number]) => {
     const parts = [item.category || 'Nieuws'];
@@ -55,8 +61,18 @@ export default async function NewsOverviewPage() {
           </section>
         ) : (
           <div className="rounded-[28px] border border-dashed border-gray-300 bg-white/80 px-8 py-16 text-center">
-            <h2 className="text-2xl font-bold text-gray-900">Nog geen nieuws gepubliceerd</h2>
-            <p className="mt-3 text-gray-600">Maak in de admin een eerste nieuwsbericht aan en publiceer het hier.</p>
+            <h2 className="text-2xl font-bold text-gray-900">Nieuws is tijdelijk niet beschikbaar</h2>
+            <p className="mt-3 text-gray-600">
+              De nieuwspagina kon nu niet geladen worden. Probeer het later opnieuw of controleer de serverlogs.
+            </p>
+            <div className="mt-6">
+              <Link
+                href="/home"
+                className="inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+              >
+                Terug naar home
+              </Link>
+            </div>
           </div>
         )}
       </div>
