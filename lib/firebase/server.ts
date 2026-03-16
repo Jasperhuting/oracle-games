@@ -16,7 +16,9 @@ function shouldUseFirebaseEmulators() {
   return (
     process.env.USE_FIREBASE_EMULATORS === "true" ||
     process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true" ||
-    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true"
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
+    !!process.env.FIRESTORE_EMULATOR_HOST ||
+    !!process.env.FIREBASE_AUTH_EMULATOR_HOST
   );
 }
 
@@ -72,6 +74,11 @@ function configureEmulatorsIfNeeded() {
     // Set emulator environment variables for Firebase Admin SDK
     process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
     process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
+    process.env.GCLOUD_PROJECT = process.env.GCLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "oracle-games-b6af6";
+    process.env.GOOGLE_CLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
+    process.env.FIREBASE_CONFIG = process.env.FIREBASE_CONFIG || JSON.stringify({
+      projectId: process.env.GCLOUD_PROJECT,
+    });
 
     emulatorsConfigured = true;
     console.log("🔧 Server-side Firebase configured to use emulators");
