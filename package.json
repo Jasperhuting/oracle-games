@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "yarn@4.9.1",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "next dev --turbopack --port 3210",
     "dev:staging": "dotenv -e .env.staging -- next dev --turbopack --port 3210",
