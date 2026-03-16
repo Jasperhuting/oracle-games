@@ -1,6 +1,6 @@
 {
-  "installCommand": "corepack enable && corepack prepare yarn@4.9.1 --activate && yarn install --immutable",
-  "buildCommand": "corepack enable && corepack prepare yarn@4.9.1 --activate && yarn build",
+  "installCommand": "corepack enable && corepack prepare yarn@4.9.1 --activate && corepack yarn install --immutable",
+  "buildCommand": "corepack enable && corepack prepare yarn@4.9.1 --activate && corepack yarn build",
   "crons": [
     {
       "path": "/api/cron/check-auction-finalizations",
