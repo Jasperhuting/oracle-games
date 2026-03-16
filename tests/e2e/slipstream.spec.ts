@@ -142,8 +142,8 @@ test.describe('Slipstream Game', () => {
       // Should see rider selector section
       await expect(authenticatedPage.getByText('Select Rider')).toBeVisible();
 
-      // The rider selector should show available riders count
-      const riderInfo = authenticatedPage.locator('text=/\\d+ riders available/');
+      // The rider selector should show an availability badge.
+      const riderInfo = authenticatedPage.getByText(/\d+\s+(riders available|beschikbaar)/i);
       await expect(riderInfo).toBeVisible({ timeout: 10000 });
     });
 
@@ -176,8 +176,8 @@ test.describe('Slipstream Game', () => {
       // Wait for page to load
       await authenticatedPage.waitForTimeout(1000);
 
-      // Should show how many riders are already used
-      const usedRidersInfo = authenticatedPage.locator('text=/\\d+ already used/');
+      // Should show how many riders are already used.
+      const usedRidersInfo = authenticatedPage.getByText(/\d+\s+(already used|gebruikt)/i);
       await expect(usedRidersInfo).toBeVisible({ timeout: 10000 });
     });
   });
@@ -230,9 +230,10 @@ test.describe('Slipstream Game', () => {
 
     test('should show race progress indicator', async ({ authenticatedPage }) => {
       await authenticatedPage.goto(`/games/${TEST_GAME_ID}/slipstream`);
+      await waitForSlipstreamReady(authenticatedPage);
 
-      // Should show race count (e.g., "1/23 races")
-      const raceProgress = authenticatedPage.locator('span').filter({ hasText: /^\d+\/\d+\s*races$/ }).first();
+      // Should show race count in standings or race picker summary.
+      const raceProgress = authenticatedPage.getByText(/\d+\/\d+\s+races(?:\s+completed)?/i).first();
       await expect(raceProgress).toBeVisible({ timeout: 10000 });
     });
 
@@ -296,12 +297,12 @@ test.describe('Slipstream Game', () => {
   test.describe('Deadline Display', () => {
     test('should show deadline countdown for upcoming races', async ({ authenticatedPage }) => {
       await authenticatedPage.goto(`/games/${TEST_GAME_ID}/slipstream?filter=upcoming`);
+      await waitForSlipstreamReady(authenticatedPage);
 
-      // Wait for page to load
-      await authenticatedPage.waitForTimeout(1000);
-
-      // Should see deadline indicators (e.g., "16d 17h 27m")
-      const deadlineIndicator = authenticatedPage.locator('text=/\\d+[dhm]\\s/');
+      // Should see a visible countdown badge for at least one upcoming race.
+      const deadlineIndicator = authenticatedPage.getByText(
+        /(?:\d+d\s+\d+h(?:\s+\d+m)?|\d+h\s+\d+m|\d+m)\b/i
+      );
       await expect(deadlineIndicator.first()).toBeVisible({ timeout: 10000 });
     });
 

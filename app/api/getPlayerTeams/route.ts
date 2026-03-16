@@ -83,8 +83,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
     
     const riders = Array.from(uniqueRidersMap.values());
 
-    console.log('uniqueRidersMap', uniqueRidersMap)
-
     const response = NextResponse.json({
       uniqueRiders: riders,
       riders: ridersWithTeamData,

@@ -4,7 +4,27 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, loginMethod } = await request.json();
+    const rawBody = await request.text();
+
+    if (!rawBody.trim()) {
+      return NextResponse.json(
+        { error: 'Request body is required' },
+        { status: 400 }
+      );
+    }
+
+    let payload: { userId?: string; loginMethod?: string };
+
+    try {
+      payload = JSON.parse(rawBody) as { userId?: string; loginMethod?: string };
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+
+    const { userId, loginMethod } = payload;
 
     if (!userId || !loginMethod) {
       return NextResponse.json(

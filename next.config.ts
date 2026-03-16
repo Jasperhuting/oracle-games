@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   eslint: {
@@ -16,6 +17,9 @@ const nextConfig: NextConfig = {
     'puppeteer-extra-plugin-stealth',
     "@sparticuz/chromium-min"
   ],
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   images: {
     remotePatterns: [
       {
