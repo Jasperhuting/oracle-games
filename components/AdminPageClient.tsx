@@ -181,6 +181,43 @@ export default function AdminPageClient() {
             ]
         },
         {
+            id: 'stats-lab',
+            label: 'Stats Lab',
+            tabs: [
+                {
+                    id: 'stats-lab-home',
+                    label: 'Workspace',
+                    content: (
+                        <div className="p-4">
+                            <p className="text-gray-600 mb-4">
+                                Interne AI-assisted stats workspace met read-only tools, idee-generatie en opgeslagen resultaten.
+                            </p>
+                            <div className="flex flex-wrap gap-3">
+                                <Link
+                                    href="/admin/stats-lab"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                                >
+                                    Naar Stats Lab <ArrowRight size={16} />
+                                </Link>
+                                <Link
+                                    href="/admin/stats-ideas"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                                >
+                                    Bekijk Ideas <ArrowRight size={16} />
+                                </Link>
+                                <Link
+                                    href="/admin/stats-results"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                                >
+                                    Bekijk Results <ArrowRight size={16} />
+                                </Link>
+                            </div>
+                        </div>
+                    )
+                }
+            ]
+        },
+        {
             id: 'system',
             label: 'Systeem',
             tabs: [

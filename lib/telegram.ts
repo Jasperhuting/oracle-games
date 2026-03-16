@@ -8,6 +8,13 @@ interface TelegramMessageOptions {
   disable_web_page_preview?: boolean;
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 /**
  * Send a message to Telegram
  */
@@ -66,14 +73,14 @@ export async function sendFeedbackNotification(
   const telegramMessage = `
 🔔 <b>Nieuwe Feedback</b>
 
-👤 <b>Van:</b> ${userName} (${userEmail})
-📄 <b>Pagina:</b> ${currentPage}
+👤 <b>Van:</b> ${escapeHtml(userName)} (${escapeHtml(userEmail)})
+📄 <b>Pagina:</b> ${escapeHtml(currentPage)}
 
 💬 <b>Bericht:</b>
-${message}
+${escapeHtml(message)}
 
-🆔 <b>Feedback ID:</b> ${feedbackId}
-↩️ <b>Antwoord via Telegram:</b> /reply ${feedbackId} &lt;bericht&gt;
+🆔 <b>Feedback ID:</b> ${escapeHtml(feedbackId)}
+↩️ <b>Antwoord via Telegram:</b> /reply ${escapeHtml(feedbackId)} &lt;bericht&gt;
 
 ⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
   `.trim();
@@ -98,25 +105,25 @@ export async function sendErrorNotification(
   let telegramMessage = `
 🚨 <b>Error Log</b>
 
-👤 <b>Gebruiker:</b> ${userName} (${userEmail})
-⚙️ <b>Operatie:</b> ${operation}
+👤 <b>Gebruiker:</b> ${escapeHtml(userName)} (${escapeHtml(userEmail)})
+⚙️ <b>Operatie:</b> ${escapeHtml(operation)}
 
 ❌ <b>Error:</b>
-${errorMessage}
+${escapeHtml(errorMessage)}
   `.trim();
 
   if (details?.gameId) {
-    telegramMessage += `\n\n🎮 <b>Game ID:</b> ${details.gameId}`;
+    telegramMessage += `\n\n🎮 <b>Game ID:</b> ${escapeHtml(details.gameId)}`;
   }
 
   if (details?.endpoint) {
-    telegramMessage += `\n🔗 <b>Endpoint:</b> ${details.endpoint}`;
+    telegramMessage += `\n🔗 <b>Endpoint:</b> ${escapeHtml(details.endpoint)}`;
   }
 
   if (details?.errorDetails) {
     // Limit stack trace to 3500 characters to stay within Telegram's 4096 limit
     const stackTrace = details.errorDetails.substring(0, 3500);
-    telegramMessage += `\n\n📋 <b>Stack trace:</b>\n<code>${stackTrace}</code>`;
+    telegramMessage += `\n\n📋 <b>Stack trace:</b>\n<code>${escapeHtml(stackTrace)}</code>`;
   }
 
   telegramMessage += `\n\n⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}`;
@@ -142,13 +149,13 @@ export async function sendMessageNotification(
   const telegramMessage = `
 📨 <b>Nieuw Bericht</b>
 
-👤 <b>Van:</b> ${senderName} (${senderEmail})
-👥 <b>Aan:</b> ${recipientName}
+👤 <b>Van:</b> ${escapeHtml(senderName)} (${escapeHtml(senderEmail)})
+👥 <b>Aan:</b> ${escapeHtml(recipientName)}
 
-📌 <b>Onderwerp:</b> ${subject}
+📌 <b>Onderwerp:</b> ${escapeHtml(subject)}
 
 💬 <b>Bericht:</b>
-${preview}
+${escapeHtml(preview)}
 
 ⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
   `.trim();
@@ -167,10 +174,10 @@ export async function sendBroadcastNotification(
   const telegramMessage = `
 📢 <b>Broadcast Bericht</b>
 
-👤 <b>Van:</b> ${senderName}
+👤 <b>Van:</b> ${escapeHtml(senderName)}
 👥 <b>Ontvangers:</b> ${recipientCount} gebruikers
 
-📌 <b>Onderwerp:</b> ${subject}
+📌 <b>Onderwerp:</b> ${escapeHtml(subject)}
 
 ⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
   `.trim();
@@ -196,14 +203,14 @@ export async function sendRiderScriptNotification(
   let telegramMessage = `
 ${statusIcon} <b>Rider Script ${statusText}</b>
 
-👤 <b>Gebruiker:</b> ${userName} (${userEmail})
-🚴 <b>Renner:</b> ${riderName}
-🔗 <b>URL:</b> ${riderUrl}
+👤 <b>Gebruiker:</b> ${escapeHtml(userName)} (${escapeHtml(userEmail)})
+🚴 <b>Renner:</b> ${escapeHtml(riderName)}
+🔗 <b>URL:</b> ${escapeHtml(riderUrl)}
 📅 <b>Jaar:</b> ${year}
   `.trim();
 
   if (!success && errorMessage) {
-    telegramMessage += `\n\n❌ <b>Fout:</b>\n${errorMessage}`;
+    telegramMessage += `\n\n❌ <b>Fout:</b>\n${escapeHtml(errorMessage)}`;
   }
 
   telegramMessage += `\n\n⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}`;
@@ -216,8 +223,7 @@ ${statusIcon} <b>Rider Script ${statusText}</b>
  */
 export async function sendChatSummaryNotification(
   roomTitle: string,
-  messages: { userName: string; text: string }[],
-  roomId: string
+  messages: { userName: string; text: string }[]
 ): Promise<boolean> {
   const maxMessages = 20;
   const shown = messages.slice(0, maxMessages);
@@ -243,13 +249,6 @@ ${messageLines}`;
   return sendTelegramMessage(telegramMessage.trim());
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 /**
  * Send a rate limit notification to Telegram
  */
@@ -263,8 +262,8 @@ export async function sendRateLimitNotification(
   const telegramMessage = `
 ⚠️ <b>Rate Limit Bereikt</b>
 
-👤 <b>Gebruiker:</b> ${userName} (${userEmail})
-⚙️ <b>Actie:</b> ${action}
+👤 <b>Gebruiker:</b> ${escapeHtml(userName)} (${escapeHtml(userEmail)})
+⚙️ <b>Actie:</b> ${escapeHtml(action)}
 📊 <b>Limiet:</b> ${limit} per dag
 📈 <b>Gebruikt:</b> ${currentCount}
 
