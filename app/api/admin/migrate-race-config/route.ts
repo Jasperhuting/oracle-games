@@ -125,6 +125,7 @@ const KNOWN_SINGLE_DAY_RACES = new Set([
   'milano-sanremo', 'ronde-van-vlaanderen', 'paris-roubaix',
   'liege-bastogne-liege', 'il-lombardia', 'amstel-gold-race',
   'la-flèche-wallonne', 'strade-bianche', 'gent-wevelgem',
+  'e3-saxo-classic', 'e3-harelbeke', 'e3-binkbank-classic',
   'omloop-het-nieuwsblad', 'kuurne-brussel-kuurne', 'dwars-door-vlaanderen',
   'eschborn-frankfurt', 'cyclassics-hamburg', 'gp-quebec', 'gp-montreal',
   'classic-brugge-de-panne', 'copenhagen-sprint', 'world-championship',
