@@ -3,6 +3,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { sendTelegramMessage } from '@/lib/telegram';
 import { createJob } from '@/lib/firebase/job-queue';
 import { generateDocumentId, type ScraperDataKey } from '@/lib/firebase/scraper-service';
+import { shouldExcludeRace } from '@/lib/utils/race-filters';
 
 const TIME_ZONE = 'Europe/Amsterdam';
 const MAX_RUN_MS = 240_000; // keep under maxDuration to avoid timeouts
@@ -16,71 +17,6 @@ type ScrapeOutcome = {
   riderCount: number;
   message: string;
 };
-
-// Classifications to exclude (youth, U23, women categories)
-const UNWANTED_CLASSIFICATIONS = ['MJ', 'MU', 'WJ', 'WU', 'WE', 'WWT'];
-
-const WOMEN_NAME_KEYWORDS = [
-  'WOMEN',
-  'WOMAN',
-  'FEMINA',
-  'FEMINAS',
-  'FEMENINA',
-  'FEMENINO',
-  'FEMME',
-  'FEMMES',
-  'DAMES',
-  'LADIES',
-  'FEMALE',
-];
-
-// Race slugs to explicitly exclude (women's races with incorrect classification, etc.)
-const EXCLUDED_RACE_SLUGS: Set<string> = new Set([
-  'vuelta-el-salvador',
-  'trofeo-felanitx-femina',
-  'grand-prix-el-salvador',
-  'grand-prix-san-salvador',
-  'trofeo-palma-femina',
-  'trofeo-binissalem-andratx',
-  'race-torquay',
-  'grand-prix-de-oriente',
-  'pionera-race-we',
-]);
-
-/**
- * Check if a race should be excluded based on classification, name, or slug
- * Mirrors the logic from /api/admin/race-status
- */
-function shouldExcludeRace(name: string, classification: string | null, slug?: string): boolean {
-  if (slug && EXCLUDED_RACE_SLUGS.has(slug)) {
-    return true;
-  }
-
-  const cls = (classification || '').trim();
-  const nameUpper = name.toUpperCase();
-  const clsUpper = cls.toUpperCase();
-  const slugUpper = (slug || '').toUpperCase();
-
-  const hasUnwantedInName = UNWANTED_CLASSIFICATIONS.some(
-    unwanted => nameUpper.includes(unwanted) || nameUpper.includes(`${unwanted} -`)
-  );
-
-  const hasUnwantedInClassification = UNWANTED_CLASSIFICATIONS.some(
-    unwanted => clsUpper.includes(unwanted)
-  );
-
-  const hasWomenInName = WOMEN_NAME_KEYWORDS.some(keyword => nameUpper.includes(keyword));
-  const hasWomenInSlug = WOMEN_NAME_KEYWORDS.some(keyword => slugUpper.includes(keyword));
-  const hasWWTInClassification = clsUpper.includes('WWT');
-
-  return (
-    hasUnwantedInName ||
-    hasUnwantedInClassification ||
-    hasWomenInName ||
-    hasWomenInSlug ||
-    hasWWTInClassification
-  );
-}
 
 const formatDateOnly = (date: Date): string =>
   date.toLocaleDateString('en-CA', { timeZone: TIME_ZONE });
@@ -187,6 +123,7 @@ export async function GET(request: NextRequest) {
     const outcomes: ScrapeOutcome[] = [];
     const skipped: string[] = [];
     let queuedJobs = 0;
+    let excludedByFlag = 0;
     let stoppedEarly = false;
 
     for (const raceDoc of racesSnapshot.docs) {
@@ -200,7 +137,9 @@ export async function GET(request: NextRequest) {
       const raceName = raceData.name || raceSlug;
       const classification = raceData.classification || null;
 
-      if (shouldExcludeRace(raceName, classification, raceSlug)) {
+      const excludeFromScraping = raceData.excludeFromScraping === true;
+      if (shouldExcludeRace(raceName, classification, raceSlug, excludeFromScraping)) {
+        if (excludeFromScraping) excludedByFlag++;
         skipped.push(`${raceSlug} (excluded by filters)`);
         continue;
       }
@@ -227,7 +166,8 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const isSingleDay = !!raceData.isSingleDay || startStr === endStr;
+      const isSingleDay = raceData.isSingleDay === true || startStr === endStr;
+      const hasPrologue = raceData.hasPrologue === true;
 
       if (isSingleDay) {
         const year = raceData.year || new Date().getFullYear();
@@ -289,8 +229,24 @@ export async function GET(request: NextRequest) {
             continue;
           }
 
-          const stageOffset = diffDays(startStr, targetDate);
-          const stageNumber = stageOffset + 1;
+          // Primary: look up exact stage date in 'stages' subcollection
+          let stageNumberOrNull: number | null = null;
+          const stagesSubSnap = await raceDoc.ref.collection('stages').get();
+          for (const stageDoc of stagesSubSnap.docs) {
+            const stageData = stageDoc.data();
+            const rawDate: string =
+              stageData.date ?? stageData.stageDate ?? stageData.raceDate ?? stageData.startDate ?? '';
+            const stageDate = rawDate ? parseDateOnly(rawDate) : null;
+            if (stageDate === targetDate && typeof stageData.stage === 'number') {
+              stageNumberOrNull = stageData.stage as number;
+              break;
+            }
+          }
+
+          // Fallback: date-offset formula with prologue awareness
+          const stageNumber = stageNumberOrNull !== null
+            ? stageNumberOrNull
+            : (hasPrologue ? diffDays(startStr, targetDate) : diffDays(startStr, targetDate) + 1);
 
           const alreadyScraped = await hasExistingScrape(db, {
             race: raceSlug,
@@ -480,7 +436,7 @@ export async function GET(request: NextRequest) {
       `⏱️ Duration: ${elapsedSeconds}s`,
       `🧭 Window: ${targetDates[targetDates.length - 1]} → ${targetDates[0]}`,
       `🧾 Te verwerken: ${summaryLines.length}`,
-      `🧹 Excluded slugs: ${EXCLUDED_RACE_SLUGS.size}`,
+      `🧹 Uitgesloten via vlag: ${excludedByFlag}`,
       '',
       summaryLines.length > 0 ? summaryLines.join('\n\n') : 'No races scheduled for today.',
       skippedSummary,
