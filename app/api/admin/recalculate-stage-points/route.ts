@@ -36,6 +36,23 @@ export async function POST(request: NextRequest) {
     const response = await calculatePoints(mockRequest);
     const result = await response.json();
 
+    // An empty stage (0 riders) produces a 400 validation error from calculate-points.
+    // This is not a real error — there is simply nothing to calculate. Treat it as success.
+    const isEmptyStage =
+      response.status === 400 &&
+      Array.isArray(result.validationErrors) &&
+      result.validationErrors.some(
+        (e: { message?: string }) => typeof e.message === 'string' && e.message.includes('Too few riders: 0'),
+      );
+
+    if (isEmptyStage) {
+      return NextResponse.json({
+        success: true,
+        status: 200,
+        result: { message: 'Stage is empty (0 riders) — no points to calculate' },
+      });
+    }
+
     return NextResponse.json({
       success: response.status === 200,
       status: response.status,
