@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
       const update: Record<string, unknown> = {};
 
       if (data.totalStages == null) {
-        update.totalStages = KNOWN_RACE_STAGES[slug] ?? (isSingleDayBySlug(slug) ? 1 : 1);
+        update.totalStages = KNOWN_RACE_STAGES[slug] ?? 1;
       }
       if (data.hasPrologue == null) {
         update.hasPrologue = RACES_WITH_PROLOGUE.has(slug);
