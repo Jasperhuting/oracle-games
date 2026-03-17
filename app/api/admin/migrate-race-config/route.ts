@@ -191,6 +191,14 @@ function isSingleDayBySlug(slug: string): boolean {
   return KNOWN_SINGLE_DAY_PATTERNS.some(p => slug.includes(p));
 }
 
+function stagesFromDateRange(start: string | null | undefined, end: string | null | undefined): number | null {
+  if (!start || !end) return null;
+  const [sy, sm, sd] = start.substring(0, 10).split('-').map(Number);
+  const [ey, em, ed] = end.substring(0, 10).split('-').map(Number);
+  const diff = Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86400000);
+  return diff > 0 ? diff + 1 : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -225,7 +233,10 @@ export async function POST(request: NextRequest) {
       const update: Record<string, unknown> = {};
 
       if (data.totalStages == null) {
-        update.totalStages = KNOWN_RACE_STAGES[slug] ?? 1;
+        update.totalStages =
+          KNOWN_RACE_STAGES[slug] ??
+          stagesFromDateRange(data.startDate, data.endDate) ??
+          1;
       }
       if (data.hasPrologue == null) {
         update.hasPrologue = RACES_WITH_PROLOGUE.has(slug);

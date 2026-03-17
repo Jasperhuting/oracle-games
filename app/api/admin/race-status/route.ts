@@ -4,6 +4,18 @@ import { type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { shouldExcludeRace } from '@/lib/utils/race-filters';
 import type { StageStatus, RaceStatus, RaceStatusResponse } from '@/lib/types/race-status';
 
+/**
+ * Infer stage count from start/end date range.
+ * Returns null when dates are missing, equal (single-day), or invalid.
+ */
+function stagesFromDateRange(start: string | null, end: string | null): number | null {
+  if (!start || !end) return null;
+  const [sy, sm, sd] = start.substring(0, 10).split('-').map(Number);
+  const [ey, em, ed] = end.substring(0, 10).split('-').map(Number);
+  const diff = Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86400000);
+  return diff > 0 ? diff + 1 : null;
+}
+
 // GET /api/admin/race-status - Get scrape status for all races
 export async function GET(request: NextRequest) {
   try {
@@ -74,7 +86,7 @@ export async function GET(request: NextRequest) {
 
       raceConfigs.set(slug, {
         name: data.name || slug,
-        totalStages: data.totalStages ?? data.stages ?? 1,
+        totalStages: data.totalStages ?? data.stages ?? stagesFromDateRange(startDate, data.endDate || null) ?? 1,
         isSingleDay: data.isSingleDay ?? false,
         hasPrologue: data.hasPrologue ?? false,
         startDate,
@@ -570,7 +582,8 @@ export async function GET(request: NextRequest) {
       } else if (config.totalStages > 1) {
         numberedStages = config.totalStages;
       } else {
-        numberedStages = 1;
+        // Fall back to date range inference when totalStages is not configured
+        numberedStages = stagesFromDateRange(config.startDate, config.endDate) ?? 1;
       }
 
       const totalStages = hasPrologue ? numberedStages + 1 : numberedStages;
