@@ -242,7 +242,10 @@ export async function POST(request: NextRequest) {
         update.hasPrologue = RACES_WITH_PROLOGUE.has(slug);
       }
       if (data.isSingleDay == null) {
-        update.isSingleDay = isSingleDayBySlug(slug);
+        update.isSingleDay =
+          isSingleDayBySlug(slug) ||
+          !data.endDate ||
+          data.startDate === data.endDate;
       }
       if (data.excludeFromScraping == null) {
         update.excludeFromScraping = EXCLUDED_RACE_SLUGS.has(slug);

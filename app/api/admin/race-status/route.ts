@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       raceConfigs.set(slug, {
         name: data.name || slug,
         totalStages: data.totalStages ?? data.stages ?? stagesFromDateRange(startDate, data.endDate || null) ?? 1,
-        isSingleDay: data.isSingleDay ?? false,
+        isSingleDay: data.isSingleDay ?? (!data.endDate || data.startDate === data.endDate),
         hasPrologue: data.hasPrologue ?? false,
         startDate,
         endDate: data.endDate || null,
