@@ -385,11 +385,11 @@ export async function GET(request: NextRequest) {
           if (isFailed) {
             failedStages++;
             totalStagesFailed++;
-          } else if (isEmpty) {
-            emptyStages++;
-          } else if (!isEmpty) {
+          } else {
+            // Both scraped-with-data and scraped-empty count as "done"
             scrapedStages++;
             totalStagesScraped++;
+            if (isEmpty) emptyStages++;
           }
         }
 
@@ -553,7 +553,7 @@ export async function GET(request: NextRequest) {
       stages.length = 0;
       stages.push(...deduplicatedStages);
 
-      const pendingStages = totalStages - scrapedStages - failedStages - emptyStages;
+      const pendingStages = totalStages - scrapedStages - failedStages;
 
       races.push({
         raceSlug,
