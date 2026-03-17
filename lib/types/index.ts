@@ -27,3 +27,6 @@ export * from '../scraper/types';
 
 // Export API response types
 export * from './api-responses';
+
+// Export race status types
+export * from './race-status';
