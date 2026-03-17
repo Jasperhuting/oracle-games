@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
       endDate: string | null;
       classification: string | null;
       excludeFromScraping: boolean;
+      restDays: number;
     }>();
 
     racesSnapshot.docs.forEach(doc => {
@@ -84,15 +85,28 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      const hasPrologue = data.hasPrologue ?? false;
+      const restDays: number = data.restDays ?? 0;
+      const isSingleDay = data.isSingleDay ?? (!data.endDate || data.startDate === data.endDate);
+      const endDate: string | null = data.endDate || null;
+
+      // Infer totalStages from date range if not set in Firestore:
+      // subtract rest days and prologue day so only numbered stages remain
+      const inferredStages = stagesFromDateRange(startDate, endDate);
+      const totalStagesFromRange = inferredStages !== null
+        ? Math.max(1, inferredStages - (hasPrologue ? 1 : 0) - restDays)
+        : null;
+
       raceConfigs.set(slug, {
         name: data.name || slug,
-        totalStages: data.totalStages ?? data.stages ?? stagesFromDateRange(startDate, data.endDate || null) ?? 1,
-        isSingleDay: data.isSingleDay ?? (!data.endDate || data.startDate === data.endDate),
-        hasPrologue: data.hasPrologue ?? false,
+        totalStages: data.totalStages ?? data.stages ?? totalStagesFromRange ?? 1,
+        isSingleDay,
+        hasPrologue,
         startDate,
-        endDate: data.endDate || null,
+        endDate,
         classification,
         excludeFromScraping,
+        restDays,
       });
     });
 
@@ -561,6 +575,7 @@ export async function GET(request: NextRequest) {
         raceStatus: getRaceStatus(raceConfig?.startDate || null, raceConfig?.endDate || null),
         classification: raceConfig?.classification || null,
         excludeFromScraping: raceConfig?.excludeFromScraping ?? false,
+        restDays: raceConfig?.restDays ?? 0,
       });
     });
 
@@ -583,7 +598,10 @@ export async function GET(request: NextRequest) {
         numberedStages = config.totalStages;
       } else {
         // Fall back to date range inference when totalStages is not configured
-        numberedStages = stagesFromDateRange(config.startDate, config.endDate) ?? 1;
+        const dateRange = stagesFromDateRange(config.startDate, config.endDate);
+        numberedStages = dateRange !== null
+          ? Math.max(1, dateRange - (hasPrologue ? 1 : 0) - config.restDays)
+          : 1;
       }
 
       const totalStages = hasPrologue ? numberedStages + 1 : numberedStages;
@@ -676,6 +694,7 @@ export async function GET(request: NextRequest) {
         raceStatus: getRaceStatus(config.startDate, config.endDate),
         classification: config.classification,
         excludeFromScraping: config.excludeFromScraping,
+        restDays: config.restDays,
       });
     });
 

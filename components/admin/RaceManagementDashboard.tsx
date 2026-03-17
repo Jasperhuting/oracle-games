@@ -448,6 +448,7 @@ function RaceConfigForm({
   const [hasPrologue, setHasPrologue] = useState(race.hasPrologue);
   const [isSingleDay, setIsSingleDay] = useState(race.isSingleDay);
   const [excludeFromScraping, setExcludeFromScraping] = useState(race.excludeFromScraping);
+  const [restDays, setRestDays] = useState(race.restDays ?? 0);
   const [saving, setSaving] = useState(false);
 
   // Derive the Firestore document ID: {slug}_{year}
@@ -459,7 +460,7 @@ function RaceConfigForm({
       const response = await fetch('/api/admin/race-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping }),
+        body: JSON.stringify({ userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping, restDays }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
@@ -484,6 +485,18 @@ function RaceConfigForm({
             max={30}
             value={totalStages}
             onChange={e => setTotalStages(parseInt(e.target.value, 10))}
+            className="border rounded px-2 py-1 w-20 text-sm"
+            disabled={isSingleDay}
+          />
+        </label>
+        <label className="flex flex-col text-sm gap-1">
+          <span className="text-gray-600">Rustdagen</span>
+          <input
+            type="number"
+            min={0}
+            max={10}
+            value={restDays}
+            onChange={e => setRestDays(parseInt(e.target.value, 10))}
             className="border rounded px-2 py-1 w-20 text-sm"
             disabled={isSingleDay}
           />

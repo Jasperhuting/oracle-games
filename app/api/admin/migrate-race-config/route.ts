@@ -250,6 +250,9 @@ export async function POST(request: NextRequest) {
       if (data.excludeFromScraping == null) {
         update.excludeFromScraping = EXCLUDED_RACE_SLUGS.has(slug);
       }
+      if (data.restDays == null) {
+        update.restDays = 0;
+      }
 
       if (Object.keys(update).length === 0) {
         skipped++;

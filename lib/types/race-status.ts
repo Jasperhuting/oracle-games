@@ -33,6 +33,7 @@ export interface RaceStatus {
   raceStatus: 'upcoming' | 'in-progress' | 'finished' | 'unknown';
   classification: string | null;
   excludeFromScraping: boolean;
+  restDays: number;
 }
 
 export interface RaceStatusResponse {
