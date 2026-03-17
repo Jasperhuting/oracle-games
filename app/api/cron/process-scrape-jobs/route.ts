@@ -11,6 +11,16 @@ const STALE_RUNNING_MS = 15 * 60 * 1000;
 const PROGRESS_NOTIFY_MIN_INTERVAL_MS = 4 * 60 * 1000;
 const TIME_ZONE = 'Europe/Amsterdam';
 const CRON_ALERT_DEDUP_COLLECTION = 'cronAlertState';
+const TELEGRAM_BUFFER_COLLECTION = 'telegramBuffer';
+const TELEGRAM_BUFFER_DOC = 'scrapeNotifications';
+
+/** Returns the current hour (0-23) in Amsterdam time. */
+function getAmsterdamHour(): number {
+  return parseInt(
+    new Date().toLocaleString('en-US', { timeZone: TIME_ZONE, hour: '2-digit', hour12: false }),
+    10,
+  );
+}
 
 const truncate = (value: string, max = 1200): string =>
   value.length > max ? `${value.slice(0, max)}...` : value;
@@ -233,13 +243,16 @@ export async function GET(request: NextRequest) {
       console.error('[CRON] Failed to send scrape progress update:', error);
     }
 
-    // Send Telegram notification summarising the run (only when jobs were actually processed)
-    if (processed.length > 0) {
-      try {
-        const successCount = processed.filter(p => p.status < 400).length;
-        const failCount = processed.filter(p => p.status >= 400).length;
+    // Send Telegram notification — buffer during quiet hours (before 09:00 Amsterdam),
+    // flush buffer on first daytime run.
+    try {
+      const db = getServerFirebase();
+      const bufferRef = db.collection(TELEGRAM_BUFFER_COLLECTION).doc(TELEGRAM_BUFFER_DOC);
+      const isQuiet = getAmsterdamHour() < 9;
 
-        const lines = pendingJobs
+      // Build lines for current run (may be empty if no jobs were processed)
+      const buildLines = () =>
+        pendingJobs
           .map(job => {
             const result = processed.find(p => p.jobId === job.id);
             if (!result) return null;
@@ -255,22 +268,65 @@ export async function GET(request: NextRequest) {
           })
           .filter((l): l is string => l !== null);
 
-        const message = [
-          `🔄 <b>Scrape Jobs Verwerkt</b>`,
-          '',
-          `✅ Geslaagd: ${successCount}`,
-          failCount > 0 ? `❌ Mislukt: ${failCount}` : null,
-          '',
-          ...lines.slice(0, 15),
-          lines.length > 15 ? `<i>...en ${lines.length - 15} meer</i>` : null,
-          '',
-          `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
-        ].filter((l): l is string => l !== null).join('\n');
+      if (isQuiet) {
+        // Night: buffer results (only when jobs were actually processed)
+        if (processed.length > 0) {
+          const currentLines = buildLines();
+          const existing = (await bufferRef.get()).data() ?? {};
+          await bufferRef.set({
+            lines: [...((existing.lines as string[]) ?? []), ...currentLines],
+            successCount: ((existing.successCount as number) ?? 0) + processed.filter(p => p.status < 400).length,
+            failCount: ((existing.failCount as number) ?? 0) + processed.filter(p => p.status >= 400).length,
+            bufferedSince: (existing.bufferedSince as string) ?? new Date().toISOString(),
+            lastBufferedAt: new Date().toISOString(),
+          });
+        }
+      } else {
+        // Day: check for buffered night results and combine with current run
+        const bufferSnap = await bufferRef.get();
+        const buffer = bufferSnap.exists ? bufferSnap.data()! : null;
+        const hasBuffer = !!(buffer && ((buffer.lines as string[])?.length > 0 || (buffer.successCount as number) > 0));
 
-        await sendTelegramMessage(message, { parse_mode: 'HTML' });
-      } catch (telegramError) {
-        console.error('[CRON] Failed to send Telegram notification:', telegramError);
+        const currentLines = processed.length > 0 ? buildLines() : [];
+        const currentSuccess = processed.filter(p => p.status < 400).length;
+        const currentFail = processed.filter(p => p.status >= 400).length;
+
+        const allLines = hasBuffer ? [...((buffer!.lines as string[]) ?? []), ...currentLines] : currentLines;
+        const allSuccess = currentSuccess + (hasBuffer ? ((buffer!.successCount as number) ?? 0) : 0);
+        const allFail = currentFail + (hasBuffer ? ((buffer!.failCount as number) ?? 0) : 0);
+
+        // Send if there is anything to report (new jobs or buffered night results)
+        if (allLines.length > 0 || allSuccess > 0 || allFail > 0) {
+          const title = hasBuffer && currentLines.length === 0
+            ? `🌅 <b>Nacht Scrape Overzicht</b>`
+            : hasBuffer
+              ? `🌅 <b>Scrape Overzicht (inclusief nacht)</b>`
+              : `🔄 <b>Scrape Jobs Verwerkt</b>`;
+
+          const message = [
+            title,
+            '',
+            `✅ Geslaagd: ${allSuccess}`,
+            allFail > 0 ? `❌ Mislukt: ${allFail}` : null,
+            hasBuffer
+              ? `📦 Nacht: ${new Date(buffer!.bufferedSince as string).toLocaleString('nl-NL', { timeZone: TIME_ZONE })} → ${new Date(buffer!.lastBufferedAt as string).toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`
+              : null,
+            '',
+            ...allLines.slice(0, 20),
+            allLines.length > 20 ? `<i>...en ${allLines.length - 20} meer</i>` : null,
+            '',
+            `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
+          ].filter((l): l is string => l !== null).join('\n');
+
+          await sendTelegramMessage(message, { parse_mode: 'HTML' });
+
+          if (hasBuffer) {
+            await bufferRef.delete();
+          }
+        }
       }
+    } catch (telegramError) {
+      console.error('[CRON] Failed to send Telegram notification:', telegramError);
     }
 
     return Response.json({
