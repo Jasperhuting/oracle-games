@@ -163,7 +163,10 @@ export async function GET(request: NextRequest) {
       // Skip TTT aggregate rows.
       if (Array.isArray(row.riders)) return;
 
-      const placeRaw = row.place;
+      // GC documents may use 'rank' or 'position' instead of 'place'.
+      // Note: before deploying, verify the actual field name by reading a real
+      // 'tour-gc' Firestore document. Add additional fallbacks if needed.
+      const placeRaw = row.place ?? row.rank ?? row.position;
       const place = typeof placeRaw === 'number' ? placeRaw : Number(placeRaw);
       if (!Number.isFinite(place) || place <= 0) return;
 
