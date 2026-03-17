@@ -4,50 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/Button';
 import toast from 'react-hot-toast';
-
-interface StageStatus {
-  stageNumber: number | string;
-  status: 'scraped' | 'pending' | 'failed' | 'empty';
-  scrapedAt: string | null;
-  riderCount: number;
-  hasValidationErrors: boolean;
-  validationWarnings: number;
-  docId: string;
-  stageDate: string | null; // Date when the stage was actually raced
-}
-
-interface RaceStatus {
-  raceSlug: string;
-  raceName: string;
-  year: number;
-  totalStages: number;
-  scrapedStages: number;
-  failedStages: number;
-  pendingStages: number;
-  hasStartlist: boolean;
-  startlistRiderCount: number;
-  lastScrapedAt: string | null;
-  hasValidationErrors: boolean;
-  isSingleDay: boolean;
-  hasPrologue: boolean;
-  stages: StageStatus[];
-  // Calendar info
-  startDate: string | null;
-  endDate: string | null;
-  raceStatus: 'upcoming' | 'in-progress' | 'finished' | 'unknown';
-  classification: string | null;
-}
-
-interface RaceStatusResponse {
-  races: RaceStatus[];
-  summary: {
-    totalRaces: number;
-    racesWithData: number;
-    totalStagesScraped: number;
-    totalStagesFailed: number;
-    validationErrors: number;
-  };
-}
+import type { StageStatus, RaceStatus, RaceStatusResponse } from '@/lib/types/race-status';
 
 interface StageDetailResponse {
   race: string;
@@ -478,6 +435,95 @@ function StageRow({
   );
 }
 
+function RaceConfigForm({
+  race,
+  userId,
+  onSaved,
+}: {
+  race: RaceStatus;
+  userId: string;
+  onSaved: () => void;
+}) {
+  const [totalStages, setTotalStages] = useState(race.totalStages);
+  const [hasPrologue, setHasPrologue] = useState(race.hasPrologue);
+  const [isSingleDay, setIsSingleDay] = useState(race.isSingleDay);
+  const [excludeFromScraping, setExcludeFromScraping] = useState(race.excludeFromScraping);
+  const [saving, setSaving] = useState(false);
+
+  // Derive the Firestore document ID: {slug}_{year}
+  const raceId = `${race.raceSlug}_${race.year}`;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/race-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      toast.success('Config saved');
+      onSaved();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border-t bg-blue-50 px-4 py-3 space-y-3">
+      <h4 className="text-sm font-semibold text-blue-900">Race configuratie</h4>
+      <div className="flex flex-wrap gap-4 items-end">
+        <label className="flex flex-col text-sm gap-1">
+          <span className="text-gray-600">Etappes</span>
+          <input
+            type="number"
+            min={1}
+            max={30}
+            value={totalStages}
+            onChange={e => setTotalStages(parseInt(e.target.value, 10))}
+            className="border rounded px-2 py-1 w-20 text-sm"
+            disabled={isSingleDay}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hasPrologue}
+            onChange={e => setHasPrologue(e.target.checked)}
+            disabled={isSingleDay}
+          />
+          <span>Heeft proloog</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isSingleDay}
+            onChange={e => {
+              setIsSingleDay(e.target.checked);
+              if (e.target.checked) setHasPrologue(false);
+            }}
+          />
+          <span>Eendagswedstrijd</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={excludeFromScraping}
+            onChange={e => setExcludeFromScraping(e.target.checked)}
+          />
+          <span className="text-orange-700">Uitsluiten van scraping</span>
+        </label>
+        <Button size="sm" onClick={handleSave} disabled={saving}>
+          {saving ? 'Opslaan...' : 'Opslaan'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function RaceCard({
   race,
   userId,
@@ -489,6 +535,7 @@ function RaceCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [recalcLoading, setRecalcLoading] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
   const [pointsStatus, setPointsStatus] = useState<Record<string, { status: 'success' | 'partial' | 'failed'; calculatedAt?: string | null; errors?: string[] }> | null>(null);
   const [pointsLoading, setPointsLoading] = useState(false);
 
@@ -605,6 +652,11 @@ function RaceCard({
               Fully scraped
             </span>
           )}
+          {race.excludeFromScraping && (
+            <span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">
+              Uitgesloten
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-600">
@@ -642,6 +694,13 @@ function RaceCard({
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={e => { e.stopPropagation(); setConfigOpen(c => !c); }}
+          >
+            Config
+          </Button>
           <span className="text-gray-400">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
@@ -725,6 +784,13 @@ function RaceCard({
             </tbody>
           </table>
         </div>
+      )}
+      {configOpen && (
+        <RaceConfigForm
+          race={race}
+          userId={userId}
+          onSaved={() => { setConfigOpen(false); onRefresh(); }}
+        />
       )}
     </div>
   );
@@ -862,6 +928,48 @@ export function RaceManagementDashboard() {
           </label>
           <Button onClick={fetchData} disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              if (!confirm(`Migrate race config for ${year}? Only writes absent fields.`)) return;
+              try {
+                const res = await fetch('/api/admin/migrate-race-config', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: user.uid, year }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                toast.success(data.message);
+                fetchData();
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : 'Migration failed');
+              }
+            }}
+          >
+            Migrate config
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              if (!confirm(`Sync race calendar from PCS for ${year}?`)) return;
+              try {
+                const res = await fetch('/api/admin/sync-race-calendar', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: user.uid, year }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                toast.success(data.message || 'Calendar synced');
+                fetchData();
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : 'Sync failed');
+              }
+            }}
+          >
+            Sync kalender
           </Button>
         </div>
       </div>
