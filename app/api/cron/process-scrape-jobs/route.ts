@@ -233,6 +233,46 @@ export async function GET(request: NextRequest) {
       console.error('[CRON] Failed to send scrape progress update:', error);
     }
 
+    // Send Telegram notification summarising the run (only when jobs were actually processed)
+    if (processed.length > 0) {
+      try {
+        const successCount = processed.filter(p => p.status < 400).length;
+        const failCount = processed.filter(p => p.status >= 400).length;
+
+        const lines = pendingJobs
+          .map(job => {
+            const result = processed.find(p => p.jobId === job.id);
+            if (!result) return null;
+            const ok = result.status < 400;
+            const dataType = job.data?.type as string | undefined;
+            const label =
+              dataType === 'result' ? 'Result' :
+              dataType === 'tour-gc' ? 'Tour GC' :
+              `Stage ${job.data?.stage ?? '?'}`;
+            const name = (job.data?.raceName as string | undefined) || (job.data?.race as string | undefined) || '?';
+            const icon = ok ? '✅' : '❌';
+            return `${icon} <b>${name}</b> — ${label}${result.error ? `\n   <code>${result.error.slice(0, 120)}</code>` : ''}`;
+          })
+          .filter((l): l is string => l !== null);
+
+        const message = [
+          `🔄 <b>Scrape Jobs Verwerkt</b>`,
+          '',
+          `✅ Geslaagd: ${successCount}`,
+          failCount > 0 ? `❌ Mislukt: ${failCount}` : null,
+          '',
+          ...lines.slice(0, 15),
+          lines.length > 15 ? `<i>...en ${lines.length - 15} meer</i>` : null,
+          '',
+          `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
+        ].filter((l): l is string => l !== null).join('\n');
+
+        await sendTelegramMessage(message, { parse_mode: 'HTML' });
+      } catch (telegramError) {
+        console.error('[CRON] Failed to send Telegram notification:', telegramError);
+      }
+    }
+
     return Response.json({
       success: true,
       recoveredRunningJobs,
