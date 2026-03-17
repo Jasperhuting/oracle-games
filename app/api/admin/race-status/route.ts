@@ -87,7 +87,10 @@ export async function GET(request: NextRequest) {
 
       const hasPrologue = data.hasPrologue ?? false;
       const restDays: number = data.restDays ?? 0;
-      const isSingleDay = data.isSingleDay ?? (!data.endDate || data.startDate === data.endDate);
+      // Dates are authoritative: if there is no end date or start === end, it is always
+      // a single-day race regardless of any stored isSingleDay value.
+      const datesConfirmSingleDay = !data.endDate || data.startDate === data.endDate;
+      const isSingleDay = datesConfirmSingleDay || (data.isSingleDay ?? false);
       const endDate: string | null = data.endDate || null;
 
       // Infer totalStages from date range if not set in Firestore:

@@ -242,11 +242,13 @@ export async function POST(request: NextRequest) {
       if (data.hasPrologue == null) {
         update.hasPrologue = RACES_WITH_PROLOGUE.has(slug);
       }
-      if (data.isSingleDay == null) {
+      // Always correct isSingleDay when dates confirm it — even if already set to false.
+      // A race where startDate === endDate (or has no endDate) cannot be multi-stage.
+      const datesConfirmSingleDay = !data.endDate || data.startDate === data.endDate;
+      if (data.isSingleDay == null || (datesConfirmSingleDay && data.isSingleDay === false)) {
         update.isSingleDay =
           isSingleDayBySlug(slug) ||
-          !data.endDate ||
-          data.startDate === data.endDate;
+          datesConfirmSingleDay;
       }
       if (data.excludeFromScraping == null) {
         update.excludeFromScraping = EXCLUDED_RACE_SLUGS.has(slug);
