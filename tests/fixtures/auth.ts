@@ -61,13 +61,9 @@ async function getAuthenticatedStorageState(
  * })
  * ```
  */
-const EMULATOR_SKIP_MSG =
-  'Firebase emulator not running — use `npm run test:e2e:full` to start the full test environment';
-
 export const test = base.extend<AuthFixtures>({
   // Default authenticated page (user@test.com)
   authenticatedPage: async ({ browser }: any, use: any) => {
-    base.skip(!(await checkEmulatorAvailable()), EMULATOR_SKIP_MSG);
     userStorageState = await getAuthenticatedStorageState(browser, TEST_USERS.user, userStorageState);
     const context = await browser.newContext({ storageState: userStorageState });
     const page = await context.newPage();
@@ -77,7 +73,6 @@ export const test = base.extend<AuthFixtures>({
 
   // Authenticated as user2@test.com
   authenticatedAsUser2: async ({ browser }: any, use: any) => {
-    base.skip(!(await checkEmulatorAvailable()), EMULATOR_SKIP_MSG);
     user2StorageState = await getAuthenticatedStorageState(browser, TEST_USERS.user2, user2StorageState);
     const context = await browser.newContext({ storageState: user2StorageState });
     const page = await context.newPage();
@@ -87,7 +82,6 @@ export const test = base.extend<AuthFixtures>({
 
   // Authenticated as admin@test.com
   authenticatedAsAdmin: async ({ browser }: any, use: any) => {
-    base.skip(!(await checkEmulatorAvailable()), EMULATOR_SKIP_MSG);
     adminStorageState = await getAuthenticatedStorageState(browser, TEST_USERS.admin, adminStorageState);
     const context = await browser.newContext({ storageState: adminStorageState });
     const page = await context.newPage();

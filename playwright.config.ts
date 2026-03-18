@@ -11,6 +11,10 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
 
+  // Global setup/teardown: starts Firebase emulator + seeds test data
+  globalSetup: './tests/globalSetup.ts',
+  globalTeardown: './tests/globalTeardown.ts',
+
   // Run tests in files in parallel
   fullyParallel: true,
 
@@ -31,8 +35,8 @@ export default defineConfig({
 
   // Shared settings for all the projects below
   use: {
-    // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3210',
+    // Base URL — port 3310 is the isolated test server (dev:emulator:test)
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3310',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -52,35 +56,19 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Environment variables for Firebase emulators
-        contextOptions: {
-          // These will be available in tests
-        }
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
-
-    // Uncomment to test on Firefox
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // Uncomment to test on WebKit (Safari)
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
   ],
 
-  // Run your local dev server before starting the tests
-  // Note: This is commented out because we use manual startup
-  // to coordinate with Firebase emulators
-  // webServer: {
-  //   command: 'npm run dev:emulator',
-  //   url: 'http://localhost:3210',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120 * 1000,
-  // },
+  // Start the Next.js dev server (emulator mode, port 3310) before tests.
+  // reuseExistingServer: true → if test:e2e:full already started the server,
+  // Playwright uses it instead of spawning a new one.
+  webServer: {
+    command: 'npm run dev:emulator:test',
+    url: 'http://localhost:3310',
+    reuseExistingServer: true,
+    timeout: 120 * 1000,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
 });

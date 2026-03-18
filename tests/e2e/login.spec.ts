@@ -4,10 +4,7 @@
  * Converted from Cypress to Playwright
  * Tests authentication flows with Firebase emulator
  */
-import { test, expect, TEST_USERS, checkEmulatorAvailable } from '../fixtures/auth';
-
-const EMULATOR_SKIP_MSG =
-  'Firebase emulator not running — use `npm run test:e2e:full` to start the full test environment';
+import { test, expect, TEST_USERS } from '../fixtures/auth';
 
 test.describe('Login Functionality', () => {
   test('should display login form elements', async ({ page }) => {
@@ -22,7 +19,6 @@ test.describe('Login Functionality', () => {
   });
 
   test('should show error for invalid credentials', async ({ page }) => {
-    test.skip(!(await checkEmulatorAvailable()), EMULATOR_SKIP_MSG);
     await page.goto('/login');
 
     // Fill in wrong credentials
@@ -40,7 +36,6 @@ test.describe('Login Functionality', () => {
   });
 
   test('should login successfully with valid credentials', async ({ page }) => {
-    test.skip(!(await checkEmulatorAvailable()), EMULATOR_SKIP_MSG);
     await page.goto('/login');
 
     // Fill in correct credentials
@@ -62,7 +57,6 @@ test.describe('Login Functionality', () => {
   });
 
   test('should login as admin user', async ({ page }) => {
-    test.skip(!(await checkEmulatorAvailable()), EMULATOR_SKIP_MSG);
     await page.goto('/login');
 
     // Fill in admin credentials
