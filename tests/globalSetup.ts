@@ -11,6 +11,24 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 
+// Use the npm binary alongside the current node binary so it works in
+// restricted shells (CI, Claude Code Bash tool, etc.) where npm isn't in PATH.
+const NPM_BIN = path.join(path.dirname(process.execPath), 'npm');
+
+// Ensure node (and java) are always in PATH for all child processes.
+const ENRICHED_PATH = [
+  path.dirname(process.execPath),            // /opt/homebrew/Cellar/node/.../bin
+  '/opt/homebrew/bin',                        // homebrew symlinks (node, npm, etc.)
+  '/opt/homebrew/opt/openjdk@21/bin',         // Java 21 (for Firebase emulator)
+  path.join(os.homedir(), '.npm-global/bin'), // globally installed CLIs (firebase)
+  '/usr/local/bin',
+  '/usr/bin',
+  '/bin',
+  '/usr/sbin',
+  '/sbin',
+  process.env.PATH ?? '',
+].join(':');
+
 const PROJECT_ROOT = path.join(__dirname, '..');
 const FIREBASE_BIN = path.join(os.homedir(), '.npm-global/bin/firebase');
 const PID_FILE = '/tmp/oracle-e2e-emulator.pid';
@@ -42,12 +60,9 @@ async function waitForPort(port: number, label: string, timeoutMs = 60000): Prom
 async function startEmulator(): Promise<void> {
   console.log('\n🔥 Starting Firebase emulators...');
 
-  const javaPath = '/opt/homebrew/opt/openjdk@21/bin';
-  const npmGlobal = path.join(os.homedir(), '.npm-global/bin');
-
   const env: NodeJS.ProcessEnv = {
     ...process.env,
-    PATH: `${javaPath}:${npmGlobal}:${process.env.PATH ?? ''}`,
+    PATH: ENRICHED_PATH,
     JAVA_HOME: '/opt/homebrew/opt/openjdk@21',
   };
 
@@ -93,9 +108,10 @@ async function clearFirestore(): Promise<void> {
 
 async function seedTestData(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn('npm', ['run', 'seed:test-data'], {
+    const proc = spawn(NPM_BIN, ['run', 'seed:test-data'], {
       cwd: PROJECT_ROOT,
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, PATH: ENRICHED_PATH },
     });
 
     let stderr = '';

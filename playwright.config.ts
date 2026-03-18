@@ -1,4 +1,26 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
+import * as os from 'os';
+
+// Use the npm binary that lives alongside the node that's running playwright.
+// This avoids "npm: command not found" when running from a restricted shell
+// (e.g. CI or Claude Code's Bash tool where /opt/homebrew/bin is not in PATH).
+const npmBin = path.join(path.dirname(process.execPath), 'npm');
+
+// Ensure node, npm, firebase CLI and Java are all in PATH for child processes.
+// Turbopack spawns node workers for PostCSS; without node in PATH it panics.
+const enrichedPath = [
+  path.dirname(process.execPath),
+  '/opt/homebrew/bin',
+  '/opt/homebrew/opt/openjdk@21/bin',
+  path.join(os.homedir(), '.npm-global/bin'),
+  '/usr/local/bin',
+  '/usr/bin',
+  '/bin',
+  '/usr/sbin',
+  '/sbin',
+  process.env.PATH ?? '',
+].join(':');
 
 /**
  * Playwright Configuration for Oracle Games E2E Tests
@@ -64,11 +86,13 @@ export default defineConfig({
   // reuseExistingServer: true → if test:e2e:full already started the server,
   // Playwright uses it instead of spawning a new one.
   webServer: {
-    command: 'npm run dev:emulator:test',
+    command: `"${npmBin}" run dev:emulator:test`,
     url: 'http://localhost:3310',
     reuseExistingServer: true,
     timeout: 120 * 1000,
     stdout: 'ignore',
     stderr: 'pipe',
+    // Provide PATH so Turbopack can spawn node workers for PostCSS processing.
+    env: { ...process.env, PATH: enrichedPath } as Record<string, string>,
   },
 });

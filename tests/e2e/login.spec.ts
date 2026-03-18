@@ -28,11 +28,12 @@ test.describe('Login Functionality', () => {
     // Submit form
     await page.getByTestId('login-submit-button').click();
 
-    // Check for error message (actual message is "No account found with this email address")
+    // Check for error message — production Firebase returns "Invalid email or password"
+    // (auth/invalid-credential), the emulator returns "No account found with this email address"
+    // (auth/user-not-found). Accept either.
     const errorMessage = page.getByTestId('login-error-message');
     await expect(errorMessage).toBeVisible({ timeout: 10000 });
-    // Firebase SDK now returns auth/invalid-credential for all bad logins (prevents user enumeration)
-    await expect(errorMessage).toContainText('Invalid email or password');
+    await expect(errorMessage).toContainText(/Invalid email or password|No account found/);
   });
 
   test('should login successfully with valid credentials', async ({ page }) => {
