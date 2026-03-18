@@ -3,6 +3,7 @@ import {
   getApps as getAdminApps,
   getApp as getAdminApp,
   cert,
+  applicationDefault,
 } from "firebase-admin/app";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
@@ -32,17 +33,15 @@ function initializeFirebaseAdmin() {
   const emulatorProjectId =
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "oracle-games-b6af6";
 
-  // Provide a lightweight credential for emulator usage to avoid ADC lookups.
-  const emulatorCredential = {
-    getAccessToken: async () => ({ access_token: "owner", expires_in: 3600 }),
-  };
-
-  // Allow initialization without service-account credentials when emulator mode is enabled
+  // Allow initialization without service-account credentials when emulator mode is enabled.
+  // applicationDefault() satisfies firebase-admin v13's ServiceAccountCredential /
+  // isApplicationDefault() check in firestore-internal.js. In emulator mode the Firestore
+  // client never calls getAccessToken(), so no real credentials are needed.
   if (shouldUseFirebaseEmulators() && (!projectId || !clientEmail || !privateKey)) {
     console.log("🔧 Initializing Firebase Admin for emulator use (no credentials needed)");
     return initializeAdminApp({
       projectId: emulatorProjectId,
-      credential: emulatorCredential as unknown as Parameters<typeof initializeAdminApp>[0]["credential"],
+      credential: applicationDefault(),
     });
   }
 
