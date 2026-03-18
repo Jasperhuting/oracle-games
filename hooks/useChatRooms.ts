@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { ChatRoom } from '@/lib/types/chat';
+
+const CHAT_SEEN_EVENT = 'chat-seen-updated';
 
 export interface UseChatRoomsResult {
   rooms: ChatRoom[];
@@ -30,6 +32,10 @@ export function computeUnreadCounts(rooms: ChatRoom[]): Map<string, number> {
 /** Call this when a user opens a room to mark all current messages as seen. */
 export function markRoomAsSeen(roomId: string, messageCount: number): void {
   localStorage.setItem(`chat_unread_${roomId}`, String(messageCount));
+  // Notify all useChatRooms instances to recompute unread counts immediately
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CHAT_SEEN_EVENT));
+  }
 }
 
 export function useChatRooms(): UseChatRoomsResult {
@@ -37,6 +43,8 @@ export function useChatRooms(): UseChatRoomsResult {
   const [unreadByRoom, setUnreadByRoom] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  // Keep a ref to current rooms so the event listener always has fresh data
+  const roomsRef = useRef<ChatRoom[]>([]);
 
   useEffect(() => {
     const q = query(
@@ -50,6 +58,7 @@ export function useChatRooms(): UseChatRoomsResult {
         const fetched = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as ChatRoom)
         );
+        roomsRef.current = fetched;
         const counts = computeUnreadCounts(fetched);
         setRooms(fetched);
         setUnreadByRoom(counts);
@@ -63,6 +72,15 @@ export function useChatRooms(): UseChatRoomsResult {
     );
 
     return () => unsubscribe();
+  }, []);
+
+  // Recompute unread counts immediately when markRoomAsSeen is called anywhere
+  useEffect(() => {
+    const handleSeen = () => {
+      setUnreadByRoom(computeUnreadCounts(roomsRef.current));
+    };
+    window.addEventListener(CHAT_SEEN_EVENT, handleSeen);
+    return () => window.removeEventListener(CHAT_SEEN_EVENT, handleSeen);
   }, []);
 
   const totalUnread = Array.from(unreadByRoom.values()).reduce((a, b) => a + b, 0);
