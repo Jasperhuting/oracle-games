@@ -55,19 +55,23 @@ const parseMaybeJsonArray = (value: unknown): unknown[] => {
 const truncate = (value: string, max = 1200): string =>
   value.length > max ? `${value.slice(0, max)}...` : value;
 
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 const sendCronFailureAlert = async (context: {
   endpoint: string;
   message: string;
   details?: string;
   batchId?: string;
 }) => {
+  const safeDetails = context.details ? escapeHtml(truncate(context.details)) : null;
   const telegramMessage = [
     `🚨 <b>Cron Failure</b>`,
     ``,
     `🔗 <b>Endpoint:</b> ${context.endpoint}`,
     `❌ <b>Issue:</b> ${context.message}`,
     context.batchId ? `🆔 <b>Batch:</b> <code>${context.batchId}</code>` : '',
-    context.details ? `📋 <b>Details:</b>\n<code>${truncate(context.details)}</code>` : '',
+    safeDetails ? `📋 <b>Details:</b>\n<code>${safeDetails}</code>` : '',
     `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
   ].filter(Boolean).join('\n');
 
@@ -365,7 +369,15 @@ export async function GET(request: NextRequest) {
 
       if (queuedJobs > 0) {
         try {
-          const processUrl = new URL('/api/cron/process-scrape-jobs', request.nextUrl.origin);
+          // Use the production URL to avoid Vercel SSO protection on deployment-specific URLs.
+          // VERCEL_PROJECT_PRODUCTION_URL is set automatically by Vercel on all deployments.
+          const baseOrigin =
+            process.env.APP_URL ||
+            (process.env.VERCEL_PROJECT_PRODUCTION_URL
+              ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+              : null) ||
+            request.nextUrl.origin;
+          const processUrl = new URL('/api/cron/process-scrape-jobs', baseOrigin);
           processUrl.searchParams.set('limit', '20');
           const headers: HeadersInit = {};
           if (process.env.INTERNAL_API_KEY) {

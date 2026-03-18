@@ -25,6 +25,9 @@ function getAmsterdamHour(): number {
 const truncate = (value: string, max = 1200): string =>
   value.length > max ? `${value.slice(0, max)}...` : value;
 
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 const sendCronFailureAlert = async (context: {
   endpoint: string;
   message: string;
@@ -58,7 +61,7 @@ const sendCronFailureAlert = async (context: {
     ``,
     `🔗 <b>Endpoint:</b> ${context.endpoint}`,
     `❌ <b>Issue:</b> ${context.message}`,
-    context.details ? `📋 <b>Details:</b>\n<code>${truncate(context.details)}</code>` : '',
+    context.details ? `📋 <b>Details:</b>\n<code>${escapeHtml(truncate(context.details))}</code>` : '',
     `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
   ].filter(Boolean).join('\n');
 
