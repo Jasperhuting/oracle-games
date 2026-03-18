@@ -11,6 +11,7 @@ import { RankingsProvider } from '@/contexts/RankingsContext';
 import LanguageWrapper from '@/components/LanguageWrapper';
 import { PlayerTeamsProvider } from '@/contexts/PlayerTeamsContext';
 import { isPublicRoute } from '@/lib/constants/routes';
+import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
 
 export default function AppShellProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -32,6 +33,7 @@ export default function AppShellProviders({ children }: { children: React.ReactN
                   <main>{children}</main>
                 </LayoutShell>
               )}
+              {!isPublic && <ChatFloatingButton />}
             </AuthGuard>
           </PlayerTeamsProvider>
         </RankingsProvider>
