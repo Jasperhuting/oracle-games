@@ -40,30 +40,30 @@ function OverlayHeader({
   const showBack = isMultiRoom && selectedRoom !== null;
 
   return (
-    <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2 bg-slate-800 flex-shrink-0">
+    <div className="flex items-center gap-2 border-b border-gray-200 px-3 py-2 bg-white flex-shrink-0">
       {showBack && (
-        <button onClick={onBackToList} className="mr-1 text-slate-400 hover:text-white transition-colors" aria-label="Terug naar overzicht">
+        <button onClick={onBackToList} className="mr-1 text-gray-400 hover:text-gray-700 transition-colors" aria-label="Terug naar overzicht">
           <IconChevronLeft size={16} />
         </button>
       )}
-      <span className="flex-1 text-sm font-semibold text-slate-100 truncate">
+      <span className="flex-1 text-sm font-semibold text-gray-900 truncate">
         {selectedRoom ? selectedRoom.title : 'Chats'}
       </span>
       <div className="flex items-center gap-1">
         {mode === 'popup' && onExpand && (
-          <button onClick={onExpand} className="rounded p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Uitbreiden" title="Uitbreiden naar zijpaneel">
+          <button onClick={onExpand} className="rounded p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Uitbreiden" title="Uitbreiden naar zijpaneel">
             <IconArrowsDiagonal size={15} />
           </button>
         )}
         {mode === 'drawer' && onCollapse && (
-          <button onClick={onCollapse} className="rounded p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Minimaliseren" title="Terug naar popup">
+          <button onClick={onCollapse} className="rounded p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Minimaliseren" title="Terug naar popup">
             <IconArrowsDiagonalMinimize size={15} />
           </button>
         )}
-        <button onClick={onGoToFullPage} className="rounded p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Volledige pagina" title="Open volledige chatpagina">
+        <button onClick={onGoToFullPage} className="rounded p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Volledige pagina" title="Open volledige chatpagina">
           <IconExternalLink size={15} />
         </button>
-        <button onClick={onClose} className="rounded p-1 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors" aria-label="Sluiten">
+        <button onClick={onClose} className="rounded p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors" aria-label="Sluiten">
           <IconX size={15} />
         </button>
       </div>
@@ -79,9 +79,9 @@ function RoomListView({
       {rooms.map((room) => {
         const unread = unreadByRoom.get(room.id) ?? 0;
         return (
-          <button key={room.id} onClick={() => onSelectRoom(room)} className="flex items-center gap-3 px-3 py-3 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0">
+          <button key={room.id} onClick={() => onSelectRoom(room)} className="flex items-center gap-3 px-3 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-100 truncate">
+              <p className="text-sm font-medium text-gray-900 truncate">
                 {room.gameType === 'cycling' && '🚴 '}
                 {room.gameType === 'football' && '⚽ '}
                 {room.gameType === 'f1' && '🏎️ '}
@@ -96,7 +96,7 @@ function RoomListView({
           </button>
         );
       })}
-      <button onClick={onGoToFullPage} className="flex items-center justify-center gap-2 px-3 py-3 text-sm text-blue-400 hover:text-blue-300 hover:bg-slate-700 transition-colors">
+      <button onClick={onGoToFullPage} className="flex items-center justify-center gap-2 px-3 py-3 text-sm text-blue-600 hover:text-blue-700 hover:bg-gray-50 transition-colors">
         Ga naar overzicht
         <IconArrowRight size={14} />
       </button>
@@ -116,8 +116,8 @@ function RoomChatView({ room, user, compact }: { room: ChatRoom; user: OverlayUs
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 bg-slate-900">
-        {loading && <p className="text-xs text-slate-500 text-center py-4">Laden...</p>}
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 bg-gray-50">
+        {loading && <p className="text-xs text-gray-400 text-center py-4">Laden...</p>}
         {!loading && messages.map((msg) => (
           <ChatMessageItem
             key={msg.id}
@@ -130,7 +130,7 @@ function RoomChatView({ room, user, compact }: { room: ChatRoom; user: OverlayUs
         <div ref={messagesEndRef} />
       </div>
       {isRoomClosed ? (
-        <div className="px-3 py-2 text-xs text-slate-500 text-center border-t border-slate-700 bg-slate-800">
+        <div className="px-3 py-2 text-xs text-gray-400 text-center border-t border-gray-200 bg-white">
           Deze chat is gesloten.
         </div>
       ) : (
@@ -151,7 +151,7 @@ function OverlayContent(props: OverlayProps & { compact: boolean }) {
     return <RoomChatView room={selectedRoom} user={user} compact={compact} />;
   }
   return (
-    <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
+    <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
       Geen chat beschikbaar.
     </div>
   );
@@ -180,7 +180,7 @@ function ChatPopup(props: OverlayProps) {
   }, [props.onClose]);
 
   return (
-    <div ref={popupRef} className="fixed bottom-20 right-5 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col rounded-xl bg-slate-800 shadow-2xl overflow-hidden" style={{ height: '520px' }}>
+    <div ref={popupRef} className="fixed bottom-20 right-5 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col rounded-xl bg-white shadow-2xl overflow-hidden border border-gray-200" style={{ height: '520px' }}>
       <OverlayHeader {...props} />
       <OverlayContent {...props} compact={true} />
     </div>
@@ -197,7 +197,7 @@ function ChatDrawer(props: OverlayProps) {
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40" onClick={props.onCollapse} />
-      <div className="fixed right-0 top-0 bottom-0 z-50 flex w-[420px] max-w-full flex-col bg-slate-800 shadow-2xl">
+      <div className="fixed right-0 top-0 bottom-0 z-50 flex w-[420px] max-w-full flex-col bg-white shadow-2xl border-l border-gray-200">
         <OverlayHeader {...props} />
         <OverlayContent {...props} compact={false} />
       </div>
