@@ -23,6 +23,7 @@ interface ChatInputProps {
   onClearReply: () => void;
   disabled: boolean;
   disabledReason?: string;
+  compact?: boolean;
 }
 
 export default function ChatInput({
@@ -32,6 +33,7 @@ export default function ChatInput({
   onClearReply,
   disabled,
   disabledReason,
+  compact = false,
 }: ChatInputProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -233,15 +235,17 @@ export default function ChatInput({
         >
           <IconMoodSmile className="h-5 w-5" />
         </button>
-        <button
-          ref={giphyButtonRef}
-          type="button"
-          onClick={() => setShowGiphyPicker(!showGiphyPicker)}
-          className="px-2 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
-          title="GIF toevoegen"
-        >
-          GIF
-        </button>
+        {!compact && (
+          <button
+            ref={giphyButtonRef}
+            type="button"
+            onClick={() => setShowGiphyPicker(!showGiphyPicker)}
+            className="px-2 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
+            title="GIF toevoegen"
+          >
+            GIF
+          </button>
+        )}
         <button
           type="submit"
           disabled={(!text.trim() && !selectedGif) || sending}
@@ -272,7 +276,7 @@ export default function ChatInput({
           document.body
         )}
 
-      {showGiphyPicker &&
+      {!compact && showGiphyPicker &&
         createPortal(
           <div
             ref={giphyPickerRef}
