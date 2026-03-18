@@ -8,6 +8,7 @@ import { IconArrowLeft, IconLock, IconMessageCircle } from '@tabler/icons-react'
 import { Timestamp } from 'firebase/firestore';
 import { useChatRoom } from '@/hooks/useChatRoom';
 import { useAuth } from '@/hooks/useAuth';
+import { markRoomAsSeen } from '@/hooks/useChatRooms';
 import ChatMessageList from '@/components/chat/ChatMessageList';
 import ChatInput from '@/components/chat/ChatInput';
 
@@ -61,6 +62,13 @@ export default function ChatRoomPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [replyingTo, setReplyingTo] = useState<ReplyTo | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Mark room as seen whenever messageCount updates (so FAB badge stays at 0 while viewing)
+  useEffect(() => {
+    if (room?.messageCount != null) {
+      markRoomAsSeen(roomId, room.messageCount);
+    }
+  }, [roomId, room?.messageCount]);
 
   useEffect(() => {
     if (user) {

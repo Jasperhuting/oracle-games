@@ -114,6 +114,11 @@ function RoomChatView({ room, user, compact }: { room: ChatRoom; user: OverlayUs
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Keep lastSeen in sync while the user has this room open in the FAB
+  useEffect(() => {
+    markRoomAsSeen(room.id, room.messageCount);
+  }, [room.id, room.messageCount]);
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 bg-gray-50">
