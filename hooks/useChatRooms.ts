@@ -10,14 +10,18 @@ export interface UseChatRoomsResult {
   unreadByRoom: Map<string, number>;
   totalUnread: number;
   loading: boolean;
+  error: Error | null;
 }
 
 /** Exported for unit testing. Computes per-room unread counts from localStorage. */
 export function computeUnreadCounts(rooms: ChatRoom[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const room of rooms) {
-    const stored = localStorage.getItem(`chat_unread_${room.id}`);
-    const lastSeen = stored !== null ? parseInt(stored, 10) : room.messageCount;
+    const stored = typeof localStorage !== 'undefined'
+      ? localStorage.getItem(`chat_unread_${room.id}`)
+      : null;
+    const parsed = parseInt(stored ?? '', 10);
+    const lastSeen = stored !== null && !isNaN(parsed) ? parsed : room.messageCount;
     map.set(room.id, Math.max(0, room.messageCount - lastSeen));
   }
   return map;
@@ -32,6 +36,7 @@ export function useChatRooms(): UseChatRoomsResult {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unreadByRoom, setUnreadByRoom] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -52,6 +57,7 @@ export function useChatRooms(): UseChatRoomsResult {
       },
       (err) => {
         console.error('[useChatRooms] Firestore error:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
         setLoading(false);
       }
     );
@@ -61,5 +67,5 @@ export function useChatRooms(): UseChatRoomsResult {
 
   const totalUnread = Array.from(unreadByRoom.values()).reduce((a, b) => a + b, 0);
 
-  return { rooms, unreadByRoom, totalUnread, loading };
+  return { rooms, unreadByRoom, totalUnread, loading, error };
 }
