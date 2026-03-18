@@ -40,15 +40,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Load excluded race slugs so we can skip them in health checks.
+    const racesSnapshot = await db
+      .collection('races')
+      .where('year', '==', year)
+      .limit(1000)
+      .get();
+    const excludedSlugs = new Set<string>();
+    racesSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.excludeFromScraping === true) {
+        excludedSlugs.add(data.slug || doc.id);
+      }
+    });
+
     const scraperSnapshot = await db
       .collection('scraper-data')
       .where('year', '==', year)
       .limit(2000)
       .get();
 
+    const parseMaybeArray = (v: unknown): unknown[] => {
+      if (Array.isArray(v)) return v;
+      if (typeof v !== 'string') return [];
+      try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; }
+    };
+
     const scraperItems = scraperSnapshot.docs
       .map(doc => doc.data() as any)
       .filter(doc => doc?.key?.type && doc?.key?.type !== 'startlist')
+      // Skip races that are excluded from scraping (not part of the game).
+      .filter(doc => !excludedSlugs.has(doc?.key?.race))
+      // Skip empty scrapes (0 riders): nothing to calculate points for, not a real issue.
+      .filter(doc => {
+        const count = typeof doc.count === 'number' ? doc.count : 0;
+        const results = parseMaybeArray(doc.stageResults);
+        const gc = parseMaybeArray(doc.generalClassification);
+        return count > 0 || results.length > 0 || gc.length > 0;
+      })
       .filter(doc => {
         if (!doc.updatedAt) return true;
         const updated = new Date(doc.updatedAt);
