@@ -452,25 +452,15 @@ export async function fetchPageHtml(options: {
       await configurePage(page);
 
       console.log(`[${logLabel}] Navigating to: ${url} (attempt ${attempt}/${maxAttempts})`);
+      // Use networkidle2 so Cloudflare's JS challenge has time to complete its
+      // network requests and redirect to the real page before we read the DOM.
+      // If the challenge fails (IP-blocked), the page becomes idle quickly on
+      // the challenge page and we detect it below.
       await page.goto(url, {
-        waitUntil: "domcontentloaded",
+        waitUntil: "networkidle2",
         timeout: NAVIGATION_TIMEOUT_MS,
         ...navigationOptions,
       });
-
-      // If this is a Cloudflare challenge page, set up waitForNavigation NOW
-      // (after goto returns) to catch the redirect that CF triggers once its
-      // JS challenge completes. The challenge takes 1-5s so there is no race.
-      const quickHtml = await page.content();
-      const quickBody = quickHtml.toLowerCase();
-      if (quickBody.includes("just a moment") || quickBody.includes("checking your browser")) {
-        console.log(`[${logLabel}] Cloudflare challenge detected — waiting for redirect (up to 30s)...`);
-        await page.waitForNavigation({
-          waitUntil: "domcontentloaded",
-          timeout: 30_000,
-        }).catch(() => null); // null = CF didn't redirect (IP-blocked or challenge failed)
-        await delay(500); // short settle after redirect
-      }
 
       await waitForAnySelector(page, selectors);
       await delay(300);
