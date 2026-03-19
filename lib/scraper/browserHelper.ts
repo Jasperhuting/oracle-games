@@ -452,34 +452,42 @@ export async function fetchPageHtml(options: {
       await configurePage(page);
 
       console.log(`[${logLabel}] Navigating to: ${url} (attempt ${attempt}/${maxAttempts})`);
+      // Navigate and immediately start listening for the next navigation (the
+      // Cloudflare JS challenge redirect) before domcontentloaded fires, so
+      // we don't miss it.
+      const navigationPromise = page.waitForNavigation({
+        waitUntil: "domcontentloaded",
+        timeout: 30_000,
+      }).catch(() => null); // null = no second navigation (either no CF challenge or IP-blocked)
+
       await page.goto(url, {
         waitUntil: "domcontentloaded",
         timeout: NAVIGATION_TIMEOUT_MS,
         ...navigationOptions,
       });
 
+      // If this is a Cloudflare challenge page, wait for the redirect to the real page.
+      const quickHtml = await page.content();
+      const quickBody = quickHtml.toLowerCase();
+      if (quickBody.includes("just a moment") || quickBody.includes("checking your browser")) {
+        console.log(`[${logLabel}] Cloudflare challenge detected — waiting for redirect...`);
+        await navigationPromise; // wait for CF to complete and redirect (up to 30s)
+        await delay(500);        // short settle after redirect
+      }
+
       await waitForAnySelector(page, selectors);
-      // Give JS-based challenges (e.g. Cloudflare) time to complete and redirect
-      await delay(1500);
+      await delay(300);
 
       let html = await page.content();
       let bodyText = html.toLowerCase();
 
-      // If Cloudflare challenge is still present, wait up to 4 more seconds for
-      // the JS challenge to resolve and the browser to redirect to the real page.
+      // If still on challenge page after all waits, treat as availability error.
       if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
-        await delay(4000);
-        html = await page.content();
-        bodyText = html.toLowerCase();
-
-        // Still on challenge page after extra wait — treat as availability error
-        if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
-          throw new Error(
-            options.noDataErrorMessage
-              ? `${options.noDataErrorMessage} (Cloudflare challenge not resolved)`
-              : "Cloudflare challenge not resolved — page not available"
-          );
-        }
+        throw new Error(
+          options.noDataErrorMessage
+            ? `${options.noDataErrorMessage} (Cloudflare challenge not resolved)`
+            : "Cloudflare challenge not resolved — page not available"
+        );
       }
 
       const matchedNoData = noDataTexts.find((text) =>
