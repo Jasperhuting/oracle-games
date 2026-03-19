@@ -191,11 +191,14 @@ async function resolveExecutablePath(): Promise<string | undefined> {
 
 async function createBrowser(): Promise<BrowserLike> {
   if (isProduction) {
-    const puppeteer = await import("puppeteer-core");
+    const puppeteerExtra = (await import("puppeteer-extra")).default;
+    const StealthPlugin = (await import("puppeteer-extra-plugin-stealth")).default;
     const chromium = (await import("@sparticuz/chromium-min")).default;
     const executablePath = await resolveExecutablePath();
 
-    return puppeteer.launch({
+    puppeteerExtra.use(StealthPlugin());
+
+    return puppeteerExtra.launch({
       args: [
         ...chromium.args,
         "--hide-scrollbars",
@@ -207,7 +210,7 @@ async function createBrowser(): Promise<BrowserLike> {
       defaultViewport: DEFAULT_VIEWPORT,
       executablePath,
       headless: true,
-    });
+    } as Parameters<typeof puppeteerExtra.launch>[0]);
   }
 
   const puppeteer = await import("puppeteer");
