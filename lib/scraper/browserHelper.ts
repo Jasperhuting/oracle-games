@@ -203,6 +203,8 @@ async function createBrowser(): Promise<BrowserLike> {
         "--disable-dev-shm-usage",
         "--disable-background-networking",
         "--disable-renderer-backgrounding",
+        // Prevent Chromium from exposing automation indicators at the browser level
+        "--disable-blink-features=AutomationControlled",
       ],
       defaultViewport: DEFAULT_VIEWPORT,
       executablePath,
@@ -457,10 +459,22 @@ export async function fetchPageHtml(options: {
       });
 
       await waitForAnySelector(page, selectors);
-      await delay(300);
+      // Give JS-based challenges (e.g. Cloudflare) time to complete and redirect
+      await delay(1500);
 
       const html = await page.content();
       const bodyText = html.toLowerCase();
+
+      // Detect Cloudflare challenge page — treat as availability error so the
+      // job is marked completed (with empty marker) instead of failing silently.
+      if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
+        throw new Error(
+          options.noDataErrorMessage
+            ? `${options.noDataErrorMessage} (Cloudflare challenge detected)`
+            : "Cloudflare challenge detected — page not available"
+        );
+      }
+
       const matchedNoData = noDataTexts.find((text) =>
         bodyText.includes(text.toLowerCase())
       );
