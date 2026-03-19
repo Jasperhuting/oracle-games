@@ -142,6 +142,9 @@ export async function GET(request: NextRequest) {
         if (process.env.CRON_SECRET) {
           headers.authorization = `Bearer ${process.env.CRON_SECRET}`;
         }
+        if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+          headers['x-vercel-protection-bypass'] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+        }
 
         const response = await fetch(
           `${request.nextUrl.origin}/api/jobs/process/${job.id}`,
