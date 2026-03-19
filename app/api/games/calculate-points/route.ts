@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       const timeDiffMinutes = (currentTime - lastUpdatedTime) / (1000 * 60);
       const isDevelopment = process.env.NODE_ENV === 'development';
       
-      if (timeDiffMinutes < 5 && !isDevelopment) {
+      if (timeDiffMinutes < 5 && !isDevelopment && !force) {
         console.log(`[CALCULATE_POINTS] Stage ${docId} was recently processed (${Math.round(timeDiffMinutes)} minutes ago). Skipping to prevent duplicate points.`);
         return NextResponse.json({
           success: true,

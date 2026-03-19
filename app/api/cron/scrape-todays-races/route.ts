@@ -4,6 +4,7 @@ import { sendTelegramMessage } from '@/lib/telegram';
 import { createJob } from '@/lib/firebase/job-queue';
 import { generateDocumentId, type ScraperDataKey } from '@/lib/firebase/scraper-service';
 import { shouldExcludeRace } from '@/lib/utils/race-filters';
+import { formatDateOnlyInAmsterdam, getCompletedRaceDates } from '@/lib/utils/scrape-window';
 
 const TIME_ZONE = 'Europe/Amsterdam';
 const MAX_RUN_MS = 240_000; // keep under maxDuration to avoid timeouts
@@ -18,8 +19,7 @@ type ScrapeOutcome = {
   message: string;
 };
 
-const formatDateOnly = (date: Date): string =>
-  date.toLocaleDateString('en-CA', { timeZone: TIME_ZONE });
+const formatDateOnly = (date: Date): string => formatDateOnlyInAmsterdam(date);
 
 const parseDateOnly = (dateStr: string): string | null => {
   const parsed = new Date(dateStr);
@@ -109,9 +109,7 @@ export async function GET(request: NextRequest) {
   const notifyOnly = request.nextUrl.searchParams.get('notifyOnly') === 'true';
   const todayStr = formatDateOnly(new Date());
   const todayYear = Number(todayStr.split('-')[0]);
-  const targetDates = [0, 1, 2].map((offsetDays) =>
-    formatDateOnly(new Date(Date.now() - offsetDays * 86400000))
-  );
+  const targetDates = getCompletedRaceDates(new Date(), 3);
 
   const runStartedAt = Date.now();
 
@@ -306,7 +304,7 @@ export async function GET(request: NextRequest) {
         }
 
         const dayAfterEnd = addDays(endStr, 1);
-        if (targetDates.includes(dayAfterEnd)) {
+        if (targetDates.includes(dayAfterEnd) || targetDates.includes(endStr)) {
           const alreadyScraped = await hasExistingScrape(db, {
             race: raceSlug,
             year,
