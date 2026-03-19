@@ -20,6 +20,8 @@ const PROXY_USERNAME = process.env.SCRAPER_PROXY_USERNAME ?? "";
 const PROXY_PASSWORD = process.env.SCRAPER_PROXY_PASSWORD ?? "";
 const PROXY_ENABLED = !!(PROXY_HOST && PROXY_PORT);
 
+const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY ?? "";
+
 const SCRAPER_LOCK_COLLECTION = "runtimeLocks";
 const LOCK_TTL_MS = parsePositiveInt(
   process.env.SCRAPER_BROWSER_LOCK_TTL_MS,
@@ -437,6 +439,80 @@ async function waitForAnySelector(page: Page, selectors: string[]) {
     : new Error(`None of the selectors became available: ${pendingSelectors.join(", ")}`);
 }
 
+async function fetchPageHtmlViaScrapingBee(options: {
+  url: string;
+  selectors: string[];
+  noDataTexts?: string[];
+  noDataErrorMessage?: string;
+  logLabel?: string;
+  maxAttempts?: number;
+}): Promise<string> {
+  const {
+    url,
+    selectors,
+    noDataTexts = [],
+    noDataErrorMessage,
+    logLabel = "scraper",
+    maxAttempts = 2,
+  } = options;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`[${logLabel}] ScrapingBee: Fetching ${url} (attempt ${attempt}/${maxAttempts})`);
+
+      const apiUrl = new URL("https://app.scrapingbee.com/api/v1/");
+      apiUrl.searchParams.set("api_key", SCRAPINGBEE_API_KEY);
+      apiUrl.searchParams.set("url", url);
+      apiUrl.searchParams.set("render_js", "true");
+      apiUrl.searchParams.set("premium_proxy", "true");
+      apiUrl.searchParams.set("block_resources", "true");
+
+      // Wait for the first meaningful selector so content is fully loaded
+      const waitForSelector = selectors.find(Boolean);
+      if (waitForSelector) {
+        apiUrl.searchParams.set("wait_for", waitForSelector);
+      }
+
+      const response = await fetch(apiUrl.toString());
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`ScrapingBee error ${response.status}: ${errorText.slice(0, 200)}`);
+      }
+
+      const html = await response.text();
+      const bodyText = html.toLowerCase();
+
+      if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
+        throw new Error(
+          noDataErrorMessage
+            ? `${noDataErrorMessage} (Cloudflare challenge not resolved)`
+            : "Cloudflare challenge not resolved — page not available"
+        );
+      }
+
+      const matchedNoData = noDataTexts.find((text) =>
+        bodyText.includes(text.toLowerCase())
+      );
+      if (matchedNoData) {
+        throw new Error(noDataErrorMessage || matchedNoData);
+      }
+
+      return html;
+    } catch (error) {
+      lastError = error;
+      if (!isTransientScrapeError(error) || attempt >= maxAttempts) {
+        throw error;
+      }
+      await delay(attempt * 750);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Unknown scrape error");
+}
+
 export async function fetchPageHtml(options: {
   url: string;
   selectors: string[];
@@ -446,6 +522,11 @@ export async function fetchPageHtml(options: {
   logLabel?: string;
   maxAttempts?: number;
 }): Promise<string> {
+  // Use ScrapingBee on production when API key is configured — bypasses Cloudflare without Puppeteer
+  if (isProduction && SCRAPINGBEE_API_KEY) {
+    return fetchPageHtmlViaScrapingBee(options);
+  }
+
   const {
     url,
     selectors,
