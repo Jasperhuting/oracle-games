@@ -35,11 +35,6 @@ const diffDays = (from: string, to: string): number => {
   return Math.floor((toUtc - fromUtc) / 86400000);
 };
 
-const addDays = (dateStr: string, days: number): string => {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const utc = Date.UTC(year, month - 1, day + days);
-  return formatDateOnly(new Date(utc));
-};
 
 const parseMaybeJsonArray = (value: unknown): unknown[] => {
   if (Array.isArray(value)) return value;
@@ -303,8 +298,7 @@ export async function GET(request: NextRequest) {
           break;
         }
 
-        const dayAfterEnd = addDays(endStr, 1);
-        if (targetDates.includes(dayAfterEnd) || targetDates.includes(endStr)) {
+        if (targetDates.includes(endStr)) {
           const alreadyScraped = await hasExistingScrape(db, {
             race: raceSlug,
             year,
