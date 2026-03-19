@@ -333,6 +333,45 @@ function StageRow({
           >
             Recalculate points
           </Button>
+          {stage.status !== 'pending' && (
+            <Button
+              size="sm"
+              variant="danger"
+              outline
+              onClick={async () => {
+                const label = isSingleDay
+                  ? 'result'
+                  : typeof stage.stageNumber === 'number'
+                    ? `stage ${stage.stageNumber}`
+                    : stage.stageNumber;
+                if (!confirm(`Reset scrape data for ${race} ${label}?\n\nThis deletes the scraped data so the stage will be picked up again by the next cron run.`)) return;
+                setLoading(true);
+                try {
+                  let type = 'stage';
+                  let stageParam: number | string | undefined = typeof stage.stageNumber === 'number' ? stage.stageNumber : undefined;
+                  if (stage.stageNumber === 'result' || isSingleDay) { type = 'result'; stageParam = undefined; }
+                  else if (stage.stageNumber === 'gc') { type = 'tour-gc'; stageParam = undefined; }
+                  else if (stage.stageNumber === 'prologue') { type = 'stage'; stageParam = 0; }
+                  const response = await fetch('/api/admin/reset-scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, race, year, type, stage: stageParam }),
+                  });
+                  const data = await response.json();
+                  if (!response.ok) throw new Error(data.error || 'Reset failed');
+                  toast.success('Scrape data reset — stage is now pending');
+                  onRefresh();
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : 'Reset failed');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              Reset
+            </Button>
+          )}
         </td>
       </tr>
       {detailsOpen && details && (
