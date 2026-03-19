@@ -191,14 +191,11 @@ async function resolveExecutablePath(): Promise<string | undefined> {
 
 async function createBrowser(): Promise<BrowserLike> {
   if (isProduction) {
-    const puppeteerExtra = (await import("puppeteer-extra")).default;
-    const StealthPlugin = (await import("puppeteer-extra-plugin-stealth")).default;
+    const puppeteer = await import("puppeteer-core");
     const chromium = (await import("@sparticuz/chromium-min")).default;
     const executablePath = await resolveExecutablePath();
 
-    puppeteerExtra.use(StealthPlugin());
-
-    return puppeteerExtra.launch({
+    return puppeteer.launch({
       args: [
         ...chromium.args,
         "--hide-scrollbars",
@@ -210,7 +207,7 @@ async function createBrowser(): Promise<BrowserLike> {
       defaultViewport: DEFAULT_VIEWPORT,
       executablePath,
       headless: true,
-    } as Parameters<typeof puppeteerExtra.launch>[0]);
+    });
   }
 
   const puppeteer = await import("puppeteer");
@@ -348,6 +345,29 @@ async function configurePage(page: Page) {
   await page.setUserAgent(USER_AGENT);
   await page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
   await page.setDefaultTimeout(WAIT_FOR_SELECTOR_TIMEOUT_MS);
+
+  // Mask headless browser fingerprinting so Cloudflare treats us as a real browser
+  await page.evaluateOnNewDocument(() => {
+    // Remove webdriver flag
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+
+    // Spoof plugins (real browsers have plugins)
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [
+        { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
+        { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
+        { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' },
+      ],
+    });
+
+    // Spoof languages
+    Object.defineProperty(navigator, 'languages', { get: () => ['nl-NL', 'nl', 'en-US', 'en'] });
+
+    // Spoof chrome runtime so sites don't detect missing chrome object
+    if (!(window as any).chrome) {
+      (window as any).chrome = { runtime: {} };
+    }
+  });
 
   await page.setRequestInterception(true);
   page.on("request", (request) => {
