@@ -462,17 +462,24 @@ export async function fetchPageHtml(options: {
       // Give JS-based challenges (e.g. Cloudflare) time to complete and redirect
       await delay(1500);
 
-      const html = await page.content();
-      const bodyText = html.toLowerCase();
+      let html = await page.content();
+      let bodyText = html.toLowerCase();
 
-      // Detect Cloudflare challenge page — treat as availability error so the
-      // job is marked completed (with empty marker) instead of failing silently.
+      // If Cloudflare challenge is still present, wait up to 4 more seconds for
+      // the JS challenge to resolve and the browser to redirect to the real page.
       if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
-        throw new Error(
-          options.noDataErrorMessage
-            ? `${options.noDataErrorMessage} (Cloudflare challenge detected)`
-            : "Cloudflare challenge detected — page not available"
-        );
+        await delay(4000);
+        html = await page.content();
+        bodyText = html.toLowerCase();
+
+        // Still on challenge page after extra wait — treat as availability error
+        if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
+          throw new Error(
+            options.noDataErrorMessage
+              ? `${options.noDataErrorMessage} (Cloudflare challenge not resolved)`
+              : "Cloudflare challenge not resolved — page not available"
+          );
+        }
       }
 
       const matchedNoData = noDataTexts.find((text) =>
