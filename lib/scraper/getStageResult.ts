@@ -28,9 +28,9 @@ export async function getStageResult({ race, year, stage, riders }: GetStageResu
     throw new Error('Year must be a valid year, e.g., 2026');
   }
 
-  const url = stage === 0 ? 
+  const url = stage === 0 ?
     `https://www.procyclingstats.com/race/${race}/${yearNum}/prologue/result` :
-    `https://www.procyclingstats.com/race/${race}/${yearNum}/stage-${stage}`;
+    `https://www.procyclingstats.com/race/${race}/${yearNum}/stage-${stage}/result`;
   const html = await fetchPageHtml({
     url,
     selectors: ['.page-title', 'h1', '.result-cont', 'table.results'],
