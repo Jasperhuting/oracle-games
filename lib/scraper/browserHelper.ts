@@ -14,6 +14,12 @@ const USER_AGENT =
 const isProduction =
   process.env.NODE_ENV === "production" || !!process.env.VERCEL;
 
+const PROXY_HOST = process.env.SCRAPER_PROXY_HOST ?? "";
+const PROXY_PORT = process.env.SCRAPER_PROXY_PORT ?? "";
+const PROXY_USERNAME = process.env.SCRAPER_PROXY_USERNAME ?? "";
+const PROXY_PASSWORD = process.env.SCRAPER_PROXY_PASSWORD ?? "";
+const PROXY_ENABLED = !!(PROXY_HOST && PROXY_PORT);
+
 const SCRAPER_LOCK_COLLECTION = "runtimeLocks";
 const LOCK_TTL_MS = parsePositiveInt(
   process.env.SCRAPER_BROWSER_LOCK_TTL_MS,
@@ -195,17 +201,23 @@ async function createBrowser(): Promise<BrowserLike> {
     const chromium = (await import("@sparticuz/chromium-min")).default;
     const executablePath = await resolveExecutablePath();
 
+    const productionArgs = [
+      ...chromium.args,
+      "--hide-scrollbars",
+      "--disable-web-security",
+      "--disable-dev-shm-usage",
+      "--disable-background-networking",
+      "--disable-renderer-backgrounding",
+      // Prevent Chromium from exposing automation indicators at the browser level
+      "--disable-blink-features=AutomationControlled",
+    ];
+
+    if (PROXY_ENABLED) {
+      productionArgs.push(`--proxy-server=http://${PROXY_HOST}:${PROXY_PORT}`);
+    }
+
     return puppeteer.launch({
-      args: [
-        ...chromium.args,
-        "--hide-scrollbars",
-        "--disable-web-security",
-        "--disable-dev-shm-usage",
-        "--disable-background-networking",
-        "--disable-renderer-backgrounding",
-        // Prevent Chromium from exposing automation indicators at the browser level
-        "--disable-blink-features=AutomationControlled",
-      ],
+      args: productionArgs,
       defaultViewport: DEFAULT_VIEWPORT,
       executablePath,
       headless: true,
@@ -347,6 +359,10 @@ async function configurePage(page: Page) {
   await page.setUserAgent(USER_AGENT);
   await page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
   await page.setDefaultTimeout(WAIT_FOR_SELECTOR_TIMEOUT_MS);
+
+  if (PROXY_ENABLED && PROXY_USERNAME && PROXY_PASSWORD) {
+    await page.authenticate({ username: PROXY_USERNAME, password: PROXY_PASSWORD });
+  }
 
   // Mask headless browser fingerprinting so Cloudflare treats us as a real browser
   await page.evaluateOnNewDocument(() => {
