@@ -12,6 +12,7 @@ import LanguageWrapper from '@/components/LanguageWrapper';
 import { PlayerTeamsProvider } from '@/contexts/PlayerTeamsContext';
 import { isPublicRoute } from '@/lib/constants/routes';
 import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
+import { TabFocusRefresher } from '@/components/TabFocusRefresher';
 
 export default function AppShellProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,6 +24,7 @@ export default function AppShellProviders({ children }: { children: React.ReactN
         <RankingsProvider autoLoad={!isPublic}>
           <PlayerTeamsProvider autoLoad={!isPublic}>
             <Toaster position="top-center" />
+            <TabFocusRefresher />
             {!isPublic && <LastActiveTracker />}
             {!isPublic && <MessageNotification />}
             <AuthGuard>
