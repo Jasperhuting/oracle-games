@@ -16,7 +16,7 @@ export const BetaBanner = ({ setShowBanner }: { setShowBanner: (show: boolean) =
 
     return (
         <div
-            className="fixed top-0 left-0 right-0 z-50 text-center h-0 sm:h-[36px]"
+            className="fixed top-0 left-0 right-0 z-50 text-center h-[36px]"
             style={{
                 background: "var(--platform-banner-bg)",
                 color: "var(--platform-banner-text)",
