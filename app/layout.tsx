@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter, Lato } from "next/font/google";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import AppShellProviders from "@/components/AppShellProviders";
+import { getPlatformConfigFromHost } from "@/lib/platform";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,19 +25,26 @@ export const metadata: Metadata = {
   description: "Oracle Games is hét platform voor fantasy sportliefhebbers. Speel diverse spellen, meet je met kenners of vrienden en beleef sport op een competitieve manier.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const host = (await headers()).get("host");
+  const platform = getPlatformConfigFromHost(host);
+
   return (
-    <html lang="nl">
+    <html lang="nl" data-platform={platform.key}>
       <head>
         <meta name="apple-mobile-web-app-title" content="Oracle games" />
       </head>
       <body
-        className={`${inter.variable} ${lato.variable} antialiased bg-gray-50 overflow-x-hidden`}
-        style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}
+        className={`${inter.variable} ${lato.variable} antialiased overflow-x-hidden`}
+        style={{
+          fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
+          background: "var(--platform-page-bg)",
+          color: "var(--platform-text-color)",
+        }}
       >
         <SpeedInsights />
         <AppShellProviders>{children}</AppShellProviders>

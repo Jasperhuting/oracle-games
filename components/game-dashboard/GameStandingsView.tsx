@@ -10,6 +10,7 @@ import {
   getSortedRowModel,
   flexRender,
   createColumnHelper,
+  type ColumnDef,
   SortingState,
 } from '@tanstack/react-table';
 import { ScoreUpdateBanner } from '@/components/ScoreUpdateBanner';
@@ -78,7 +79,7 @@ export function GameStandingsView({
   const isFullGrid = (gameType || '').toLowerCase() === 'full-grid';
 
   const columns = useMemo(() => {
-    const allColumns = [
+    const allColumns: ColumnDef<GameStandingRow, any>[] = [
       columnHelper.accessor('ranking', {
         header: '#',
         cell: (info) => {
@@ -148,7 +149,7 @@ export function GameStandingsView({
     if (!isFullGrid) {
       allColumns.push(
         columnHelper.accessor(
-          (row) => {
+          (row): number | undefined => {
             if (gameType === 'marginal-gains') {
               const pricePaid = row.totalSpent ?? 0;
               if (pricePaid <= 0) return undefined;
@@ -437,8 +438,8 @@ export function GameStandingsView({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">{content}</div>
+    <div className="min-h-screen">
+      <div className="max-w-2xl mx-auto px-4 py-8 mt-9">{content}</div>
     </div>
   );
 }

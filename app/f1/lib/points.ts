@@ -77,6 +77,28 @@ export function calculatePredictionPoints(
 }
 
 /**
+ * Count how many predicted top-10 positions are exactly correct.
+ */
+export function calculateCorrectPredictions(
+  prediction: F1Prediction,
+  result: F1RaceResult
+): number {
+  const predictedOrder = prediction.finishOrder
+    .slice(0, F1_POINTS_CONFIG.maxPredictionSize)
+    .filter(Boolean);
+
+  let correctPositions = 0;
+
+  for (let i = 0; i < predictedOrder.length; i++) {
+    if (result.finishOrder[i] === predictedOrder[i]) {
+      correctPositions++;
+    }
+  }
+
+  return correctPositions;
+}
+
+/**
  * Calculate maximum possible penalty points for a race
  */
 export function getMaxPossiblePoints(): number {

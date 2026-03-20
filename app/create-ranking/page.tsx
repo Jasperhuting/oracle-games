@@ -20,6 +20,14 @@ import Image from "next/image";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRankings } from "@/contexts/RankingsContext";
 import { useTranslation } from "react-i18next";
+import {
+  setStartingListRace,
+  getStartingListRace,
+  getAllTeams,
+  getEnrichedTeams,
+  getEnrichedRiders,
+  clearOldCaches
+} from "@/components/ranking/RankingHelpers";
 
 export default function CreateRankingPage() {
   const router = useRouter();
@@ -73,28 +81,14 @@ export default function CreateRankingPage() {
 
 
 
-  const setStartingListRace = async ({ year, race }: { year: number, race: string }) => {
-    const response = await fetch(`/api/setStartingListRace?year=${year}&race=${race}`);
-    const data = await response.json();
-  }
-
-  const getStartingListRace = async ({ year, race }: { year: number, race: string }) => {
-    const response = await fetch(`/api/getRidersFromRace?year=${year}&race=${race}`);
-    const data = await response.json();
-    // setStartingList(data.riders);
-  }
-
-
-  const getAllTeams = async () => {
-    const response = await fetch(`/api/getTeams`);
-    const data = await response.json();
-
+  const getAllTeamsWrapper = async () => {
+    const data = await getAllTeams();
     setTeamsArray(data.teams);
     return data;
   };
 
   useEffect(() => {
-    getAllTeams();
+    getAllTeamsWrapper();
   }, []);
 
 
@@ -131,75 +125,6 @@ export default function CreateRankingPage() {
     },
   })
 
-
-
-  const getEnrichedRiders = async () => {
-    console.log(`Starting to enrich riders for ${teamsArray.length} teams...`);
-
-    for (let i = 0; i < teamsArray.length; i++) {
-      const team: any = teamsArray[i]; // eslint-disable-line @typescript-eslint/no-explicit-any
-      let teamSlug = team.slug;
-
-      if (teamSlug === 'q365-pro-cycing-team-2025') {
-        teamSlug = 'q365-pro-cycling-team-2025'
-      }
-
-      try {
-        console.log(`[${i + 1}/${teamsArray.length}] Enriching riders for team: ${teamSlug}`);
-        const response = await fetch(`/api/setEnrichedRiders?year=2026&team=${teamSlug}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          console.error(`Failed to enrich riders for ${teamSlug}:`, data);
-        } else {
-          console.log(`✓ Successfully enriched riders for ${teamSlug}`);
-        }
-
-        // Add delay between requests to avoid overwhelming the server
-        if (i < teamsArray.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      } catch (error) {
-        console.error(`Error enriching riders for ${teamSlug}:`, error);
-      }
-    }
-
-    console.log('Finished enriching riders for all teams!');
-  };
-
-  const getEnrichedTeams = async () => {
-    console.log(`Starting to enrich teams for ${teamsArray.length} teams...`);
-
-    for (let i = 0; i < teamsArray.length; i++) {
-      const team: any = teamsArray[i]; // eslint-disable-line @typescript-eslint/no-explicit-any
-      let teamSlug = team.slug;
-
-      if (teamSlug === 'q365-pro-cycing-team-2025') {
-        teamSlug = 'q365-pro-cycling-team-2025'
-      }
-
-      try {
-        console.log(`[${i + 1}/${teamsArray.length}] Enriching team: ${teamSlug}`);
-        const response = await fetch(`/api/setEnrichedTeams?year=2026&team=${teamSlug}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          console.error(`Failed to enrich team ${teamSlug}:`, data);
-        } else {
-          console.log(`✓ Successfully enriched team ${teamSlug}`);
-        }
-
-        // Add delay between requests to avoid overwhelming the server
-        if (i < teamsArray.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      } catch (error) {
-        console.error(`Error enriching team ${teamSlug}:`, error);
-      }
-    }
-
-    console.log('Finished enriching teams!');
-  };
 
   const [progress, setProgress] = useState({ current: 0, total: 0, isRunning: false });
   const [totalCount, setTotalCount] = useState<number | null>(null);
@@ -357,17 +282,6 @@ export default function CreateRankingPage() {
     }
   };
 
-  const clearOldCaches = (currentYear: number) => {
-    // Clear caches for years other than current
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('riders_') || key.startsWith('teams_') || key.startsWith('cache_meta_'))) {
-        if (!key.includes(`_${currentYear}`)) {
-          localStorage.removeItem(key);
-        }
-      }
-    }
-  };
 
   const fetchData = async ({ year, append = false, forceRefresh = false }: { year: number, append?: boolean, forceRefresh?: boolean }) => {
     try {
@@ -720,8 +634,8 @@ export default function CreateRankingPage() {
           <Button text={progress.isRunning ? 'Running...' : 'Create Ranking'} onClick={() => createRanking()} disabled={isLoading || progress.isRunning} />
           <Button text={progress.isRunning ? 'Running...' : 'Create Ranking New'} onClick={() => createRankingNew()} disabled={isLoading || progress.isRunning} />
 
-          <Button onClick={() => getEnrichedTeams()} text="Get Enriched Teams" />
-          <Button onClick={() => getEnrichedRiders()} text="Get Enriched Riders" />
+          <Button onClick={() => getEnrichedTeams(teamsArray)} text="Get Enriched Teams" />
+          <Button onClick={() => getEnrichedRiders(teamsArray)} text="Get Enriched Riders" />
           <Button text={isLoading ? 'Loading...' : 'Set Teams'} onClick={() => setTeams()} disabled={isLoading || progress.isRunning} />
           <Button text="Test New Teams" onClick={testNewTeams} disabled={isLoading || progress.isRunning} />
           <Button text={progress.isRunning ? 'Running...' : 'Set Starting List'} onClick={() => setStartingListRace({ year: 2026, race: 'tour-de-france' })} disabled={isLoading || progress.isRunning} />

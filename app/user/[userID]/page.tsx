@@ -65,7 +65,7 @@ export default function UserPage({ params }: { params: Promise<{ userID: string 
 
     if (authLoading || loading) {
         return (
-            <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
+            <div className="flex flex-col p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
                 <div className="mx-auto container max-w-7xl">
                     <div className="flex items-center justify-center p-8">
                         <div className="text-gray-600">Laden...</div>
@@ -77,7 +77,7 @@ export default function UserPage({ params }: { params: Promise<{ userID: string 
 
     if (notFound || !profile) {
         return (
-            <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
+            <div className="flex flex-col p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
                 <div className="mx-auto container max-w-7xl">
                     <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
                         <button

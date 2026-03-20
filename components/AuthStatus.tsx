@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
+import { clearSharedSession } from "@/lib/auth/client-session";
 import { Button } from "./Button";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +13,7 @@ export const AuthStatus = () => {
 
     const handleLogout = async () => {
         try {
+            await clearSharedSession();
             await signOut(auth);
             router.push('/login');
         } catch (error) {

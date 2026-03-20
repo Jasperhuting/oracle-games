@@ -222,7 +222,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-8 mt-9">
           {loading && (
             <div className="text-center py-8 text-gray-600">Loading...</div>
           )}

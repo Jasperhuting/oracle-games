@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithCustomToken, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { ImpersonationStatus } from '@/lib/types/hooks';
+import { createSharedSession } from '@/lib/auth/client-session';
+import {
+  clearImpersonationCustomToken,
+  clearRestoreAdminSessionToken,
+  getImpersonationCustomToken,
+  getRestoreAdminSessionToken,
+} from '@/lib/auth/impersonation-storage';
 
 // Global state to share impersonation status across all useAuth instances
 let globalImpersonationStatus: ImpersonationStatus = { isImpersonating: false };
 const globalImpersonationListeners: Set<(status: ImpersonationStatus) => void> = new Set();
 let isCheckingImpersonation = false;
 let hasCheckedGlobally = false;
+let hasAttemptedSharedSessionRestore = false;
+let isApplyingImpersonationToken = false;
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -22,7 +31,7 @@ export function useAuth() {
   };
 
   // Function to refresh impersonation status
-  const refreshImpersonationStatus = async () => {
+  const refreshImpersonationStatus = useCallback(async () => {
     if (isCheckingImpersonation) {
       console.log('Already checking impersonation, skipping...');
       return;
@@ -40,7 +49,7 @@ export function useAuth() {
     } finally {
       isCheckingImpersonation = false;
     }
-  };
+  }, []);
 
   // Subscribe to global impersonation status changes
   useEffect(() => {
@@ -53,7 +62,7 @@ export function useAuth() {
     return () => {
       globalImpersonationListeners.delete(listener);
     };
-  }, []);
+  }, [refreshImpersonationStatus]);
 
   // Check impersonation status on mount (only once globally)
   useEffect(() => {
@@ -65,7 +74,7 @@ export function useAuth() {
     const checkImpersonation = async () => {
       try {
         // Check if we need to restore admin session after stopping impersonation
-        const restoreAdminToken = localStorage.getItem('restore_admin_session');
+        const restoreAdminToken = getRestoreAdminSessionToken();
         if (restoreAdminToken) {
           console.log('Restoring admin session...');
           setRestoringSession(true);
@@ -79,6 +88,9 @@ export function useAuth() {
             // Then sign in with the admin token
             await signInWithCustomToken(auth, restoreAdminToken);
             console.log('Signed in with admin token');
+            if (auth.currentUser) {
+              await createSharedSession(auth.currentUser, true);
+            }
 
             // After restoring admin session, update impersonation status
             const statusResponse = await fetch('/api/impersonate/status');
@@ -92,7 +104,7 @@ export function useAuth() {
             // Clear invalid token to prevent infinite retry loop
           } finally {
             // Always remove the token, whether successful or not
-            localStorage.removeItem('restore_admin_session');
+            clearRestoreAdminSessionToken();
             setRestoringSession(false);
             setLoading(false);
           }
@@ -106,15 +118,18 @@ export function useAuth() {
 
           // If impersonating and we have a custom token in localStorage, sign in
           if (globalImpersonationStatus.isImpersonating) {
-            const customToken = localStorage.getItem('impersonation_token');
+            const customToken = getImpersonationCustomToken();
             if (customToken) {
               try {
                 await signInWithCustomToken(auth, customToken);
+                if (auth.currentUser) {
+                  await createSharedSession(auth.currentUser, true);
+                }
               } catch (impersonationError) {
                 console.error('Error signing in with impersonation token:', impersonationError);
               } finally {
                 // Always remove the token after attempting to use it
-                localStorage.removeItem('impersonation_token');
+                clearImpersonationCustomToken();
               }
             }
           }
@@ -128,6 +143,54 @@ export function useAuth() {
     };
 
     checkImpersonation();
+  }, [refreshImpersonationStatus]);
+
+  useEffect(() => {
+    if (hasAttemptedSharedSessionRestore || typeof window === "undefined") {
+      return;
+    }
+
+    const restoreSharedSession = async () => {
+      const hasLocalRestoreToken = !!getRestoreAdminSessionToken();
+      const hasImpersonationToken = !!getImpersonationCustomToken();
+
+      if (auth.currentUser || hasLocalRestoreToken || hasImpersonationToken) {
+        hasAttemptedSharedSessionRestore = true;
+        return;
+      }
+
+      hasAttemptedSharedSessionRestore = true;
+      setRestoringSession(true);
+      setLoading(true);
+
+      try {
+        const response = await fetch('/api/auth/session/restore', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (data?.customToken) {
+          await signInWithCustomToken(auth, data.customToken);
+          if (auth.currentUser) {
+            await createSharedSession(auth.currentUser, true);
+          }
+        }
+      } catch (error) {
+        console.error('Error restoring shared session:', error);
+      } finally {
+        setRestoringSession(false);
+        if (!auth.currentUser) {
+          setLoading(false);
+        }
+      }
+    };
+
+    restoreSharedSession();
   }, []);
 
   useEffect(() => {
@@ -141,6 +204,45 @@ export function useAuth() {
 
     return () => unsubscribe();
   }, [restoringSession]);
+
+  useEffect(() => {
+    if (!impersonationStatus.isImpersonating) {
+      return;
+    }
+
+    const targetUid = impersonationStatus.impersonatedUser?.uid;
+    if (!targetUid || user?.uid === targetUid || isApplyingImpersonationToken) {
+      return;
+    }
+
+    const syncImpersonatedAuthUser = async () => {
+      const customToken = getImpersonationCustomToken();
+      if (!customToken) {
+        return;
+      }
+
+      isApplyingImpersonationToken = true;
+      setRestoringSession(true);
+      setLoading(true);
+
+      try {
+        await signInWithCustomToken(auth, customToken);
+        if (auth.currentUser) {
+          await createSharedSession(auth.currentUser, true);
+        }
+      } catch (error) {
+        console.error("Error syncing impersonated auth user:", error);
+      } finally {
+        isApplyingImpersonationToken = false;
+        setRestoringSession(false);
+        if (auth.currentUser) {
+          setLoading(false);
+        }
+      }
+    };
+
+    syncImpersonatedAuthUser();
+  }, [impersonationStatus, user]);
 
   return { 
     user, 

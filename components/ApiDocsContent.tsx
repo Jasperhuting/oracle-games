@@ -37,7 +37,7 @@ function getMethodColor(method: string): string {
 export function ApiDocsContent() {
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 mt-9">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Oracle Games API Documentation</h1>
           <p className="text-gray-600">

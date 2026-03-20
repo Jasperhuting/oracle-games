@@ -34,7 +34,7 @@ export default async function NewsOverviewPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef6f4_35%,#ffffff_100%)] pb-20">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef6f4_35%,#ffffff_100%)] pb-20 mt-9">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>

@@ -19,10 +19,16 @@ export const Menu = React.forwardRef<HTMLDivElement, Ariakit.MenuProps>(
         flip={menu?.parent ? true : "bottom-end"}
         {...props}
         className={clsx(
-          "cursor-pointer relative z-50 flex flex-col min-w-[180px] w-max overflow-auto overscroll-contain rounded-lg border border-solid border-[hsl(204,20%,88%)] bg-white  text-black shadow-lg outline-none",
+          "cursor-pointer relative z-50 flex flex-col min-w-[180px] w-max overflow-auto overscroll-contain rounded-lg border border-solid outline-none",
           "dark:border-[hsl(204,4%,24%)]]",
           props.className
         )}
+        style={{
+          background: "var(--platform-mobile-menu-bg)",
+          color: "var(--platform-header-title)",
+          borderColor: "var(--platform-header-border)",
+          ...props.style,
+        }}
       />
     );
   },
@@ -49,7 +55,7 @@ export const MenuItem = React.forwardRef<HTMLDivElement, Ariakit.MenuItemProps>(
         className={clsx(
           "flex cursor-pointer scroll-m-2 items-center gap-2 rounded outline-none pb-[6px]",
           "aria-disabled:opacity-25",
-          "data-[active-item]:bg-white data-[active-item]:hover:bg-gray-50 data-[active-item]:text-black",
+          "data-[active-item]:text-black",
           props.className
         )}
       />

@@ -431,7 +431,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-8 mt-9">
           {loading && (
             <div className="text-center py-8 text-gray-600">{t('games.loading')}</div>
           )}

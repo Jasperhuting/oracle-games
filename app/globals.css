@@ -4,6 +4,86 @@
 
 
 @layer base {
+  :root {
+    --platform-page-bg: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 48%, #eff6ff 100%);
+    --platform-text-color: #111827;
+    --platform-header-bg: rgba(255, 255, 255, 0.9);
+    --platform-header-border: rgba(255, 255, 255, 0.85);
+    --platform-header-shadow: 0 14px 38px rgba(15, 23, 42, 0.12);
+    --platform-header-title: #0f172a;
+    --platform-header-link: #475569;
+    --platform-header-link-hover: #0f172a;
+    --platform-header-link-active: #02554d;
+    --platform-header-accent: #02554d;
+    --platform-header-accent-soft: rgba(2, 85, 77, 0.16);
+    --platform-mobile-menu-bg: rgba(255, 255, 255, 0.96);
+    --platform-selector-border: rgba(15, 23, 42, 0.08);
+    --platform-banner-bg: #02554d;
+    --platform-banner-text: #ffffff;
+    --platform-banner-hover: rgba(255, 255, 255, 0.12);
+    --platform-logo-filter: none;
+  }
+
+  html[data-platform="cycling"] {
+    --platform-page-bg: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 48%, #eff6ff 100%);
+    --platform-text-color: #111827;
+    --platform-header-bg: rgba(255, 255, 255, 0.9);
+    --platform-header-border: rgba(255, 255, 255, 0.85);
+    --platform-header-shadow: 0 14px 38px rgba(15, 23, 42, 0.12);
+    --platform-header-title: #0f172a;
+    --platform-header-link: #475569;
+    --platform-header-link-hover: #0f172a;
+    --platform-header-link-active: #02554d;
+    --platform-header-accent: #02554d;
+    --platform-header-accent-soft: rgba(2, 85, 77, 0.16);
+    --platform-mobile-menu-bg: rgba(255, 255, 255, 0.96);
+    --platform-selector-border: rgba(15, 23, 42, 0.08);
+    --platform-banner-bg: #02554d;
+    --platform-banner-text: #ffffff;
+    --platform-banner-hover: rgba(255, 255, 255, 0.12);
+    --platform-logo-filter: none;
+  }
+
+  html[data-platform="f1"] {
+    --platform-page-bg: radial-gradient(circle at top, #0f2241 0%, #071225 45%, #020611 100%);
+    --platform-text-color: #f8fafc;
+    --platform-header-bg: rgba(7, 18, 37, 0.84);
+    --platform-header-border: rgba(248, 250, 252, 0.12);
+    --platform-header-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+    --platform-header-title: #f8fafc;
+    --platform-header-link: #cbd5e1;
+    --platform-header-link-hover: #ffffff;
+    --platform-header-link-active: #ff3040;
+    --platform-header-accent: #ff3040;
+    --platform-header-accent-soft: rgba(255, 48, 64, 0.24);
+    --platform-mobile-menu-bg: rgba(7, 18, 37, 0.97);
+    --platform-selector-border: rgba(248, 250, 252, 0.18);
+    --platform-banner-bg: #ff3040;
+    --platform-banner-text: #ffffff;
+    --platform-banner-hover: rgba(255, 255, 255, 0.12);
+    --platform-logo-filter: invert(1);
+  }
+
+  html[data-platform="football"] {
+    --platform-page-bg: #fff4e5;
+    --platform-text-color: #111827;
+    --platform-header-bg: rgba(255, 255, 255, 0.9);
+    --platform-header-border: rgba(255, 255, 255, 0.85);
+    --platform-header-shadow: 0 16px 40px rgba(255, 153, 0, 0.18);
+    --platform-header-title: #7a3c00;
+    --platform-header-link: #9a4d00;
+    --platform-header-link-hover: #7a3c00;
+    --platform-header-link-active: #ff9900;
+    --platform-header-accent: #ff9900;
+    --platform-header-accent-soft: rgba(255, 153, 0, 0.2);
+    --platform-mobile-menu-bg: rgba(255, 255, 255, 0.96);
+    --platform-selector-border: rgba(255, 153, 0, 0.28);
+    --platform-banner-bg: #ff9900;
+    --platform-banner-text: #ffffff;
+    --platform-banner-hover: rgba(255, 255, 255, 0.18);
+    --platform-logo-filter: none;
+  }
+
   html {
     font-family: Inter, system-ui, sans-serif;
     scroll-behavior: smooth;
@@ -13,6 +93,8 @@
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-attachment: fixed;
+    color: var(--platform-text-color);
   }
 
   /* Prevent layout shift from images */

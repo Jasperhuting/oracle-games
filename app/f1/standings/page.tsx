@@ -17,6 +17,7 @@ import { useUserNames } from "../hooks/useUserNames";
 import { F1SubLeague, F1Prediction, LegacyDriver } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { auth } from "@/lib/firebase/client";
+import { PlayerCard, ComparisonTable, DriverTag, DnfTags } from "@/components/f1";
 
 interface Player {
     id: string;
@@ -364,17 +365,6 @@ const StandingsPage = () => {
                 cell: (info) => (
                     <span className="text-gray-300">{info.getValue()}</span>
                 ),
-            }),
-            columnHelper.accessor("bestFinish", {
-                header: "Beste",
-                cell: (info) => {
-                    const value = info.getValue();
-                    if (value === null) return <span className="text-gray-500">-</span>;
-                    if (value === 1) return <span className="text-yellow-400 font-bold">🥇 1e</span>;
-                    if (value === 2) return <span className="text-gray-300 font-bold">🥈 2e</span>;
-                    if (value === 3) return <span className="text-amber-600 font-bold">🥉 3e</span>;
-                    return <span className="text-gray-400">{value}e</span>;
-                },
             }),
             columnHelper.accessor("lastRacePoints", {
                 header: "Laatste race",
@@ -815,252 +805,8 @@ const StandingsPage = () => {
         [buildComparisonRows, selectedCompareRow]
     );
 
-    const renderComparisonTable = (title: string, playerName: string, points: number | null, rows: ComparePositionRow[]) => (
-        <div className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="relative px-4 py-4 border-b border-gray-700">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')]"></div>
-                <div className="flex flex-col gap-2 pt-1 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-1 h-6 bg-red-600 rounded-full"></div>
-                        <h3 className="text-white font-black text-base tracking-tight uppercase">{title}</h3>
-                        <div className="w-1 h-6 bg-red-600 rounded-full"></div>
-                    </div>
-                    <div className="text-sm text-gray-400">
-                        <span className="text-white font-semibold">{playerName}</span>
-                        <span className="ml-2 text-red-400 font-black">{points ?? '-'}</span>
-                        <span className="ml-1">strafpunten</span>
-                    </div>
-                </div>
-            </div>
 
-            {rows.length > 0 ? (
-                <div className="overflow-x-auto xl:overflow-visible">
-                    <table className="w-full table-fixed min-w-[640px] xl:min-w-0">
-                        <thead className="bg-black/30">
-                            <tr>
-                                <th className="w-[96px] px-3 py-3 text-left text-[11px] font-bold text-gray-300 uppercase tracking-wider">Voorspeld</th>
-                                <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-300 uppercase tracking-wider">Coureur</th>
-                                <th className="w-[92px] px-3 py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-wider">Werkelijk</th>
-                                <th className="w-[110px] px-3 py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-wider">Verschil</th>
-                                <th className="w-[118px] px-3 py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-wider">Strafpunten</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-700">
-                            {rows.map(({ driver, predictedPos, actualPos, penalty, isDnf }) => {
-                                const rowColor = penalty === 0
-                                    ? 'bg-green-950/35'
-                                    : penalty >= 10
-                                        ? 'bg-red-950/35'
-                                        : 'bg-yellow-950/25';
 
-                                return (
-                                    <tr key={`${title}-${driver?.shortName ?? predictedPos}`} className={rowColor}>
-                                        <td className="px-3 py-2.5">
-                                            <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-full bg-gray-800 border border-gray-600 px-2 text-sm font-black text-white">
-                                                P{predictedPos}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-2.5">
-                                            {driver ? (
-                                                <div className="flex items-center gap-2.5 min-w-0">
-                                                    <span
-                                                        style={{ backgroundColor: driver.teamColor || '#666' }}
-                                                        className="rounded-full overflow-hidden bg-gray-200 w-[34px] h-[34px] relative shrink-0"
-                                                    >
-                                                        <img src={driver.image} alt={driver.lastName} className="w-[46px] h-auto absolute top-0 left-0" />
-                                                    </span>
-                                                    <div className="min-w-0">
-                                                        <div className="truncate font-semibold text-white text-[15px] leading-tight">{driver.firstName} {driver.lastName}</div>
-                                                        <div className="text-xs text-gray-400">{driver.shortName}</div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div>
-                                                    <div className="font-semibold text-white">Onbekende coureur</div>
-                                                    <div className="text-xs text-gray-400">Niet gevonden</div>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-center">
-                                            <span className={`font-semibold text-[15px] ${actualPos && actualPos <= 10 ? 'text-white' : 'text-amber-400'}`}>
-                                                {isDnf ? 'DNF' : actualPos ? `P${actualPos}` : 'Niet geklasseerd'}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-2.5 text-center text-sm text-gray-300">
-                                            {isDnf ? 'uitgevallen' : actualPos === null ? '-' : penalty === 0 ? 'exact' : `${penalty} plaatsen`}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-center">
-                                            <span className={`inline-flex min-w-11 justify-center rounded-full px-2 py-1 text-sm font-black ${
-                                                penalty === 0 ? 'bg-green-600/20 text-green-300' : penalty < 10 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-600/20 text-red-300'
-                                            }`}>
-                                                {penalty > 0 ? `+${penalty}` : '0'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <div className="px-4 py-8 text-center text-gray-400">Niet ingevuld</div>
-            )}
-        </div>
-    );
-
-    const renderDriverTag = (shortName: string | null, label: string, actualValue?: string | null) => {
-        const driver = shortName ? driversByShortName.get(shortName) ?? null : null;
-        const isCorrect = shortName && actualValue && shortName === actualValue;
-
-        return (
-            <div className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-3">
-                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">{label}</div>
-                {driver ? (
-                    <div className="flex items-center gap-3">
-                        <span
-                            style={{ backgroundColor: driver.teamColor || '#666' }}
-                            className="rounded-full overflow-hidden bg-gray-200 w-9 h-9 relative shrink-0"
-                        >
-                            <img src={driver.image} alt={driver.lastName} className="w-[50px] h-auto absolute top-0 left-0" />
-                        </span>
-                        <div className="min-w-0">
-                            <div className={`font-semibold ${isCorrect ? 'text-green-300' : 'text-white'}`}>{driver.firstName} {driver.lastName}</div>
-                            <div className="text-xs text-gray-400">{driver.shortName}</div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-sm text-gray-500">Niet ingevuld</div>
-                )}
-            </div>
-        );
-    };
-
-    const renderDnfTags = (shortNames: string[], actualDnfs: string[]) => (
-            <div className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-3">
-                <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">DNFs</div>
-            {shortNames.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                    {shortNames.map((shortName) => {
-                        const driver = driversByShortName.get(shortName) ?? null;
-                        const isCorrect = actualDnfs.includes(shortName);
-                        return (
-                            <div
-                                key={shortName}
-                                className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 ${
-                                    isCorrect
-                                        ? 'border-green-500/40 bg-green-500/10 text-green-200'
-                                        : 'border-gray-600 bg-gray-900 text-gray-200'
-                                }`}
-                            >
-                                {driver && (
-                                    <span
-                                        style={{ backgroundColor: driver.teamColor || '#666' }}
-                                        className="rounded-full overflow-hidden bg-gray-200 w-6 h-6 relative shrink-0"
-                                    >
-                                        <img src={driver.image} alt={driver.lastName} className="w-8 h-auto absolute top-0 left-0" />
-                                    </span>
-                                )}
-                                <span className="text-sm font-medium">{shortName}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className="text-sm text-gray-500">Niet ingevuld</div>
-            )}
-        </div>
-    );
-
-    // Mobile card component
-    const PlayerCard = ({ player, position }: { player: Player; position: number }) => {
-        const getPositionStyle = () => {
-            if (position === 1) return "bg-gradient-to-r from-yellow-500 to-yellow-400 text-black";
-            if (position === 2) return "bg-gradient-to-r from-gray-400 to-gray-300 text-black";
-            if (position === 3) return "bg-gradient-to-r from-amber-700 to-amber-600 text-white";
-            return "bg-gray-700 text-white";
-        };
-
-        const getBorderStyle = () => {
-            if (position === 1) return "border-yellow-500";
-            if (position === 2) return "border-gray-400";
-            if (position === 3) return "border-amber-600";
-            return "border-gray-700";
-        };
-
-        return (
-            <div 
-                className={`bg-gray-800 rounded-lg p-4 border-l-4 ${getBorderStyle()} cursor-pointer hover:bg-gray-700/50 transition-colors`}
-                onClick={() => {
-                    if (!hasFinishedRace) return;
-                    if (player.id === user?.uid) return;
-                    handleOpenComparison(player.id);
-                }}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-sm ${getPositionStyle()}`}>
-                            {position}
-                        </span>
-                        {player.avatarUrl ? (
-                            <div className="w-10 h-10 rounded-full overflow-hidden">
-                                <img
-                                    src={player.avatarUrl}
-                                    alt="Avatar"
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-sm">
-                                {player.name.charAt(0).toUpperCase()}
-                            </div>
-                        )}
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <div className="font-semibold text-white">{player.name}</div>
-                                {player.id === user?.uid && (
-                                    <>
-                                        <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
-                                            Jij
-                                        </span>
-                                        {shouldPromptAvatar && (
-                                            <button
-                                                type="button"
-                                                onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    router.push("/account/settings");
-                                                }}
-                                                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20"
-                                            >
-                                                Voeg avatar toe
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                            <div className="text-xs text-gray-400">{player.racesParticipated} races</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <div className="text-2xl font-black text-red-400">{player.totalPoints}</div>
-                            <div className="text-xs text-gray-400">strafpunten</div>
-                        </div>
-                        {hasFinishedRace && player.id !== user?.uid && <Users size={18} className="text-gray-500" />}
-                    </div>
-                </div>
-                <div className="flex justify-between mt-3 pt-3 border-t border-gray-700 text-sm">
-                    <div className="text-gray-400">
-                        <span className="text-white font-semibold">{player.correctPredictions}</span> correct
-                    </div>
-                    {player.lastRacePoints !== null && (
-                        <div className="text-gray-400">
-                            Laatste: <span className="text-green-400 font-semibold">+{player.lastRacePoints}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
 
     if (racesLoading || standingsLoading || participantsLoading || subLeaguesLoading || namesLoading || legacyDriversLoading) {
         return (
@@ -1296,7 +1042,15 @@ const StandingsPage = () => {
             {/* Mobile view - card list */}
             <div className="md:hidden flex flex-col gap-3">
                 {sortedPlayers.map((player, index) => (
-                    <PlayerCard key={player.id} player={player} position={index + 1} />
+                    <PlayerCard
+                        key={player.id}
+                        player={player}
+                        position={index + 1}
+                        hasFinishedRace={hasFinishedRace}
+                        shouldPromptAvatar={shouldPromptAvatar}
+                        currentUserId={user?.uid}
+                        onCompare={handleOpenComparison}
+                    />
                 ))}
             </div>
 
@@ -1604,46 +1358,46 @@ const StandingsPage = () => {
                                             </div>
 
                                             <div className="grid gap-4 xl:grid-cols-2">
-                                                {renderComparisonTable(
-                                                    'Jouw voorspelde top 10 vs einduitslag',
-                                                    players.find((player) => player.id === user?.uid)?.name || 'Jij',
-                                                    selectedCompareRow.myPoints,
-                                                    myComparePositionRows
-                                                )}
-                                                {renderComparisonTable(
-                                                    `${comparePlayer.name} top 10 vs einduitslag`,
-                                                    comparePlayer.name,
-                                                    selectedCompareRow.theirPoints,
-                                                    theirComparePositionRows
-                                                )}
+                                                <ComparisonTable
+                                                    title='Jouw voorspelde top 10 vs einduitslag'
+                                                    playerName={players.find((player) => player.id === user?.uid)?.name || 'Jij'}
+                                                    points={selectedCompareRow.myPoints}
+                                                    rows={myComparePositionRows}
+                                                />
+                                                <ComparisonTable
+                                                    title={`${comparePlayer.name} top 10 vs einduitslag`}
+                                                    playerName={comparePlayer.name}
+                                                    points={selectedCompareRow.theirPoints}
+                                                    rows={theirComparePositionRows}
+                                                />
                                             </div>
 
                                             <div className="grid gap-4 xl:grid-cols-2">
                                                 <div className="bg-gray-900 rounded-xl border border-gray-700 p-4 space-y-3">
                                                     <div className="text-sm font-bold uppercase tracking-wide text-white">Jouw extra voorspellingen</div>
                                                     <div className="grid gap-3 md:grid-cols-2">
-                                                        {renderDriverTag(selectedCompareRow.myPolePosition, 'Pole position', selectedCompareRow.resultPolePosition)}
-                                                        {renderDriverTag(selectedCompareRow.myFastestLap, 'Snelste ronde', selectedCompareRow.resultFastestLap)}
+                                                        <DriverTag shortName={selectedCompareRow.myPolePosition} label='Pole position' actualValue={selectedCompareRow.resultPolePosition} driversByShortName={driversByShortName} />
+                                                        <DriverTag shortName={selectedCompareRow.myFastestLap} label='Snelste ronde' actualValue={selectedCompareRow.resultFastestLap} driversByShortName={driversByShortName} />
                                                     </div>
-                                                    {renderDnfTags(selectedCompareRow.myDnfs, selectedCompareRow.dnfDrivers)}
+                                                    <DnfTags shortNames={selectedCompareRow.myDnfs} actualDnfs={selectedCompareRow.dnfDrivers} driversByShortName={driversByShortName} />
                                                 </div>
 
                                                 <div className="bg-gray-900 rounded-xl border border-gray-700 p-4 space-y-3">
                                                     <div className="text-sm font-bold uppercase tracking-wide text-white">{comparePlayer.name} extra voorspellingen</div>
                                                     <div className="grid gap-3 md:grid-cols-2">
-                                                        {renderDriverTag(selectedCompareRow.theirPolePosition, 'Pole position', selectedCompareRow.resultPolePosition)}
-                                                        {renderDriverTag(selectedCompareRow.theirFastestLap, 'Snelste ronde', selectedCompareRow.resultFastestLap)}
+                                                        <DriverTag shortName={selectedCompareRow.theirPolePosition} label='Pole position' actualValue={selectedCompareRow.resultPolePosition} driversByShortName={driversByShortName} />
+                                                        <DriverTag shortName={selectedCompareRow.theirFastestLap} label='Snelste ronde' actualValue={selectedCompareRow.resultFastestLap} driversByShortName={driversByShortName} />
                                                     </div>
-                                                    {renderDnfTags(selectedCompareRow.theirDnfs, selectedCompareRow.dnfDrivers)}
+                                                    <DnfTags shortNames={selectedCompareRow.theirDnfs} actualDnfs={selectedCompareRow.dnfDrivers} driversByShortName={driversByShortName} />
                                                 </div>
                                             </div>
 
                                             <div className="bg-gray-900 rounded-xl border border-gray-700 p-4">
                                                 <div className="text-sm font-bold uppercase tracking-wide text-white mb-3">Officiële bonusuitslag</div>
                                                 <div className="grid gap-3 md:grid-cols-3">
-                                                    {renderDriverTag(selectedCompareRow.resultPolePosition, 'Pole position')}
-                                                    {renderDriverTag(selectedCompareRow.resultFastestLap, 'Snelste ronde')}
-                                                    {renderDnfTags(selectedCompareRow.dnfDrivers, selectedCompareRow.dnfDrivers)}
+                                                    <DriverTag shortName={selectedCompareRow.resultPolePosition} label='Pole position' driversByShortName={driversByShortName} />
+                                                    <DriverTag shortName={selectedCompareRow.resultFastestLap} label='Snelste ronde' driversByShortName={driversByShortName} />
+                                                    <DnfTags shortNames={selectedCompareRow.dnfDrivers} actualDnfs={selectedCompareRow.dnfDrivers} driversByShortName={driversByShortName} />
                                                 </div>
                                             </div>
                                         </div>

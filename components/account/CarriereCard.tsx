@@ -211,7 +211,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       {/* Header with avatar and basic info */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
+      <div className="bg-gradient-to-r from-primary-light to-white p-6">
         <div className="flex items-center gap-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
@@ -266,7 +266,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Oracle Rank */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600 mb-1">
+            <div className="text-2xl font-bold text-primary mb-1">
               {oracleLoading ? '...' : oracleStats?.oracleRank ? `#${oracleStats.oracleRank}` : '-'}
             </div>
             <div className="text-sm font-medium text-gray-700 mb-1">Oracle Rank</div>
@@ -283,7 +283,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
             <button
               type="button"
               onClick={openOracleStandings}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+              className="mt-2 text-xs text-primary hover:text-primary-hover underline"
             >
               Bekijk standings
             </button>
@@ -291,7 +291,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
           {/* Season Rank */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600 mb-1">
+            <div className="text-2xl font-bold text-primary mb-1">
               {seasonLoading ? '...' : seasonStats?.oracleRank ? `#${seasonStats.oracleRank}` : '-'}
             </div>
             <div className="text-sm font-medium text-gray-700 mb-1">Season Rank</div>
@@ -309,7 +309,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
           {/* Top Results Count */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600 mb-1">
+            <div className="text-2xl font-bold text-primary mb-1">
               {loading ? '...' : topResults.length}
             </div>
             <div className="text-sm font-medium text-gray-700 mb-1">Top Resultaten</div>
@@ -330,7 +330,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
             {topResults.map((result, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="flex-shrink-0 w-8 h-8 bg-primary-light text-primary rounded-full flex items-center justify-center text-sm font-bold">
                     {formatRanking(result.ranking)}
                   </div>
                   <div>
@@ -361,39 +361,39 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link
               href="/account/settings"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-blue-300 hover:shadow-lg transition-all duration-300"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
             >
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
+              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
                 <span className="text-xl">⚙️</span>
               </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-blue-600">Voorkeuren</div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Voorkeuren</div>
             </Link>
             <Link
               href="/account/stats"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-green-300 hover:shadow-lg transition-all duration-300"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
             >
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 transition-colors">
+              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
                 <span className="text-xl">📊</span>
               </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-green-600">Statistiek</div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Statistiek</div>
             </Link>
             <Link
               href="/account/history"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-purple-300 hover:shadow-lg transition-all duration-300"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
             >
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors">
+              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
                 <span className="text-xl">📜</span>
               </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-purple-600">Geschiedenis</div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Geschiedenis</div>
             </Link>
             <Link
               href="/forum"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-orange-300 hover:shadow-lg transition-all duration-300"
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
             >
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-200 transition-colors">
+              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
                 <span className="text-xl">💬</span>
               </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-orange-600">Forum</div>
+              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Forum</div>
             </Link>
           </div>
         </div>

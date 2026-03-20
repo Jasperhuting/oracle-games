@@ -484,14 +484,14 @@ export default function SlipstreamPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen mt-9 flex items-center justify-center">
         <div className="text-lg text-gray-600">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mt-9">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">

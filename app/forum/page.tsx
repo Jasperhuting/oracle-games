@@ -53,7 +53,7 @@ export default function ForumPage() {
   }, []);
 
   return (
-      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-[radial-gradient(circle_at_top_left,_rgba(254,243,199,0.7),_transparent_32%),linear-gradient(180deg,#fffaf0_0%,#eef6ff_55%,#f8fafc_100%)]">
+      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px]">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
             <Link href="/account" className="text-sm text-gray-600 hover:text-gray-900 underline">

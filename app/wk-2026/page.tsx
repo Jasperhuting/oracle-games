@@ -2,6 +2,7 @@
 'use client';
 
 import { Flag } from "@/components/Flag";
+import { WkAdminNav } from "@/components/WkAdminNav";
 import { useEffect, useState } from "react";
 
 import countriesList from '@/lib/country.json';
@@ -204,13 +205,14 @@ const WK2026Page = () => {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-8 mt-9">
+            <WkAdminNav />
             <h1 className="text-3xl font-bold mb-6">WK 2026 Games</h1>
 
             <div className="mb-4 flex gap-4">
                 <button
                     onClick={randomlyAssignAllPots}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                    className="px-4 py-2 bg-[#ff9900] text-white rounded-lg hover:bg-[#e68a00] transition-colors font-semibold"
                 >
                     Randomly Assign All Pots to Poules
                 </button>
@@ -288,7 +290,7 @@ const WK2026Page = () => {
                                                     key={position}
                                                     onDragOver={handleDragOver}
                                                     onDrop={() => handleDropToPosition(poule, position)}
-                                                    className="flex flex-row items-center p-2 bg-white border-2 border-dashed border-gray-300 rounded-lg min-h-[44px] hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                                                    className="flex flex-row items-center p-2 bg-white border-2 border-dashed border-gray-300 rounded-lg min-h-[44px] hover:border-[#ff9900] hover:bg-orange-50 transition-colors"
                                                 >
                                                     <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-gray-200 rounded-full text-xs font-bold mr-2">
                                                         {position + 1}
@@ -306,7 +308,7 @@ const WK2026Page = () => {
             </div>
 
             <div
-                className="mb-8 p-6 border-2 border-dashed border-blue-400 rounded-lg bg-blue-50"
+                className="mb-8 p-6 border-2 border-dashed border-[#ff9900] rounded-lg bg-orange-50"
                 onDragOver={handleDragOver}
                 onDrop={handleDropToUnassigned}
             >
@@ -319,10 +321,10 @@ const WK2026Page = () => {
                                 key={team.id}
                                 draggable
                                 onDragStart={() => handleDragStart(team)}
-                                className="relative flex flex-row items-center p-4 bg-white border-2 border-blue-300 rounded-lg cursor-move hover:shadow-lg transition-shadow"
+                                className="relative flex flex-row items-center p-4 bg-white border-2 border-[#ffcc80] rounded-lg cursor-move hover:shadow-lg transition-shadow"
                             >
                                 <Flag countryCode={country?.code || team.id} width={40} />
-                                <span className={`ml-2 font-bold absolute right-1 top-1 rounded-full w-6 h-6 flex items-center justify-center bg-blue-500 text-white text-xs ${team.pot === 1 && 'bg-red-500'} ${team.pot === 2 && 'bg-yellow-500'} ${team.pot === 3 && 'bg-green-500'} ${team.pot === 4 && 'bg-purple-500'} `}>{team.pot}</span>
+                                <span className={`ml-2 font-bold absolute right-1 top-1 rounded-full w-6 h-6 flex items-center justify-center bg-[#ff9900] text-white text-xs ${team.pot === 1 && 'bg-red-500'} ${team.pot === 2 && 'bg-yellow-500'} ${team.pot === 3 && 'bg-green-500'} ${team.pot === 4 && 'bg-purple-500'} `}>{team.pot}</span>
                                 <h2 className="ml-2 font-medium truncate">{team.name}</h2>
                             </div>
                         );

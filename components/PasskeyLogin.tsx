@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "./Button";
 import { authenticateWithPasskey, isPasskeySupported } from "@/lib/passkey";
 import { useRouter } from "next/navigation";
+import { createSharedSession } from "@/lib/auth/client-session";
 
 export const PasskeyLogin = () => {
     const [error, setError] = useState<string | null>(null);
@@ -43,6 +44,9 @@ export const PasskeyLogin = () => {
 
             // Sign in with custom token
             await signInWithCustomToken(auth, token);
+            if (auth.currentUser) {
+                await createSharedSession(auth.currentUser, true);
+            }
 
             // Update last login method
             await fetch('/api/updateLoginMethod', {

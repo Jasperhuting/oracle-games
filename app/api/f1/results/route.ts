@@ -10,7 +10,7 @@ import {
   createRaceDocId,
   createStandingDocId,
 } from '@/app/f1/types';
-import { calculatePredictionPoints } from '@/app/f1/lib/points';
+import { calculatePredictionPoints, calculateCorrectPredictions } from '@/app/f1/lib/points';
 import { cookies } from 'next/headers';
 
 const f1Db = getServerFirebaseF1();
@@ -123,16 +123,18 @@ export async function POST(request: NextRequest) {
       .get();
 
     // Calculate points for each prediction
-    const pointsUpdates: { userId: string; points: number; breakdown: F1PointsHistory['breakdown'] }[] = [];
+    const pointsUpdates: { userId: string; points: number; correctPredictions: number; breakdown: F1PointsHistory['breakdown'] }[] = [];
     const predictedUserIds = new Set<string>();
 
     for (const predDoc of predictionsSnapshot.docs) {
       const prediction = predDoc.data() as F1Prediction;
       const { total, breakdown } = calculatePredictionPoints(prediction, resultData);
+      const correctPredictions = calculateCorrectPredictions(prediction, resultData);
 
       pointsUpdates.push({
         userId: prediction.userId,
         points: total,
+        correctPredictions,
         breakdown,
       });
       predictedUserIds.add(prediction.userId);
@@ -155,6 +157,7 @@ export async function POST(request: NextRequest) {
       pointsUpdates.push({
         userId: participant.userId,
         points: F1_POINTS_CONFIG.missingPredictionPenalty,
+        correctPredictions: 0,
         breakdown: {
           positionPenalty: F1_POINTS_CONFIG.missingPredictionPenalty,
           bonusPenalty: 0,
@@ -171,13 +174,25 @@ export async function POST(request: NextRequest) {
 
       if (standingDoc.exists) {
         const existing = standingDoc.data() as F1Standing;
-        const newRacePoints = { ...existing.racePoints, [raceId]: update.points };
+        const previousRacePoints =
+          typeof existing.racePoints === 'object' && existing.racePoints !== null
+            ? existing.racePoints
+            : {};
+        const newRacePoints = { ...previousRacePoints, [raceId]: update.points };
+        const previousCorrectByRace =
+          existing.correctPredictionsByRace && typeof existing.correctPredictionsByRace === 'object'
+            ? existing.correctPredictionsByRace
+            : {};
+        const newCorrectByRace = { ...previousCorrectByRace, [raceId]: update.correctPredictions };
         const newTotalPoints = Object.values(newRacePoints).reduce((a, b) => a + b, 0);
+        const newCorrectPredictions = Object.values(newCorrectByRace).reduce((a, b) => a + b, 0);
 
         await standingRef.update({
           totalPoints: newTotalPoints,
+          correctPredictions: newCorrectPredictions,
           racesParticipated: Object.keys(newRacePoints).length,
           racePoints: newRacePoints,
+          correctPredictionsByRace: newCorrectByRace,
           lastRacePoints: update.points,
           lastRaceRound: result.round,
           updatedAt: now,
@@ -188,10 +203,11 @@ export async function POST(request: NextRequest) {
           userId: update.userId,
           season: result.season,
           totalPoints: update.points,
-          correctPredictions: 0, // TODO: Calculate this
+          correctPredictions: update.correctPredictions,
           racesParticipated: 1,
           bestFinish: null,
           racePoints: { [raceId]: update.points },
+          correctPredictionsByRace: { [raceId]: update.correctPredictions },
           lastRacePoints: update.points,
           lastRaceRound: result.round,
           updatedAt: now as unknown as import('firebase/firestore').Timestamp,

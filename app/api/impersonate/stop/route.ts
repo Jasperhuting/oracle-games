@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { cookies } from 'next/headers';
+import { getSharedCookieDomain } from '@/lib/auth/session-cookie';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,8 +53,30 @@ export async function POST(request: NextRequest) {
       adminToken,
     });
 
-    // Clear the impersonation cookie
-    response.cookies.delete('impersonation');
+    const normalizedHost = (request.headers.get('host') || '').split(':')[0].toLowerCase();
+    const sharedDomain = getSharedCookieDomain(request.headers.get('host'));
+    const sharedDomainWithoutDot = sharedDomain?.replace(/^\./, '');
+    const expiredAt = new Date(0);
+
+    const clearOptions = [
+      undefined,
+      sharedDomain,
+      sharedDomainWithoutDot,
+      normalizedHost || undefined,
+      normalizedHost ? `.${normalizedHost}` : undefined,
+    ].filter((value, index, array) => Boolean(value) ? array.indexOf(value) === index : index === 0);
+
+    for (const domain of clearOptions) {
+      response.cookies.set('impersonation', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+        expires: expiredAt,
+        ...(domain ? { domain } : {}),
+      });
+    }
 
     return response;
   } catch (error) {

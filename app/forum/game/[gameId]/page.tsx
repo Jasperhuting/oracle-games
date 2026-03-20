@@ -251,7 +251,7 @@ export default function ForumGamePage() {
   }, [topics]);
 
   return (
-      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-[radial-gradient(circle_at_top_left,_rgba(254,226,226,0.6),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(254,243,199,0.6),_transparent_26%),linear-gradient(180deg,#fff8f3_0%,#f7fbff_58%,#f8fafc_100%)]">
+      <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
         <div className="mx-auto container max-w-5xl">
           <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
             <Link href="/forum" className="text-sm text-gray-600 hover:text-gray-900 underline">
@@ -259,7 +259,7 @@ export default function ForumGamePage() {
             </Link>
           </div>
 
-          <div className="bg-gradient-to-br from-rose-50 via-white to-amber-50 border border-gray-200 rounded-2xl p-6 mb-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
@@ -291,7 +291,7 @@ export default function ForumGamePage() {
                 <select
                   value={sort}
                   onChange={(event) => setSort(event.target.value as SortOption)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                 >
                   <option value="active">Actief</option>
                   <option value="new">Nieuwste</option>
@@ -327,7 +327,7 @@ export default function ForumGamePage() {
                     <select
                       value={selectedDivisionGameId}
                       onChange={(event) => setSelectedDivisionGameId(event.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                     >
                       {divisionOptions.map((division) => (
                         <option key={division.id} value={division.id}>
@@ -342,7 +342,7 @@ export default function ForumGamePage() {
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="Titel"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                 />
                 <RichTextEditor
                   value={content}

@@ -171,6 +171,7 @@ export interface F1Standing {
   
   // Per race breakdown
   racePoints: Record<string, number>;  // { "2026_01": 28, "2026_02": 32, ... }
+  correctPredictionsByRace?: Record<string, number>;
   
   lastRacePoints: number | null;
   lastRaceRound: number | null;

@@ -2,10 +2,11 @@
 export const dynamic = "force-dynamic";
 
 import { Flag } from "@/components/Flag";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import countriesList from '@/lib/country.json';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
+import { useWk2026Participant } from "../hooks";
 
 interface Match {
     id: string;
@@ -36,14 +37,46 @@ interface TeamStats {
 
 export default function PlayerPredictionsPage() {
     const { user } = useAuth();
+    const { isParticipant, loading: participantLoading, refresh: refreshParticipant } = useWk2026Participant(user?.uid || null, 2026);
     const [poules, setPoules] = useState<PouleRanking[]>([]); // Team assignments from admin
     const [manualRankings, setManualRankings] = useState<PouleRanking[]>([]); // Player's predicted rankings
     const [matches, setMatches] = useState<Match[]>([]); // Player's predicted scores
     const [selectedPoule, setSelectedPoule] = useState<string>('a');
     const [draggedTeam, setDraggedTeam] = useState<TeamInPoule | null>(null);
     const [draggedFromPosition, setDraggedFromPosition] = useState<number | null>(null);
+    const [isJoining, setIsJoining] = useState(false);
 
-    const fetchPoulesAndPredictions = async () => {
+    const handleJoinWk = async () => {
+        if (!user) return;
+
+        setIsJoining(true);
+
+        try {
+            const idToken = await user.getIdToken();
+            const response = await fetch('/api/wk-2026/join', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ season: 2026 }),
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                alert(data.error || 'Er ging iets mis bij het deelnemen');
+            } else {
+                await refreshParticipant();
+            }
+        } catch (error) {
+            console.error('Error joining WK 2026:', error);
+            alert('Er ging iets mis bij het deelnemen');
+        } finally {
+            setIsJoining(false);
+        }
+    };
+
+    const fetchPoulesAndPredictions = useCallback(async () => {
         try {
             // Fetch admin's poules (official team assignments)
             const poulesResponse = await fetch('/api/wk-2026/getPoules');
@@ -117,13 +150,13 @@ export default function PlayerPredictionsPage() {
         } catch (error) {
             console.error('Error fetching poules and predictions:', error);
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         if (user) {
             fetchPoulesAndPredictions();
         }
-    }, [user]);
+    }, [user, fetchPoulesAndPredictions]);
 
     const handleScoreChange = (matchId: string, team: 'team1' | 'team2', score: string) => {
         const scoreValue = score === '' ? null : parseInt(score);
@@ -148,7 +181,6 @@ export default function PlayerPredictionsPage() {
         }));
     };
 
-    const selectedPouleData = poules.find(p => p.pouleId === selectedPoule);
     const selectedManualRanking = manualRankings.find(p => p.pouleId === selectedPoule);
     const selectedPouleMatches = matches.filter(m => m.pouleId === selectedPoule);
 
@@ -301,14 +333,49 @@ export default function PlayerPredictionsPage() {
 
     if (!user) {
         return (
-            <div className="p-6">
+            <div className="p-8 mt-9">
                 <h1 className="text-3xl font-bold mb-6">Please log in to make predictions</h1>
             </div>
         );
     }
 
+    if (participantLoading) {
+        return (
+            <div className="p-8 mt-9 max-w-6xl mx-auto">
+                <div className="rounded-2xl border border-[#ffd7a6] bg-white p-6 text-[#9a4d00]">
+                    Deelnamestatus laden...
+                </div>
+            </div>
+        );
+    }
+
+    if (!isParticipant) {
+        return (
+            <div className="p-8 mt-9 max-w-4xl mx-auto">
+                <div className="rounded-3xl border border-[#ffd7a6] bg-white p-8 shadow-sm">
+                    <span className="inline-flex rounded-full bg-[#fff0d9] px-3 py-1 text-sm font-semibold text-[#9a4d00]">
+                        Eerst deelnemen
+                    </span>
+                    <h1 className="mt-4 text-3xl font-bold text-gray-900">Doe mee aan WK 2026</h1>
+                    <p className="mt-3 max-w-2xl text-base text-gray-600">
+                        Voor je voorspellingen kunt invullen, moet je eerst officieel deelnemen aan het WK-platform.
+                        Daarna krijg je direct toegang tot de groepsfase, knockout en subpoules.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleJoinWk}
+                        disabled={isJoining}
+                        className="mt-6 rounded-xl bg-[#ff9900] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#e68a00] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {isJoining ? 'Bezig met aanmelden...' : 'Deelnemen aan WK 2026'}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="p-6">
+        <div className="p-8 mt-9">
             <h1 className="text-3xl font-bold mb-6">My WK 2026 Predictions</h1>
 
             {/* Poule Selector */}
@@ -321,7 +388,7 @@ export default function PlayerPredictionsPage() {
                             onClick={() => setSelectedPoule(pouleId)}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                                 selectedPoule === pouleId
-                                    ? 'bg-blue-500 text-white'
+                                    ? 'bg-[#ff9900] text-white'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
                         >
@@ -352,7 +419,7 @@ export default function PlayerPredictionsPage() {
                                         onDrop={() => handleDropToPosition(position)}
                                         className="flex items-center p-3 bg-white border-2 border-gray-200 rounded-lg cursor-move hover:shadow-md transition-shadow"
                                     >
-                                        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-blue-500 text-white rounded-full text-sm font-bold mr-3">
+                                        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-[#ff9900] text-white rounded-full text-sm font-bold mr-3">
                                             {position + 1}
                                         </div>
                                         <div className="flex-shrink-0">
@@ -367,7 +434,7 @@ export default function PlayerPredictionsPage() {
                                         key={position}
                                         onDragOver={handleDragOver}
                                         onDrop={() => handleDropToPosition(position)}
-                                        className="flex items-center p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg min-h-[56px] hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                                        className="flex items-center p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg min-h-[56px] hover:border-[#ff9900] hover:bg-orange-50 transition-colors"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-700 rounded-full text-sm font-bold mr-3">
                                             {position + 1}
@@ -500,13 +567,15 @@ export default function PlayerPredictionsPage() {
             </div>
 
             {/* Save Button */}
-            <div className="flex gap-4">
-                <button
-                    onClick={savePredictions}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
-                >
-                    Save My Predictions
-                </button>
+            <div className="sticky bottom-4 z-20 mt-8 flex justify-end">
+                <div className="rounded-2xl border border-orange-200 bg-white/90 p-2 shadow-lg backdrop-blur">
+                    <button
+                        onClick={savePredictions}
+                        className="px-6 py-3 bg-[#ff9900] text-white rounded-lg hover:bg-[#e68a00] transition-colors font-semibold"
+                    >
+                        Save My Predictions
+                    </button>
+                </div>
             </div>
         </div>
     );

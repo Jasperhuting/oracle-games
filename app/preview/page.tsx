@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   IconTrophy,
@@ -9,17 +11,19 @@ import {
   IconCalendar,
   IconStar,
 } from "@tabler/icons-react";
+import { resolvePlatformFromHost } from "@/lib/platform";
 
 
-export default function PreviewPage() {
+export default async function PreviewPage() {
+  const host = (await headers()).get("host");
+  const { platform, isMatchedSubdomain } = resolvePlatformFromHost(host);
+
+  if (isMatchedSubdomain) {
+    redirect(platform.publicEntryPath);
+  }
+
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-blue-50">
-      {/* Decoratieve achtergrond cirkels */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-20 -right-20 h-96 w-96 rounded-full bg-emerald-200/30 blur-3xl" />
-        <div className="absolute top-60 -left-24 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl" />
-        <div className="absolute bottom-20 right-10 h-64 w-64 rounded-full bg-teal-200/30 blur-3xl" />
-      </div>
+    <div>
 
       <div className="relative z-10">
         {/* Navigatiebalk */}

@@ -77,7 +77,7 @@ export default function AccountSettingsPage() {
                         </div>
 
                         {/* Tab Content */}
-                        <div className="p-6">
+                        <div className="p-8 mt-9">
                             {loading ? (
                                 <div className="flex items-center justify-center p-8">
                                     <div className="text-gray-600">{t('global.loading')}</div>

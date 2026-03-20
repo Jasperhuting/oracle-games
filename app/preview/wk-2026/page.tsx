@@ -63,12 +63,7 @@ const DEMO_STANDINGS = [
 
 export default function WK2026PreviewPage() {
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-blue-50">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-emerald-200/30 blur-3xl" />
-        <div className="absolute top-60 -left-24 h-72 w-72 rounded-full bg-blue-200/25 blur-3xl" />
-        <div className="absolute bottom-20 right-10 h-56 w-56 rounded-full bg-teal-200/25 blur-3xl" />
-      </div>
+    <div className="relative min-h-screen mt-9">
 
       <div className="relative z-10">
         {/* Nav */}

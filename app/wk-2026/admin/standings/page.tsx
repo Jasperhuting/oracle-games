@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { POULES, TeamInPoule } from '../../page';
+import { WkAdminNav } from '@/components/WkAdminNav';
 
 interface PouleRanking {
   pouleId: string;
@@ -28,6 +29,14 @@ interface Match {
   isLive?: boolean;
 }
 
+interface LiveScore {
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  gameIsFinished: boolean;
+}
+
 interface TeamStats {
   teamId: string;
   team: TeamInPoule;
@@ -44,6 +53,7 @@ interface TeamStats {
 export default function StandingsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   const [allPredictions, setAllPredictions] = useState<PredictionDoc[]>([]);
   const [selectedPoule, setSelectedPoule] = useState<string>('a');
@@ -53,16 +63,14 @@ export default function StandingsPage() {
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [baseMatches, setBaseMatches] = useState<Match[]>([]);
 
-  const [liveScoresData, setLiveScoresData] = useState<unknown[]>([]);
-
-  console.log('liveScoresData', liveScoresData)
+  const [liveScoresData, setLiveScoresData] = useState<LiveScore[]>([]);
 
   useEffect(() => {
     const fetchLiveScores = async () => {
       try {
         const response = await fetch('/api/wk-2026/livescores');
         const data = await response.json();
-        setLiveScoresData(data);
+        setLiveScoresData(data || []);
       } catch (error) {
         console.error('Error fetching live scores:', error);
       }
@@ -102,7 +110,6 @@ export default function StandingsPage() {
         return matchesForward || matchesReverse;
       });
 
-
       // If live score found and game is not finished, use live scores
       if (liveScore && !liveScore.gameIsFinished) {
         const isReversed = liveScore.homeTeam === team2.id;
@@ -137,10 +144,7 @@ export default function StandingsPage() {
         }
 
         const userData = await response.json();
-        if (userData.userType !== 'admin') {
-          router.push('/wk-2026/predictions');
-          return;
-        }
+        setIsAdminUser(userData.userType === 'admin');
 
         setIsLoadingPredictions(true);
 
@@ -335,8 +339,11 @@ export default function StandingsPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">WK 2026 Predictions - Standings</h1>
+    <div className="p-8 mt-9">
+      {isAdminUser ? <WkAdminNav /> : null}
+      <h1 className="text-3xl font-bold mb-6">
+        {isAdminUser ? 'WK 2026 Admin - Predictions & Standings' : 'WK 2026 - Standings'}
+      </h1>
 
       <div className="mb-6 flex items-center gap-4 flex-wrap">
         <div>
@@ -348,7 +355,7 @@ export default function StandingsPage() {
                 onClick={() => setSelectedPoule(pouleId)}
                 className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                   selectedPoule === pouleId
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-[#ff9900] text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >

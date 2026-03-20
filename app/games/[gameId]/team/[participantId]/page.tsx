@@ -189,7 +189,7 @@ export default function TeamDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg text-gray-600">Laden...</div>
       </div>
     );
@@ -197,7 +197,7 @@ export default function TeamDetailPage() {
 
   if (error || !participant || !teamDetails) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">{error || 'Team niet gevonden'}</div>
           <Link
@@ -212,8 +212,8 @@ export default function TeamDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-4 py-8 mt-9">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">

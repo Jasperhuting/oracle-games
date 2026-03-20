@@ -1,36 +1,97 @@
 'use client';
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { KNOCKOUT_MATCHES, KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
-import { TeamInPoule, POULES } from '../../page';
+import { POULES } from '../../page';
+import { useWk2026Participant } from '../../hooks';
 
-interface KnockoutPrediction {
-  userId: string;
-  matches: KnockoutMatch[];
-  updatedAt: string;
+interface GroupTeamEntry {
+  name: string;
+}
+
+interface GroupData {
+  pouleId: string;
+  teams?: Record<string, GroupTeamEntry>;
+}
+
+interface GroupStageMatch {
+  pouleId: string;
+  team1Id: string;
+  team2Id: string;
+  team1Score: number | null;
+  team2Score: number | null;
+}
+
+interface GroupStanding {
+  teamId: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
+interface ThirdPlacedStanding extends GroupStanding {
+  poule: string;
 }
 
 export default function KnockoutPredictionsPage() {
   const { user, loading } = useAuth();
+  const { isParticipant, loading: participantLoading, refresh: refreshParticipant } = useWk2026Participant(user?.uid || null, 2026);
   const router = useRouter();
 
   const [matches, setMatches] = useState<KnockoutMatch[]>([]);
-  const [actualPoules, setActualPoules] = useState<unknown[]>([]);
+  const [actualPoules, setActualPoules] = useState<GroupData[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleJoinWk = async () => {
+    if (!user) return;
+
+    setIsJoining(true);
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/wk-2026/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ season: 2026 }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setMessage({ type: 'error', text: data.error || 'Deelnemen aan WK 2026 is mislukt' });
+      } else {
+        await refreshParticipant();
+      }
+    } catch (error) {
+      console.error('Error joining WK 2026:', error);
+      setMessage({ type: 'error', text: 'Deelnemen aan WK 2026 is mislukt' });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   // Calculate standings for a poule
-  const calculateStandings = (pouleId: string, poules: unknown[], allMatches: unknown[]) => {
-    const pouleData = poules.find((p: any) => p.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const calculateStandings = useCallback((pouleId: string, poules: GroupData[], allMatches: GroupStageMatch[]): GroupStanding[] => {
+    const pouleData = poules.find((poule) => poule.pouleId === pouleId);
     if (!pouleData || !pouleData.teams) return [];
 
     const teams = Object.keys(pouleData.teams);
-    const pouleMatches = allMatches.filter((m: any) => m.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const pouleMatches = allMatches.filter((match) => match.pouleId === pouleId);
 
-    const stats: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const stats: Record<string, GroupStanding> = {};
     teams.forEach(teamId => {
       stats[teamId] = {
         teamId,
@@ -45,7 +106,7 @@ export default function KnockoutPredictionsPage() {
       };
     });
 
-    pouleMatches.forEach((match: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    pouleMatches.forEach((match) => {
       if (match.team1Score !== null && match.team2Score !== null) {
         const team1Stats = stats[match.team1Id];
         const team2Stats = stats[match.team2Id];
@@ -79,20 +140,20 @@ export default function KnockoutPredictionsPage() {
       }
     });
 
-    return Object.values(stats).sort((a: any, b: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    return Object.values(stats).sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
       return b.goalsFor - a.goalsFor;
     });
-  };
+  }, []);
 
   // Calculate all qualified teams based on group standings
-  const calculateQualifiedTeams = (poules: unknown[], allMatches: unknown[]) => {
-    const qualified: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const calculateQualifiedTeams = useCallback((poules: GroupData[], allMatches: GroupStageMatch[]) => {
+    const qualified: Record<string, string> = {};
 
     // Get winners and runners-up from each group
     POULES.forEach(pouleId => {
-      const standings: any = calculateStandings(pouleId, poules, allMatches); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const standings = calculateStandings(pouleId, poules, allMatches);
       if (standings.length >= 2) {
         qualified[`1${pouleId.toUpperCase()}`] = standings[0].teamId;
         qualified[`2${pouleId.toUpperCase()}`] = standings[1].teamId;
@@ -100,9 +161,9 @@ export default function KnockoutPredictionsPage() {
     });
 
     // Get best third-placed teams
-    const allThirdPlaced: unknown[] = [];
+    const allThirdPlaced: ThirdPlacedStanding[] = [];
     POULES.forEach(pouleId => {
-      const standings: any = calculateStandings(pouleId, poules, allMatches); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const standings = calculateStandings(pouleId, poules, allMatches);
       if (standings.length >= 3) {
         allThirdPlaced.push({
           ...standings[2],
@@ -142,10 +203,10 @@ export default function KnockoutPredictionsPage() {
     });
 
     return qualified;
-  };
+  }, [calculateStandings]);
 
   // Initialize knockout matches with qualified teams
-  const initializeKnockoutMatches = (qualifiedTeams: any): KnockoutMatch[] => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const initializeKnockoutMatches = (qualifiedTeams: Record<string, string>): KnockoutMatch[] => {
     return KNOCKOUT_MATCHES.map(m => {
       const team1 = qualifiedTeams[m.team1Source] || null;
       const team2 = qualifiedTeams[m.team2Source] || null;
@@ -164,7 +225,7 @@ export default function KnockoutPredictionsPage() {
   // Update existing matches with qualified teams and propagate winners
   const updateMatchesWithQualifiedTeams = (
     existingMatches: KnockoutMatch[],
-    qualifiedTeams: any // eslint-disable-line @typescript-eslint/no-explicit-any
+    qualifiedTeams: Record<string, string>
   ): KnockoutMatch[] => {
     const updated = [...existingMatches];
 
@@ -214,12 +275,12 @@ export default function KnockoutPredictionsPage() {
     return updated;
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // Load poules to determine qualified teams
       const poulesResponse = await fetch('/api/wk-2026/getPoules');
       const poulesData = await poulesResponse.json();
-      const poules = poulesData.poules || [];
+      const poules: GroupData[] = poulesData.poules || [];
       setActualPoules(poules);
 
       console.log('Loaded poules:', poules);
@@ -227,7 +288,7 @@ export default function KnockoutPredictionsPage() {
       // Load matches to calculate standings
       const matchesResponse = await fetch('/api/wk-2026/getMatches');
       const matchesData = await matchesResponse.json();
-      const allMatches = matchesData.matches || [];
+      const allMatches: GroupStageMatch[] = matchesData.matches || [];
 
       console.log('Loaded matches:', allMatches.length);
 
@@ -258,7 +319,7 @@ export default function KnockoutPredictionsPage() {
       console.error('Error loading data:', error);
       setMessage({ type: 'error', text: 'Failed to load predictions' });
     }
-  };
+  }, [calculateQualifiedTeams, user?.uid]);
 
   useEffect(() => {
     if (loading) return;
@@ -268,8 +329,50 @@ export default function KnockoutPredictionsPage() {
       return;
     }
 
+    if (participantLoading || !isParticipant) {
+      return;
+    }
+
     loadData();
-  }, [user, loading, router]);
+  }, [user, loading, router, participantLoading, isParticipant, loadData]);
+
+  if (loading || participantLoading) {
+    return (
+      <div className="mt-9 max-w-6xl mx-auto p-8">
+        <div className="rounded-2xl border border-[#ffd7a6] bg-white p-6 text-[#9a4d00]">
+          Deelnamestatus laden...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  if (!isParticipant) {
+    return (
+      <div className="mt-9 max-w-4xl mx-auto p-8">
+        <div className="rounded-3xl border border-[#ffd7a6] bg-white p-8 shadow-sm">
+          <span className="inline-flex rounded-full bg-[#fff0d9] px-3 py-1 text-sm font-semibold text-[#9a4d00]">
+            Eerst deelnemen
+          </span>
+          <h1 className="mt-4 text-3xl font-bold text-gray-900">Nog niet klaar voor de knockout</h1>
+          <p className="mt-3 max-w-2xl text-base text-gray-600">
+            Meld je eerst aan voor WK 2026. Daarna kun je meteen ook je knockout predictions invullen.
+          </p>
+          <button
+            type="button"
+            onClick={handleJoinWk}
+            disabled={isJoining}
+            className="mt-6 rounded-xl bg-[#ff9900] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#e68a00] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isJoining ? 'Bezig met aanmelden...' : 'Deelnemen aan WK 2026'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleScoreChange = (matchId: string, team: 'team1' | 'team2', score: string) => {
     const scoreValue = score === '' ? null : parseInt(score, 10);
@@ -278,13 +381,18 @@ export default function KnockoutPredictionsPage() {
     setMatches(prev => {
       const updated = prev.map(m => {
         if (m.id === matchId) {
-          const updatedMatch = { ...m, [`${team}Score`]: scoreValue };
+          const updatedMatch: KnockoutMatch = team === 'team1'
+            ? { ...m, team1Score: scoreValue }
+            : { ...m, team2Score: scoreValue };
 
           // Determine winner if both scores are set
-          if (updatedMatch.team1Score !== null && updatedMatch.team2Score !== null) {
-            if (updatedMatch.team1Score > updatedMatch.team2Score) {
+          const team1Score = updatedMatch.team1Score;
+          const team2Score = updatedMatch.team2Score;
+
+          if (team1Score !== null && team2Score !== null && team1Score !== undefined && team2Score !== undefined) {
+            if (team1Score > team2Score) {
               updatedMatch.winner = updatedMatch.team1 || null;
-            } else if (updatedMatch.team2Score > updatedMatch.team1Score) {
+            } else if (team2Score > team1Score) {
               updatedMatch.winner = updatedMatch.team2 || null;
             } else {
               // For tied scores, don't set winner automatically - let user choose via dropdown
@@ -437,7 +545,7 @@ export default function KnockoutPredictionsPage() {
   };
 
   // Display team or potential teams
-  const displayTeam = (teamId: string | null | undefined, teamSource: string): JSX.Element => {
+  const displayTeam = (teamId: string | null | undefined, teamSource: string): ReactElement => {
     if (teamId) {
       return <span>{getTeamName(teamId)}</span>;
     }
@@ -482,7 +590,7 @@ export default function KnockoutPredictionsPage() {
   const grouped = groupMatchesByRound();
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-8 mt-9 max-w-7xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">WK 2026 - Knockout Fase Predictions</h1>
 
       {message && (
@@ -494,16 +602,6 @@ export default function KnockoutPredictionsPage() {
           {message.text}
         </div>
       )}
-
-      <div className="mb-6">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? 'Saving...' : 'Save predictions'}
-        </button>
-      </div>
 
       {Object.entries(grouped).map(([round, roundMatches]) => {
         if (roundMatches.length === 0) return null;
@@ -603,14 +701,16 @@ export default function KnockoutPredictionsPage() {
         );
       })}
 
-      <div className="mt-6">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? 'Saving...' : 'Save predictions'}
-        </button>
+      <div className="sticky bottom-4 z-30 mt-8 flex justify-end">
+        <div className="rounded-xl border border-[#ffd699] bg-white/95 p-3 shadow-lg backdrop-blur">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-3 bg-[#ff9900] text-white rounded-lg font-semibold hover:bg-[#e68a00] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving...' : 'Save predictions'}
+          </button>
+        </div>
       </div>
     </div>
   );

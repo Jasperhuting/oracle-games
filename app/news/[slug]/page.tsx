@@ -38,7 +38,7 @@ export default async function NewsDetailPage(
   const relatedItems = items.filter((entry) => entry.id !== item.id).slice(0, 3);
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef6f4_35%,#ffffff_100%)] pb-20">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef6f4_35%,#ffffff_100%)] pb-20 mt-9">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link href="/news" className="text-sm font-semibold text-primary hover:text-primary-hover">

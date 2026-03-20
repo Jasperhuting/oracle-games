@@ -8,6 +8,7 @@ import { Button } from "./Button";
 import Link from "next/link";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { User } from "@/lib/types/user";
+import { setAdminRestoreToken, setImpersonationCustomToken } from "@/lib/auth/impersonation-storage";
 
 type LoginPatternBucket = {
   label: string;
@@ -295,16 +296,16 @@ export const UserList = () => {
       });
       
       // Store the custom token for sign-in
-      localStorage.setItem('impersonation_token', data.customToken);
+      setImpersonationCustomToken(data.customToken);
       console.log('Stored impersonation_token');
       
       // Store the admin token to restore session later
       if (data.adminToken) {
-        localStorage.setItem('admin_restore_token', data.adminToken);
+        setAdminRestoreToken(data.adminToken);
         console.log('Stored admin_restore_token');
         
         // Verify it was stored
-        const verify = localStorage.getItem('admin_restore_token');
+        const verify = window.localStorage.getItem('admin_restore_token');
         console.log('Verification - admin_restore_token stored:', verify ? 'YES' : 'NO');
       } else {
         console.error('No admin token in response!');

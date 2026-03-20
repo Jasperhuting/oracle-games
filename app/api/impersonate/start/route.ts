@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { cookies } from 'next/headers';
+import { getSharedCookieDomain } from '@/lib/auth/session-cookie';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24, // 24 hours
       path: '/',
+      ...(getSharedCookieDomain(request.headers.get('host')) ? { domain: getSharedCookieDomain(request.headers.get('host')) } : {}),
     });
 
     // Log the impersonation action

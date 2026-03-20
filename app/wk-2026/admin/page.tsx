@@ -6,6 +6,7 @@ import countriesList from '@/lib/country.json';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { WkAdminNav } from "@/components/WkAdminNav";
 
 interface Match {
     id: string;
@@ -301,7 +302,8 @@ export default function GroupsPage() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-8 mt-9">
+            <WkAdminNav />
             <h1 className="text-3xl font-bold mb-6">Group Stage - Match Schedule & Rankings</h1>
 
             {/* Poule Selector */}
@@ -314,7 +316,7 @@ export default function GroupsPage() {
                             onClick={() => setSelectedPoule(pouleId)}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                                 selectedPoule === pouleId
-                                    ? 'bg-blue-500 text-white'
+                                    ? 'bg-[#ff9900] text-white'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
                         >
@@ -360,7 +362,7 @@ export default function GroupsPage() {
                                         key={position}
                                         onDragOver={handleDragOver}
                                         onDrop={() => handleDropToPosition(position)}
-                                        className="flex items-center p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg min-h-[56px] hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                                        className="flex items-center p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg min-h-[56px] hover:border-[#ff9900] hover:bg-orange-50 transition-colors"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-200 text-gray-700 rounded-full text-sm font-bold mr-3">
                                             {position + 1}

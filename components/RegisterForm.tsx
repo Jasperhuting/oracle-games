@@ -10,6 +10,7 @@ import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
 import { RegisterFormProps } from "@/lib/types/component-props";
+import { createSharedSession } from "@/lib/auth/client-session";
 
 const BLOCKED_EMAIL_DOMAINS = new Set(["esims.nl"]);
 
@@ -124,6 +125,7 @@ export const RegisterForm = () => {
             await ensureUserExists(user);
             
             // Google accounts are pre-verified, go directly to home
+            await createSharedSession(user, true);
             router.push('/home');
         } catch (error: unknown) {
             console.error('Google signup error:', error);
@@ -190,10 +192,10 @@ export const RegisterForm = () => {
 
             <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
+                    <div className="w-full border-t border-slate-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-gray-50 text-gray-500">Or register with</span>
+                    <span className="px-2 bg-white/90 text-slate-500">Or register with</span>
                 </div>
             </div>
 
@@ -215,7 +217,7 @@ export const RegisterForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs">Already have an account? Go to the <Link className="underline" href="/login">login page</Link></span>
+                <span className="text-xs text-slate-700">Already have an account? Go to the <Link className="underline text-slate-800 hover:text-slate-950" href="/login">login page</Link></span>
             </div>
         </div>
     );

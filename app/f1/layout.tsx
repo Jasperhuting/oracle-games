@@ -5,7 +5,7 @@ import { RaceCard } from "./components/RaceCardComponent";
 import { useF1Races, useF1UserPredictions } from "./hooks";
 import Link from "next/link";
 import { Trophy, Flag } from "tabler-icons-react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 export default function F1Layout({ children }: { children: React.ReactNode }) {
     const params = useParams();
@@ -32,23 +32,12 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
         return statusMap;
     }, [predictions]);
 
-    // Override body background color for F1 pages
-    useEffect(() => {
-        const originalBg = document.body.style.backgroundColor;
-        document.body.style.backgroundColor = '#101828'; // gray-900
-        document.body.classList.remove('bg-gray-50');
-        document.body.classList.add('bg-gray-900');
-        
-        return () => {
-            document.body.style.backgroundColor = originalBg;
-            document.body.classList.remove('bg-gray-900');
-            document.body.classList.add('bg-gray-50');
-        };
-    }, []);
+    if (pathname === '/f1/account') {
+        return <>{children}</>;
+    }
 
     return (
-        <div className="bg-gray-900 min-h-screen -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 pt-6 pb-8 relative z-0">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto py-8 px-4 md:px-8 mt-10">
             {/* Navigation tabs */}
             <div className="flex items-center gap-2 mb-4">
                 <Link
@@ -120,7 +109,6 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {children}
-        </div>
         </div>
     );
 }

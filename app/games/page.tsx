@@ -5,13 +5,8 @@ import { GamesBreadcrumb } from "@/components/GamesBreadcrumb";
 export default function GamesPage() {
     return (
         <AuthGuard>
-            <div className="relative min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-blue-50">
-                <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                    <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-emerald-200/30 blur-3xl" />
-                    <div className="absolute top-40 -left-24 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
-                    <div className="absolute bottom-0 right-10 h-52 w-52 rounded-full bg-teal-200/30 blur-3xl" />
-                </div>
-                <div className="relative z-10 flex flex-col min-h-screen px-6 py-8">
+            <div>
+                <div className="relative z-10 flex flex-col min-h-screen px-6 py-8 mt-9">
                     <div className="mx-auto container">
                         <GamesBreadcrumb />
                         <div className="mt-4 mb-6 flex flex-col gap-3">

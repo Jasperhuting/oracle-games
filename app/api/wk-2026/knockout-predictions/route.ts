@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerFirebase } from '@/lib/firebase/server';
+import { getServerFirebase, getServerFirebaseFootball } from '@/lib/firebase/server';
+import { WK2026_COLLECTIONS, createWkParticipantDocId } from '@/app/wk-2026/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,6 +51,19 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getServerFirebase();
+    const footballDb = getServerFirebaseFootball();
+
+    const participantDoc = await footballDb
+      .collection(WK2026_COLLECTIONS.PARTICIPANTS)
+      .doc(createWkParticipantDocId(userId, 2026))
+      .get();
+
+    if (!participantDoc.exists) {
+      return NextResponse.json(
+        { error: 'User must join WK 2026 before saving predictions' },
+        { status: 403 }
+      );
+    }
 
     await db.collection('wk2026KnockoutPredictions').doc(userId).set({
       userId,

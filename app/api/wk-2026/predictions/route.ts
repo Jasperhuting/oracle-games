@@ -1,4 +1,5 @@
 import { getServerFirebaseFootball } from '@/lib/firebase/server';
+import { WK2026_COLLECTIONS, createWkParticipantDocId } from '@/app/wk-2026/types';
 import { NextRequest, NextResponse } from 'next/server';
 export const runtime = "nodejs";
 
@@ -33,6 +34,18 @@ export async function POST(request: NextRequest) {
         const db = getServerFirebaseFootball();
 
         console.log(`Saving predictions for user ${userId}`);
+
+        const participantId = createWkParticipantDocId(userId, 2026);
+        const participantDoc = await db
+            .collection(WK2026_COLLECTIONS.PARTICIPANTS)
+            .doc(participantId)
+            .get();
+
+        if (!participantDoc.exists) {
+            return NextResponse.json({
+                error: 'User must join WK 2026 before saving predictions'
+            }, { status: 403 });
+        }
 
         // Save user's predictions
         await db.collection('predictions').doc(userId).set({

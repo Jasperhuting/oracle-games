@@ -48,12 +48,17 @@ function useCookieValue(cookieName: string) {
     }, 1000); // Check every second
 
     return () => clearInterval(interval);
-  }, [cookieName]);
+  }, [cookieName, value]);
 
   return value;
 }
 
 import { AuctionGameData as GameData, AuctionParticipantData as ParticipantData, RiderWithBid } from '@/lib/types/pages';
+
+// Helper function to check game type without type narrowing issues
+function isGameType(game: GameData | null, type: string): boolean {
+  return game?.gameType === type;
+}
 
 export default function AuctionPage({ params }: { params: Promise<{ gameId: string }> }) {
   const router = useRouter();
@@ -324,12 +329,15 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       const gameResponse = await fetch(`/api/games/${gameId}`);
       if (!gameResponse.ok) throw new Error('Failed to load game');
       const gameData = await gameResponse.json();
+      
+      // Type assertion to ensure TypeScript knows this is a valid game response
+      const game = gameData.game as GameData;
 
-      if (gameData.game.gameType !== 'auction' && gameData.game.gameType !== 'marginal-gains' && gameData.game.gameType !== 'auctioneer' && gameData.game.gameType !== 'worldtour-manager' && gameData.game.gameType !== 'full-grid') {
+      if (game.gameType !== 'auctioneer' && game.gameType !== 'marginal-gains' && game.gameType !== 'worldtour-manager' && game.gameType !== 'full-grid') {
         throw new Error('This game is not an auction game');
       }
 
-      setGame(gameData.game);
+      setGame(game);
 
       // Load participant data (optional for admins)
       const participantResponse = await fetch(`/api/gameParticipants?userId=${user.uid}&gameId=${gameId}`);
@@ -345,7 +353,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         setParticipant({
           id: 'admin-view',
           userId: user.uid,
-          budget: gameData.game.config?.budget || 0,
+          budget: game.config?.budget || 0,
           spentBudget: 0,
           rosterSize: 0,
           rosterComplete: false,
@@ -358,8 +366,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       let riders: Rider[] = rankingsRiders;
 
       // Filter by eligible riders if specified
-      if (gameData.game.eligibleRiders && gameData.game.eligibleRiders.length > 0) {
-        const eligibleSet = new Set(gameData.game.eligibleRiders);
+      if (game.eligibleRiders && game.eligibleRiders.length > 0) {
+        const eligibleSet = new Set(game.eligibleRiders);
         riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
       }
 
@@ -400,9 +408,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       }
 
       // Enhance riders with bid information and sold status
-      const maxMinBid = gameData?.game?.config?.maxMinimumBid;
-      const freshFullGridRiderValues = (gameData?.game?.config?.riderValues || {}) as Record<string, number>;
-      const isFreshFullGrid = gameData?.game?.gameType === 'full-grid';
+      const maxMinBid = game?.config?.maxMinimumBid;
+      const freshFullGridRiderValues = (game?.config?.riderValues || {}) as Record<string, number>;
+      const isFreshFullGrid = game?.gameType === 'full-grid';
       const ridersWithBids = riders.map((rider: Rider) => {
         const riderNameId = rider.nameID || rider.id || '';
         const myBid = userBids.find((b: Bid) =>
@@ -412,7 +420,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         // Check if rider is already sold
         const soldData = soldRidersMap.get(riderNameId);
         // Only mark riders as sold for bidding game types, not for selection games
-        const isBiddingGame = gameData?.game?.gameType === 'auctioneer';
+        const isBiddingGame = game?.gameType === 'auctioneer';
         const isSold = isBiddingGame && !!soldData;
         const soldTo = soldData?.ownerName;
         const pricePaid = soldData?.pricePaid;
@@ -469,7 +477,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       // Cache the loaded data (riders are already cached by RankingsContext)
       await setCachedAuctionData(
         gameId,
-        gameData.game,
+        game,
         participantData,
         allBidsData,
         playerTeamsData
@@ -725,7 +733,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     }
 
     // Check budget for auction games (not for marginal-gains which has no budget)
-    if (game?.gameType !== 'marginal-gains') {
+    if (!isGameType(game, 'marginal-gains')) {
       if (bidAmount > getRemainingBudget(riderNameId)) {
         setError('Bid exceeds your remaining budget');
         return;
@@ -1032,7 +1040,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   // Full Grid: compute teams that already have a selected rider
   const teamsWithSelection = useMemo(() => {
-    if (game?.gameType !== 'full-grid') return new Set<string>();
+    if (!isGameType(game, 'full-grid')) return new Set<string>();
     return new Set(
       myBids
         .filter(b => b.status === 'active' || b.status === 'won')
@@ -1043,7 +1051,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const teamClassByKey = useMemo(() => {
     const map = new Map<string, string>();
-    if (game?.gameType !== 'full-grid') return map;
+    if (!isGameType(game, 'full-grid')) return map;
     availableRiders.forEach(rider => {
       const teamName = rider.team?.name;
       const teamClass = (rider.team as any)?.class || (rider.team as any)?.teamClass; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -1059,7 +1067,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   // Full Grid: build unique team list for filter dropdown
   const availableTeams = useMemo(() => {
-    if (game?.gameType !== 'full-grid') return [];
+    if (!isGameType(game, 'full-grid')) return [];
     const teamMap = new Map<string, { count: number; teamImage?: string }>();
     availableRiders.forEach(rider => {
       if (!rider.team?.name) return;
@@ -1108,7 +1116,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       // Birth year filter for marginal-gains
       // Compare rider's birth year against the selected range
       const riderBirthYear = rider.age ? getBirthYear(rider.age) : null;
-      const matchesBirthYear = game?.gameType !== 'marginal-gains' || !riderBirthYear || (riderBirthYear >= birthYearRange[0] && riderBirthYear <= birthYearRange[1]);
+      const matchesBirthYear = !isGameType(game, 'marginal-gains') || !riderBirthYear || (riderBirthYear >= birthYearRange[0] && riderBirthYear <= birthYearRange[1]);
 
       // Apply top-200 restriction at list level: only show riders in top 200 when enabled
       const riderRank = (rider as any).rank; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -1195,7 +1203,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
   const myAuctionBids = myBids.map((bid: Bid) => ({ ...bid, price: sortedAndFilteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points })).filter((bid: Bid) => bid.status === 'active')
   const isSelectionBasedGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid';
   return (
-    <div className={`min-h-screen bg-gray-50 relative `}>
+    <div className={`min-h-screen mt-24 relative `}>
       <div className="bg-white border-b border-gray-200 z-10 px-8">
         <div className="container mx-auto py-4">
           <div className="flex justify-between items-center">
@@ -1312,8 +1320,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               />
             </div>
 
-            {game?.gameType !== 'full-grid' && (
-              <div className="bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start min-w-[330px]" style={{ top: hideBanner ? '107px' : '142px' }}>
+            {isGameType(game, 'full-grid') && (
+              <div className="bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start min-w-[330px]" style={{ top: hideBanner ? '127px' : '162px' }}>
                 {!auctionActive && (
                   <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
                     <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'}`}>
@@ -1328,7 +1336,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   </div>
                 )}
 
-                {error && game?.gameType !== 'full-grid' && (
+                {error && !isGameType(game, 'full-grid') && (
                   <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
                     <span className="text-red-700 text-sm">{error}</span>
                   </div>

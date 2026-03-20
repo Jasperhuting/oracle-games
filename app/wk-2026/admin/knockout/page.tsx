@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { KNOCKOUT_MATCHES, KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
 import { POULES } from '../../page';
 import { Flag } from '@/components/Flag';
+import { WkAdminNav } from '@/components/WkAdminNav';
 
 import countriesList from '@/lib/country.json';
 
@@ -16,6 +17,29 @@ interface KnockoutPrediction {
   updatedAt: string;
 }
 
+interface PouleData {
+  pouleId: string;
+  teams: Record<string, { name: string }>;
+}
+
+interface TeamContender {
+  id: string;
+  name: string;
+}
+
+interface TeamStats {
+  teamId: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  poule?: string;
+}
+
 export default function AdminKnockoutPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -23,9 +47,9 @@ export default function AdminKnockoutPage() {
   const [actualMatches, setActualMatches] = useState<KnockoutMatch[]>([]);
   const [allPredictions, setAllPredictions] = useState<KnockoutPrediction[]>([]);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
-  const [actualPoules, setActualPoules] = useState<unknown[]>([]);
+  const [actualPoules, setActualPoules] = useState<PouleData[]>([]);
   const [saving, setSaving] = useState(false);
-  const [contenders, setContenders] = useState<unknown[]>([]);
+  const [contenders, setContenders] = useState<TeamContender[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -42,14 +66,14 @@ export default function AdminKnockoutPage() {
   }, []);
 
   // Calculate standings for a poule (same logic as user predictions page)
-  const calculateStandings = (pouleId: string, poules: unknown[], allMatches: unknown[]) => {
-    const pouleData = poules.find((p: any) => p.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const calculateStandings = (pouleId: string, poules: PouleData[], allMatches: Record<string, unknown>[]) => {
+    const pouleData = poules.find((p) => p.pouleId === pouleId);
     if (!pouleData || !pouleData.teams) return [];
 
     const teams = Object.keys(pouleData.teams);
-    const pouleMatches = allMatches.filter((m: any) => m.pouleId === pouleId); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const pouleMatches = allMatches.filter((m) => m.pouleId === pouleId);
 
-    const stats: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const stats: Record<string, TeamStats> = {};
     teams.forEach(teamId => {
       stats[teamId] = {
         teamId,
@@ -64,24 +88,24 @@ export default function AdminKnockoutPage() {
       };
     });
 
-    pouleMatches.forEach((match: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    pouleMatches.forEach((match) => {
       if (match.team1Score !== null && match.team2Score !== null) {
-        const team1Stats = stats[match.team1Id];
-        const team2Stats = stats[match.team2Id];
+        const team1Stats = stats[match.team1Id as string];
+        const team2Stats = stats[match.team2Id as string];
 
         if (team1Stats && team2Stats) {
           team1Stats.played++;
           team2Stats.played++;
-          team1Stats.goalsFor += match.team1Score;
-          team1Stats.goalsAgainst += match.team2Score;
-          team2Stats.goalsFor += match.team2Score;
-          team2Stats.goalsAgainst += match.team1Score;
+          team1Stats.goalsFor += match.team1Score as number;
+          team1Stats.goalsAgainst += match.team2Score as number;
+          team2Stats.goalsFor += match.team2Score as number;
+          team2Stats.goalsAgainst += match.team1Score as number;
 
-          if (match.team1Score > match.team2Score) {
+          if ((match.team1Score as number) > (match.team2Score as number)) {
             team1Stats.won++;
             team1Stats.points += 3;
             team2Stats.lost++;
-          } else if (match.team1Score < match.team2Score) {
+          } else if ((match.team1Score as number) < (match.team2Score as number)) {
             team2Stats.won++;
             team2Stats.points += 3;
             team1Stats.lost++;
@@ -98,7 +122,7 @@ export default function AdminKnockoutPage() {
       }
     });
 
-    return Object.values(stats).sort((a: any, b: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    return Object.values(stats).sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
       return b.goalsFor - a.goalsFor;
@@ -106,12 +130,12 @@ export default function AdminKnockoutPage() {
   };
 
   // Calculate all qualified teams based on group standings
-  const calculateQualifiedTeams = (poules: unknown[], allMatches: unknown[]) => {
-    const qualified: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const calculateQualifiedTeams = (poules: PouleData[], allMatches: Record<string, unknown>[]) => {
+    const qualified: Record<string, string> = {};
 
     // Get winners and runners-up from each group
     POULES.forEach(pouleId => {
-      const standings: any = calculateStandings(pouleId, poules, allMatches); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const standings = calculateStandings(pouleId, poules, allMatches);
       if (standings.length >= 2) {
         qualified[`1${pouleId.toUpperCase()}`] = standings[0].teamId;
         qualified[`2${pouleId.toUpperCase()}`] = standings[1].teamId;
@@ -119,9 +143,9 @@ export default function AdminKnockoutPage() {
     });
 
     // Get best third-placed teams
-    const allThirdPlaced: unknown[] = [];
+    const allThirdPlaced: TeamStats[] = [];
     POULES.forEach(pouleId => {
-      const standings: any = calculateStandings(pouleId, poules, allMatches); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const standings = calculateStandings(pouleId, poules, allMatches);
       if (standings.length >= 3) {
         allThirdPlaced.push({
           ...standings[2],
@@ -131,7 +155,7 @@ export default function AdminKnockoutPage() {
     });
 
     // Sort third-placed teams
-    const sortedThirdPlaced = allThirdPlaced.sort((a, b) => {
+    const sortedThirdPlaced = allThirdPlaced.sort((a: TeamStats, b: TeamStats) => {
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
       if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
@@ -152,7 +176,7 @@ export default function AdminKnockoutPage() {
 
     thirdPlaceSlots.forEach(({ slot, groups }) => {
       for (const team of sortedThirdPlaced) {
-        if (groups.includes(team.poule) && !Object.values(qualified).includes(team.teamId)) {
+        if (team.poule && groups.includes(team.poule) && !Object.values(qualified).includes(team.teamId)) {
           qualified[slot] = team.teamId;
           break;
         }
@@ -241,7 +265,7 @@ export default function AdminKnockoutPage() {
       // Load matches to calculate standings
       const matchesResponse = await fetch('/api/wk-2026/getMatches');
       const matchesData = await matchesResponse.json();
-      const allMatches = matchesData.matches || [];
+      const allMatches: Record<string, unknown>[] = matchesData.matches || [];
 
       // Calculate qualified teams
       const qualifiedTeams = calculateQualifiedTeams(poules, allMatches);
@@ -413,19 +437,20 @@ export default function AdminKnockoutPage() {
     if (!teamId) return '?';
 
     for (const poule of actualPoules) {
-      if (poule.teams && poule.teams[teamId]) {
+      if (poule.teams?.[teamId]) {
         return poule.teams[teamId].name;
       }
     }
     return teamId;
   };
 
-    const getTeamNameId = (teamId: string | null | undefined): string => {
+  const getTeamNameId = (teamId: string | null | undefined): string => {
     if (!teamId) return '?';
 
     for (const poule of actualPoules) {
-      if (poule.teams && poule.teams[teamId]) {
-        const country = countriesList.find((c: any) => c.name.toLowerCase() === contenders.find((team) => team.id === teamId)?.name.toLowerCase()); // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (poule.teams?.[teamId]) {
+        const contender = contenders.find((team) => team.id === teamId);
+        const country = countriesList.find((c) => c.name.toLowerCase() === contender?.name.toLowerCase());
         return country?.code || teamId;
       }
     }
@@ -520,7 +545,8 @@ export default function AdminKnockoutPage() {
   const grouped = groupMatchesByRound();
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-8 mt-9 max-w-7xl mx-auto">
+      <WkAdminNav />
       <h1 className="text-3xl font-bold mb-6">WK 2026 Admin - Knockout Fase</h1>
 
       {message && (
@@ -537,7 +563,7 @@ export default function AdminKnockoutPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-[#ff9900] text-white rounded-lg font-semibold hover:bg-[#e68a00] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? 'Opslaan...' : 'Uitslagen Opslaan'}
         </button>

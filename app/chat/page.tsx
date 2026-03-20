@@ -89,7 +89,7 @@ export default function ChatOverviewPage() {
 
   if (authLoading) {
     return (
-      <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
+      <div className="flex flex-col p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
         <div className="mx-auto container max-w-4xl">
           <div className="text-sm text-gray-500">Laden...</div>
         </div>
@@ -99,7 +99,7 @@ export default function ChatOverviewPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
+      <div className="flex flex-col p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
         <div className="mx-auto container max-w-4xl">
           <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
             <IconLock className="mx-auto h-10 w-10 text-gray-400 mb-4" />
@@ -128,7 +128,7 @@ export default function ChatOverviewPage() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
+    <div className="flex flex-col p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
       <div className="mx-auto container max-w-4xl">
         {/* Back link */}
         <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">

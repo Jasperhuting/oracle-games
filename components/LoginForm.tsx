@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { User } from "firebase/auth";
 import { LoginFormProps } from "@/lib/types/component-props";
+import { createSharedSession } from "@/lib/auth/client-session";
 
 const PasskeyLogin = dynamic(
   () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
@@ -78,6 +79,8 @@ export const LoginForm = () => {
                 }),
             });
             
+            await createSharedSession(user, stayLoggedIn);
+
             // Redirect to home page
             router.push('/home');
         } catch (error: unknown) {
@@ -145,6 +148,8 @@ export const LoginForm = () => {
                 }),
             });
             
+            await createSharedSession(user, stayLoggedIn);
+
             router.push('/home');
         } catch (error: unknown) {
             console.error('Google login error:', error);
@@ -280,7 +285,7 @@ export const LoginForm = () => {
                         )}
                     </div>
                 )}
-                <div className="flex justify-between items-center my-2">
+                <div className="flex justify-between items-center my-2 text-slate-700">
                     <label className="flex items-center text-xs cursor-pointer">
                         <input
                             type="checkbox"
@@ -292,7 +297,7 @@ export const LoginForm = () => {
                         Stay logged in
                     </label>
                     <div className="text-xs">
-                        <Link href="/reset-password" className="underline">Forgot password?</Link>
+                        <Link href="/reset-password" className="underline text-slate-700 hover:text-slate-900">Forgot password?</Link>
                     </div>
                 </div>
                 <Button
@@ -306,10 +311,10 @@ export const LoginForm = () => {
 
             <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
+                    <div className="w-full border-t border-slate-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-gray-50 text-gray-500">Or log in with</span>
+                    <span className="px-2 bg-white/90 text-slate-500">Or log in with</span>
                 </div>
             </div>
 

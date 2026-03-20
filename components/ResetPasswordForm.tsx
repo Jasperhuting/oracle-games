@@ -56,7 +56,7 @@ export const ResetPasswordForm = () => {
 
     if (success) {
         return (
-            <div className="flex flex-col max-w-[300px]">
+            <div className="flex flex-col">
                 <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
                     <div className="flex items-start">
                         <div className="flex-shrink-0">
@@ -89,7 +89,7 @@ export const ResetPasswordForm = () => {
     }
 
     return (
-        <div className="flex flex-col max-w-[300px]">
+        <div className="flex flex-col">
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex flex-col mb-4">
                     <TextInput 
@@ -123,7 +123,7 @@ export const ResetPasswordForm = () => {
             </form>
 
             <div className="text-center">
-                <Link href="/login" className="text-xs underline text-gray-600 hover:text-gray-900">
+                <Link href="/login" className="text-xs underline text-slate-600 hover:text-slate-900">
                     Back to login
                 </Link>
             </div>

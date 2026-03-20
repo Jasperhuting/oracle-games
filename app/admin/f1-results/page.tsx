@@ -112,7 +112,7 @@ export default function F1ResultsAdminPage() {
 
     if (loading || authLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <p className="text-gray-600">Laden...</p>
             </div>
         );
@@ -125,7 +125,7 @@ export default function F1ResultsAdminPage() {
     const selectedRaceData = races2026.find(r => r.round === selectedRace);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen py-8">
             <div className="max-w-4xl mx-auto px-4">
                 <div className="bg-white rounded-lg shadow-md p-6">
                     <h1 className="text-2xl font-bold mb-6">F1 Race Uitslagen Invoeren</h1>

@@ -1,0 +1,216 @@
+<style>
+  .header-mock {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 0 24px;
+    height: 72px;
+    backdrop-filter: blur(10px);
+    margin-bottom: 8px;
+    font-size: 14px;
+    gap: 0;
+  }
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .logo-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: white; font-size: 13px;
+  }
+  .logo-text {
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-link {
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: rgba(255,255,255,0.6);
+    white-space: nowrap;
+    font-size: 14px;
+  }
+  .nav-link.active {
+    color: rgba(255,255,255,0.95);
+    background: rgba(255,255,255,0.1);
+    font-weight: 500;
+  }
+  .sep {
+    width: 1px;
+    height: 28px;
+    background: rgba(255,255,255,0.12);
+    flex-shrink: 0;
+    margin: 0 8px;
+  }
+  .platform-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 5px 12px 5px 10px;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .platform-emoji { font-size: 16px; }
+  .chevron { font-size: 10px; opacity: 0.5; }
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 5px 12px 5px 8px;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    flex-shrink: 0;
+  }
+  .spacer { flex: 1; }
+  .option-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    margin: 18px 0 6px;
+  }
+  .option-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 4px;
+    margin-bottom: 12px;
+  }
+  .cards { display: flex; flex-direction: column; gap: 4px; }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .card:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+  .card.selected { border-color: #6366f1; background: rgba(99,102,241,0.12); }
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .option-badge {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px; color: white;
+    flex-shrink: 0;
+  }
+  .card.selected .option-badge { background: #6366f1; }
+  .card-title { font-weight: 600; color: rgba(255,255,255,0.9); font-size: 14px; }
+</style>
+
+<h2>Welk header-layout voelt het meest overzichtelijk?</h2>
+<p class="subtitle">Klik op een optie om te selecteren</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="option-badge">A</div>
+      <div class="card-title">Logo links — nav gecentreerd — platform + user rechts</div>
+    </div>
+    <div class="header-mock">
+      <div class="logo-area">
+        <div class="logo-circle">OG</div>
+        <span class="logo-text">Oracle Games</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="nav-links">
+        <span class="nav-link active">Nieuws</span>
+        <span class="nav-link">Spellen</span>
+        <span class="nav-link">Forum</span>
+        <span class="nav-link">Chat</span>
+        <span class="nav-link">Admin</span>
+      </div>
+      <div class="spacer"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="platform-pill"><span class="platform-emoji">🚴</span> Cycling <span class="chevron">▼</span></div>
+        <div class="user-pill"><div class="avatar"></div> Jasper Huting <span class="chevron">▼</span></div>
+      </div>
+    </div>
+    <div class="option-desc">Nav staat centraal, platform en user zijn gegroepeerd als één blok rechts. Rustiger door minder separators.</div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="option-badge">B</div>
+      <div class="card-title">Platform selector naast logo — nav rechts — user helemaal rechts</div>
+    </div>
+    <div class="header-mock">
+      <div class="logo-area">
+        <div class="logo-circle">OG</div>
+        <span class="logo-text">Oracle Games</span>
+      </div>
+      <div style="margin-left:12px">
+        <div class="platform-pill"><span class="platform-emoji">🚴</span> Cycling <span class="chevron">▼</span></div>
+      </div>
+      <div class="spacer"></div>
+      <div class="nav-links">
+        <span class="nav-link active">Nieuws</span>
+        <span class="nav-link">Spellen</span>
+        <span class="nav-link">Forum</span>
+        <span class="nav-link">Chat</span>
+        <span class="nav-link">Admin</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="user-pill"><div class="avatar"></div> Jasper Huting <span class="chevron">▼</span></div>
+    </div>
+    <div class="option-desc">Platform switcher hoort bij de merkidentiteit (links), nav is content-navigatie (midden), user is account (rechts).</div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-header">
+      <div class="option-badge">C</div>
+      <div class="card-title">Logo + platform links — nav direct erna — user rechts</div>
+    </div>
+    <div class="header-mock">
+      <div class="logo-area">
+        <div class="logo-circle">OG</div>
+      </div>
+      <div style="margin-left:10px;margin-right:4px">
+        <div class="platform-pill"><span class="platform-emoji">🚴</span> Cycling <span class="chevron">▼</span></div>
+      </div>
+      <div class="sep"></div>
+      <div class="nav-links">
+        <span class="nav-link active">Nieuws</span>
+        <span class="nav-link">Spellen</span>
+        <span class="nav-link">Forum</span>
+        <span class="nav-link">Chat</span>
+        <span class="nav-link">Admin</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="user-pill"><div class="avatar"></div> Jasper Huting <span class="chevron">▼</span></div>
+    </div>
+    <div class="option-desc">Compact: logo + platform zijn één geheel, de "Oracle Games" tekst verdwijnt (logo staat voor het merk), nav direct erna.</div>
+  </div>
+
+</div>
