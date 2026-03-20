@@ -88,6 +88,28 @@ async function hasExistingScrape(db: ReturnType<typeof getServerFirebase>, key: 
   return stageResults.length > 0 || generalClassification.length > 0 || count > 0;
 }
 
+/** Returns true if there's already a pending or running scraper job for this race/type/stage. */
+async function hasPendingJob(
+  db: ReturnType<typeof getServerFirebase>,
+  race: string,
+  year: number,
+  type: string,
+  stage?: number,
+): Promise<boolean> {
+  let query = db.collection('jobs')
+    .where('type', '==', 'scraper')
+    .where('data.race', '==', race)
+    .where('data.year', '==', year)
+    .where('data.type', '==', type) as FirebaseFirestore.Query;
+
+  if (stage !== undefined) {
+    query = query.where('data.stage', '==', stage);
+  }
+
+  const pendingSnap = await query.where('status', 'in', ['pending', 'running']).limit(1).get();
+  return !pendingSnap.empty;
+}
+
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
   const authHeader = request.headers.get('authorization');
@@ -178,6 +200,10 @@ export async function GET(request: NextRequest) {
             skipped.push(`${raceSlug} (result already scraped)`);
             continue;
           }
+          if (!dryRun && !notifyOnly && await hasPendingJob(db, raceSlug, year, 'result')) {
+            skipped.push(`${raceSlug} (result job already queued)`);
+            continue;
+          }
           if (dryRun || notifyOnly) {
             outcomes.push({
               raceSlug,
@@ -255,6 +281,10 @@ export async function GET(request: NextRequest) {
             skipped.push(`${raceSlug} (stage ${stageNumber} already scraped)`);
             continue;
           }
+          if (!dryRun && !notifyOnly && await hasPendingJob(db, raceSlug, year, 'stage', stageNumber)) {
+            skipped.push(`${raceSlug} (stage ${stageNumber} job already queued)`);
+            continue;
+          }
 
           if (dryRun || notifyOnly) {
             outcomes.push({
@@ -306,6 +336,10 @@ export async function GET(request: NextRequest) {
           });
           if (alreadyScraped) {
             skipped.push(`${raceSlug} (tour-gc already scraped)`);
+            continue;
+          }
+          if (!dryRun && !notifyOnly && await hasPendingJob(db, raceSlug, year, 'tour-gc')) {
+            skipped.push(`${raceSlug} (tour-gc job already queued)`);
             continue;
           }
           if (dryRun || notifyOnly) {
