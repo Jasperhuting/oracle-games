@@ -66,7 +66,7 @@ export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_pictur
 
     return (
         <div className="relative min-h-screen overflow-hidden">
-            <Image src={heroImageSrc} fill className="object-cover object-center" alt="" />
+            <Image src={heroImageSrc} fill className="object-cover object-center" alt="" priority sizes="100vw" quality={75} />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,7,18,0.42),rgba(3,7,18,0.58))]" />
             <div className="relative z-10 flex min-h-screen items-center justify-center overflow-y-auto px-6 py-10">
                 <div className="w-full max-w-[420px] rounded-[28px] border border-white/65 bg-white/88 px-8 py-10 text-slate-900 shadow-[0_24px_80px_rgba(15,23,42,0.18)] backdrop-blur">
