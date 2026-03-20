@@ -46,8 +46,9 @@ export const MobileMenu = ({
     onPlatformChange,
 }: MobileMenuProps) => {
     const router = useRouter();
-    const headerHeight = 86;    
-    const menuTop = topOffset + headerHeight; // below header + half side margin gap
+    const headerHeight = 86;
+    const headerTopGap = 32; // matches the fixed top gap in Header.tsx (bannerOffset + 32)
+    const menuTop = topOffset + headerTopGap + headerHeight; // below header bottom
 
     return (
         <AnimatePresence>
