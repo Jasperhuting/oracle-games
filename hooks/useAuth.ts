@@ -163,10 +163,15 @@ export function useAuth() {
       setRestoringSession(true);
       setLoading(true);
 
+      // Abort after 5 seconds to prevent infinite loading on slow/mobile connections
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
       try {
         const response = await fetch('/api/auth/session/restore', {
           method: 'GET',
           cache: 'no-store',
+          signal: controller.signal,
         });
 
         if (!response.ok) {
@@ -183,10 +188,9 @@ export function useAuth() {
       } catch (error) {
         console.error('Error restoring shared session:', error);
       } finally {
+        clearTimeout(timeout);
         setRestoringSession(false);
-        if (!auth.currentUser) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
