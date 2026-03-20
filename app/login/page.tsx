@@ -10,6 +10,7 @@ export default async function LoginPage() {
 
     return (
         <LoginPageClient
+            initialPlatform={platform.key}
             previewHref={isMatchedSubdomain ? platform.publicEntryPath : "/preview"}
             heroImageSrc={platform.authImages.login}
         />
