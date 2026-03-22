@@ -55,13 +55,16 @@ export function SlipstreamAdminPanel({
     }
   };
 
-  const calculateResults = async (raceSlug: string) => {
+  const calculateResults = async (race: Race) => {
+    const { raceSlug, raceId } = race;
     setLoading(`calc-${raceSlug}`);
     setError(null);
     setSuccess(null);
 
     try {
-      const resultsResponse = await fetch(`/api/races/${raceSlug}/results`);
+      // Use raceId (includes year, e.g. "milano-sanremo_2026") so the API can
+      // locate the correct result document in scraper-data.
+      const resultsResponse = await fetch(`/api/races/${raceId}/results`);
       if (!resultsResponse.ok) {
         throw new Error('Race results not available. Save race result first.');
       }
@@ -180,7 +183,7 @@ export function SlipstreamAdminPanel({
                       Unlock
                     </button>
                     <button
-                      onClick={() => calculateResults(race.raceSlug)}
+                      onClick={() => calculateResults(race)}
                       disabled={loading === `calc-${race.raceSlug}`}
                       className="px-3 py-1.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 flex items-center gap-1"
                     >
@@ -200,7 +203,7 @@ export function SlipstreamAdminPanel({
                       Revert to Locked
                     </button>
                     <button
-                      onClick={() => calculateResults(race.raceSlug)}
+                      onClick={() => calculateResults(race)}
                       disabled={loading === `calc-${race.raceSlug}`}
                       className="px-3 py-1.5 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50 flex items-center gap-1"
                     >
