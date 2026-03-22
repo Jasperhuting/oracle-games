@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash, Calendar } from 'tabler-icons-react';
+import { Plus, Trash, Calendar, Refresh, Lock, CircleCheck, Clock } from 'tabler-icons-react';
 
 interface Race {
   raceId: string;
@@ -53,6 +53,8 @@ export function SlipstreamRaceManager({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [calcLoading, setCalcLoading] = useState<string | null>(null);
+  const [statusLoading, setStatusLoading] = useState<string | null>(null);
   
   // Form state for adding single race
   const [newRace, setNewRace] = useState({
@@ -164,6 +166,57 @@ export function SlipstreamRaceManager({
     }
   };
 
+  const updateRaceStatus = async (race: Race, status: 'upcoming' | 'locked' | 'finished') => {
+    setStatusLoading(race.raceSlug);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch(`/api/games/${gameId}/slipstream/admin/race-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raceSlug: race.raceSlug, status })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Kon status niet bijwerken');
+      setSuccess(`${race.raceName} status bijgewerkt naar ${status}`);
+      onRacesChange?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kon status niet bijwerken');
+    } finally {
+      setStatusLoading(null);
+    }
+  };
+
+  const calculateResults = async (race: Race) => {
+    setCalcLoading(race.raceSlug);
+    setError(null);
+    setSuccess(null);
+    try {
+      const resultsResponse = await fetch(`/api/races/${race.raceId}/results`);
+      if (!resultsResponse.ok) {
+        throw new Error('Wedstrijdresultaten niet beschikbaar. Sla het resultaat eerst op via de scraper.');
+      }
+      const resultsData = await resultsResponse.json();
+
+      const response = await fetch(`/api/games/${gameId}/slipstream/calculate-results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raceSlug: race.raceSlug,
+          stageResults: resultsData.stageResults || []
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Berekening mislukt');
+      setSuccess(`Punten berekend voor ${race.raceName}: ${data.summary?.participantsProcessed || 0} deelnemers verwerkt`);
+      onRacesChange?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Berekening mislukt');
+    } finally {
+      setCalcLoading(null);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 border-b border-gray-200">
@@ -241,7 +294,7 @@ export function SlipstreamRaceManager({
         </div>
       )}
 
-      <div className="p-4 max-h-[300px] overflow-y-auto">
+      <div className="p-4 max-h-[500px] overflow-y-auto">
         {races.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>No races configured yet.</p>
@@ -252,34 +305,92 @@ export function SlipstreamRaceManager({
             {[...races].sort((a, b) => new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()).map(race => (
               <div
                 key={race.raceSlug}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                className="p-2 bg-gray-50 rounded space-y-2"
               >
-                <div>
-                  <div className="font-medium text-sm">{race.raceName}</div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(race.raceDate).toLocaleDateString('en-GB', {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                    <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${
-                      race.status === 'finished' ? 'bg-green-100 text-green-700' :
-                      race.status === 'locked' ? 'bg-orange-100 text-orange-700' :
-                      'bg-blue-100 text-blue-700'
-                    }`}>
-                      {race.status}
-                    </span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-sm flex items-center gap-1">
+                      {race.status === 'finished' && <CircleCheck className="w-3.5 h-3.5 text-green-500" />}
+                      {race.status === 'locked' && <Lock className="w-3.5 h-3.5 text-orange-500" />}
+                      {race.status === 'upcoming' && <Clock className="w-3.5 h-3.5 text-blue-500" />}
+                      {race.raceName}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(race.raceDate).toLocaleDateString('en-GB', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                      <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${
+                        race.status === 'finished' ? 'bg-green-100 text-green-700' :
+                        race.status === 'locked' ? 'bg-orange-100 text-orange-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {race.status}
+                      </span>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => deleteRace(race.raceSlug)}
+                    disabled={loading || race.status !== 'upcoming'}
+                    className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30"
+                    title={race.status !== 'upcoming' ? 'Cannot delete non-upcoming races' : 'Delete race'}
+                  >
+                    <Trash className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => deleteRace(race.raceSlug)}
-                  disabled={loading || race.status !== 'upcoming'}
-                  className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30"
-                  title={race.status !== 'upcoming' ? 'Cannot delete non-upcoming races' : 'Delete race'}
-                >
-                  <Trash className="w-4 h-4" />
-                </button>
+
+                {/* Admin actions per race */}
+                <div className="flex flex-wrap gap-1.5">
+                  {race.status === 'upcoming' && (
+                    <button
+                      onClick={() => updateRaceStatus(race, 'locked')}
+                      disabled={statusLoading === race.raceSlug}
+                      className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                    >
+                      {statusLoading === race.raceSlug ? 'Bezig...' : 'Picks vergrendelen'}
+                    </button>
+                  )}
+                  {race.status === 'locked' && (
+                    <>
+                      <button
+                        onClick={() => updateRaceStatus(race, 'upcoming')}
+                        disabled={statusLoading === race.raceSlug}
+                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                      >
+                        {statusLoading === race.raceSlug ? 'Bezig...' : 'Ontgrendelen'}
+                      </button>
+                      <button
+                        onClick={() => calculateResults(race)}
+                        disabled={calcLoading === race.raceSlug}
+                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <Refresh className={`w-3 h-3 ${calcLoading === race.raceSlug ? 'animate-spin' : ''}`} />
+                        {calcLoading === race.raceSlug ? 'Berekenen...' : 'Bereken punten'}
+                      </button>
+                    </>
+                  )}
+                  {race.status === 'finished' && (
+                    <>
+                      <button
+                        onClick={() => updateRaceStatus(race, 'locked')}
+                        disabled={statusLoading === race.raceSlug}
+                        className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                      >
+                        {statusLoading === race.raceSlug ? 'Bezig...' : 'Terugzetten naar locked'}
+                      </button>
+                      <button
+                        onClick={() => calculateResults(race)}
+                        disabled={calcLoading === race.raceSlug}
+                        className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <Refresh className={`w-3 h-3 ${calcLoading === race.raceSlug ? 'animate-spin' : ''}`} />
+                        {calcLoading === race.raceSlug ? 'Berekenen...' : 'Herbereken punten'}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>
