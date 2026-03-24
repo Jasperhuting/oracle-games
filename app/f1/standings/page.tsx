@@ -16,7 +16,7 @@ import { useF1Standings, useF1SubLeagues, useF1Participants, useF1UserPrediction
 import { useUserNames } from "../hooks/useUserNames";
 import { F1SubLeague, F1Prediction, LegacyDriver } from "../types";
 import { useAuth } from "@/hooks/useAuth";
-import { auth } from "@/lib/firebase/client";
+import { authorizedFetch } from "@/lib/auth/token-service";
 import { PlayerCard, ComparisonTable, DriverTag, DnfTags } from "@/components/f1";
 
 interface Player {
@@ -144,12 +144,7 @@ const StandingsPage = () => {
             setBrowseLoading(true);
             (async () => {
                 try {
-                    const idToken = await auth.currentUser?.getIdToken();
-                    const headers: HeadersInit = {};
-                    if (idToken) {
-                        headers['Authorization'] = `Bearer ${idToken}`;
-                    }
-                    const res = await fetch('/api/f1/subleagues?public=true', { headers });
+                    const res = await authorizedFetch('/api/f1/subleagues?public=true');
                     const data = await res.json();
                     if (data.success) {
                         setPublicSubLeagues(data.data);
@@ -393,19 +388,10 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
-            // Get ID token for authentication
-            const idToken = await auth.currentUser?.getIdToken();
-            if (!idToken) {
-                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
-                setActionLoading(false);
-                return;
-            }
-
-            const response = await fetch('/api/f1/subleagues', {
+            const response = await authorizedFetch('/api/f1/subleagues', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({
                     name: newPouleName.trim(),
@@ -439,19 +425,10 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
-            // Get ID token for authentication
-            const idToken = await auth.currentUser?.getIdToken();
-            if (!idToken) {
-                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
-                setActionLoading(false);
-                return;
-            }
-
-            const response = await fetch('/api/f1/subleagues', {
+            const response = await authorizedFetch('/api/f1/subleagues', {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
             });
@@ -485,18 +462,10 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
-            const idToken = await auth.currentUser?.getIdToken();
-            if (!idToken) {
-                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
-                setRequestingJoin(null);
-                return;
-            }
-
-            const response = await fetch(`/api/f1/subleagues/${subLeagueId}`, {
+            const response = await authorizedFetch(`/api/f1/subleagues/${subLeagueId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({ action: 'request' }),
             });
@@ -528,18 +497,10 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
-            const idToken = await auth.currentUser?.getIdToken();
-            if (!idToken) {
-                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
-                setRequestingJoin(null);
-                return;
-            }
-
-            const response = await fetch(`/api/f1/subleagues/${subLeagueId}`, {
+            const response = await authorizedFetch(`/api/f1/subleagues/${subLeagueId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({ action: 'cancel' }),
             });
@@ -572,18 +533,10 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
-            const idToken = await auth.currentUser?.getIdToken();
-            if (!idToken) {
-                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
-                setActionLoading(false);
-                return;
-            }
-
-            const response = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
+            const response = await authorizedFetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({ action, targetUserId }),
             });
@@ -618,17 +571,8 @@ const StandingsPage = () => {
         setActionMessage(null);
 
         try {
-            const idToken = await auth.currentUser?.getIdToken();
-            if (!idToken) {
-                setActionMessage({ type: 'error', text: 'Je bent niet ingelogd' });
-                return;
-            }
-
-            const response = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
+            const response = await authorizedFetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`,
-                },
             });
             const data = await response.json();
 
@@ -670,13 +614,7 @@ const StandingsPage = () => {
         setComparePredictions([]);
 
         try {
-            const idToken = await auth.currentUser?.getIdToken();
-            const headers: HeadersInit = {};
-            if (idToken) {
-                headers.Authorization = `Bearer ${idToken}`;
-            }
-
-            const response = await fetch(`/f1/api/predictions?season=2026&userId=${playerId}`, { headers });
+            const response = await authorizedFetch(`/f1/api/predictions?season=2026&userId=${playerId}`);
             const data = await response.json();
             if (data.success && data.data) {
                 setComparePredictions(data.data);
@@ -1671,12 +1609,10 @@ const StandingsPage = () => {
                                                         if (!confirm(`Weet je zeker dat je ${memberPlayer?.name || 'deze gebruiker'} wilt verwijderen?`)) return;
                                                         setActionLoading(true);
                                                         try {
-                                                            const idToken = await auth.currentUser?.getIdToken();
-                                                            const response = await fetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
+                                                            const response = await authorizedFetch(`/api/f1/subleagues/${managingSubLeague.id}`, {
                                                                 method: 'POST',
                                                                 headers: {
                                                                     'Content-Type': 'application/json',
-                                                                    'Authorization': `Bearer ${idToken}`,
                                                                 },
                                                                 body: JSON.stringify({ action: 'remove', targetUserId: memberId }),
                                                             });

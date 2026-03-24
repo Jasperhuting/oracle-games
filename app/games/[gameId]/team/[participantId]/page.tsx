@@ -7,8 +7,8 @@ import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
 import { formatCurrencyWhole } from '@/lib/utils/formatCurrency';
 import { getRaceNamesClient } from '@/lib/race-names';
-import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { authorizedFetch } from '@/lib/auth/token-service';
 
 // PointsEvent interface for the new format
 interface PointsEvent {
@@ -121,13 +121,7 @@ export default function TeamDetailPage() {
         }
 
         // Fetch team details
-        const headers: HeadersInit = {};
-        const idToken = await auth.currentUser?.getIdToken();
-        if (idToken) {
-          headers['Authorization'] = `Bearer ${idToken}`;
-        }
-
-        const response = await fetch(`/api/games/${gameId}/team/${participantId}`, { headers });
+        const response = await authorizedFetch(`/api/games/${gameId}/team/${participantId}`);
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
             throw new Error('Je hebt geen toegang tot dit team');

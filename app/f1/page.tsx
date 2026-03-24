@@ -12,6 +12,7 @@ import { F1Race, F1Prediction, F1RaceResult } from "./types";
 import Link from "next/link";
 import { Check, Clock, Edit, UserPlus } from "tabler-icons-react";
 import { useAuth } from "@/hooks/useAuth";
+import { authorizedFetch } from "@/lib/auth/token-service";
 import { RaceCard } from "@/components/f1/RaceCard";
 
 interface RaceTableRow {
@@ -45,14 +46,10 @@ const F1Page = () => {
         if (!user) return;
         setIsJoining(true);
         try {
-            // Get the ID token for authentication
-            const idToken = await user.getIdToken();
-
-            const response = await fetch('/api/f1/join', {
+            const response = await authorizedFetch('/api/f1/join', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
                 },
                 body: JSON.stringify({ season: 2026 }),
             });
