@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { authorizedFetch } from '@/lib/auth/token-service';
 import { POULES, TeamInPoule } from '../page';
 import { useWk2026Participant, useWk2026SubLeagues } from '../hooks';
 import { Wk2026SubLeague } from '../types';
@@ -446,13 +447,9 @@ export default function WkStandingsPage() {
     setFeedbackMessage(null);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch('/api/wk-2026/join', {
+      const response = await authorizedFetch('/api/wk-2026/join', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ season: 2026 }),
       });
       const data = await response.json();
@@ -479,13 +476,9 @@ export default function WkStandingsPage() {
     setFeedbackMessage(null);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch('/api/wk-2026/subleagues', {
+      const response = await authorizedFetch('/api/wk-2026/subleagues', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newSubpouleName.trim(),
           description: newSubpouleDescription.trim(),
@@ -524,13 +517,9 @@ export default function WkStandingsPage() {
     setFeedbackMessage(null);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch('/api/wk-2026/subleagues', {
+      const response = await authorizedFetch('/api/wk-2026/subleagues', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: joinCode.trim().toUpperCase() }),
       });
       const data = await response.json();
@@ -567,12 +556,8 @@ export default function WkStandingsPage() {
     setFeedbackMessage(null);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch(`/api/wk-2026/subleagues?id=${league.id}`, {
+      const response = await authorizedFetch(`/api/wk-2026/subleagues?id=${league.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-        },
       });
       const data = await response.json();
 
@@ -605,13 +590,9 @@ export default function WkStandingsPage() {
     setFeedbackMessage(null);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch(`/api/wk-2026/subleagues/${leagueId}`, {
+      const response = await authorizedFetch(`/api/wk-2026/subleagues/${leagueId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
       const data = await response.json();
@@ -647,13 +628,9 @@ export default function WkStandingsPage() {
     setFeedbackMessage(null);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch(`/api/wk-2026/subleagues/${managingSubLeague.id}`, {
+      const response = await authorizedFetch(`/api/wk-2026/subleagues/${managingSubLeague.id}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, targetUserId }),
       });
       const data = await response.json();

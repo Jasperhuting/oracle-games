@@ -5,6 +5,7 @@ import type { ReactElement } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { authorizedFetch } from '@/lib/auth/token-service';
 import { KNOCKOUT_MATCHES, KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
 import { POULES } from '../../page';
 import { useWk2026Participant } from '../../hooks';
@@ -59,13 +60,9 @@ export default function KnockoutPredictionsPage() {
     setIsJoining(true);
 
     try {
-      const idToken = await user.getIdToken();
-      const response = await fetch('/api/wk-2026/join', {
+      const response = await authorizedFetch('/api/wk-2026/join', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ season: 2026 }),
       });
       const data = await response.json();

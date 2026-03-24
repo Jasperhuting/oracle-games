@@ -7,6 +7,7 @@ import countriesList from '@/lib/country.json';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
 import { useWk2026Participant } from "../hooks";
+import { authorizedFetch } from "@/lib/auth/token-service";
 
 interface Match {
     id: string;
@@ -52,13 +53,9 @@ export default function PlayerPredictionsPage() {
         setIsJoining(true);
 
         try {
-            const idToken = await user.getIdToken();
-            const response = await fetch('/api/wk-2026/join', {
+            const response = await authorizedFetch('/api/wk-2026/join', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`,
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ season: 2026 }),
             });
             const data = await response.json();
