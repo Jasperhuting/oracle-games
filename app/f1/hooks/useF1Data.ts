@@ -276,7 +276,7 @@ export function useF1RaceResult(season: number, round: number): SubscriptionQuer
 // ============================================
 // useF1RaceResults - Get all race results for a season
 // ============================================
-export function useF1RaceResults(season: number = CURRENT_SEASON) {
+export function useF1RaceResults(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1RaceResult[]> & { results: F1RaceResult[] } {
   const [results, setResults] = useState<F1RaceResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -304,13 +304,13 @@ export function useF1RaceResults(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [season]);
 
-  return { results, loading, error };
+  return { data: results, results, loading, error };
 }
 
 // ============================================
 // useF1LegacyDrivers - Get drivers in legacy format (for backward compatibility)
 // ============================================
-export function useF1LegacyDrivers(season: number = CURRENT_SEASON) {
+export function useF1LegacyDrivers(season: number = CURRENT_SEASON): SubscriptionQueryResult<LegacyDriver[]> & { drivers: LegacyDriver[] } {
   const { drivers, loading: driversLoading, error: driversError } = useF1Drivers(season);
   const { teams, loading: teamsLoading, error: teamsError } = useF1Teams(season);
 
@@ -334,6 +334,7 @@ export function useF1LegacyDrivers(season: number = CURRENT_SEASON) {
   }, [drivers, teams]);
 
   return {
+    data: legacyDrivers,
     drivers: legacyDrivers,
     loading: driversLoading || teamsLoading,
     error: driversError || teamsError,
@@ -343,7 +344,7 @@ export function useF1LegacyDrivers(season: number = CURRENT_SEASON) {
 // ============================================
 // useF1Participants - Get ALL participants for a season
 // ============================================
-export function useF1Participants(season: number = CURRENT_SEASON) {
+export function useF1Participants(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Participant[]> & { participants: F1Participant[] } {
   const [participants, setParticipants] = useState<F1Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -375,7 +376,7 @@ export function useF1Participants(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [season]);
 
-  return { participants, loading, error };
+  return { data: participants, participants, loading, error };
 }
 
 // ============================================
