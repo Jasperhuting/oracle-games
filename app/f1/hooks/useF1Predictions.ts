@@ -2,33 +2,49 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { auth } from '@/lib/firebase/client';
-import { 
+import {
   collection,
   query,
-  where, 
+  where,
   onSnapshot,
   doc,
 } from 'firebase/firestore';
 import { f1Db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { 
-  F1Prediction, 
+import {
+  F1Prediction,
   F1_COLLECTIONS,
   createPredictionDocId,
   createRaceDocId,
 } from '../types';
+import type { SubscriptionQueryResult, SubscriptionWithMutation } from '@/lib/data-fetching/types';
 
 const CURRENT_SEASON = 2026;
 
 // ============================================
 // useF1Prediction - Get/save prediction for a race
 // ============================================
-export function useF1Prediction(round: number, season: number = CURRENT_SEASON) {
+
+export interface SavePredictionArgs {
+  finishOrder: string[];
+  polePosition: string | null;
+  fastestLap: string | null;
+  dnf1: string | null;
+  dnf2: string | null;
+}
+
+export interface SavePredictionResult {
+  success: boolean;
+  error?: string;
+}
+
+export function useF1Prediction(round: number, season: number = CURRENT_SEASON): SubscriptionWithMutation<F1Prediction | null, SavePredictionArgs, SavePredictionResult> & { prediction: F1Prediction | null; savePrediction: (args: SavePredictionArgs) => Promise<SavePredictionResult>; isAuthenticated: boolean } {
   const { user } = useAuth();
   const [prediction, setPrediction] = useState<F1Prediction | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [saveError, setSaveError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -59,21 +75,15 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
     return () => unsubscribe();
   }, [user?.uid, season, round]);
 
-  const savePrediction = useCallback(async (data: {
-    finishOrder: string[];
-    polePosition: string | null;
-    fastestLap: string | null;
-    dnf1: string | null;
-    dnf2: string | null;
-  }): Promise<{ success: boolean; error?: string }> => {
+  const mutate = useCallback(async (data: SavePredictionArgs): Promise<SavePredictionResult> => {
     if (!user?.uid) {
       const authError = 'Not authenticated';
-      setError(new Error(authError));
+      setSaveError(new Error(authError));
       return { success: false, error: authError };
     }
 
     setSaving(true);
-    setError(null);
+    setSaveError(null);
 
     try {
       const raceId = createRaceDocId(season, round);
@@ -114,18 +124,27 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
     } catch (err) {
       console.error('Error saving prediction:', err);
       const nextError = err instanceof Error ? err : new Error('Failed to save prediction');
-      setError(nextError);
+      setSaveError(nextError);
       return { success: false, error: nextError.message };
     } finally {
       setSaving(false);
     }
   }, [user?.uid, season, round]);
 
-  return { 
-    prediction, 
-    loading, 
-    saving, 
-    error, 
+  // savePrediction is a backward-compat alias for mutate
+  const savePrediction = mutate;
+
+  return {
+    // SubscriptionQueryResult fields
+    data: prediction,
+    loading,
+    error,
+    // MutationResult fields
+    mutate,
+    saving,
+    saveError,
+    // Backward-compat aliases
+    prediction,
     savePrediction,
     isAuthenticated: !!user?.uid,
   };
@@ -134,7 +153,7 @@ export function useF1Prediction(round: number, season: number = CURRENT_SEASON) 
 // ============================================
 // useF1UserPredictions - Get all predictions for user
 // ============================================
-export function useF1UserPredictions(season: number = CURRENT_SEASON) {
+export function useF1UserPredictions(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Prediction[]> & { predictions: F1Prediction[] } {
   const { user } = useAuth();
   const [predictions, setPredictions] = useState<F1Prediction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,5 +188,5 @@ export function useF1UserPredictions(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [user?.uid, season]);
 
-  return { predictions, loading, error };
+  return { data: predictions, predictions, loading, error };
 }
