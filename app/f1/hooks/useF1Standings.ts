@@ -1,29 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  query,
+  where,
+  orderBy,
   onSnapshot,
   doc,
 } from 'firebase/firestore';
 import { f1Db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { 
-  F1Standing, 
+import {
+  F1Standing,
   F1SubLeague,
   F1_COLLECTIONS,
   createStandingDocId,
 } from '../types';
+import type { SubscriptionQueryResult } from '@/lib/data-fetching/types';
 
 const CURRENT_SEASON = 2026;
 
 // ============================================
 // useF1Standings - Get standings for season
 // ============================================
-export function useF1Standings(season: number = CURRENT_SEASON, subLeagueId?: string) {
+export function useF1Standings(season: number = CURRENT_SEASON, subLeagueId?: string): SubscriptionQueryResult<F1Standing[]> & { standings: F1Standing[] } {
   const [standings, setStandings] = useState<F1Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -55,13 +56,13 @@ export function useF1Standings(season: number = CURRENT_SEASON, subLeagueId?: st
     return () => unsubscribe();
   }, [season, subLeagueId]);
 
-  return { standings, loading, error };
+  return { data: standings, standings, loading, error };
 }
 
 // ============================================
 // useF1UserStanding - Get standing for current user
 // ============================================
-export function useF1UserStanding(season: number = CURRENT_SEASON) {
+export function useF1UserStanding(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Standing | null> & { standing: F1Standing | null } {
   const { user } = useAuth();
   const [standing, setStanding] = useState<F1Standing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,13 +97,13 @@ export function useF1UserStanding(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [user?.uid, season]);
 
-  return { standing, loading, error };
+  return { data: standing, standing, loading, error };
 }
 
 // ============================================
 // useF1SubLeagues - Get user's subLeagues
 // ============================================
-export function useF1SubLeagues() {
+export function useF1SubLeagues(): SubscriptionQueryResult<F1SubLeague[]> & { subLeagues: F1SubLeague[] } {
   const { user } = useAuth();
   const [subLeagues, setSubLeagues] = useState<F1SubLeague[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,5 +141,5 @@ export function useF1SubLeagues() {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  return { subLeagues, loading, error };
+  return { data: subLeagues, subLeagues, loading, error };
 }

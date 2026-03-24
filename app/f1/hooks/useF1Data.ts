@@ -25,13 +25,14 @@ import {
   createRaceDocId,
   createParticipantDocId,
 } from '../types';
+import type { SubscriptionQueryResult } from '@/lib/data-fetching/types';
 
 const CURRENT_SEASON = 2026;
 
 // ============================================
 // useF1Season - Get active season
 // ============================================
-export function useF1Season() {
+export function useF1Season(): SubscriptionQueryResult<F1Season | null> & { season: F1Season | null } {
   const [season, setSeason] = useState<F1Season | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -59,13 +60,13 @@ export function useF1Season() {
     return () => unsubscribe();
   }, []);
 
-  return { season, loading, error };
+  return { data: season, season, loading, error };
 }
 
 // ============================================
 // useF1Teams - Get all teams for season
 // ============================================
-export function useF1Teams(season: number = CURRENT_SEASON) {
+export function useF1Teams(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Team[]> & { teams: F1Team[] } {
   const [teams, setTeams] = useState<F1Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -94,13 +95,13 @@ export function useF1Teams(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [season]);
 
-  return { teams, loading, error };
+  return { data: teams, teams, loading, error };
 }
 
 // ============================================
 // useF1Drivers - Get all drivers for season
 // ============================================
-export function useF1Drivers(season: number = CURRENT_SEASON) {
+export function useF1Drivers(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Driver[]> & { drivers: F1Driver[] } {
   const [drivers, setDrivers] = useState<F1Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -129,13 +130,13 @@ export function useF1Drivers(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [season]);
 
-  return { drivers, loading, error };
+  return { data: drivers, drivers, loading, error };
 }
 
 // ============================================
 // useF1DriversWithTeams - Get drivers with team data
 // ============================================
-export function useF1DriversWithTeams(season: number = CURRENT_SEASON) {
+export function useF1DriversWithTeams(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1DriverWithTeam[]> & { drivers: F1DriverWithTeam[] } {
   const { drivers, loading: driversLoading, error: driversError } = useF1Drivers(season);
   const { teams, loading: teamsLoading, error: teamsError } = useF1Teams(season);
 
@@ -157,6 +158,7 @@ export function useF1DriversWithTeams(season: number = CURRENT_SEASON) {
   });
 
   return {
+    data: driversWithTeams,
     drivers: driversWithTeams,
     loading: driversLoading || teamsLoading,
     error: driversError || teamsError,
@@ -166,7 +168,7 @@ export function useF1DriversWithTeams(season: number = CURRENT_SEASON) {
 // ============================================
 // useF1Races - Get all races for season
 // ============================================
-export function useF1Races(season: number = CURRENT_SEASON) {
+export function useF1Races(season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Race[]> & { races: F1Race[] } {
   const [races, setRaces] = useState<F1Race[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -198,13 +200,13 @@ export function useF1Races(season: number = CURRENT_SEASON) {
     return () => unsubscribe();
   }, [season]);
 
-  return { races, loading, error };
+  return { data: races, races, loading, error };
 }
 
 // ============================================
 // useF1Race - Get single race
 // ============================================
-export function useF1Race(season: number, round: number) {
+export function useF1Race(season: number, round: number): SubscriptionQueryResult<F1Race | null> & { race: F1Race | null } {
   const [race, setRace] = useState<F1Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -233,13 +235,13 @@ export function useF1Race(season: number, round: number) {
     return () => unsubscribe();
   }, [season, round]);
 
-  return { race, loading, error };
+  return { data: race, race, loading, error };
 }
 
 // ============================================
 // useF1RaceResult - Get race result
 // ============================================
-export function useF1RaceResult(season: number, round: number) {
+export function useF1RaceResult(season: number, round: number): SubscriptionQueryResult<F1RaceResult | null> & { result: F1RaceResult | null } {
   const [result, setResult] = useState<F1RaceResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -268,7 +270,7 @@ export function useF1RaceResult(season: number, round: number) {
     return () => unsubscribe();
   }, [season, round]);
 
-  return { result, loading, error };
+  return { data: result, result, loading, error };
 }
 
 // ============================================
@@ -379,7 +381,7 @@ export function useF1Participants(season: number = CURRENT_SEASON) {
 // ============================================
 // useF1Participant - Check if user is registered for F1 season
 // ============================================
-export function useF1Participant(userId: string | null, season: number = CURRENT_SEASON) {
+export function useF1Participant(userId: string | null, season: number = CURRENT_SEASON): SubscriptionQueryResult<F1Participant | null> & { participant: F1Participant | null; isParticipant: boolean } {
   const [participant, setParticipant] = useState<F1Participant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -414,5 +416,5 @@ export function useF1Participant(userId: string | null, season: number = CURRENT
     return () => unsubscribe();
   }, [userId, season]);
 
-  return { participant, isParticipant: !!participant, loading, error };
+  return { data: participant, participant, isParticipant: !!participant, loading, error };
 }
