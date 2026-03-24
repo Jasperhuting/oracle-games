@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { authorizedFetch } from '@/lib/auth/token-service';
 
 const PING_INTERVAL_MS = 5 * 60 * 1000;
 const STORAGE_KEY = 'last-active-ping-at';
@@ -29,15 +29,7 @@ export function LastActiveTracker() {
       inFlightRef.current = true;
 
       try {
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) return;
-
-        const response = await fetch('/api/updateLastActive', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
+        const response = await authorizedFetch('/api/updateLastActive', { method: 'POST' });
 
         if (response.ok) {
           localStorage.setItem(STORAGE_KEY, String(now));

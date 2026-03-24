@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { authorizedFetch } from '@/lib/auth/token-service';
 import { Collapsible } from "@/components/Collapsible";
 import { StatsChartPreview } from "@/components/admin/stats/StatsChartPreview";
 import { ManualIdeaForm } from "@/components/admin/stats/ManualIdeaForm";
@@ -21,16 +22,6 @@ type AccessResponse = {
   availableGames: StatsAdminGameOption[];
 };
 
-async function authorizedFetch(userToken: string, input: RequestInfo, init?: RequestInit) {
-  return fetch(input, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${userToken}`,
-      ...(init?.headers ?? {}),
-    },
-  });
-}
 
 export function StatsLabClient() {
   const { user } = useAuth();
@@ -54,8 +45,7 @@ export function StatsLabClient() {
       }
 
       try {
-        const token = await user.getIdToken();
-        const response = await authorizedFetch(token, "/api/admin/stats/access", {
+        const response = await authorizedFetch("/api/admin/stats/access", {
           method: "GET",
         });
         const payload = (await response.json()) as AccessResponse;
@@ -86,9 +76,9 @@ export function StatsLabClient() {
     setError(null);
     startTransition(async () => {
       try {
-        const token = await user.getIdToken();
-        const response = await authorizedFetch(token, "/api/admin/stats/generate-ideas", {
+        const response = await authorizedFetch("/api/admin/stats/generate-ideas", {
           method: "POST",
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             gameId: selectedGameId,
             maxIdeas: 10,
@@ -114,9 +104,9 @@ export function StatsLabClient() {
     setError(null);
     startTransition(async () => {
       try {
-        const token = await user.getIdToken();
-        const response = await authorizedFetch(token, "/api/admin/stats/run", {
+        const response = await authorizedFetch("/api/admin/stats/run", {
           method: "POST",
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             gameId: selectedGameId,
             ideaId: selectedIdeaId,
@@ -147,9 +137,9 @@ export function StatsLabClient() {
       throw new Error("Authentication required");
     }
 
-    const token = await user.getIdToken();
-    const response = await authorizedFetch(token, "/api/admin/stats/ideas", {
+    const response = await authorizedFetch("/api/admin/stats/ideas", {
       method: "POST",
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
     });
     const payload = await response.json();

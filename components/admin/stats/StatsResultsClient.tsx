@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { authorizedFetch } from '@/lib/auth/token-service';
 import { Collapsible } from "@/components/Collapsible";
 import { StatsChartPreview } from "@/components/admin/stats/StatsChartPreview";
 import { StatsLabTabs } from "@/components/admin/stats/StatsLabTabs";
@@ -27,15 +28,6 @@ function formatTimestamp(value: unknown) {
   return "-";
 }
 
-async function authorizedFetch(userToken: string, input: RequestInfo, init?: RequestInit) {
-  return fetch(input, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${userToken}`,
-      ...(init?.headers ?? {}),
-    },
-  });
-}
 
 export function StatsResultsClient() {
   const { user } = useAuth();
@@ -54,8 +46,7 @@ export function StatsResultsClient() {
       }
 
       try {
-        const token = await user.getIdToken();
-        const response = await authorizedFetch(token, "/api/admin/stats/access");
+        const response = await authorizedFetch("/api/admin/stats/access");
         const payload = (await response.json()) as AccessResponse;
         if (!cancelled) {
           setAvailableGames(payload.availableGames ?? []);
@@ -82,9 +73,7 @@ export function StatsResultsClient() {
 
     startTransition(async () => {
       try {
-        const token = await user.getIdToken();
         const response = await authorizedFetch(
-          token,
           `/api/admin/stats/results?gameId=${encodeURIComponent(selectedGameId)}`
         );
         const payload = await response.json();
@@ -111,8 +100,7 @@ export function StatsResultsClient() {
     setError(null);
 
     try {
-      const token = await user.getIdToken();
-      const response = await authorizedFetch(token, `/api/admin/stats/results/${resultId}`, {
+      const response = await authorizedFetch(`/api/admin/stats/results/${resultId}`, {
         method: "DELETE",
       });
       const payload = await response.json();

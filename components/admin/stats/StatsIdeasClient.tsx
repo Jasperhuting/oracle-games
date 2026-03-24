@@ -3,9 +3,11 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { authorizedFetch } from '@/lib/auth/token-service';
 import { ManualIdeaForm } from "@/components/admin/stats/ManualIdeaForm";
 import { StatsLabTabs } from "@/components/admin/stats/StatsLabTabs";
 import type {
+  AdminProfile,
   ChartType,
   StatIdea,
   StatIdeaStatus,
@@ -31,15 +33,6 @@ function formatTimestamp(value: unknown) {
   return "-";
 }
 
-async function authorizedFetch(userToken: string, input: RequestInfo, init?: RequestInit) {
-  return fetch(input, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${userToken}`,
-      ...(init?.headers ?? {}),
-    },
-  });
-}
 
 export function StatsIdeasClient() {
   const { user } = useAuth();
@@ -69,8 +62,7 @@ export function StatsIdeasClient() {
       }
 
       try {
-        const token = await user.getIdToken();
-        const response = await authorizedFetch(token, "/api/admin/stats/access");
+        const response = await authorizedFetch("/api/admin/stats/access");
         const payload = (await response.json()) as AccessResponse;
         if (!cancelled) {
           setAvailableGames(payload.availableGames ?? []);
@@ -97,9 +89,7 @@ export function StatsIdeasClient() {
 
     startTransition(async () => {
       try {
-        const token = await user.getIdToken();
         const response = await authorizedFetch(
-          token,
           `/api/admin/stats/ideas?gameId=${encodeURIComponent(selectedGameId)}`
         );
         const payload = await response.json();
@@ -126,8 +116,7 @@ export function StatsIdeasClient() {
       throw new Error("Authentication required");
     }
 
-    const token = await user.getIdToken();
-    const response = await authorizedFetch(token, "/api/admin/stats/ideas", {
+    const response = await authorizedFetch("/api/admin/stats/ideas", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -162,8 +151,7 @@ export function StatsIdeasClient() {
       return;
     }
 
-    const token = await user.getIdToken();
-    const response = await authorizedFetch(token, `/api/admin/stats/ideas/${ideaId}`, {
+    const response = await authorizedFetch(`/api/admin/stats/ideas/${ideaId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -194,8 +182,7 @@ export function StatsIdeasClient() {
       return;
     }
 
-    const token = await user.getIdToken();
-    const response = await authorizedFetch(token, `/api/admin/stats/ideas/${ideaId}`, {
+    const response = await authorizedFetch(`/api/admin/stats/ideas/${ideaId}`, {
       method: "DELETE",
     });
     const payload = await response.json();
@@ -215,8 +202,7 @@ export function StatsIdeasClient() {
       return;
     }
 
-    const token = await user.getIdToken();
-    const response = await authorizedFetch(token, "/api/admin/stats/run", {
+    const response = await authorizedFetch("/api/admin/stats/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

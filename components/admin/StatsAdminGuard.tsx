@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { authorizedFetch } from '@/lib/auth/token-service';
 import type { AdminProfile } from "@/lib/stats/types";
 
 interface StatsAdminGuardProps {
@@ -25,12 +26,7 @@ export function StatsAdminGuard({ children }: StatsAdminGuardProps) {
       }
 
       try {
-        const idToken = await user.getIdToken();
-        const response = await fetch("/api/admin/stats/access", {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
+        const response = await authorizedFetch("/api/admin/stats/access");
 
         if (!response.ok) {
           if (!cancelled) {
