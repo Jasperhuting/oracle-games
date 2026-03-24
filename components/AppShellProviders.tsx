@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Toaster } from 'react-hot-toast';
 import { LayoutShell } from '@/components/LayoutShell';
@@ -13,10 +14,16 @@ import { PlayerTeamsProvider } from '@/contexts/PlayerTeamsContext';
 import { isPublicRoute } from '@/lib/constants/routes';
 import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
 import { TabFocusRefresher } from '@/components/TabFocusRefresher';
+import { registerTokenService } from '@/lib/auth/token-service';
+import { FirebaseTokenAdapter } from '@/lib/auth/adapters/firebase-token-adapter';
 
 export default function AppShellProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPublic = isPublicRoute(pathname);
+
+  useEffect(() => {
+    registerTokenService(new FirebaseTokenAdapter());
+  }, []);
 
   return (
     <LanguageWrapper>
