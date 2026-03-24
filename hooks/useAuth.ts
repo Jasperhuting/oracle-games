@@ -17,6 +17,10 @@ let isCheckingImpersonation = false;
 let hasCheckedGlobally = false;
 let hasAttemptedSharedSessionRestore = false;
 let isApplyingImpersonationToken = false;
+// Set synchronously (before any await) when a session restore is in flight.
+// This prevents the onAuthStateChanged listener from calling setLoading(false)
+// during the race window before the React state update for restoringSession applies.
+let sessionRestoreInProgress = false;
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -160,6 +164,7 @@ export function useAuth() {
       }
 
       hasAttemptedSharedSessionRestore = true;
+      sessionRestoreInProgress = true; // Must be set synchronously before any await
       setRestoringSession(true);
       setLoading(true);
 
@@ -189,6 +194,7 @@ export function useAuth() {
         console.error('Error restoring shared session:', error);
       } finally {
         clearTimeout(timeout);
+        sessionRestoreInProgress = false;
         setRestoringSession(false);
         setLoading(false);
       }
@@ -200,8 +206,11 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      // Only set loading to false if we're not restoring a session
-      if (!restoringSession) {
+      // Only set loading to false if we're not restoring a session.
+      // Also check the module-level flag to cover the race window between
+      // the restore effect setting sessionRestoreInProgress and React
+      // re-rendering with the updated restoringSession state.
+      if (!restoringSession && !sessionRestoreInProgress) {
         setLoading(false);
       }
     });
