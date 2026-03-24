@@ -90,6 +90,16 @@ function PlayerSelector({
 
 export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllTeamsTabProps) {
   const { t } = useTranslation();
+  const isAuctionMaster = game?.gameType === 'auctioneer';
+
+  const getRiderRoi = (rider: Rider) => {
+    const roiBasis = isAuctionMaster ? (rider.pricePaid || 0) : (rider.baseValue || 0);
+    if (roiBasis <= 0) {
+      return null;
+    }
+
+    return ((rider.pointsScored - roiBasis) / roiBasis) * 100;
+  };
   
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ranking' | 'points' | 'value' | 'percentage'>('ranking');
@@ -189,10 +199,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
           comparison = a.baseValue - b.baseValue;
           break;
         case 'roi': {
-          const aBaseValue = a.baseValue || 0;
-          const bBaseValue = b.baseValue || 0;
-          const aRoi = aBaseValue > 0 ? ((a.pointsScored - aBaseValue) / aBaseValue) * 100 : -Infinity;
-          const bRoi = bBaseValue > 0 ? ((b.pointsScored - bBaseValue) / bBaseValue) * 100 : -Infinity;
+          const aRoi = getRiderRoi(a) ?? -Infinity;
+          const bRoi = getRiderRoi(b) ?? -Infinity;
           comparison = aRoi - bRoi;
           break;
         }
@@ -781,11 +789,10 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                       <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>
                       <td className="px-4 py-3 text-sm text-right">
                         {(() => {
-                          const baseValue = rider.baseValue || 0;
-                          if (baseValue <= 0) {
+                          const roi = getRiderRoi(rider);
+                          if (roi === null) {
                             return <span className="text-gray-400">-</span>;
                           }
-                          const roi = ((rider.pointsScored - baseValue) / baseValue) * 100;
                           const roiClass = roi > 0 ? 'text-green-600' : roi < 0 ? 'text-red-600' : 'text-gray-600';
                           return (
                             <span className={`font-medium ${roiClass}`}>

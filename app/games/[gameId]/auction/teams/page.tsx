@@ -76,9 +76,32 @@ export default function TeamsOverviewPage() {
   const [allViewSearch, setAllViewSearch] = useState('');
 
   const [game, setGame] = useState<Game | null>(null);
+  const isAuctionMaster = game?.gameType === 'auctioneer';
 
   const { riders: allRiders } = usePlayerTeams();
   const showAuctionLink = game?.status === 'bidding';
+
+  const getRiderRoi = (rider: Rider) => {
+    if (game?.gameType === 'marginal-gains') {
+      const roiBasis = rider.baseValue || 0;
+      return roiBasis > 0 ? Math.round(((rider.pointsScored - roiBasis) / roiBasis) * 100) : 0;
+    }
+
+    if (isAuctionMaster) {
+      const roiBasis = rider.pricePaid || 0;
+      return roiBasis > 0 ? Math.round(((rider.pointsScored - roiBasis) / roiBasis) * 100) : 0;
+    }
+
+    return rider.percentageDiff;
+  };
+
+  const getPercentageColorClass = (displayPercentage: number, useRoiColors: boolean) => {
+    if (useRoiColors) {
+      return displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600';
+    }
+
+    return displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600';
+  };
 
   useEffect(() => {
     const matchingRiders = allRiders.filter(r => r.gameId === gameId);
@@ -624,13 +647,9 @@ export default function TeamsOverviewPage() {
                               </td>
                               <td className="px-4 py-3 text-sm text-right">
                                 {(() => {
-                                  const isMarginalGains = game?.gameType === 'marginal-gains';
-                                  const displayPercentage = isMarginalGains
-                                    ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
-                                    : rider.percentageDiff;
-                                  const colorClass = isMarginalGains
-                                    ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
-                                    : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
+                                  const useRoiColors = game?.gameType === 'marginal-gains' || isAuctionMaster;
+                                  const displayPercentage = getRiderRoi(rider);
+                                  const colorClass = getPercentageColorClass(displayPercentage, useRoiColors);
                                   return (
                                     <span className={`font-medium ${colorClass}`}>
                                       {displayPercentage > 0 ? '+' : ''}{displayPercentage}%
@@ -749,13 +768,9 @@ export default function TeamsOverviewPage() {
                                         </td>
                                         <td className="px-4 py-3 text-sm text-right">
                                           {(() => {
-                                            const isMarginalGains = game?.gameType === 'marginal-gains';
-                                            const displayPercentage = isMarginalGains
-                                              ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
-                                              : rider.percentageDiff;
-                                            const colorClass = isMarginalGains
-                                              ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
-                                              : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
+                                            const useRoiColors = game?.gameType === 'marginal-gains' || isAuctionMaster;
+                                            const displayPercentage = getRiderRoi(rider);
+                                            const colorClass = getPercentageColorClass(displayPercentage, useRoiColors);
                                             return (
                                               <span className={`font-medium ${colorClass}`}>
                                                 {displayPercentage > 0 ? '+' : ''}{displayPercentage}%
@@ -1140,16 +1155,9 @@ export default function TeamsOverviewPage() {
                             </td>
                             <td className="px-4 py-3 text-sm text-right">
                               {(() => {
-                                // For marginal-gains: ROI = ((points - value) / value) * 100
-                                // For regular: use percentageDiff (price paid vs base value)
-                                const displayPercentage = isMarginalGains
-                                  ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
-                                  : rider.percentageDiff;
-                                // For marginal-gains: positive = good (green), negative = bad (red)
-                                // For regular: positive = overpaid (red), negative = underpaid (green)
-                                const colorClass = isMarginalGains
-                                  ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
-                                  : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
+                                const useRoiColors = isMarginalGains || isAuctionMaster;
+                                const displayPercentage = getRiderRoi(rider);
+                                const colorClass = getPercentageColorClass(displayPercentage, useRoiColors);
                                 return (
                                   <span className={`font-medium ${colorClass}`}>
                                     {displayPercentage > 0 ? '+' : ''}{displayPercentage}%

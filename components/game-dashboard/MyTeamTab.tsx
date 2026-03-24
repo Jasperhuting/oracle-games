@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Flag } from '@/components/Flag';
 import RacePointsBreakdown from '@/components/RacePointsBreakdown';
@@ -76,6 +76,7 @@ export function MyTeamTab({
   };
 
   const isMarginalGains = game?.gameType === 'marginal-gains';
+  const isAuctionMaster = game?.gameType === 'auctioneer';
   const isSingleOwnerGame = game?.gameType === 'auctioneer' || game?.gameType === 'full-grid';
   const isSelectionGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
   const hasAnyRacePoints = useMemo(
@@ -110,8 +111,12 @@ export function MyTeamTab({
     const totalPoints = riders.reduce((sum, rider) => sum + (rider.points || 0), 0);
     const totalPricePaid = riders.reduce((sum, rider) => sum + (rider.pricePaid || 0), 0);
     const totalBaseValue = riders.reduce((sum, rider) => sum + (rider.baseValue || 0), 0);
+    const totalRoiBasis = riders.reduce((sum, rider) => {
+      const roiBasis = isAuctionMaster ? (rider.pricePaid || 0) : (rider.baseValue || 0);
+      return sum + roiBasis;
+    }, 0);
     const marginalGains = totalPoints - totalPricePaid;
-    const avgRoi = totalBaseValue > 0 ? ((totalPoints - totalBaseValue) / totalBaseValue) * 100 : 0;
+    const avgRoi = totalRoiBasis > 0 ? ((totalPoints - totalRoiBasis) / totalRoiBasis) * 100 : 0;
     const avgPriceRoi = totalPricePaid > 0 ? ((totalPoints - totalPricePaid) / totalPricePaid) * 100 : 0;
     
     return {
@@ -122,14 +127,14 @@ export function MyTeamTab({
       avgRoi,
       avgPriceRoi,
     };
-  }, [riders]);
+  }, [isAuctionMaster, riders]);
 
   // Calculate ROI for a rider
-  const getRiderRoi = (rider: TeamRider) => {
-    const baseValue = rider.baseValue || 0;
-    if (baseValue === 0) return 0;
-    return ((rider.points - baseValue) / baseValue) * 100;
-  };
+  const getRiderRoi = useCallback((rider: TeamRider) => {
+    const roiBasis = isAuctionMaster ? (rider.pricePaid || 0) : (rider.baseValue || 0);
+    if (roiBasis === 0) return 0;
+    return ((rider.points - roiBasis) / roiBasis) * 100;
+  }, [isAuctionMaster]);
 
   // Sort riders
   const sortedRiders = useMemo(() => {
@@ -154,7 +159,7 @@ export function MyTeamTab({
       }
       return sortDirection === 'desc' ? -comparison : comparison;
     });
-  }, [riders, sortBy, sortDirection]);
+  }, [getRiderRoi, riders, sortBy, sortDirection]);
 
   const handleSort = (option: SortOption) => {
     if (sortBy === option) {
