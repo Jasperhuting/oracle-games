@@ -17,16 +17,22 @@ let isCheckingImpersonation = false;
 let hasCheckedGlobally = false;
 let hasAttemptedSharedSessionRestore = false;
 let isApplyingImpersonationToken = false;
+const globalSessionRestoreListeners: Set<() => void> = new Set();
 // Set synchronously (before any await) when a session restore is in flight.
 // This prevents the onAuthStateChanged listener from calling setLoading(false)
 // during the race window before the React state update for restoringSession applies.
 let sessionRestoreInProgress = false;
+
+const notifyGlobalSessionRestoreListeners = () => {
+  globalSessionRestoreListeners.forEach((listener) => listener());
+};
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [impersonationStatus, setImpersonationStatus] = useState<ImpersonationStatus>(globalImpersonationStatus);
   const [restoringSession, setRestoringSession] = useState(false);
+  const [sessionRestoreTick, setSessionRestoreTick] = useState(0);
 
   // Function to update global impersonation status
   const updateGlobalImpersonationStatus = (status: ImpersonationStatus) => {
@@ -67,6 +73,18 @@ export function useAuth() {
       globalImpersonationListeners.delete(listener);
     };
   }, [refreshImpersonationStatus]);
+
+  useEffect(() => {
+    const listener = () => {
+      setSessionRestoreTick((tick) => tick + 1);
+    };
+
+    globalSessionRestoreListeners.add(listener);
+
+    return () => {
+      globalSessionRestoreListeners.delete(listener);
+    };
+  }, []);
 
   // Check impersonation status on mount (only once globally)
   useEffect(() => {
@@ -160,11 +178,13 @@ export function useAuth() {
 
       if (auth.currentUser || hasLocalRestoreToken || hasImpersonationToken) {
         hasAttemptedSharedSessionRestore = true;
+        notifyGlobalSessionRestoreListeners();
         return;
       }
 
       hasAttemptedSharedSessionRestore = true;
       sessionRestoreInProgress = true; // Must be set synchronously before any await
+      notifyGlobalSessionRestoreListeners();
       setRestoringSession(true);
       setLoading(true);
 
@@ -196,6 +216,7 @@ export function useAuth() {
       } finally {
         clearTimeout(timeout);
         sessionRestoreInProgress = false;
+        notifyGlobalSessionRestoreListeners();
         setRestoringSession(false);
         if (auth.currentUser) {
           setUser(auth.currentUser);
@@ -228,10 +249,10 @@ export function useAuth() {
   }, [restoringSession]);
 
   useEffect(() => {
-    if (!restoringSession && !sessionRestoreInProgress && user) {
+    if (!restoringSession && !sessionRestoreInProgress) {
       setLoading(false);
     }
-  }, [restoringSession, user]);
+  }, [restoringSession, sessionRestoreTick]);
 
   useEffect(() => {
     if (!impersonationStatus.isImpersonating) {
