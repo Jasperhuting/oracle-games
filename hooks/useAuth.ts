@@ -28,8 +28,8 @@ const notifyGlobalSessionRestoreListeners = () => {
 };
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => auth.currentUser);
+  const [loading, setLoading] = useState(() => !auth.currentUser);
   const [impersonationStatus, setImpersonationStatus] = useState<ImpersonationStatus>(globalImpersonationStatus);
   const [restoringSession, setRestoringSession] = useState(false);
   const [sessionRestoreTick, setSessionRestoreTick] = useState(0);
@@ -176,9 +176,15 @@ export function useAuth() {
       const hasLocalRestoreToken = !!getRestoreAdminSessionToken();
       const hasImpersonationToken = !!getImpersonationCustomToken();
 
-      if (auth.currentUser || hasLocalRestoreToken || hasImpersonationToken) {
+      if (auth.currentUser) {
         hasAttemptedSharedSessionRestore = true;
-        notifyGlobalSessionRestoreListeners();
+        setUser(auth.currentUser);
+        setLoading(false);
+        return;
+      }
+
+      if (hasLocalRestoreToken || hasImpersonationToken) {
+        hasAttemptedSharedSessionRestore = true;
         return;
       }
 
