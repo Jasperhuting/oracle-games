@@ -187,6 +187,7 @@ export function useAuth() {
         if (data?.customToken) {
           await signInWithCustomToken(auth, data.customToken);
           if (auth.currentUser) {
+            setUser(auth.currentUser);
             await createSharedSession(auth.currentUser, true);
           }
         }
@@ -196,6 +197,9 @@ export function useAuth() {
         clearTimeout(timeout);
         sessionRestoreInProgress = false;
         setRestoringSession(false);
+        if (auth.currentUser) {
+          setUser(auth.currentUser);
+        }
         setLoading(false);
       }
     };
@@ -206,10 +210,15 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      // Only set loading to false if we're not restoring a session.
-      // Also check the module-level flag to cover the race window between
-      // the restore effect setting sessionRestoreInProgress and React
-      // re-rendering with the updated restoringSession state.
+      // Once Firebase has a concrete authenticated user, we should unblock the UI
+      // immediately even if another useAuth instance initiated session restore.
+      if (user) {
+        setLoading(false);
+        return;
+      }
+
+      // Keep loading only while a restore is still actively in flight and there
+      // is no authenticated user yet.
       if (!restoringSession && !sessionRestoreInProgress) {
         setLoading(false);
       }
@@ -217,6 +226,12 @@ export function useAuth() {
 
     return () => unsubscribe();
   }, [restoringSession]);
+
+  useEffect(() => {
+    if (!restoringSession && !sessionRestoreInProgress && user) {
+      setLoading(false);
+    }
+  }, [restoringSession, user]);
 
   useEffect(() => {
     if (!impersonationStatus.isImpersonating) {
@@ -241,6 +256,7 @@ export function useAuth() {
       try {
         await signInWithCustomToken(auth, customToken);
         if (auth.currentUser) {
+          setUser(auth.currentUser);
           await createSharedSession(auth.currentUser, true);
         }
       } catch (error) {

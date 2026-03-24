@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { User } from "firebase/auth";
 import { LoginFormProps } from "@/lib/types/component-props";
 import { createSharedSession } from "@/lib/auth/client-session";
+import { getPlatformConfigFromHost } from "@/lib/platform";
 
 const PasskeyLogin = dynamic(
   () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
@@ -28,6 +29,14 @@ export const LoginForm = () => {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [stayLoggedIn, setStayLoggedIn] = useState(true);
     const router = useRouter();
+
+    const getPostLoginPath = () => {
+        if (typeof window === 'undefined') {
+            return '/home';
+        }
+
+        return getPlatformConfigFromHost(window.location.host).authenticatedEntryPath;
+    };
 
     const onSubmit: SubmitHandler<LoginFormProps> = async (data) => {
         if (isSubmitting) return;
@@ -67,22 +76,29 @@ export const LoginForm = () => {
             
             console.log('User logged in successfully');
             
-            // Update last login method
-            await fetch('/api/updateLoginMethod', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    loginMethod: 'email',
-                }),
-            });
-            
-            await createSharedSession(user, stayLoggedIn);
+            try {
+                await fetch('/api/updateLoginMethod', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: user.uid,
+                        loginMethod: 'email',
+                    }),
+                });
+            } catch (metadataError) {
+                console.warn('Failed to update login method:', metadataError);
+            }
+
+            try {
+                await createSharedSession(user, stayLoggedIn);
+            } catch (sessionError) {
+                console.warn('Failed to create shared session, continuing with client auth only:', sessionError);
+            }
 
             // Redirect to home page
-            router.push('/home');
+            router.push(getPostLoginPath());
         } catch (error: unknown) {
             console.error('Login error:', error);
 
@@ -136,21 +152,28 @@ export const LoginForm = () => {
             // Check if user exists in Firestore, if not create
             await ensureUserExists(user);
             
-            // Update last login method
-            await fetch('/api/updateLoginMethod', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    loginMethod: 'google',
-                }),
-            });
-            
-            await createSharedSession(user, stayLoggedIn);
+            try {
+                await fetch('/api/updateLoginMethod', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: user.uid,
+                        loginMethod: 'google',
+                    }),
+                });
+            } catch (metadataError) {
+                console.warn('Failed to update login method:', metadataError);
+            }
 
-            router.push('/home');
+            try {
+                await createSharedSession(user, stayLoggedIn);
+            } catch (sessionError) {
+                console.warn('Failed to create shared session, continuing with client auth only:', sessionError);
+            }
+
+            router.push(getPostLoginPath());
         } catch (error: unknown) {
             console.error('Google login error:', error);
             if (error && typeof error === 'object' && 'code' in error) {

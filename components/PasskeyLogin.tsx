@@ -5,11 +5,20 @@ import { Button } from "./Button";
 import { authenticateWithPasskey, isPasskeySupported } from "@/lib/passkey";
 import { useRouter } from "next/navigation";
 import { createSharedSession } from "@/lib/auth/client-session";
+import { getPlatformConfigFromHost } from "@/lib/platform";
 
 export const PasskeyLogin = () => {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+
+    const getPostLoginPath = () => {
+        if (typeof window === 'undefined') {
+            return '/home';
+        }
+
+        return getPlatformConfigFromHost(window.location.host).authenticatedEntryPath;
+    };
 
     const handlePasskeyLogin = async () => {
         if (!isPasskeySupported()) {
@@ -45,23 +54,31 @@ export const PasskeyLogin = () => {
             // Sign in with custom token
             await signInWithCustomToken(auth, token);
             if (auth.currentUser) {
-                await createSharedSession(auth.currentUser, true);
+                try {
+                    await createSharedSession(auth.currentUser, true);
+                } catch (sessionError) {
+                    console.warn('Failed to create shared session, continuing with client auth only:', sessionError);
+                }
             }
 
             // Update last login method
-            await fetch('/api/updateLoginMethod', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: userId,
-                    loginMethod: 'passkey',
-                }),
-            });
+            try {
+                await fetch('/api/updateLoginMethod', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        loginMethod: 'passkey',
+                    }),
+                });
+            } catch (metadataError) {
+                console.warn('Failed to update login method:', metadataError);
+            }
 
             console.log('Passkey login successful');
-            router.push('/home');
+            router.push(getPostLoginPath());
         } catch (error: unknown) {
             console.error('Passkey login error:', error);
             setError(error instanceof Error ? error.message : 'Something went wrong logging in with passkey');
