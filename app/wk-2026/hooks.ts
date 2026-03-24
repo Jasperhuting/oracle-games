@@ -1,6 +1,6 @@
 "use client";
 
-import { auth } from "@/lib/firebase/client";
+import { authorizedFetch } from "@/lib/auth/token-service";
 import { WK_2026_SEASON, Wk2026Participant, Wk2026SubLeague } from "./types";
 import { useFetchHook } from "@/hooks/useFetchHook";
 import type { PullQueryResult } from "@/lib/data-fetching/types";
@@ -19,10 +19,7 @@ export function useWk2026Participant(
 ): ParticipantResult {
   const result = useFetchHook<Wk2026Participant | null>(
     async () => {
-      const idToken = await auth.currentUser?.getIdToken();
-      const response = await fetch(`/api/wk-2026/join?season=${season}`, {
-        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
-      });
+      const response = await authorizedFetch(`/api/wk-2026/join?season=${season}`);
       const data = await response.json();
       if (!response.ok && response.status !== 401) {
         throw new Error(data.error || "Failed to fetch WK participant");
@@ -52,10 +49,7 @@ export function useWk2026SubLeagues(
 ): SubLeaguesResult {
   const result = useFetchHook<Wk2026SubLeague[]>(
     async () => {
-      const idToken = await auth.currentUser?.getIdToken();
-      const response = await fetch("/api/wk-2026/subleagues", {
-        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
-      });
+      const response = await authorizedFetch("/api/wk-2026/subleagues");
       const data = await response.json();
       if (!response.ok && response.status !== 401) {
         throw new Error(data.error || "Failed to fetch WK subleagues");
