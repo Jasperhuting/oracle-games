@@ -67,7 +67,7 @@ export function PlayerTeamsProvider({
         allRiders = allRiders.concat(data.riders || []);
 
         nextCursor = data.pagination?.nextCursor ?? null;
-        hasMore = Boolean(nextCursor) && data.riders.length === limit;
+        hasMore = Boolean(nextCursor);
       }
 
       // Filter duplicates based on riderNameId, keeping only the first occurrence

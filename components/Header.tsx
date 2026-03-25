@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Logout, UserCircle, Mail } from "tabler-icons-react";
 import { MenuItem, MenuProvider, Menu } from "./ProfileMenu";
 import { Menubar } from "@ariakit/react";
@@ -36,6 +36,10 @@ export const Header = ({
     const { unreadCount } = useUnreadMessages(user?.uid);
     const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
     const [mounted, setMounted] = useState(false);
+    // Track which uid the SSR initialIsAdmin value belongs to. If a *different* user
+    // logs in client-side (without a page reload), re-fetch admin status rather than
+    // using a stale SSR prop from a previous user's session.
+    const lastCheckedUidRef = useRef<string | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentPlatform, setCurrentPlatform] = useState<PlatformKey>("cycling");
 
@@ -48,11 +52,27 @@ export const Header = ({
 
     useEffect(() => {
         if (!user) {
+            lastCheckedUidRef.current = null;
             setIsAdmin(false);
             return;
         }
 
-        setIsAdmin(initialIsAdmin);
+        if (lastCheckedUidRef.current === null || lastCheckedUidRef.current === user.uid) {
+            // First load or same user — use the SSR-derived value (avoids a round-trip)
+            lastCheckedUidRef.current = user.uid;
+            setIsAdmin(initialIsAdmin);
+            return;
+        }
+
+        // A *different* user logged in client-side — the SSR prop belongs to the previous
+        // user's session, so we must re-check.
+        lastCheckedUidRef.current = user.uid;
+        fetch(`/api/getUser?userId=${user.uid}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data: { userType?: string } | null) => {
+                setIsAdmin(data?.userType === "admin");
+            })
+            .catch(() => setIsAdmin(false));
     }, [initialIsAdmin, user]);
 
     const handleLogout = async () => {

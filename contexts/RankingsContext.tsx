@@ -62,7 +62,7 @@ export function RankingsProvider({
         allRiders = allRiders.concat(data.riders || []);
 
         nextCursor = data.pagination?.nextCursor ?? null;
-        hasMore = Boolean(nextCursor) && data.riders.length === limit;
+        hasMore = Boolean(nextCursor);
       }
 
       console.log(`[RankingsContext] Fetched ${allRiders.length} riders from API`);

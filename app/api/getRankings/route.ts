@@ -101,7 +101,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
       };
     });
 
-    const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+    // Only emit a cursor when we got a full page — a partial page means we're at the end.
+    const lastDoc = snapshot.docs.length === limit ? snapshot.docs[snapshot.docs.length - 1] : null;
     const nextCursor = lastDoc
       ? encodeCursor({
           rank: lastDoc.get('rank'),
