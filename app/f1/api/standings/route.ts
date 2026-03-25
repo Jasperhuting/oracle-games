@@ -82,7 +82,6 @@ export async function GET(request: NextRequest) {
       // Get all standings for season
       const snapshot = await standingsRef
         .where('season', '==', season)
-        .orderBy('totalPoints', 'asc')
         .get();
 
       standings = snapshot.docs.map(doc => doc.data() as F1Standing);
