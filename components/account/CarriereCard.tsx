@@ -249,7 +249,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 size={100}
               />
             )}
-            {completeness.missingFields.length > 0 && (
+            {!readOnly && completeness.missingFields.length > 0 && (
               <div style={{
                 position: 'absolute',
                 bottom: -3,
@@ -283,7 +283,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
           </div>
         </div>
 
-        {completeness.score < 100 && (
+        {!readOnly && completeness.score < 100 && (
           <div style={{
             background: '#f9fafb',
             borderRadius: '8px',
