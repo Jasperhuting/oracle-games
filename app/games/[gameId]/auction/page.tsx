@@ -24,6 +24,7 @@ import { Tabs } from "@/components/Tabs";
 import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
 import { isProTourTeamClass, normalizeTeamKey } from "@/lib/bidding/teamUtils";
 import { buildBiddableRiders } from "@/lib/bidding/buildBiddableRiders";
+import { validateBid, type BidValidationContext } from "@/lib/bidding/BiddingStrategy";
 import { AddRiderTab } from "@/components/AddRiderTab";
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
@@ -492,28 +493,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     }
   }, [availableRiders, isFullGridGame]);
 
-  const getEffectiveMinimumBid = (riderPoints: number, riderNameId?: string): number => {
-    // For full-grid, use admin-set rider values from config
-    if (game?.gameType === 'full-grid' && riderNameId) {
-      const riderValues = (game?.config?.riderValues || {}) as Record<string, number>;
-      return riderValues[riderNameId] || 0;
-    }
-
-    const maxMinBid = game?.config?.maxMinimumBid;
-    const isWorldTourManager = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
-
-    if (maxMinBid && riderPoints > maxMinBid) {
-      return maxMinBid;
-    }
-
-    // For worldtour-manager, minimum price is always 1 (even for riders with 0 points)
-    if (isWorldTourManager && riderPoints === 0) {
-      return 1;
-    }
-
-    return riderPoints;
-  };
-
   // Determine if the current auction period is restricted to top 200 riders
   const isTop200Restricted = (() => {
     if (!game || (game.gameType !== 'auctioneer')) return false;
@@ -555,149 +534,42 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
     // For worldtour-manager, marginal-gains, and full-grid, use the rider's effective minimum bid as the price
     // For auction games, use the entered bid amount
-    const riderPoints = rider.points || 0;
     const bidAmount = isSelectionGame
-      ? getEffectiveMinimumBid(riderPoints, riderNameId)
+      ? (rider.effectiveMinBid ?? 0)
       : parseFloat(bidAmountsRef.current[riderNameId] || '0');
 
-    const effectiveMinBid = getEffectiveMinimumBid(riderPoints, riderNameId);
-
-    // Prevent bidding on sold riders
-    if (rider.isSold) {
-      setError(`This rider is already sold to ${rider.soldTo}`);
-      return;
-    }
-
-    // When top-200 restriction is active, block bids on riders outside top 200
-    if (isTop200Restricted) {
-      const riderRank = (rider as any).rank; // eslint-disable-line @typescript-eslint/no-explicit-any
-      if (typeof riderRank !== 'number' || riderRank > 200) {
-        setError(t('messages.top2000OnlyError'));
-        return;
-      }
-    }
-
-    // Skip bid validation for selection-based games (it's a direct selection)
-    if (!isSelectionGame) {
-      if (Number(bidAmount) < effectiveMinBid) {
-        setError(`Bid must be at least ${effectiveMinBid}`);
-        return;
-      }
-
-      if (!bidAmount || bidAmount <= 0) {
-        setError('Please enter a valid bid amount');
-        return;
-      }
-    }
-
-    // Full Grid: Check team constraint (1 rider per team)
-    if (isFullGrid && rider.team?.name) {
-      const existingTeamRider = myBids.find(b =>
-        (b.status === 'active' || b.status === 'won') &&
-        b.riderTeam === rider.team?.name &&
-        b.riderNameId !== riderNameId
-      );
-      if (existingTeamRider) {
-        setError(`Je hebt al een renner van ${rider.team.name} geselecteerd (${existingTeamRider.riderName}). Verwijder eerst die selectie.`);
-        return;
-      }
-    }
-
-    // Full Grid: Limit ProTeam selections (max 4 different ProTeams)
-    if (isFullGrid && rider.team?.name) {
-      const teamName = rider.team.name;
-      const teamKey = normalizeTeamKey(teamName);
-      const riderTeamClass =
-        (rider.team as any)?.class || (rider.team as any)?.teamClass || teamClassByKey.get(teamKey); // eslint-disable-line @typescript-eslint/no-explicit-any
-      const isProTeam = isProTourTeamClass(riderTeamClass);
-
-      if (isProTeam) {
-        const selectedProTeams = new Set<string>();
-
-        myBids
-          .filter(b => b.status === 'active' || b.status === 'won')
-          .forEach(b => {
-            const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
-            const bidTeamName = bidRider?.team?.name || b.riderTeam;
-            const bidTeamKey = normalizeTeamKey(bidTeamName);
-            const bidTeamClass =
-              (bidRider?.team as any)?.class || (bidRider?.team as any)?.teamClass || teamClassByKey.get(bidTeamKey); // eslint-disable-line @typescript-eslint/no-explicit-any
-            if (isProTourTeamClass(bidTeamClass) && bidTeamKey) {
-              selectedProTeams.add(bidTeamKey);
-            }
-          });
-
-        if (!selectedProTeams.has(teamKey) && selectedProTeams.size >= fullGridProTeamLimit) {
-          setError(`Je mag maximaal ${fullGridProTeamLimit} ProTeams selecteren.`);
-          return;
-        }
-      }
-    }
-
-    // Check maxRiders limit before placing a new bid (not when updating existing)
+    // --- Validate via BiddingStrategy (pure, testable) ---
     const maxRiders = game?.config?.maxRiders || game?.config?.teamSize;
-    // Count UNIQUE riders, not total bids (in case there are duplicate bids)
-    const uniqueActiveRiders = new Set(
-      myBids
-        .filter(b => b.status === 'active' || b.status === 'outbid')
-        .map(b => b.riderNameId)
-    );
-    const activeBidsCount = uniqueActiveRiders.size;
     const isUpdatingExistingBid = rider.myBid !== undefined;
-
-    if (maxRiders && activeBidsCount >= maxRiders && !isUpdatingExistingBid) {
-      setError(`Maximum number of riders reached (${activeBidsCount}/${maxRiders}). Cancel a bid to place a new one.`);
+    const validationCtx: BidValidationContext = {
+      rider,
+      myBids,
+      availableRiders,
+      bidAmount,
+      remainingBudget: getRemainingBudget(riderNameId),
+      isUpdatingExistingBid,
+      isSelectionGame,
+      isFullGrid,
+      isTop200Restricted,
+      maxRiders,
+      proTeamLimit: fullGridProTeamLimit,
+      gameType: game?.gameType || "",
+      config: {
+        minRiders: game?.config?.minRiders,
+        maxNeoProPoints: game?.config?.maxNeoProPoints,
+        maxNeoProAge: game?.config?.maxNeoProAge,
+      },
+    };
+    const validation = validateBid(validationCtx);
+    if (!validation.valid) {
+      // messages.* values are i18n keys (top-200 restriction); translate them at the call site
+      const errorMsg = validation.error.startsWith("messages.")
+        ? t(validation.error as Parameters<typeof t>[0])
+        : validation.error;
+      setError(errorMsg);
       return;
     }
-
-    // Check budget for auction games (not for marginal-gains which has no budget)
-    if (!isGameType(game, 'marginal-gains')) {
-      if (bidAmount > getRemainingBudget(riderNameId)) {
-        setError('Bid exceeds your remaining budget');
-        return;
-      }
-    }
-
-    // WorldTour Manager & Marginal Gains: Check neo-prof requirements
-    // Rule: If you want 28+ riders, you need at least 1 neo-prof in your team
-    if (game && (game.gameType === 'worldtour-manager' || game.gameType === 'marginal-gains')) {
-      // Count UNIQUE riders with active/outbid status
-      const totalActiveBids = new Set(
-        myBids
-          .filter(b => b.status === 'active' || b.status === 'outbid')
-          .map(b => b.riderNameId)
-      ).size;
-      const minRiders = game.config.minRiders || 27;
-      const isThisRiderNeoProf = qualifiesAsNeoProf(rider, game?.config);
-
-      // Count current neo-profs in the team (unique riders only)
-      const currentNeoProfRiders = new Set(
-        myBids
-          .filter(b => b.status === 'active' || b.status === 'outbid')
-          .filter(b => {
-            const bidRider = availableRiders.find(r => (r.nameID || r.id) === b.riderNameId);
-            return bidRider && qualifiesAsNeoProf(bidRider, game?.config);
-          })
-          .map(b => b.riderNameId)
-      );
-      const currentNeoProfCount = currentNeoProfRiders.size;
-
-      // If we're trying to get to 28+ riders and this is NOT a neo-prof,
-      // check if we already have at least one neo-prof
-      if (totalActiveBids >= minRiders && !isThisRiderNeoProf && currentNeoProfCount === 0) {
-        const maxAge = game.config.maxNeoProAge || 21;
-        const maxPoints = game.config.maxNeoProPoints || 250;
-        setError(`Om meer dan ${minRiders} renners te hebben, moet je minimaal 1 neoprof in je team hebben (max ${maxAge} jaar oud met max ${maxPoints} punten).`);
-        return;
-      }
-
-      // If this IS a neo-prof, check if they qualify based on points
-      const riderPoints = rider.points || 0;
-      if (isThisRiderNeoProf && game.config.maxNeoProPoints && riderPoints > game.config.maxNeoProPoints) {
-        setError(`Deze renner heeft te veel punten (${riderPoints}) om als neoprof te kwalificeren. Max toegestaan: ${game.config.maxNeoProPoints} punten.`);
-        return;
-      }
-    }
+    // --- End validation ---
 
     setPlacingBid(riderNameId);
     setError(null);

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { isProTourTeamClass, normalizeTeamKey } from '@/lib/bidding/teamUtils';
+import type { RiderWithBid } from '@/lib/types/pages';
+import {
+  validateBid,
+  type BidValidationContext,
+} from '@/lib/bidding/BiddingStrategy';
 
 describe('isProTourTeamClass', () => {
   it('returns true for "prt"', () => {
@@ -186,5 +191,189 @@ describe("buildBiddableRiders", () => {
     };
     const result = buildBiddableRiders(opts);
     expect(result[0].effectiveMinBid).toBe(1);
+  });
+});
+
+// Minimal RiderWithBid fixture
+const makeRiderWithBid = (overrides: Partial<RiderWithBid> & { nameID: string }): RiderWithBid =>
+  ({
+    id: overrides.nameID,
+    name: 'Test Rider',
+    points: 100,
+    effectiveMinBid: 100,
+    isSold: false,
+    ...overrides,
+  } as RiderWithBid);
+
+// Base validation context — represents a clean state that should pass
+const baseCtx: BidValidationContext = {
+  rider: makeRiderWithBid({ nameID: 'pogacar' }),
+  myBids: [],
+  availableRiders: [],
+  bidAmount: 150,
+  remainingBudget: 10000,
+  isUpdatingExistingBid: false,
+  isSelectionGame: false,
+  isFullGrid: false,
+  isTop200Restricted: false,
+  maxRiders: undefined,
+  proTeamLimit: 4,
+  gameType: 'auctioneer',
+  config: {},
+};
+
+describe('validateBid — sold check', () => {
+  it('fails when rider is already sold', () => {
+    const ctx = { ...baseCtx, rider: makeRiderWithBid({ nameID: 'sold-rider', isSold: true, soldTo: 'Alice' }) };
+    const result = validateBid(ctx);
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.error).toContain('Alice');
+  });
+
+  it('passes when rider is not sold', () => {
+    expect(validateBid(baseCtx).valid).toBe(true);
+  });
+});
+
+describe('validateBid — top-200 restriction', () => {
+  it('fails when top-200 is active and rider rank is > 200', () => {
+    const ctx = {
+      ...baseCtx,
+      isTop200Restricted: true,
+      rider: makeRiderWithBid({ nameID: 'low-rank', rank: 250 }),
+    };
+    const result = validateBid(ctx);
+    expect(result.valid).toBe(false);
+  });
+
+  it('passes when top-200 is active and rider rank is exactly 200', () => {
+    const ctx = {
+      ...baseCtx,
+      isTop200Restricted: true,
+      rider: makeRiderWithBid({ nameID: 'edge-rider', rank: 200 }),
+    };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+
+  it('passes when top-200 is NOT active regardless of rank', () => {
+    const ctx = {
+      ...baseCtx,
+      isTop200Restricted: false,
+      rider: makeRiderWithBid({ nameID: 'low-rank', rank: 999 }),
+    };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+});
+
+describe('validateBid — bid amount (non-selection games)', () => {
+  it('fails when bid is below effectiveMinBid', () => {
+    const ctx = {
+      ...baseCtx,
+      rider: makeRiderWithBid({ nameID: 'pogacar', effectiveMinBid: 300 }),
+      bidAmount: 299,
+    };
+    const result = validateBid(ctx);
+    expect(result.valid).toBe(false);
+  });
+
+  it('passes when bid equals effectiveMinBid', () => {
+    const ctx = {
+      ...baseCtx,
+      rider: makeRiderWithBid({ nameID: 'pogacar', effectiveMinBid: 300 }),
+      bidAmount: 300,
+    };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+
+  it('skips amount check for selection games', () => {
+    const ctx = {
+      ...baseCtx,
+      isSelectionGame: true,
+      rider: makeRiderWithBid({ nameID: 'pogacar', effectiveMinBid: 300 }),
+      bidAmount: 0,
+    };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+});
+
+describe('validateBid — team constraint (full-grid)', () => {
+  it('fails when user already has a rider from the same team', () => {
+    const existingBid = makeBid({ riderNameId: 'other-rider', status: 'active', amount: 8, riderTeam: 'UAE Team Emirates' });
+    const ctx = {
+      ...baseCtx,
+      isFullGrid: true,
+      rider: makeRiderWithBid({ nameID: 'new-rider', team: { name: 'UAE Team Emirates' } as any }),
+      myBids: [existingBid],
+    };
+    const result = validateBid(ctx);
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.error).toContain('UAE Team Emirates');
+  });
+
+  it('allows selecting the same rider again (updating bid)', () => {
+    const existingBid = makeBid({ riderNameId: 'same-rider', status: 'active', amount: 8, riderTeam: 'UAE Team Emirates' });
+    const ctx = {
+      ...baseCtx,
+      isFullGrid: true,
+      rider: makeRiderWithBid({ nameID: 'same-rider', team: { name: 'UAE Team Emirates' } as any }),
+      myBids: [existingBid],
+    };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+
+  it('skips team constraint for non-full-grid games', () => {
+    const existingBid = makeBid({ riderNameId: 'other-rider', status: 'active', amount: 600, riderTeam: 'UAE Team Emirates' });
+    const ctx = {
+      ...baseCtx,
+      isFullGrid: false,
+      rider: makeRiderWithBid({ nameID: 'new-rider', team: { name: 'UAE Team Emirates' } as any }),
+      myBids: [existingBid],
+    };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+});
+
+describe('validateBid — maxRiders limit', () => {
+  it('fails when at maxRiders and placing a new bid', () => {
+    const bids = [
+      makeBid({ riderNameId: 'r1', status: 'active', amount: 8 }),
+      makeBid({ riderNameId: 'r2', status: 'active', amount: 8 }),
+    ];
+    const ctx = { ...baseCtx, myBids: bids, maxRiders: 2, isUpdatingExistingBid: false };
+    const result = validateBid(ctx);
+    expect(result.valid).toBe(false);
+  });
+
+  it('allows updating an existing bid even when at maxRiders', () => {
+    const bids = [
+      makeBid({ riderNameId: 'r1', status: 'active', amount: 8 }),
+      makeBid({ riderNameId: 'r2', status: 'active', amount: 8 }),
+    ];
+    const ctx = { ...baseCtx, myBids: bids, maxRiders: 2, isUpdatingExistingBid: true };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+
+  it('passes when below maxRiders', () => {
+    const bids = [makeBid({ riderNameId: 'r1', status: 'active', amount: 8 })];
+    const ctx = { ...baseCtx, myBids: bids, maxRiders: 5, isUpdatingExistingBid: false };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+});
+
+describe('validateBid — budget', () => {
+  it('fails when bid exceeds remaining budget', () => {
+    const ctx = { ...baseCtx, bidAmount: 1000, remainingBudget: 500 };
+    const result = validateBid(ctx);
+    expect(result.valid).toBe(false);
+  });
+
+  it('passes when bid equals remaining budget', () => {
+    const ctx = { ...baseCtx, bidAmount: 500, remainingBudget: 500 };
+    expect(validateBid(ctx).valid).toBe(true);
+  });
+
+  it('skips budget check for marginal-gains', () => {
+    const ctx = { ...baseCtx, gameType: 'marginal-gains', bidAmount: 9999, remainingBudget: 100 };
+    expect(validateBid(ctx).valid).toBe(true);
   });
 });
