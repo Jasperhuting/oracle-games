@@ -553,6 +553,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       isTop200Restricted,
       maxRiders,
       proTeamLimit: fullGridProTeamLimit,
+      teamClassByKey,
       gameType: game?.gameType || "",
       config: {
         minRiders: game?.config?.minRiders,

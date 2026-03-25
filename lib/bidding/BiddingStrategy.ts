@@ -17,6 +17,8 @@ export interface BidValidationContext {
   isTop200Restricted: boolean;
   maxRiders?: number;
   proTeamLimit: number;
+  /** Derived map of normalizeTeamKey(name) → teamClass for riders whose team object lacks class/teamClass. */
+  teamClassByKey?: Map<string, string>;
   gameType: string;
   config: {
     minRiders?: number;
@@ -36,7 +38,7 @@ export function validateBid(ctx: BidValidationContext): ValidationResult {
     checkTop200Restriction(ctx.rider, ctx.isTop200Restricted) ??
     checkBidAmount(ctx.rider, ctx.bidAmount, ctx.isSelectionGame) ??
     checkTeamConstraint(ctx.rider, ctx.myBids, ctx.isFullGrid) ??
-    checkProTeamLimit(ctx.rider, ctx.myBids, ctx.availableRiders, ctx.isFullGrid, ctx.proTeamLimit) ??
+    checkProTeamLimit(ctx.rider, ctx.myBids, ctx.availableRiders, ctx.isFullGrid, ctx.proTeamLimit, ctx.teamClassByKey) ??
     checkMaxRiders(ctx.myBids, ctx.maxRiders, ctx.isUpdatingExistingBid) ??
     checkBudget(ctx.bidAmount, ctx.remainingBudget, ctx.gameType) ??
     checkNeoProfRequirement(ctx.rider, ctx.myBids, ctx.availableRiders, ctx.gameType, ctx.config) ?? {
@@ -110,14 +112,14 @@ export function checkProTeamLimit(
   availableRiders: RiderWithBid[],
   isFullGrid: boolean,
   proTeamLimit: number,
+  teamClassByKey?: Map<string, string>,
 ): ValidationResult | null {
   if (!isFullGrid || !rider.team?.name) return null;
 
-  const teamClass =
-    (rider.team as any)?.class || (rider.team as any)?.teamClass; // eslint-disable-line @typescript-eslint/no-explicit-any
-  if (!isProTourTeamClass(teamClass)) return null;
-
   const teamKey = normalizeTeamKey(rider.team.name);
+  const teamClass =
+    (rider.team as any)?.class || (rider.team as any)?.teamClass || teamClassByKey?.get(teamKey); // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (!isProTourTeamClass(teamClass)) return null;
 
   const selectedProTeams = new Set<string>();
   myBids
@@ -129,7 +131,7 @@ export function checkProTeamLimit(
       const bidTeamName = bidRider?.team?.name || b.riderTeam;
       const bidTeamKey = normalizeTeamKey(bidTeamName);
       const bidTeamClass =
-        (bidRider?.team as any)?.class || (bidRider?.team as any)?.teamClass; // eslint-disable-line @typescript-eslint/no-explicit-any
+        (bidRider?.team as any)?.class || (bidRider?.team as any)?.teamClass || teamClassByKey?.get(bidTeamKey); // eslint-disable-line @typescript-eslint/no-explicit-any
       if (isProTourTeamClass(bidTeamClass) && bidTeamKey) {
         selectedProTeams.add(bidTeamKey);
       }
