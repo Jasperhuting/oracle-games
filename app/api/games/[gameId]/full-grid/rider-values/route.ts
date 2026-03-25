@@ -1,5 +1,4 @@
-import { adminHandler, ApiError } from '@/lib/api/handler';
-import { publicHandler } from '@/lib/api/handler';
+import { adminHandler, ApiError, publicHandler } from '@/lib/api/handler';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
