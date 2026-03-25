@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { messageId: string } }
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ messageId: string }> }) {
+  const params = await props.params;
   try {
     const { messageId } = params;
     const body = await request.json();
