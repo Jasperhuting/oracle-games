@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { AvatarUpload } from './AvatarUpload';
+import { ProfileCompleteness, buildMissingFieldsSentence } from '@/lib/profile/completeness';
 
 interface TopResult {
   gameName: string;
@@ -34,9 +36,10 @@ interface CarriereCardProps {
   avatarUrl?: string;
   onAvatarUpdate?: (newAvatarUrl: string) => void;
   readOnly?: boolean;
+  completeness?: ProfileCompleteness;
 }
 
-export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false }: CarriereCardProps) {
+export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false, completeness = { score: 100, missingFields: [] } }: CarriereCardProps) {
   const [topResults, setTopResults] = useState<TopResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
@@ -48,6 +51,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [oracleStandings, setOracleStandings] = useState<OracleStats[]>([]);
   const [oracleStandingsLoading, setOracleStandingsLoading] = useState(false);
   const currentYear = new Date().getFullYear();
+  const router = useRouter();
 
   // Update local state when prop changes
   useEffect(() => {
@@ -214,7 +218,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
       <div className="bg-gradient-to-r from-primary-light to-white p-6">
         <div className="flex items-center gap-6">
           {/* Avatar */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 relative">
             {readOnly ? (
               <div
                 className="rounded-full overflow-hidden border-2 border-gray-200 bg-gray-200 flex items-center justify-center"
@@ -245,6 +249,27 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 size={100}
               />
             )}
+            {completeness.missingFields.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                bottom: -3,
+                right: -3,
+                background: '#f59e0b',
+                borderRadius: '999px',
+                minWidth: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'white',
+                border: '2px solid white',
+                padding: '0 4px',
+              }}>
+                {completeness.missingFields.length}
+              </div>
+            )}
           </div>
 
           {/* Basic Info */}
@@ -257,6 +282,36 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
             )}
           </div>
         </div>
+
+        {completeness.score < 100 && (
+          <div style={{
+            background: '#f9fafb',
+            borderRadius: '8px',
+            padding: '10px 12px',
+            border: '1px solid #f3f4f6',
+            marginTop: '12px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#374151' }}>Profiel volledigheid</span>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#02554d' }}>{completeness.score}%</span>
+            </div>
+            <div style={{ background: '#e5e7eb', borderRadius: '999px', height: '6px', overflow: 'hidden', marginBottom: '8px' }}>
+              <div style={{ background: '#02554d', width: `${completeness.score}%`, height: '100%', borderRadius: '999px' }} />
+            </div>
+            <div style={{ fontSize: '11px', color: '#6b7280' }}
+              dangerouslySetInnerHTML={{ __html: buildMissingFieldsSentence(completeness.missingFields).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#374151">$1</strong>') }}
+            />
+            <div style={{ marginTop: '8px' }}>
+              <button
+                type="button"
+                onClick={() => router.push('/account/settings')}
+                style={{ fontSize: '11px', fontWeight: 600, color: '#02554d', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'none' }}
+              >
+                Profiel aanvullen →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Section */}

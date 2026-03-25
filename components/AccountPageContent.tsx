@@ -85,6 +85,7 @@ export function AccountPageContent() {
                             playername={playername}
                             dateOfBirth={dateOfBirth}
                             avatarUrl={avatarUrl}
+                            completeness={completeness}
                             onAvatarUpdate={(newUrl) => {
                                 setUserData((prev: any) => ({ ...prev, avatarUrl: newUrl }));
                                 fetchUserData();
