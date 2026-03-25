@@ -49,6 +49,27 @@ interface SlipstreamStandingsResponse {
   greenJersey?: SlipstreamStandingEntry[];
 }
 
+interface F1ParticipantSummary {
+  id: string;
+  userId: string;
+  displayName?: string;
+  season: number;
+  status?: string;
+}
+
+interface F1StandingSummary {
+  userId: string;
+  totalPoints?: number;
+}
+
+interface F1StandingsResponse {
+  success?: boolean;
+  data?: {
+    standings?: F1StandingSummary[];
+    lastUpdated?: string;
+  };
+}
+
 export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
   const [games, setGames] = useState<ActiveGame[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +105,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
     async function fetchActiveGames() {
       try {
-        const cacheKey = `active-games-summary:v5:${userId}`;
+        const cacheKey = `active-games-summary:v6:${userId}`;
         const cached = readDailyCache(cacheKey);
         if (cached) {
           setGames(cached);
@@ -232,6 +253,54 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
             }
           })
         )).filter((game): game is ActiveGame => Boolean(game));
+
+        try {
+          const [f1GamesResponse, f1ParticipantsResponse, f1StandingsResponse] = await Promise.all([
+            fetch('/api/games/list?gameType=f1-prediction&limit=5', { cache: 'no-store' }),
+            fetch('/api/f1/participants?season=2026', { cache: 'no-store' }),
+            fetch('/f1/api/standings?season=2026', { cache: 'no-store' }),
+          ]);
+
+          if (f1GamesResponse.ok && f1ParticipantsResponse.ok) {
+            const [f1GamesData, f1ParticipantsData, f1StandingsData] = await Promise.all([
+              f1GamesResponse.json(),
+              f1ParticipantsResponse.json(),
+              f1StandingsResponse.ok ? f1StandingsResponse.json() : Promise.resolve(null),
+            ]);
+
+            const f1Game = (f1GamesData.games || []).find((game: { gameType?: string; status?: string; isTest?: boolean; name?: string }) =>
+              game.gameType === 'f1-prediction' &&
+              ['registration', 'bidding', 'active'].includes(game.status || '') &&
+              !game.isTest &&
+              !game.name?.toLowerCase().includes('test')
+            );
+
+            const f1Participants = ((f1ParticipantsData.participants || []) as F1ParticipantSummary[]).filter(
+              (participant) => participant.status === 'active'
+            );
+            const userIsF1Participant = f1Participants.some((participant) => participant.userId === userId);
+
+            if (f1Game && userIsF1Participant) {
+              const standings = ((f1StandingsData as F1StandingsResponse | null)?.data?.standings || []) as F1StandingSummary[];
+              const ranking = standings.findIndex((standing) => standing.userId === userId);
+              const userStanding = ranking >= 0 ? standings[ranking] : null;
+
+              activeGames.push({
+                gameId: f1Game.id,
+                gameName: f1Game.name,
+                gameType: f1Game.gameType,
+                sportType: 'f1',
+                ranking: ranking >= 0 ? ranking + 1 : 0,
+                totalParticipants: f1Participants.length,
+                totalPoints: userStanding?.totalPoints || 0,
+                status: f1Game.status,
+                lastScoreUpdate: (f1StandingsData as F1StandingsResponse | null)?.data?.lastUpdated || null,
+              });
+            }
+          }
+        } catch {
+          // Ignore F1 enrichment failures so the regular games card still loads.
+        }
 
         // Sort by sport type, then by name
         activeGames.sort((a, b) => {
