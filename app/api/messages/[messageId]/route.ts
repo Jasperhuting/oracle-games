@@ -1,68 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import { userHandler, ApiError } from '@/lib/api/handler';
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ messageId: string }> }
-) {
-  try {
-    const { messageId } = await params;
-    const body = await request.json();
-    const { userId } = body;
+export const DELETE = userHandler('messages/DELETE', async (ctx) => {
+  const { uid, params } = ctx;
+  const { messageId } = params;
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
-    }
+  // Get the message to verify ownership
+  const messageRef = adminDb.collection('messages').doc(messageId);
+  const messageDoc = await messageRef.get();
 
-    // Get the message to verify ownership
-    const messageRef = adminDb.collection('messages').doc(messageId);
-    const messageDoc = await messageRef.get();
-
-    if (!messageDoc.exists) {
-      return NextResponse.json(
-        { error: 'Message not found' },
-        { status: 404 }
-      );
-    }
-
-    const messageData = messageDoc.data();
-
-    // Verify that the user is either the sender or recipient
-    const isSender = messageData?.senderId === userId;
-    const isRecipient = messageData?.recipientId === userId;
-
-    if (!isSender && !isRecipient) {
-      return NextResponse.json(
-        { error: 'Unauthorized: You can only delete your own messages' },
-        { status: 403 }
-      );
-    }
-
-    // Soft delete: mark as deleted by sender or recipient
-    const updateData: { deletedBySender?: boolean; deletedByRecipient?: boolean } = {};
-
-    if (isSender) {
-      updateData.deletedBySender = true;
-    }
-
-    if (isRecipient) {
-      updateData.deletedByRecipient = true;
-    }
-
-    await messageRef.update(updateData);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Message deleted successfully'
-    });
-  } catch (error) {
-    console.error('Error deleting message:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete message', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+  if (!messageDoc.exists) {
+    throw new ApiError('Message not found', 404);
   }
-}
+
+  const messageData = messageDoc.data();
+
+  // Verify that the user is either the sender or recipient
+  const isSender = messageData?.senderId === uid;
+  const isRecipient = messageData?.recipientId === uid;
+
+  if (!isSender && !isRecipient) {
+    throw new ApiError('Unauthorized: You can only delete your own messages', 403);
+  }
+
+  // Soft delete: mark as deleted by sender or recipient
+  const updateData: { deletedBySender?: boolean; deletedByRecipient?: boolean } = {};
+
+  if (isSender) {
+    updateData.deletedBySender = true;
+  }
+
+  if (isRecipient) {
+    updateData.deletedByRecipient = true;
+  }
+
+  await messageRef.update(updateData);
+
+  return {
+    success: true,
+    message: 'Message deleted successfully',
+  };
+});
