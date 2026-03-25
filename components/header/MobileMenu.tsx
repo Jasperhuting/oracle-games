@@ -47,8 +47,8 @@ export const MobileMenu = ({
 }: MobileMenuProps) => {
     const router = useRouter();
     const headerHeight = 86;
-    const headerTopGap = 32; // matches the fixed top gap in Header.tsx (bannerOffset + 32)
-    const menuTop = topOffset + headerTopGap + headerHeight; // below header bottom
+    // Use the same CSS variable as the header so mobile (16px) and desktop (32px) stay in sync
+    const menuTopStyle = `calc(${topOffset}px + var(--header-top) + ${headerHeight}px)`;
 
     return (
         <AnimatePresence>
@@ -60,7 +60,7 @@ export const MobileMenu = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
                         className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                        style={{ top: `${menuTop}px` }}
+                        style={{ top: menuTopStyle }}
                         onClick={onClose}
                     />
                     <motion.div
@@ -78,7 +78,7 @@ export const MobileMenu = ({
                         }}
                         className="fixed right-0 md:right-0 w-80 z-50 p-6 overflow-y-auto border rounded-2xl"
                         style={{
-                            top: `${menuTop}px`,
+                            top: menuTopStyle,
                             height: `h-fit`,
                             background: "var(--platform-mobile-menu-bg)",
                             borderColor: "var(--platform-header-border)",

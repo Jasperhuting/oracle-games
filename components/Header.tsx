@@ -327,20 +327,18 @@ export const Header = ({
                     />
                 </button>
 
-                {isMenuOpen ? (
-                    <MobileMenu
-                        isOpen={isMenuOpen}
-                        onClose={() => setIsMenuOpen(false)}
-                        menuItems={visibleMenuItems}
-                        profileItems={profileItems}
-                        user={user}
-                        pathname={pathname}
-                        topOffset={bannerOffset}
-                        currentPlatform={currentPlatform}
-                        platformOptions={platformOptions}
-                        onPlatformChange={handlePlatformChange}
-                    />
-                ) : null}
+                <MobileMenu
+                    isOpen={isMenuOpen}
+                    onClose={() => setIsMenuOpen(false)}
+                    menuItems={visibleMenuItems}
+                    profileItems={profileItems}
+                    user={user}
+                    pathname={pathname}
+                    topOffset={bannerOffset}
+                    currentPlatform={currentPlatform}
+                    platformOptions={platformOptions}
+                    onPlatformChange={handlePlatformChange}
+                />
             </div>
         </header>
     );
