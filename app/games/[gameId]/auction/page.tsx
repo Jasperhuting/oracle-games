@@ -23,6 +23,7 @@ import { qualifiesAsNeoProf, calculateAge, getBirthYear } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
 import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
 import { isProTourTeamClass, normalizeTeamKey } from "@/lib/bidding/teamUtils";
+import { buildBiddableRiders } from "@/lib/bidding/buildBiddableRiders";
 import { AddRiderTab } from "@/components/AddRiderTab";
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
@@ -242,47 +243,15 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           });
         }
 
-        // Enhance riders with bid information
-        const maxMinBid = cachedData.gameData?.config?.maxMinimumBid;
-        const fullGridRiderValues = (cachedData.gameData?.config?.riderValues || {}) as Record<string, number>;
-        const isFullGridGame = cachedData.gameData.gameType === 'full-grid';
-        const ridersWithBids = riders.map((rider: Rider) => {
-          const riderNameId = rider.nameID || rider.id || '';
-          const myBid = userBids.find((b: Bid) =>
-            (b.riderNameId === rider.nameID || b.riderNameId === rider.id)
-          );
-
-          const soldData = soldRidersMap.get(riderNameId);
-          // Only mark riders as sold for bidding game types, not for selection games
-          const isBiddingGame = cachedData.gameData.gameType === 'auctioneer';
-          const isSold = isBiddingGame && !!soldData;
-          const soldTo = soldData?.ownerName;
-          const pricePaid = soldData?.pricePaid;
-
-          const riderPoints = rider.points || 1;
-          const effectiveMinBid = isFullGridGame
-            ? (fullGridRiderValues[riderNameId] || 0)
-            : (maxMinBid && riderPoints > maxMinBid ? maxMinBid : riderPoints);
-
-          let highestBid = 0;
-          let highestBidder = '';
-
-          if (myBid && (myBid.status === 'active' || myBid.status === 'outbid' || myBid.status === 'won')) {
-            highestBid = myBid.amount;
-          }
-
-          return {
-            ...rider,
-            highestBid: highestBid || undefined,
-            highestBidder: highestBidder || undefined,
-            myBid: myBid?.amount || undefined,
-            myBidStatus: myBid?.status || undefined,
-            myBidId: myBid?.id || undefined,
-            effectiveMinBid,
-            soldTo,
-            isSold,
-            pricePaid,
-          };
+        const ridersWithBids = buildBiddableRiders({
+          riders,
+          userBids,
+          allBids: cachedData.allBidsData,
+          soldRidersMap,
+          gameType: cachedData.gameData.gameType,
+          maxMinimumBid: cachedData.gameData?.config?.maxMinimumBid as number | undefined,
+          riderValues: (cachedData.gameData?.config?.riderValues || {}) as Record<string, number>,
+          isAdmin: false,
         });
 
         setAvailableRiders(ridersWithBids);
@@ -408,69 +377,15 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         });
       }
 
-      // Enhance riders with bid information and sold status
-      const maxMinBid = game?.config?.maxMinimumBid;
-      const freshFullGridRiderValues = (game?.config?.riderValues || {}) as Record<string, number>;
-      const isFreshFullGrid = game?.gameType === 'full-grid';
-      const ridersWithBids = riders.map((rider: Rider) => {
-        const riderNameId = rider.nameID || rider.id || '';
-        const myBid = userBids.find((b: Bid) =>
-          (b.riderNameId === rider.nameID || b.riderNameId === rider.id)
-        );
-
-        // Check if rider is already sold
-        const soldData = soldRidersMap.get(riderNameId);
-        // Only mark riders as sold for bidding game types, not for selection games
-        const isBiddingGame = game?.gameType === 'auctioneer';
-        const isSold = isBiddingGame && !!soldData;
-        const soldTo = soldData?.ownerName;
-        const pricePaid = soldData?.pricePaid;
-
-        // Calculate effective minimum bid (apply cap if configured)
-        const riderPoints = rider.points || 1;
-        const effectiveMinBid = isFreshFullGrid
-          ? (freshFullGridRiderValues[riderNameId] || 0)
-          : (maxMinBid && riderPoints > maxMinBid ? maxMinBid : riderPoints);
-
-        // Calculate highest bid for this rider
-        let highestBid = 0;
-        let highestBidder = '';
-
-        if (userIsAdmin) {
-          // For admins, find the highest active bid from ALL bids
-          const riderBids = allBidsData.filter((b: Bid) =>
-            (b.riderNameId === rider.nameID || b.riderNameId === rider.id) &&
-            b.status === 'active'
-          );
-
-          if (riderBids.length > 0) {
-            const highest = riderBids.reduce((max: Bid, bid: Bid) =>
-              bid.amount > max.amount ? bid : max
-            );
-
-            highestBid = highest.amount;
-            highestBidder = highest.playername || '';
-          }
-        } else {
-          // For regular users, only show their own bid if it's active
-          if (myBid && (myBid.status === 'active' || myBid.status === 'outbid' || myBid.status === 'won')) {
-            highestBid = myBid.amount;
-            // Don't set highestBidder for non-admins
-          }
-        }
-
-        return {
-          ...rider,
-          highestBid: highestBid || undefined,
-          highestBidder: highestBidder || undefined,
-          myBid: myBid?.amount || undefined,
-          myBidStatus: myBid?.status || undefined,
-          myBidId: myBid?.id || undefined,
-          effectiveMinBid,
-          soldTo,
-          isSold,
-          pricePaid,
-        };
+      const ridersWithBids = buildBiddableRiders({
+        riders,
+        userBids,
+        allBids: allBidsData,
+        soldRidersMap,
+        gameType: game.gameType,
+        maxMinimumBid: game?.config?.maxMinimumBid as number | undefined,
+        riderValues: (game?.config?.riderValues || {}) as Record<string, number>,
+        isAdmin: userIsAdmin,
       });
 
       setAvailableRiders(ridersWithBids);
