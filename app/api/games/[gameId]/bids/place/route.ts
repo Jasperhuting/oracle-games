@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, BidStatus } from '@/lib/types';
 import { placeBidSchema, validateRequest } from '@/lib/validation';
 import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
-import { isProTourTeamClass, normalizeTeamKey } from '@/lib/bidding/teamUtils';
+import { isProTourTeamClass, normalizeTeamKey } from "@/lib/bidding/teamUtils";
 
 // TEMPORARY: Toggle to disable bidding
 const BIDDING_DISABLED = false;

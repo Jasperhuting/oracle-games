@@ -47,4 +47,7 @@ describe('normalizeTeamKey', () => {
   it('handles empty string', () => {
     expect(normalizeTeamKey('')).toBe('');
   });
+  it('preserves digits', () => {
+    expect(normalizeTeamKey('Team 2000')).toBe('team2000');
+  });
 });

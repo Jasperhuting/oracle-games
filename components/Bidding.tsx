@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { ScrollToTop } from "./ScrollToTop";
 import { BiddingCardView } from "./BiddingCardView";
 import { BiddingListView } from "./BiddingListView";
-import { isProTourTeamClass } from '@/lib/bidding/teamUtils';
+import { isProTourTeamClass } from "@/lib/bidding/teamUtils";
 import { BiddingListViewWorldTour } from "./BiddingListViewWorldTour";
 import Countdown from 'react-countdown';
 import { BiddingListViewWorldTourSmall } from "./BiddingListViewWorldTour-small";

@@ -22,7 +22,7 @@ import { AuctionFilters } from "@/components/AuctionFilters";
 import { qualifiesAsNeoProf, calculateAge, getBirthYear } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
 import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
-import { isProTourTeamClass, normalizeTeamKey } from '@/lib/bidding/teamUtils';
+import { isProTourTeamClass, normalizeTeamKey } from "@/lib/bidding/teamUtils";
 import { AddRiderTab } from "@/components/AddRiderTab";
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
