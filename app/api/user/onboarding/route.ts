@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { userHandler, ApiError } from '@/lib/api/handler';
@@ -8,30 +7,37 @@ export const POST = userHandler('onboarding', async (ctx) => {
   const body = await request.json();
   const { firstName, lastName, dateOfBirth, preferredLanguage, avatarUrl } = body;
 
+  // Type guards: ensure all fields are strings before validation
+  const safeFirstName = typeof firstName === 'string' && firstName.length > 0 ? firstName : undefined;
+  const safeLastName = typeof lastName === 'string' && lastName.length > 0 ? lastName : undefined;
+  const safeDateOfBirth = typeof dateOfBirth === 'string' && dateOfBirth.length > 0 ? dateOfBirth : undefined;
+  const safePreferredLanguage = typeof preferredLanguage === 'string' && preferredLanguage.length > 0 ? preferredLanguage : undefined;
+  const safeAvatarUrl = typeof avatarUrl === 'string' && avatarUrl.length > 0 ? avatarUrl : undefined;
+
   // Validate firstName
-  if (firstName !== undefined && firstName !== null && firstName !== '') {
-    if (firstName.length > 50) {
+  if (safeFirstName !== undefined) {
+    if (safeFirstName.length > 50) {
       throw new ApiError('firstName exceeds 50 characters', 400);
     }
   }
 
   // Validate lastName
-  if (lastName !== undefined && lastName !== null && lastName !== '') {
-    if (lastName.length > 50) {
+  if (safeLastName !== undefined) {
+    if (safeLastName.length > 50) {
       throw new ApiError('lastName exceeds 50 characters', 400);
     }
   }
 
   // Validate preferredLanguage
-  if (preferredLanguage !== undefined && preferredLanguage !== null && preferredLanguage !== '') {
-    if (!['en', 'nl'].includes(preferredLanguage)) {
+  if (safePreferredLanguage !== undefined) {
+    if (!['en', 'nl'].includes(safePreferredLanguage)) {
       throw new ApiError('Ongeldige taalvoorkeur', 400);
     }
   }
 
   // Validate dateOfBirth
-  if (dateOfBirth !== undefined && dateOfBirth !== null && dateOfBirth !== '') {
-    const date = new Date(dateOfBirth);
+  if (safeDateOfBirth !== undefined) {
+    const date = new Date(safeDateOfBirth);
     if (isNaN(date.getTime())) {
       throw new ApiError('Vul een geldige geboortedatum in (minimumleeftijd 13 jaar)', 400);
     }
@@ -51,11 +57,11 @@ export const POST = userHandler('onboarding', async (ctx) => {
   };
 
   // Add optional fields if provided and non-empty
-  if (firstName && firstName.length > 0) updateData.firstName = firstName;
-  if (lastName && lastName.length > 0) updateData.lastName = lastName;
-  if (dateOfBirth && dateOfBirth.length > 0) updateData.dateOfBirth = dateOfBirth;
-  if (preferredLanguage && preferredLanguage.length > 0) updateData.preferredLanguage = preferredLanguage;
-  if (avatarUrl && avatarUrl.length > 0) updateData.avatarUrl = avatarUrl;
+  if (safeFirstName !== undefined) updateData.firstName = safeFirstName;
+  if (safeLastName !== undefined) updateData.lastName = safeLastName;
+  if (safeDateOfBirth !== undefined) updateData.dateOfBirth = safeDateOfBirth;
+  if (safePreferredLanguage !== undefined) updateData.preferredLanguage = safePreferredLanguage;
+  if (safeAvatarUrl !== undefined) updateData.avatarUrl = safeAvatarUrl;
 
   // Update user document
   await db.collection('users').doc(uid).update(updateData);
