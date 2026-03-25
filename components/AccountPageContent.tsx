@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,8 @@ import { ActiveGamesCard } from "./account/ActiveGamesCard";
 import { AvailableGamesCard } from "./account/AvailableGamesCard";
 import { GameRulesCard } from "./account/GameRulesCard";
 import { CalendarCard } from "./account/CalendarCard";
+import { getProfileCompleteness } from "@/lib/profile/completeness";
+import { ProfileCompletenessCard } from "./account/ProfileCompletenessCard";
 
 export function AccountPageContent() {
     const { user } = useAuth();
@@ -17,24 +19,24 @@ export function AccountPageContent() {
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (!user) return;
-            try {
-                const userResponse = await fetch(`/api/getUser?userId=${user.uid}`);
-                if (userResponse.ok) {
-                    const data = await userResponse.json();
-                    setUserData(data);
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            } finally {
-                setLoading(false);
+    const fetchUserData = useCallback(async () => {
+        if (!user) return;
+        try {
+            const userResponse = await fetch(`/api/getUser?userId=${user.uid}`);
+            if (userResponse.ok) {
+                const data = await userResponse.json();
+                setUserData(data);
             }
-        };
-
-        fetchUserData();
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        } finally {
+            setLoading(false);
+        }
     }, [user]);
+
+    useEffect(() => {
+        fetchUserData();
+    }, [fetchUserData]);
 
     if (!user) {
         return null;
@@ -56,6 +58,8 @@ export function AccountPageContent() {
     const dateOfBirth = userData?.dateOfBirth;
     const avatarUrl = userData?.avatarUrl;
 
+    const completeness = getProfileCompleteness(userData ?? {});
+
     return (
         <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px]">
             <div className="mx-auto container max-w-7xl">
@@ -68,6 +72,9 @@ export function AccountPageContent() {
 
                 <h1 className="text-3xl font-bold mb-6">{t('account.myAccount')}</h1>
 
+                {/* Profile completeness */}
+                <ProfileCompletenessCard completeness={completeness} uid={user.uid} />
+
                 {/* Dashboard Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column */}
@@ -78,7 +85,10 @@ export function AccountPageContent() {
                             playername={playername}
                             dateOfBirth={dateOfBirth}
                             avatarUrl={avatarUrl}
-                            onAvatarUpdate={(newUrl) => setUserData({ ...userData, avatarUrl: newUrl })}
+                            onAvatarUpdate={(newUrl) => {
+                                setUserData((prev: any) => ({ ...prev, avatarUrl: newUrl }));
+                                fetchUserData();
+                            }}
                         />
 
                         {/* Inbox */}
