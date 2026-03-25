@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { adminHandler, ApiError } from '@/lib/api/handler';
 import { adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import type { ApiErrorResponse } from '@/lib/types';
 
 interface BidBackupResponse {
   success: boolean;
@@ -14,120 +13,102 @@ interface BidBackupResponse {
 }
 
 // POST endpoint to send bid backup messages to all players in a specific auction period
-export async function POST(
-  request: NextRequest
-): Promise<NextResponse<BidBackupResponse | ApiErrorResponse>> {
-  try {
-    const { gameId, auctionPeriodIndex, adminUserId } = await request.json();
+export const POST = adminHandler('send-bid-backup', async ({ uid, request }) => {
+  const { gameId, auctionPeriodIndex } = await request.json();
 
-    if (!gameId || auctionPeriodIndex === undefined || !adminUserId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: gameId, auctionPeriodIndex, adminUserId' },
-        { status: 400 }
-      );
-    }
+  if (!gameId || auctionPeriodIndex === undefined) {
+    throw new ApiError('Missing required fields: gameId, auctionPeriodIndex', 400);
+  }
 
-    // Verify admin user
-    const adminUserDoc = await adminDb.collection('users').doc(adminUserId).get();
-    if (!adminUserDoc.exists || adminUserDoc.data()?.userType !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
+  // Get game document
+  const gameDoc = await adminDb.collection('games').doc(gameId).get();
+  if (!gameDoc.exists) {
+    throw new ApiError('Game not found', 404);
+  }
 
-    // Get game document
-    const gameDoc = await adminDb.collection('games').doc(gameId).get();
-    if (!gameDoc.exists) {
-      return NextResponse.json(
-        { error: 'Game not found' },
-        { status: 404 }
-      );
-    }
+  const game = gameDoc.data();
+  const auctionPeriods = game?.config?.auctionPeriods;
 
-    const game = gameDoc.data();
-    const auctionPeriods = game?.config?.auctionPeriods;
+  if (!auctionPeriods || !auctionPeriods[auctionPeriodIndex]) {
+    throw new ApiError('Invalid auction period index', 400);
+  }
 
-    if (!auctionPeriods || !auctionPeriods[auctionPeriodIndex]) {
-      return NextResponse.json(
-        { error: 'Invalid auction period index' },
-        { status: 400 }
-      );
-    }
+  // Fetch admin doc for sender name
+  const adminUserDoc = await adminDb.collection('users').doc(uid).get();
 
-    const auctionPeriod = auctionPeriods[auctionPeriodIndex];
-    const startDate = typeof auctionPeriod.startDate === 'object' && 'toDate' in auctionPeriod.startDate
-      ? auctionPeriod.startDate.toDate()
-      : new Date(auctionPeriod.startDate);
-    const endDate = typeof auctionPeriod.endDate === 'object' && 'toDate' in auctionPeriod.endDate
-      ? auctionPeriod.endDate.toDate()
-      : new Date(auctionPeriod.endDate);
-    const periodName = auctionPeriod.name || `Ronde ${auctionPeriodIndex + 1}`;
+  const auctionPeriod = auctionPeriods[auctionPeriodIndex];
+  const startDate = typeof auctionPeriod.startDate === 'object' && 'toDate' in auctionPeriod.startDate
+    ? auctionPeriod.startDate.toDate()
+    : new Date(auctionPeriod.startDate);
+  const endDate = typeof auctionPeriod.endDate === 'object' && 'toDate' in auctionPeriod.endDate
+    ? auctionPeriod.endDate.toDate()
+    : new Date(auctionPeriod.endDate);
+  const periodName = auctionPeriod.name || `Ronde ${auctionPeriodIndex + 1}`;
 
-    // Get all bids in this auction period
-    const bidsSnapshot = await adminDb
-      .collection('bids')
-      .where('gameId', '==', gameId)
-      .get();
+  // Get all bids in this auction period
+  const bidsSnapshot = await adminDb
+    .collection('bids')
+    .where('gameId', '==', gameId)
+    .get();
 
-    // Filter bids by auction period dates
-    const bidsInPeriod = bidsSnapshot.docs
-      .map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-      .filter((bid: any) => {
-        // Handle both Firestore Timestamp and string dates
-        const bidDate = typeof bid.bidAt === 'object' && 'toDate' in bid.bidAt
-          ? bid.bidAt.toDate()
-          : new Date(bid.bidAt);
-        return bidDate >= startDate && bidDate <= endDate;
-      });
-
-    // Group bids by user
-    const bidsByUser = new Map<string, Array<{
-      riderName: string;
-      amount: number;
-    }>>();
-
-    bidsInPeriod.forEach((bid: any) => {
-      if (!bidsByUser.has(bid.userId)) {
-        bidsByUser.set(bid.userId, []);
-      }
-      bidsByUser.get(bid.userId)!.push({
-        riderName: bid.riderName || 'Unknown Rider',
-        amount: bid.amount
-      });
+  // Filter bids by auction period dates
+  const bidsInPeriod = bidsSnapshot.docs
+    .map((doc: any) => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+    .filter((bid: any) => {
+      // Handle both Firestore Timestamp and string dates
+      const bidDate = typeof bid.bidAt === 'object' && 'toDate' in bid.bidAt
+        ? bid.bidAt.toDate()
+        : new Date(bid.bidAt);
+      return bidDate >= startDate && bidDate <= endDate;
     });
 
-    // Send messages to each user
-    const messagePromises: Promise<any>[] = [];
-    const details: Array<{
-      userId: string;
-      playername: string;
-      ridersCount: number;
-    }> = [];
+  // Group bids by user
+  const bidsByUser = new Map<string, Array<{
+    riderName: string;
+    amount: number;
+  }>>();
 
-    for (const [userId, bids] of bidsByUser.entries()) {
-      // Get user info
-      const participantSnapshot = await adminDb
-        .collection('gameParticipants')
-        .where('gameId', '==', gameId)
-        .where('userId', '==', userId)
-        .limit(1)
-        .get();
+  bidsInPeriod.forEach((bid: any) => {
+    if (!bidsByUser.has(bid.userId)) {
+      bidsByUser.set(bid.userId, []);
+    }
+    bidsByUser.get(bid.userId)!.push({
+      riderName: bid.riderName || 'Unknown Rider',
+      amount: bid.amount
+    });
+  });
 
-      if (participantSnapshot.empty) continue;
+  // Send messages to each user
+  const messagePromises: Promise<any>[] = [];
+  const details: Array<{
+    userId: string;
+    playername: string;
+    ridersCount: number;
+  }> = [];
 
-      const participant = participantSnapshot.docs[0].data();
-      const playername = participant.playername || 'Speler';
+  for (const [userId, bids] of bidsByUser.entries()) {
+    // Get user info
+    const participantSnapshot = await adminDb
+      .collection('gameParticipants')
+      .where('gameId', '==', gameId)
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
 
-      // Create message content with list of riders (without status)
-      const ridersList = bids
-        .map(bid => `• ${bid.riderName} - €${bid.amount.toFixed(1)}`)
-        .join('\n');
+    if (participantSnapshot.empty) continue;
 
-      const messageContent = `Beste ${playername},
+    const participant = participantSnapshot.docs[0].data();
+    const playername = participant.playername || 'Speler';
+
+    // Create message content with list of riders (without status)
+    const ridersList = bids
+      .map(bid => `• ${bid.riderName} - €${bid.amount.toFixed(1)}`)
+      .join('\n');
+
+    const messageContent = `Beste ${playername},
 
 Vanwege een technisch probleem moet ${periodName} opnieuw worden gespeeld. Alle biedingen uit deze ronde worden verwijderd.
 
@@ -140,43 +121,35 @@ Je kunt binnenkort opnieuw bieden in ${periodName}.
 Met excuses voor het ongemak,
 Het Oracle Games Team`;
 
-      // Create message document
-      const messagePromise = adminDb.collection('messages').add({
-        type: 'individual',
-        senderId: adminUserId,
-        senderName: adminUserDoc.data()?.playername || 'Admin',
-        recipientId: userId,
-        recipientName: playername,
-        subject: `Backup van je biedingen - ${periodName}`,
-        message: messageContent,
-        sentAt: Timestamp.now(),
-        read: false,
-        deletedBySender: false,
-        deletedByRecipient: false
-      });
-
-      messagePromises.push(messagePromise);
-      details.push({
-        userId,
-        playername,
-        ridersCount: bids.length
-      });
-    }
-
-    // Wait for all messages to be sent
-    await Promise.all(messagePromises);
-
-    return NextResponse.json({
-      success: true,
-      messagesSent: messagePromises.length,
-      details
+    // Create message document
+    const messagePromise = adminDb.collection('messages').add({
+      type: 'individual',
+      senderId: uid,
+      senderName: adminUserDoc.data()?.playername || 'Admin',
+      recipientId: userId,
+      recipientName: playername,
+      subject: `Backup van je biedingen - ${periodName}`,
+      message: messageContent,
+      sentAt: Timestamp.now(),
+      read: false,
+      deletedBySender: false,
+      deletedByRecipient: false
     });
 
-  } catch (error: any) {
-    console.error('Error sending bid backup messages:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to send bid backup messages' },
-      { status: 500 }
-    );
+    messagePromises.push(messagePromise);
+    details.push({
+      userId,
+      playername,
+      ridersCount: bids.length
+    });
   }
-}
+
+  // Wait for all messages to be sent
+  await Promise.all(messagePromises);
+
+  return {
+    success: true,
+    messagesSent: messagePromises.length,
+    details
+  } satisfies BidBackupResponse;
+});
