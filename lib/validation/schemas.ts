@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { GAME_TYPES, GAME_STATUSES, RACE_TYPES } from '../types/games';
+import { gameConfigSchemas } from '@/lib/game-configs';
 
 // ============================================================================
 // BASE SCHEMAS
@@ -39,7 +40,20 @@ export const createGameSchema = z.object({
   eligibleTeams: z.array(z.string()).optional(),
   eligibleRiders: z.array(z.string()).optional(),
   bidding: z.boolean(),
-  config: z.any(), // Game-specific config - validated separately per game type
+  config: z.unknown(), // Game-specific config - validated per game type via superRefine
+}).superRefine((data, ctx) => {
+  const schema = gameConfigSchemas[data.gameType as keyof typeof gameConfigSchemas];
+  if (!schema) return;
+  const result = schema.safeParse(data.config);
+  if (!result.success) {
+    for (const err of result.error.errors) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: err.message,
+        path: ['config', ...err.path],
+      });
+    }
+  }
 });
 
 export const updateGameSchema = z.object({
@@ -52,7 +66,7 @@ export const updateGameSchema = z.object({
   minPlayers: z.number().int().positive().optional(),
   eligibleTeams: z.array(z.string()).optional(),
   eligibleRiders: z.array(z.string()).optional(),
-  config: z.any().optional(),
+  config: z.unknown().optional(),
 }).passthrough(); // Allow additional fields
 
 export const updateGameStatusSchema = z.object({

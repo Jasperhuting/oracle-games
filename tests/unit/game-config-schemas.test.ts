@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { createGameSchema } from '@/lib/validation/schemas';
 import {
   timestampSchema,
   auctionStatusSchema,
@@ -275,6 +276,60 @@ describe('gameConfigSchemas', () => {
     ];
     for (const type of expectedTypes) {
       expect(gameConfigSchemas).toHaveProperty(type);
+    }
+  });
+});
+
+describe('createGameSchema config validation', () => {
+  const base = {
+    adminUserId: 'admin1',
+    name: 'Test Game',
+    gameType: 'auctioneer',
+    year: 2026,
+    raceType: 'classics',   // RACE_TYPES = ['season', 'grand-tour', 'classics', 'single-race']
+    bidding: false,
+  };
+
+  it('accepts valid auctioneer config', () => {
+    const config = {
+      budget: 500,
+      maxRiders: 20,
+      auctionPeriods: [],
+      auctionStatus: 'pending',
+    };
+    expect(() => createGameSchema.parse({ ...base, config })).not.toThrow();
+  });
+
+  it('rejects invalid auctioneer config — negative budget', () => {
+    const config = { budget: -1, maxRiders: 20, auctionPeriods: [], auctionStatus: 'pending' };
+    expect(() => createGameSchema.parse({ ...base, config })).toThrow();
+  });
+
+  it('rejects config missing required fields for gameType', () => {
+    expect(() => createGameSchema.parse({ ...base, config: {} })).toThrow();
+  });
+
+  it('accepts valid last-man-standing config', () => {
+    const config = { budget: 1000, teamSize: 5, eliminationSchedule: 'per-stage' };
+    expect(() =>
+      createGameSchema.parse({ ...base, gameType: 'last-man-standing', config })
+    ).not.toThrow();
+  });
+
+  it('rejects invalid last-man-standing config', () => {
+    const config = { budget: 1000, teamSize: 5, eliminationSchedule: 'invalid-value' };
+    expect(() =>
+      createGameSchema.parse({ ...base, gameType: 'last-man-standing', config })
+    ).toThrow();
+  });
+
+  it('surfaces config errors at config.* path (not root)', () => {
+    const config = { budget: -1, maxRiders: 20, auctionPeriods: [], auctionStatus: 'pending' };
+    const result = createGameSchema.safeParse({ ...base, config });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const configErrors = result.error.errors.filter(e => e.path[0] === 'config');
+      expect(configErrors.length).toBeGreaterThan(0);
     }
   });
 });
