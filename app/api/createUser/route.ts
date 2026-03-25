@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     await db.collection('users').doc(uid).set({
       email,
       playername,
+      onboardingShown: false,
       createdAt: Timestamp.now(),
       uid,
       updatedAt: Timestamp.now(),
