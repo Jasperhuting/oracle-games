@@ -23,11 +23,13 @@ export function OnboardingForm({}: OnboardingFormProps) {
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState<'nl' | 'en'>('nl');
   const [dobError, setDobError] = useState<string | undefined>();
+  const [saveError, setSaveError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
 
   const handleSave = async () => {
     setSubmitting(true);
     setDobError(undefined);
+    setSaveError(undefined);
 
     const body: Record<string, string> = {};
     if (firstName.trim()) body.firstName = firstName.trim();
@@ -53,27 +55,27 @@ export function OnboardingForm({}: OnboardingFormProps) {
           setDobError(data.error);
           return;
         }
+        setSaveError('Er is iets misgegaan. Probeer het opnieuw.');
+        return;
       }
       router.push('/');
+    } catch {
+      setSaveError('Er is iets misgegaan. Probeer het opnieuw.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleLater = async () => {
-    setSubmitting(true);
-    try {
-      const body: Record<string, string> = {};
-      if (pendingAvatarUrl) body.avatarUrl = pendingAvatarUrl;
-      await fetch('/api/user/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-    } finally {
-      setSubmitting(false);
-      router.push('/');
-    }
+  const handleLater = () => {
+    const body: Record<string, string> = {};
+    if (pendingAvatarUrl) body.avatarUrl = pendingAvatarUrl;
+    // Fire-and-forget: persist avatar URL if uploaded, then immediately navigate
+    fetch('/api/user/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    router.push('/');
   };
 
   return (
@@ -184,12 +186,15 @@ export function OnboardingForm({}: OnboardingFormProps) {
           <button
             type="button"
             onClick={handleLater}
-            disabled={submitting}
-            style={{ flex: '0 0 auto', background: 'transparent', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 16px', fontSize: '14px', cursor: submitting ? 'not-allowed' : 'pointer' }}
+            style={{ flex: '0 0 auto', background: 'transparent', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 16px', fontSize: '14px', cursor: 'pointer' }}
           >
             Later
           </button>
         </div>
+
+        {saveError && (
+          <p style={{ margin: 0, fontSize: '12px', color: '#ef4444', textAlign: 'center' }}>{saveError}</p>
+        )}
 
         {/* Footer note */}
         <p style={{ textAlign: 'center', fontSize: '11px', color: '#9ca3af', margin: 0 }}>
