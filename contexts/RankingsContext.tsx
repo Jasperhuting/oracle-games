@@ -5,26 +5,9 @@ import { Rider } from '@/lib/types/rider';
 import { RankingsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { getCacheSnapshot, saveToCache, clearOldVersions, removeCacheEntriesByPrefix } from '@/lib/utils/indexedDBCache';
 import { getCacheVersionAsync } from '@/lib/utils/cacheVersion';
+import { getLocalDateCacheKey, isSameLocalDay } from '@/lib/utils/localDateCache';
 
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
-
-function getLocalDateCacheKey(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function isSameLocalDay(timestamp: number): boolean {
-  const cachedDate = new Date(timestamp);
-  const now = new Date();
-  return (
-    cachedDate.getFullYear() === now.getFullYear() &&
-    cachedDate.getMonth() === now.getMonth() &&
-    cachedDate.getDate() === now.getDate()
-  );
-}
 
 export function RankingsProvider({
   children,

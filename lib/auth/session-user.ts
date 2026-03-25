@@ -1,7 +1,13 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { getServerAuth, getServerFirebase } from "@/lib/firebase/server";
 
-export async function getSessionUserRole() {
+/**
+ * Returns the authenticated user's uid and admin flag from the session cookie.
+ * Wrapped in React cache() so multiple calls within one SSR render tree share
+ * a single Firestore read instead of N reads.
+ */
+export const getSessionUserRole = cache(async function getSessionUserRole() {
   try {
     const sessionCookie = (await cookies()).get("session")?.value;
 
@@ -21,4 +27,4 @@ export async function getSessionUserRole() {
   } catch {
     return { uid: null, isAdmin: false };
   }
-}
+});

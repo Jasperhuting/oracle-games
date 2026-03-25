@@ -6,26 +6,9 @@ import { PlayerTeamsContextType, RankingsProviderProps } from '@/lib/types/conte
 import { PlayerTeam } from '@/lib/types';
 import { getCacheSnapshot, saveToCache, clearOldVersions, removeCacheEntriesByPrefix } from '@/lib/utils/indexedDBCache';
 import { getCacheVersionAsync } from '@/lib/utils/cacheVersion';
+import { getLocalDateCacheKey, isSameLocalDay } from '@/lib/utils/localDateCache';
 
 const PlayerTeamsContext = createContext<PlayerTeamsContextType | undefined>(undefined);
-
-function getLocalDateCacheKey(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function isSameLocalDay(timestamp: number): boolean {
-  const cachedDate = new Date(timestamp);
-  const now = new Date();
-  return (
-    cachedDate.getFullYear() === now.getFullYear() &&
-    cachedDate.getMonth() === now.getMonth() &&
-    cachedDate.getDate() === now.getDate()
-  );
-}
 
 export function PlayerTeamsProvider({
   children,

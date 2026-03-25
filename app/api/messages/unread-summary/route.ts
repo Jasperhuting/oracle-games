@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import { getSessionUserRole } from '@/lib/auth/session-user';
 
 type UnreadSummaryResponse = {
   count: number;
@@ -18,6 +19,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<UnreadSumm
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Verify session — only the authenticated user may fetch their own unread count
+    const { uid } = await getSessionUserRole();
+    if (!uid || uid !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const baseQuery = adminDb
