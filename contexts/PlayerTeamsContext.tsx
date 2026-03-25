@@ -4,9 +4,28 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import { usePathname } from 'next/navigation';
 import { PlayerTeamsContextType, RankingsProviderProps } from '@/lib/types/context';
 import { PlayerTeam } from '@/lib/types';
+import { getCacheSnapshot, saveToCache, clearOldVersions, removeCacheEntriesByPrefix } from '@/lib/utils/indexedDBCache';
+import { getCacheVersionAsync } from '@/lib/utils/cacheVersion';
 
 const PlayerTeamsContext = createContext<PlayerTeamsContextType | undefined>(undefined);
 
+function getLocalDateCacheKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isSameLocalDay(timestamp: number): boolean {
+  const cachedDate = new Date(timestamp);
+  const now = new Date();
+  return (
+    cachedDate.getFullYear() === now.getFullYear() &&
+    cachedDate.getMonth() === now.getMonth() &&
+    cachedDate.getDate() === now.getDate()
+  );
+}
 
 export function PlayerTeamsProvider({
   children,
@@ -20,22 +39,42 @@ export function PlayerTeamsProvider({
   const [loading, setLoading] = useState(autoLoad && !isF1Page);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRankings = useCallback(async () => {
+  const fetchRankings = useCallback(async (forceRefresh = false) => {
     if (typeof window === 'undefined') return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // Fetch fresh data
-      console.log('[PlayerTeamsContext] Fetching fresh player teams data');
+      const cacheVersion = await getCacheVersionAsync();
+      const dayKey = getLocalDateCacheKey();
+      const cachePrefix = 'playerTeams_';
+      const cacheKey = `${cachePrefix}${dayKey}`;
+
+      const cached = !forceRefresh
+        ? await getCacheSnapshot<{ riders: PlayerTeam[]; uniqueRiders: PlayerTeam[] }>(cacheKey, cacheVersion)
+        : null;
+      if (cached && isSameLocalDay(cached.timestamp)) {
+        console.log(`[PlayerTeamsContext] Using cached player teams data (${cached.data.riders.length} riders, ${dayKey})`);
+        setRiders(cached.data.riders);
+        setUniqueRiders(cached.data.uniqueRiders);
+        setLoading(false);
+        return;
+      }
+
+      console.log(`[PlayerTeamsContext] Fetching fresh player teams data for ${dayKey}`);
       let allRiders: PlayerTeam[] = [];
-      let offset = 0;
+      let nextCursor: string | null = null;
       const limit = 2000;
       let hasMore = true;
 
       while (hasMore) {
-        const response = await fetch(`/api/getPlayerTeams?limit=${limit}&offset=${offset}`);
+        const params = new URLSearchParams({ limit: String(limit) });
+        if (nextCursor) {
+          params.set('cursor', nextCursor);
+        }
+
+        const response = await fetch(`/api/getPlayerTeams?${params.toString()}`);
 
         if (!response.ok) {
           throw new Error('Failed to load player teams');
@@ -44,8 +83,8 @@ export function PlayerTeamsProvider({
         const data = await response.json();
         allRiders = allRiders.concat(data.riders || []);
 
-        hasMore = data.riders.length === limit;
-        offset += limit;
+        nextCursor = data.pagination?.nextCursor ?? null;
+        hasMore = Boolean(nextCursor) && data.riders.length === limit;
       }
 
       // Filter duplicates based on riderNameId, keeping only the first occurrence
@@ -58,6 +97,10 @@ export function PlayerTeamsProvider({
       
       const uniqueRiders = Array.from(uniqueRidersMap.values());
       console.log(`[PlayerTeamsContext] Fetched ${allRiders.length} riders from API, ${uniqueRiders.length} unique riders`);
+
+      await saveToCache(cacheKey, { riders: allRiders, uniqueRiders }, cacheVersion);
+      await clearOldVersions(cacheVersion);
+      await removeCacheEntriesByPrefix(cachePrefix, cacheKey);
 
       setRiders(allRiders);
       setUniqueRiders(uniqueRiders);

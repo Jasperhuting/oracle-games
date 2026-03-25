@@ -2,12 +2,11 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { ClientMessage } from '@/lib/types/games';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Mail, MailOpened, X, Trash, Send, Edit, AlertCircle } from 'tabler-icons-react';
-import { db } from '@/lib/firebase/client';
-import { collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { refreshUnreadInboxSummary } from '@/hooks/useUnreadInboxSummary';
 
 type TabType = 'inbox' | 'outbox' | 'compose';
 
@@ -36,6 +35,46 @@ export default function InboxComponent() {
   const [sendError, setSendError] = useState('');
 
   const { t } = useTranslation();
+
+  const fetchMessages = useCallback(async (targetUserId: string) => {
+    setLoading(true);
+
+    try {
+      const [inboxResponse, outboxResponse] = await Promise.all([
+        fetch(`/api/messages?userId=${encodeURIComponent(targetUserId)}&type=inbox`, {
+          cache: 'no-store',
+        }),
+        fetch(`/api/messages?userId=${encodeURIComponent(targetUserId)}&type=outbox`, {
+          cache: 'no-store',
+        }),
+      ]);
+
+      if (!inboxResponse.ok || !outboxResponse.ok) {
+        throw new Error('Failed to load messages');
+      }
+
+      const [inboxData, outboxData] = await Promise.all([
+        inboxResponse.json(),
+        outboxResponse.json(),
+      ]);
+
+      const nextInboxMessages = (inboxData.messages ?? []).filter(
+        (msg: ClientMessage) => !msg.deletedAt && !msg.deletedByRecipient
+      );
+      const nextOutboxMessages = (outboxData.messages ?? []).filter(
+        (msg: ClientMessage) => !msg.deletedAt && !msg.deletedBySender
+      );
+
+      setInboxMessages(nextInboxMessages);
+      setOutboxMessages(nextOutboxMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setInboxMessages([]);
+      setOutboxMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const checkBannerCookie = () => {
@@ -70,96 +109,8 @@ export default function InboxComponent() {
       setLoading(false);
       return;
     }
-
-    const messagesRef = collection(db, 'messages');
-
-    // Set up real-time listener for inbox messages (received)
-    // Limit to 50 most recent messages to reduce Firestore reads
-    const inboxQuery = query(
-      messagesRef,
-      where('recipientId', '==', user.uid),
-      orderBy('sentAt', 'desc'),
-      limit(50)
-    );
-
-    const unsubscribeInbox = onSnapshot(
-      inboxQuery,
-      (snapshot) => {
-        // Filter out messages deleted by recipient
-        const messagesData: ClientMessage[] = snapshot.docs
-          .filter(doc => !doc.data().deletedAt && !doc.data().deletedByRecipient)
-          .map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            type: data.type,
-            senderId: data.senderId,
-            senderName: data.senderName,
-            recipientId: data.recipientId,
-            recipientName: data.recipientName,
-            subject: data.subject,
-            message: data.message,
-            sentAt: data.sentAt?.toDate().toISOString(),
-            read: data.read,
-            readAt: data.readAt?.toDate().toISOString(),
-          };
-        });
-        // Already sorted by Firestore query (sentAt desc)
-        setInboxMessages(messagesData);
-        setLoading(false);
-      },
-      (error) => {
-        console.log('Inbox initializing... (indexes building)');
-        setInboxMessages([]);
-        setLoading(false);
-      }
-    );
-
-    // Set up real-time listener for outbox messages (sent)
-    // Limit to 50 most recent messages to reduce Firestore reads
-    const outboxQuery = query(
-      messagesRef,
-      where('senderId', '==', user.uid),
-      orderBy('sentAt', 'desc'),
-      limit(50)
-    );
-
-    const unsubscribeOutbox = onSnapshot(
-      outboxQuery,
-      (snapshot) => {
-        // Filter out messages deleted by sender
-        const messagesData: ClientMessage[] = snapshot.docs
-          .filter(doc => !doc.data().deletedAt && !doc.data().deletedBySender)
-          .map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            type: data.type,
-            senderId: data.senderId,
-            senderName: data.senderName,
-            recipientId: data.recipientId,
-            recipientName: data.recipientName,
-            subject: data.subject,
-            message: data.message,
-            sentAt: data.sentAt?.toDate().toISOString(),
-            read: data.read,
-            readAt: data.readAt?.toDate().toISOString(),
-          };
-        });
-        // Already sorted by Firestore query (sentAt desc)
-        setOutboxMessages(messagesData);
-      },
-      (error) => {
-        console.log('Outbox initializing... (indexes building)');
-        setOutboxMessages([]);
-      }
-    );
-
-    return () => {
-      unsubscribeInbox();
-      unsubscribeOutbox();
-    };
-  }, [user]);
+    void fetchMessages(user.uid);
+  }, [fetchMessages, user]);
 
   // Fetch users for compose tab
   useEffect(() => {
@@ -240,6 +191,8 @@ export default function InboxComponent() {
       setSelectedRecipient('');
       setSubject('');
       setMessage('');
+      await fetchMessages(user.uid);
+      refreshUnreadInboxSummary();
       toast.success('Bericht succesvol verzonden!');
       setActiveTab('outbox');
     } catch (error) {
@@ -261,6 +214,8 @@ export default function InboxComponent() {
         },
         body: JSON.stringify({ userId: user.uid }),
       });
+      await fetchMessages(user.uid);
+      refreshUnreadInboxSummary();
     } catch (error) {
       console.error('Error marking message as read:', error);
     }
@@ -294,6 +249,8 @@ export default function InboxComponent() {
       });
 
       if (response.ok) {
+        await fetchMessages(user.uid);
+        refreshUnreadInboxSummary();
         // Close modal if the deleted message was selected
         if (selectedMessage?.id === messageId) {
           setSelectedMessage(null);

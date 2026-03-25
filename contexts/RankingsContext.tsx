@@ -1,16 +1,30 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Rider } from '@/lib/types/rider';
 import { RankingsContextType, RankingsProviderProps } from '@/lib/types/context';
-import { getFromCache, saveToCache, clearOldVersions } from '@/lib/utils/indexedDBCache';
-import { getCacheVersionAsync, primeCachedVersion } from '@/lib/utils/cacheVersion';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { getCacheSnapshot, saveToCache, clearOldVersions, removeCacheEntriesByPrefix } from '@/lib/utils/indexedDBCache';
+import { getCacheVersionAsync } from '@/lib/utils/cacheVersion';
 
 const RankingsContext = createContext<RankingsContextType | undefined>(undefined);
 
-const RANKINGS_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours (daily scrape)
+function getLocalDateCacheKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isSameLocalDay(timestamp: number): boolean {
+  const cachedDate = new Date(timestamp);
+  const now = new Date();
+  return (
+    cachedDate.getFullYear() === now.getFullYear() &&
+    cachedDate.getMonth() === now.getMonth() &&
+    cachedDate.getDate() === now.getDate()
+  );
+}
 
 export function RankingsProvider({
   children,
@@ -19,7 +33,6 @@ export function RankingsProvider({
   const [riders, setRiders] = useState<Rider[]>([]);
   const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
-  const lastKnownVersionRef = useRef<number | null>(null);
 
   const fetchRankings = useCallback(async (forceRefresh = false) => {
     if (typeof window === 'undefined') return;
@@ -28,41 +41,35 @@ export function RankingsProvider({
     setError(null);
 
     try {
-      // Get current cache version dynamically from Firebase
       const cacheVersion = await getCacheVersionAsync();
-      
-      // Check if version changed - if so, clear old cache entries
-      if (lastKnownVersionRef.current !== null && lastKnownVersionRef.current !== cacheVersion) {
-        console.log(`[RankingsContext] Cache version changed from ${lastKnownVersionRef.current} to ${cacheVersion}, clearing old cache...`);
-        await clearOldVersions(cacheVersion);
-        forceRefresh = true; // Force fresh fetch since version changed
-      }
-      
-      // Store the version we're using
-      lastKnownVersionRef.current = cacheVersion;
+      const dayKey = getLocalDateCacheKey();
+      const cachePrefix = 'rankings_2026_';
+      const cacheKey = `${cachePrefix}${dayKey}`;
 
-      // Try to get from cache first (skip if forceRefresh)
-      const cacheKey = `rankings_2026`;
       if (!forceRefresh) {
-        const cached = await getFromCache<Rider[]>(cacheKey, cacheVersion, RANKINGS_CACHE_MAX_AGE);
+        const cached = await getCacheSnapshot<Rider[]>(cacheKey, cacheVersion);
 
-        if (cached && cached.length > 0) {
-          console.log(`[RankingsContext] Using cached rankings data (${cached.length} riders, version ${cacheVersion})`);
-          setRiders(cached);
+        if (cached && cached.data.length > 0 && isSameLocalDay(cached.timestamp)) {
+          console.log(`[RankingsContext] Using cached rankings data (${cached.data.length} riders, ${dayKey})`);
+          setRiders(cached.data);
           setLoading(false);
           return;
         }
       }
 
-      // Fetch fresh data if cache miss
-      console.log(`[RankingsContext] Fetching fresh rankings data (cache version ${cacheVersion})`);
+      console.log(`[RankingsContext] Fetching fresh rankings data for ${dayKey}`);
       let allRiders: Rider[] = [];
-      let offset = 0;
+      let nextCursor: string | null = null;
       const limit = 500;
       let hasMore = true;
 
       while (hasMore) {
-        const response = await fetch(`/api/getRankings?limit=${limit}&offset=${offset}`);
+        const params = new URLSearchParams({ limit: String(limit) });
+        if (nextCursor) {
+          params.set('cursor', nextCursor);
+        }
+
+        const response = await fetch(`/api/getRankings?${params.toString()}`);
 
         if (!response.ok) {
           throw new Error('Failed to load rankings');
@@ -71,15 +78,15 @@ export function RankingsProvider({
         const data = await response.json();
         allRiders = allRiders.concat(data.riders || []);
 
-        hasMore = data.riders.length === limit;
-        offset += limit;
+        nextCursor = data.pagination?.nextCursor ?? null;
+        hasMore = Boolean(nextCursor) && data.riders.length === limit;
       }
 
       console.log(`[RankingsContext] Fetched ${allRiders.length} riders from API`);
 
-      // Store in IndexedDB for future use
       await saveToCache(cacheKey, allRiders, cacheVersion);
       await clearOldVersions(cacheVersion);
+      await removeCacheEntriesByPrefix(cachePrefix, cacheKey);
 
       setRiders(allRiders);
     } catch (err) {
@@ -98,63 +105,6 @@ export function RankingsProvider({
     }
   }, [autoLoad, fetchRankings]);
 
-  // Poll cache version to avoid Firestore watch-stream instability in dev.
-  useEffect(() => {
-    let isActive = true;
-    let permissionDenied = false;
-    const cacheRef = doc(db, 'config', 'cache');
-
-    const checkCacheVersion = async () => {
-      try {
-        if (permissionDenied || !isActive) return;
-        const snapshot = await getDoc(cacheRef);
-        if (!isActive || !snapshot.exists()) return;
-
-        const version = snapshot.data()?.version ?? 1;
-
-        const previousVersion = lastKnownVersionRef.current;
-
-        // First check only initializes local tracking.
-        if (previousVersion === null) {
-          lastKnownVersionRef.current = version;
-          primeCachedVersion(version);
-          return;
-        }
-
-        if (version !== previousVersion) {
-          console.log(`[RankingsContext] Cache version changed from ${previousVersion} to ${version}, refetching rankings...`);
-          primeCachedVersion(version);
-          lastKnownVersionRef.current = version;
-          await clearOldVersions(version);
-          if (!isActive) return;
-          await fetchRankings(true);
-        }
-      } catch (error) {
-        if (
-          typeof error === 'object' &&
-          error !== null &&
-          'code' in error &&
-          error.code === 'permission-denied'
-        ) {
-          permissionDenied = true;
-          console.warn('[RankingsContext] No permission for config/cache; skipping cache-version polling.');
-          return;
-        }
-        console.error('[RankingsContext] Error checking cache version updates:', error);
-      }
-    };
-
-    void checkCacheVersion();
-    const pollInterval = setInterval(() => {
-      void checkCacheVersion();
-    }, 30000);
-
-    return () => {
-      isActive = false;
-      clearInterval(pollInterval);
-    };
-  }, [fetchRankings]);
-
   // Helper function to get a single rider by ID
   const getRiderById = useCallback((id: string): Rider | undefined => {
     return riders.find(r => r.id === id || r.nameID === id);
@@ -170,6 +120,7 @@ export function RankingsProvider({
     <RankingsContext.Provider
       value={{
         riders,
+        uniqueRiders: riders,
         loading,
         error,
         refetch: fetchRankings,

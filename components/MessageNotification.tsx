@@ -1,8 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { db } from '@/lib/firebase/client';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { useUnreadInboxSummary } from '@/hooks/useUnreadInboxSummary';
 import { useEffect, useRef, useState } from 'react';
 import { Mail, X } from 'tabler-icons-react';
 import { useRouter } from 'next/navigation';
@@ -18,17 +17,16 @@ export default function MessageNotification() {
   const { user } = useAuth();
   const userId = user?.uid;
   const router = useRouter();
+  const { latestMessage } = useUnreadInboxSummary(userId);
   const [notification, setNotification] = useState<Message | null>(null);
-  const isInitializedRef = useRef(false);
+  const initializedRef = useRef(false);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!userId) return;
-    let isActive = true;
     const storageKey = `seenMessageIds:${userId}`;
 
-    // Load seen message IDs once for this user session.
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
@@ -41,88 +39,45 @@ export default function MessageNotification() {
         seenMessageIdsRef.current = new Set();
       }
     }
+    initializedRef.current = false;
+  }, [userId]);
 
-    isInitializedRef.current = false;
+  useEffect(() => {
+    if (!userId || !latestMessage) return;
 
-    const messagesRef = collection(db, 'messages');
-    const q = query(
-      messagesRef,
-      where('recipientId', '==', userId),
-      where('read', '==', false),
-      limit(20)
-    );
+    const storageKey = `seenMessageIds:${userId}`;
 
-    const pollUnreadMessages = async () => {
-      try {
-        const snapshot = await getDocs(q);
-        if (!isActive) return;
+    if (!initializedRef.current) {
+      seenMessageIdsRef.current.add(latestMessage.id);
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(seenMessageIdsRef.current)));
+      initializedRef.current = true;
+      return;
+    }
 
-        const unreadDocs = snapshot.docs.filter((doc) => {
-          const data = doc.data();
-          return data.read === false && !data.deletedAt && !data.deletedByRecipient;
-        });
+    if (!seenMessageIdsRef.current.has(latestMessage.id)) {
+      const isOnInboxPage = window.location.pathname === '/inbox';
 
-        // On initial load, mark all current messages as seen.
-        if (!isInitializedRef.current) {
-          seenMessageIdsRef.current = new Set(unreadDocs.map((doc) => doc.id));
-          localStorage.setItem(storageKey, JSON.stringify(Array.from(seenMessageIdsRef.current)));
-          isInitializedRef.current = true;
-          return;
+      if (!isOnInboxPage) {
+        setNotification(latestMessage);
+
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
         }
-
-        const unseenDocs = unreadDocs
-          .filter((doc) => !seenMessageIdsRef.current.has(doc.id))
-          .sort((a, b) => {
-            const aDate = a.data().sentAt?.toDate?.()?.getTime?.() ?? 0;
-            const bDate = b.data().sentAt?.toDate?.()?.getTime?.() ?? 0;
-            return bDate - aDate;
-          });
-
-        if (unseenDocs.length > 0) {
-          const nextMessage = unseenDocs[0];
-          const data = nextMessage.data();
-          const isOnInboxPage = window.location.pathname === '/inbox';
-
-          if (!isOnInboxPage) {
-            setNotification({
-              id: nextMessage.id,
-              subject: data.subject,
-              senderName: data.senderName,
-              sentAt: data.sentAt?.toDate?.()?.toISOString?.(),
-            });
-
-            if (hideTimeoutRef.current) {
-              clearTimeout(hideTimeoutRef.current);
-            }
-            hideTimeoutRef.current = setTimeout(() => {
-              setNotification(null);
-            }, 5000);
-          }
-
-          unseenDocs.forEach((doc) => {
-            seenMessageIdsRef.current.add(doc.id);
-          });
-          localStorage.setItem(storageKey, JSON.stringify(Array.from(seenMessageIdsRef.current)));
-        }
-      } catch (error) {
-        console.error('Error listening to unread messages:', error);
-        // Silently fail - don't show notification if there's an error
+        hideTimeoutRef.current = setTimeout(() => {
+          setNotification(null);
+        }, 5000);
       }
-    };
 
-    void pollUnreadMessages();
-    const pollInterval = setInterval(() => {
-      void pollUnreadMessages();
-    }, 15000);
+      seenMessageIdsRef.current.add(latestMessage.id);
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(seenMessageIdsRef.current)));
+    }
 
     return () => {
-      isActive = false;
-      clearInterval(pollInterval);
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
       }
     };
-  }, [userId]);
+  }, [latestMessage, userId]);
 
   const handleClick = () => {
     router.push('/inbox');

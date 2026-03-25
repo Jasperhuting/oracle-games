@@ -75,6 +75,7 @@ export interface PaginationInfo {
   limit: number;
   count: number;
   totalCount: number | null;
+  nextCursor?: string | null;
 }
 
 // ============================================================================

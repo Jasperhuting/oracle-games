@@ -14,6 +14,12 @@ interface CacheEntry<T> {
   version: number;
 }
 
+export interface CacheSnapshot<T> {
+  data: T;
+  timestamp: number;
+  version: number;
+}
+
 /**
  * Initialize IndexedDB database
  */
@@ -118,6 +124,51 @@ export async function getFromCache<T>(
 }
 
 /**
+ * Get cached data together with metadata.
+ */
+export async function getCacheSnapshot<T>(
+  key: string,
+  currentVersion: number
+): Promise<CacheSnapshot<T> | null> {
+  try {
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.get(key);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const entry = request.result as CacheEntry<T> | undefined;
+
+        if (!entry) {
+          resolve(null);
+          return;
+        }
+
+        if (entry.version !== currentVersion) {
+          console.log(`Cache version mismatch for ${key}. Expected ${currentVersion}, got ${entry.version}`);
+          resolve(null);
+          return;
+        }
+
+        resolve({
+          data: entry.data,
+          timestamp: entry.timestamp,
+          version: entry.version,
+        });
+      };
+
+      transaction.oncomplete = () => db.close();
+    });
+  } catch (error) {
+    console.error('Error reading cache snapshot from IndexedDB:', error);
+    return null;
+  }
+}
+
+/**
  * Save data to IndexedDB cache
  */
 export async function saveToCache<T>(key: string, data: T, version: number): Promise<boolean> {
@@ -173,6 +224,44 @@ export async function removeFromCache(key: string): Promise<boolean> {
     });
   } catch (error) {
     console.error('Error removing from IndexedDB cache:', error);
+    return false;
+  }
+}
+
+/**
+ * Remove cache entries by key prefix, optionally keeping one key.
+ */
+export async function removeCacheEntriesByPrefix(prefix: string, keepKey?: string): Promise<boolean> {
+  try {
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const objectStore = transaction.objectStore(STORE_NAME);
+      const request = objectStore.openCursor();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result as IDBCursorWithValue | null;
+        if (!cursor) {
+          return;
+        }
+
+        const entry = cursor.value as CacheEntry<unknown>;
+        if (entry.key.startsWith(prefix) && entry.key !== keepKey) {
+          cursor.delete();
+        }
+        cursor.continue();
+      };
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve(true);
+      };
+      transaction.onerror = () => reject(transaction.error);
+    });
+  } catch (error) {
+    console.error('Error removing IndexedDB cache entries by prefix:', error);
     return false;
   }
 }

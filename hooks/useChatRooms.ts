@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
 import type { ChatRoom } from '@/lib/types/chat';
 
 const CHAT_SEEN_EVENT = 'chat-seen-updated';
+const POLL_INTERVAL_MS = 60000;
 
 export interface UseChatRoomsResult {
   rooms: ChatRoom[];
@@ -32,7 +31,6 @@ export function computeUnreadCounts(rooms: ChatRoom[]): Map<string, number> {
 /** Call this when a user opens a room to mark all current messages as seen. */
 export function markRoomAsSeen(roomId: string, messageCount: number): void {
   localStorage.setItem(`chat_unread_${roomId}`, String(messageCount));
-  // Notify all useChatRooms instances to recompute unread counts immediately
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(CHAT_SEEN_EVENT));
   }
@@ -43,38 +41,50 @@ export function useChatRooms(): UseChatRoomsResult {
   const [unreadByRoom, setUnreadByRoom] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  // Keep a ref to current rooms so the event listener always has fresh data
   const roomsRef = useRef<ChatRoom[]>([]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'chat_rooms'),
-      where('status', '==', 'open')
-    );
+    let isActive = true;
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetched = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as ChatRoom)
-        );
+    const loadRooms = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/chat/rooms?skipRecount=true', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('Failed to load chat rooms');
+        }
+
+        const data = await response.json();
+        if (!isActive) return;
+
+        const fetched = (data.rooms ?? []).filter((room: ChatRoom) => room.status === 'open') as ChatRoom[];
         roomsRef.current = fetched;
-        const counts = computeUnreadCounts(fetched);
         setRooms(fetched);
-        setUnreadByRoom(counts);
+        setUnreadByRoom(computeUnreadCounts(fetched));
         setLoading(false);
-      },
-      (err) => {
-        console.error('[useChatRooms] Firestore error:', err);
+        setError(null);
+      } catch (err) {
+        if (!isActive) return;
+        console.error('[useChatRooms] Error loading rooms:', err);
         setError(err instanceof Error ? err : new Error(String(err)));
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    void loadRooms();
+    const intervalId = window.setInterval(() => {
+      void loadRooms();
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
   }, []);
 
-  // Recompute unread counts immediately when markRoomAsSeen is called anywhere
   useEffect(() => {
     const handleSeen = () => {
       setUnreadByRoom(computeUnreadCounts(roomsRef.current));

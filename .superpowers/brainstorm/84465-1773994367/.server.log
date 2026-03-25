@@ -1,5 +1,0 @@
-{"type":"server-started","port":57239,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:57239","screen_dir":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/84465-1773994367"}
-{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/84465-1773994367/header-layouts.html"}
-{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/84465-1773994367/header-left-right.html"}
-{"source":"user-event","type":"click","text":"A\n      Met \"Oracle Games\" tekst naast logo\n    \n    \n      \n        OG\n        Oracle Games\n      \n      \n      \n        Nieuws\n        Spellen\n        Forum\n        Chat\n        Admin\n      \n      \n      \n        🚴 Cycling ▼\n         Jasper Huting ▼\n      \n    \n    Merknaam zichtbaar naast het logo, duidelijke scheiding tussen navigatie en acties.","choice":"a","id":null,"timestamp":1773994588081}
-{"type":"server-stopped","reason":"idle timeout"}

@@ -1,8 +1,0 @@
-{"type":"server-started","port":51238,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:51238","screen_dir":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/63632-1773834579"}
-{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/63632-1773834579/chat-overlay-approaches.html"}
-{"source":"user-event","type":"click","text":"💬 Race Chat\n            ✕\n          \n          \n            \n            \n          \n          \n            \n          \n          \n            \n            ▶\n          \n        \n        \n        \n          \n            💬\n          \n        \n      \n    \n    \n      A — Compact popup (WhatsApp-stijl)\n      Kleine chat-bubble rechtsonder. Klikken opent een vaste popup (~380×520px) boven de knop. App blijft zichtbaar op de achtergrond. Sluiten met ✕ of door buiten te klikken.","choice":"a","id":null,"timestamp":1773834679148}
-{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/63632-1773834579/chat-popup-detail.html"}
-{"source":"user-event","type":"click","text":"👍\n    \n      Ziet er goed uit, ga bouwen\n      Dit ontwerp klopt, implementeer het","choice":"good","id":null,"timestamp":1773834814845}
-{"source":"user-event","type":"click","text":"👍\n    \n      Ziet er goed uit, ga bouwen\n      Dit ontwerp klopt, implementeer het","choice":"good","id":null,"timestamp":1773834828891}
-{"source":"user-event","type":"click","text":"👍\n    \n      Ziet er goed uit, ga bouwen\n      Dit ontwerp klopt, implementeer het","choice":"good","id":null,"timestamp":1773834829057}
-{"type":"server-stopped","reason":"idle timeout"}

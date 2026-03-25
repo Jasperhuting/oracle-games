@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase/client';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
 import Countdown from 'react-countdown';
 import { IconMessageCircle } from '@tabler/icons-react';
@@ -41,31 +39,36 @@ export function ActiveChatsCard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const roomsRef = collection(db, 'chat_rooms');
-    const q = query(
-      roomsRef,
-      where('status', '==', 'open'),
-      orderBy('createdAt', 'desc')
-    );
+    let isActive = true;
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as ChatRoomPreview[];
-        setRooms(data);
+    const loadRooms = async () => {
+      try {
+        const response = await fetch('/api/chat/rooms?skipRecount=true', {
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load chat rooms');
+        }
+
+        const data = await response.json();
+        if (!isActive) return;
+
+        const openRooms = (data.rooms ?? []).filter((room: ChatRoomPreview & { status?: string }) => room.status === 'open');
+        setRooms(openRooms);
         setLoading(false);
-      },
-      () => {
+      } catch {
+        if (!isActive) return;
         setRooms([]);
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    void loadRooms();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const getClosesAtDate = (closesAt: Timestamp | string): Date => {

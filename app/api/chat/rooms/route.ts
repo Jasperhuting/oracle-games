@@ -17,14 +17,17 @@ async function getVisibleMessageCount(roomId: string): Promise<number> {
 }
 
 // GET: List all chat rooms
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const skipRecount = request.nextUrl.searchParams.get('skipRecount') === 'true';
     const snapshot = await db.collection('chat_rooms').orderBy('createdAt', 'desc').get();
     const rooms = await Promise.all(snapshot.docs.map(async (doc) => {
       const data = doc.data();
-      const computedMessageCount = await getVisibleMessageCount(doc.id);
+      const computedMessageCount = skipRecount
+        ? data.messageCount || 0
+        : await getVisibleMessageCount(doc.id);
 
-      if ((data.messageCount || 0) !== computedMessageCount) {
+      if (!skipRecount && (data.messageCount || 0) !== computedMessageCount) {
         await db.collection('chat_rooms').doc(doc.id).update({
           messageCount: computedMessageCount,
         });
