@@ -174,7 +174,7 @@ export const Header = ({
         <header
             className="sticky w-[calc(100%-32px)] md:w-[calc(100%-64px)] z-40 h-[86px] px-4 left-4 right-4 md:left-8 md:right-8 rounded-md border backdrop-blur-md overflow-visible"
             style={{
-                top: `${bannerOffset + 32}px`,
+                top: `calc(${bannerOffset}px + var(--header-top))`,
                 background: "var(--platform-header-bg)",
                 borderColor: "var(--platform-header-border)",
                 boxShadow: "var(--platform-header-shadow)",

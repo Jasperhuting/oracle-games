@@ -87,6 +87,13 @@
   html {
     font-family: Inter, system-ui, sans-serif;
     scroll-behavior: smooth;
+    --header-top: 16px;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      --header-top: 32px;
+    }
   }
 
   body {
