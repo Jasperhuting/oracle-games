@@ -17,14 +17,21 @@ export const POST = userHandler('onboarding', async (ctx) => {
   // Validate firstName
   if (safeFirstName !== undefined) {
     if (safeFirstName.length > 50) {
-      throw new ApiError('firstName exceeds 50 characters', 400);
+      throw new ApiError('Voornaam mag maximaal 50 tekens bevatten', 400);
     }
   }
 
   // Validate lastName
   if (safeLastName !== undefined) {
     if (safeLastName.length > 50) {
-      throw new ApiError('lastName exceeds 50 characters', 400);
+      throw new ApiError('Achternaam mag maximaal 50 tekens bevatten', 400);
+    }
+  }
+
+  // Validate avatarUrl
+  if (safeAvatarUrl !== undefined) {
+    if (!safeAvatarUrl.startsWith('https://')) {
+      throw new ApiError('Ongeldige URL voor avatar', 400);
     }
   }
 
