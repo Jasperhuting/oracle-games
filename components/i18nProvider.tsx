@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import i18n from "i18next";  // Import i18n directly
 import { initI18n } from "@/lib/i18n/i18n";
-import { listenTranslations } from "@/lib/i18n/firestore";
+import { listenTranslations, getCachedTranslations } from "@/lib/i18n/firestore";
 
 export default function I18nProvider({ 
   children,
@@ -21,9 +21,11 @@ export default function I18nProvider({
 
     const initialize = async () => {
       try {
-        // Initialize quickly, then load translation payload in the background.
+        // Initialize with cached translations (from a previous visit) so the
+        // first render has content immediately, avoiding a missing-key flash.
         if (!i18n.isInitialized) {
-          await initI18n(locale, {});
+          const cached = getCachedTranslations(locale) ?? {};
+          await initI18n(locale, cached as Record<string, string>);
         } else if (i18n.language !== locale) {
           await i18n.changeLanguage(locale);
         }

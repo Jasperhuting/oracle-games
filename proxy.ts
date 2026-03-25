@@ -28,7 +28,7 @@ function isBareOrWwwOracleHost(host: string | null | undefined): boolean {
   );
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { nextUrl, headers } = request;
   const pathname = nextUrl.pathname;
 
