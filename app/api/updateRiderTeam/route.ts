@@ -2,7 +2,7 @@ import { getServerFirebase } from "@/lib/firebase/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { adminHandler, ApiError } from "@/lib/api/handler";
 
-export const POST = adminHandler('update-rider-team', async ({ request }) => {
+export const POST = adminHandler('update-rider-team', async ({ uid, request }) => {
   const { riderId, teamSlug, year } = await request.json();
 
   if (!riderId || !teamSlug || !year) {
@@ -21,6 +21,8 @@ export const POST = adminHandler('update-rider-team', async ({ request }) => {
   // Update rider's team reference
   await db.collection(`rankings_${year}`).doc(riderId).update({
     team: teamDoc.ref,
+    updatedBy: uid,
+    updatedAt: Timestamp.now(),
   });
 
   // Increment cache version to invalidate client caches
