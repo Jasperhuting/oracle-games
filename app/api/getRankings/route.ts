@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { RankingsResponse, ApiErrorResponse, Ranking } from "@/lib/types";
 import { FieldPath } from "firebase-admin/firestore";
+import { unstable_cache } from "next/cache";
+
+export const RANKINGS_CACHE_TAG = "rankings";
 
 type RankingsCursor = {
   rank: number;
@@ -10,25 +13,23 @@ type RankingsCursor = {
 };
 
 function getTeamPath(teamRef: unknown): string | null {
-  if (!teamRef || typeof teamRef !== 'object') return null;
-
-  if ('path' in teamRef && typeof teamRef.path === 'string') {
+  if (!teamRef || typeof teamRef !== "object") return null;
+  if ("path" in teamRef && typeof teamRef.path === "string") {
     return teamRef.path;
   }
-
   return null;
 }
 
 function encodeCursor(cursor: RankingsCursor): string {
-  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+  return Buffer.from(JSON.stringify(cursor)).toString("base64url");
 }
 
-function decodeCursor(rawCursor: string | null): RankingsCursor | null {
-  if (!rawCursor) return null;
-
+function decodeCursor(rawCursor: string): RankingsCursor | null {
   try {
-    const parsed = JSON.parse(Buffer.from(rawCursor, 'base64url').toString('utf8')) as Partial<RankingsCursor>;
-    if (typeof parsed.rank !== 'number' || typeof parsed.id !== 'string') {
+    const parsed = JSON.parse(
+      Buffer.from(rawCursor, "base64url").toString("utf8"),
+    ) as Partial<RankingsCursor>;
+    if (typeof parsed.rank !== "number" || typeof parsed.id !== "string") {
       return null;
     }
     return { rank: parsed.rank, id: parsed.id };
@@ -37,17 +38,35 @@ function decodeCursor(rawCursor: string | null): RankingsCursor | null {
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse<RankingsResponse | ApiErrorResponse>> {
-  const searchParams = request.nextUrl.searchParams;
-  const limit = parseInt(searchParams.get('limit') || '100');
-  const offset = parseInt(searchParams.get('offset') || '0');
-  const cursor = decodeCursor(searchParams.get('cursor'));
+type RankingsPageResult = {
+  riders: Ranking[];
+  pagination: {
+    offset: number;
+    limit: number;
+    count: number;
+    totalCount: number | null;
+    nextCursor: string | null;
+  };
+};
 
-  try {
+/**
+ * Firestore fetch wrapped in Next.js data cache.
+ * Cache is tagged with RANKINGS_CACHE_TAG so it can be invalidated immediately
+ * when an admin increments the cache version (revalidateTag in that route).
+ * The 24h revalidate is a safety backstop only.
+ */
+const fetchRankingsPage = unstable_cache(
+  async (
+    cursorStr: string | null,
+    limit: number,
+    offset: number,
+  ): Promise<RankingsPageResult> => {
     const db = getServerFirebase();
+    const cursor = cursorStr ? decodeCursor(cursorStr) : null;
 
-    let query = db.collection(`rankings_2026`)
-      .orderBy('rank')
+    let query = db
+      .collection("rankings_2026")
+      .orderBy("rank")
       .orderBy(FieldPath.documentId());
 
     if (cursor) {
@@ -59,10 +78,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
 
     const snapshot = await query.get();
 
-    // Get total count (only if offset is 0 to avoid extra reads)
-    let totalCount = null;
-    if (offset === 0) {
-      const countSnapshot = await db.collection(`rankings_2026`).count().get();
+    // Only fetch total count on the first page (no cursor, no offset)
+    let totalCount: number | null = null;
+    if (!cursorStr && offset === 0) {
+      const countSnapshot = await db.collection("rankings_2026").count().get();
       totalCount = countSnapshot.data().count;
     }
 
@@ -70,22 +89,27 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
       new Set(
         snapshot.docs
           .map((doc) => getTeamPath(doc.data().team))
-          .filter((path): path is string => Boolean(path))
-      )
+          .filter((path): path is string => Boolean(path)),
+      ),
     );
-    const teamSnapshots = teamPaths.length > 0
-      ? await db.getAll(...teamPaths.map((path) => db.doc(path)))
-      : [];
+    const teamSnapshots =
+      teamPaths.length > 0
+        ? await db.getAll(...teamPaths.map((path) => db.doc(path)))
+        : [];
     const teamsByPath = new Map<string, Record<string, unknown> | null>();
-
     teamSnapshots.forEach((teamDoc) => {
-      teamsByPath.set(teamDoc.ref.path, teamDoc.exists ? (teamDoc.data() as Record<string, unknown>) : null);
+      teamsByPath.set(
+        teamDoc.ref.path,
+        teamDoc.exists ? (teamDoc.data() as Record<string, unknown>) : null,
+      );
     });
 
     const riders: Ranking[] = snapshot.docs.map((doc) => {
       const data = doc.data();
       const teamPath = getTeamPath(data.team);
-      const teamData = (teamPath ? teamsByPath.get(teamPath) ?? null : null) as Ranking['team'];
+      const teamData = (
+        teamPath ? (teamsByPath.get(teamPath) ?? null) : null
+      ) as Ranking["team"];
 
       return {
         id: doc.id,
@@ -102,15 +126,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
     });
 
     // Only emit a cursor when we got a full page — a partial page means we're at the end.
-    const lastDoc = snapshot.docs.length === limit ? snapshot.docs[snapshot.docs.length - 1] : null;
+    const lastDoc =
+      snapshot.docs.length === limit
+        ? snapshot.docs[snapshot.docs.length - 1]
+        : null;
     const nextCursor = lastDoc
-      ? encodeCursor({
-          rank: lastDoc.get('rank'),
-          id: lastDoc.id,
-        })
+      ? encodeCursor({ rank: lastDoc.get("rank"), id: lastDoc.id })
       : null;
 
-    const response = NextResponse.json({
+    return {
       riders,
       pagination: {
         offset: cursor ? 0 : offset,
@@ -118,17 +142,31 @@ export async function GET(request: NextRequest): Promise<NextResponse<RankingsRe
         count: riders.length,
         totalCount,
         nextCursor,
-      }
-    });
+      },
+    };
+  },
+  ["rankings-page"],
+  { tags: [RANKINGS_CACHE_TAG], revalidate: 86400 },
+);
 
-    // Add HTTP caching headers
-    // Cache for 1 hour in the browser, revalidate in background (stale-while-revalidate)
-    // Note: For development, you may want to disable caching
-    response.headers.set('Cache-Control', 'no-store, max-age=0');
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<RankingsResponse | ApiErrorResponse>> {
+  const searchParams = request.nextUrl.searchParams;
+  const limit = parseInt(searchParams.get("limit") || "100");
+  const offset = parseInt(searchParams.get("offset") || "0");
+  const cursorStr = searchParams.get("cursor");
 
+  try {
+    const data = await fetchRankingsPage(cursorStr, limit, offset);
+    const response = NextResponse.json(data);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
     return response;
   } catch (error) {
-    console.error('Error fetching rankings:', error);
-    return NextResponse.json({ error: 'Failed to fetch rankings' }, { status: 500 });
+    console.error("Error fetching rankings:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch rankings" },
+      { status: 500 },
+    );
   }
 }

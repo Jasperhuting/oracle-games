@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { ApiErrorResponse, PlayerTeam, PlayerTeamResponse } from "@/lib/types";
 import { FieldPath } from "firebase-admin/firestore";
+import { unstable_cache } from "next/cache";
+
+export const PLAYER_TEAMS_CACHE_TAG = "player-teams";
 
 type PlayerTeamsCursor = {
   pointsScored: number;
@@ -10,25 +13,26 @@ type PlayerTeamsCursor = {
 };
 
 function getTeamPath(teamRef: unknown): string | null {
-  if (!teamRef || typeof teamRef !== 'object') return null;
-
-  if ('path' in teamRef && typeof teamRef.path === 'string') {
+  if (!teamRef || typeof teamRef !== "object") return null;
+  if ("path" in teamRef && typeof teamRef.path === "string") {
     return teamRef.path;
   }
-
   return null;
 }
 
 function encodeCursor(cursor: PlayerTeamsCursor): string {
-  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+  return Buffer.from(JSON.stringify(cursor)).toString("base64url");
 }
 
-function decodeCursor(rawCursor: string | null): PlayerTeamsCursor | null {
-  if (!rawCursor) return null;
-
+function decodeCursor(rawCursor: string): PlayerTeamsCursor | null {
   try {
-    const parsed = JSON.parse(Buffer.from(rawCursor, 'base64url').toString('utf8')) as Partial<PlayerTeamsCursor>;
-    if (typeof parsed.pointsScored !== 'number' || typeof parsed.id !== 'string') {
+    const parsed = JSON.parse(
+      Buffer.from(rawCursor, "base64url").toString("utf8"),
+    ) as Partial<PlayerTeamsCursor>;
+    if (
+      typeof parsed.pointsScored !== "number" ||
+      typeof parsed.id !== "string"
+    ) {
       return null;
     }
     return { pointsScored: parsed.pointsScored, id: parsed.id };
@@ -37,18 +41,37 @@ function decodeCursor(rawCursor: string | null): PlayerTeamsCursor | null {
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeamResponse | ApiErrorResponse>> {
-  const searchParams = request.nextUrl.searchParams;
-  const limit = parseInt(searchParams.get('limit') || '100');
-  const offset = parseInt(searchParams.get('offset') || '0');
-  const cursor = decodeCursor(searchParams.get('cursor'));
+type PlayerTeamsPageResult = {
+  uniqueRiders: PlayerTeam[];
+  riders: PlayerTeam[];
+  pagination: {
+    offset: number;
+    limit: number;
+    count: number;
+    totalCount: number | null;
+    nextCursor: string | null;
+  };
+};
 
-  try {
+/**
+ * Firestore fetch wrapped in Next.js data cache.
+ * Cache is tagged with PLAYER_TEAMS_CACHE_TAG so it can be invalidated immediately
+ * when an admin increments the cache version (revalidateTag in that route).
+ * The 24h revalidate is a safety backstop only.
+ */
+const fetchPlayerTeamsPage = unstable_cache(
+  async (
+    cursorStr: string | null,
+    limit: number,
+    offset: number,
+  ): Promise<PlayerTeamsPageResult> => {
     const db = getServerFirebase();
+    const cursor = cursorStr ? decodeCursor(cursorStr) : null;
 
-    let query = db.collection(`playerTeams`)
-      .orderBy('pointsScored', 'desc')
-      .orderBy(FieldPath.documentId(), 'desc');
+    let query = db
+      .collection("playerTeams")
+      .orderBy("pointsScored", "desc")
+      .orderBy(FieldPath.documentId(), "desc");
 
     if (cursor) {
       query = query.startAfter(cursor.pointsScored, cursor.id);
@@ -59,10 +82,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
 
     const snapshot = await query.get();
 
-    // Get total count (only if offset is 0 to avoid extra reads)
-    let totalCount = null;
-    if (offset === 0) {
-      const countSnapshot = await db.collection(`playerTeams`).count().get();
+    // Only fetch total count on the first page (no cursor, no offset)
+    let totalCount: number | null = null;
+    if (!cursorStr && offset === 0) {
+      const countSnapshot = await db.collection("playerTeams").count().get();
       totalCount = countSnapshot.data().count;
     }
 
@@ -70,22 +93,25 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
       new Set(
         snapshot.docs
           .map((doc) => getTeamPath(doc.data().team))
-          .filter((path): path is string => Boolean(path))
-      )
+          .filter((path): path is string => Boolean(path)),
+      ),
     );
-    const teamSnapshots = teamPaths.length > 0
-      ? await db.getAll(...teamPaths.map((path) => db.doc(path)))
-      : [];
+    const teamSnapshots =
+      teamPaths.length > 0
+        ? await db.getAll(...teamPaths.map((path) => db.doc(path)))
+        : [];
     const teamsByPath = new Map<string, Record<string, unknown> | null>();
-
     teamSnapshots.forEach((teamDoc) => {
-      teamsByPath.set(teamDoc.ref.path, teamDoc.exists ? (teamDoc.data() as Record<string, unknown>) : null);
+      teamsByPath.set(
+        teamDoc.ref.path,
+        teamDoc.exists ? (teamDoc.data() as Record<string, unknown>) : null,
+      );
     });
 
     const ridersWithTeamData: PlayerTeam[] = snapshot.docs.map((doc) => {
       const data = doc.data();
       const teamPath = getTeamPath(data.team);
-      const teamData = teamPath ? teamsByPath.get(teamPath) ?? null : null;
+      const teamData = teamPath ? (teamsByPath.get(teamPath) ?? null) : null;
       const riderPoints = data.pointsScored ?? 0;
 
       return {
@@ -109,25 +135,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
       };
     });
 
-    // Filter duplicates based on riderNameId, keeping only the first occurrence
+    // Deduplicate by riderNameId, keeping the first occurrence
     const uniqueRidersMap = new Map<string, PlayerTeam>();
-    ridersWithTeamData.forEach(rider => {
+    ridersWithTeamData.forEach((rider) => {
       if (rider.riderNameId && !uniqueRidersMap.has(rider.riderNameId)) {
         uniqueRidersMap.set(rider.riderNameId, rider);
       }
     });
-    
     const riders = Array.from(uniqueRidersMap.values());
+
     // Only emit a cursor when we got a full page — a partial page means we're at the end.
-    const lastDoc = snapshot.docs.length === limit ? snapshot.docs[snapshot.docs.length - 1] : null;
+    const lastDoc =
+      snapshot.docs.length === limit
+        ? snapshot.docs[snapshot.docs.length - 1]
+        : null;
     const nextCursor = lastDoc
       ? encodeCursor({
-          pointsScored: lastDoc.get('pointsScored') ?? 0,
+          pointsScored: lastDoc.get("pointsScored") ?? 0,
           id: lastDoc.id,
         })
       : null;
 
-    const response = NextResponse.json({
+    return {
       uniqueRiders: riders,
       riders: ridersWithTeamData,
       pagination: {
@@ -136,17 +165,31 @@ export async function GET(request: NextRequest): Promise<NextResponse<PlayerTeam
         count: riders.length,
         totalCount,
         nextCursor,
-      }
-    });
+      },
+    };
+  },
+  ["player-teams-page"],
+  { tags: [PLAYER_TEAMS_CACHE_TAG], revalidate: 86400 },
+);
 
-    // Add HTTP caching headers
-    // Cache for 1 hour in the browser, revalidate in background (stale-while-revalidate)
-    // Note: For development, you may want to disable caching
-    response.headers.set('Cache-Control', 'no-store, max-age=0');
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<PlayerTeamResponse | ApiErrorResponse>> {
+  const searchParams = request.nextUrl.searchParams;
+  const limit = parseInt(searchParams.get("limit") || "100");
+  const offset = parseInt(searchParams.get("offset") || "0");
+  const cursorStr = searchParams.get("cursor");
 
+  try {
+    const data = await fetchPlayerTeamsPage(cursorStr, limit, offset);
+    const response = NextResponse.json(data);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
     return response;
   } catch (error) {
-    console.error('Error fetching rankings:', error);
-    return NextResponse.json({ error: 'Failed to fetch rankings' }, { status: 500 });
+    console.error("Error fetching player teams:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch player teams" },
+      { status: 500 },
+    );
   }
 }
