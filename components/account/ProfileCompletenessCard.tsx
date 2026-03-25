@@ -2,41 +2,36 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProfileCompleteness, FIELD_LABELS, FieldKey } from '@/lib/profile/completeness';
+import { ProfileCompleteness, FIELD_LABELS, OPTIONAL_FIELDS, TOTAL_PROFILE_FIELDS } from '@/lib/profile/completeness';
 
 interface ProfileCompletenessCardProps {
   completeness: ProfileCompleteness;
+  uid: string;
 }
-
-const OPTIONAL_FIELDS: Exclude<FieldKey, 'playername' | 'email'>[] = [
-  'firstName',
-  'lastName',
-  'avatarUrl',
-  'dateOfBirth',
-  'preferredLanguage',
-];
 
 export function ProfileCompletenessCard({
   completeness,
+  uid,
 }: ProfileCompletenessCardProps) {
   const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
+  const storageKey = `profileCardDismissed_${uid}`;
 
   useEffect(() => {
-    if (sessionStorage.getItem('profileCardDismissed') === '1') {
+    if (sessionStorage.getItem(storageKey) === '1') {
       setDismissed(true);
     }
-  }, []);
+  }, [storageKey]);
 
   // Hide when complete or dismissed
   if (completeness.score === 100 || dismissed) {
     return null;
   }
 
-  const filledCount = 7 - completeness.missingFields.length;
+  const filledCount = TOTAL_PROFILE_FIELDS - completeness.missingFields.length;
 
   const handleDismiss = () => {
-    sessionStorage.setItem('profileCardDismissed', '1');
+    sessionStorage.setItem(storageKey, '1');
     setDismissed(true);
   };
 
@@ -78,7 +73,7 @@ export function ProfileCompletenessCard({
               marginTop: '1px',
             }}
           >
-            {filledCount} van 7 velden ingevuld
+            {filledCount} van {TOTAL_PROFILE_FIELDS} velden ingevuld
           </div>
         </div>
         <div

@@ -7,6 +7,9 @@ export type FieldKey =
   | 'dateOfBirth'
   | 'preferredLanguage';
 
+/** Total number of tracked profile fields (2 required + 5 optional). */
+export const TOTAL_PROFILE_FIELDS = 7;
+
 export interface ProfileCompleteness {
   score: number;          // integer 0–100
   missingFields: FieldKey[];
@@ -20,7 +23,7 @@ export const FIELD_LABELS: Record<Exclude<FieldKey, 'playername' | 'email'>, str
   preferredLanguage: 'Taalvoorkeur',
 };
 
-const OPTIONAL_FIELDS: Exclude<FieldKey, 'playername' | 'email'>[] = [
+export const OPTIONAL_FIELDS: Exclude<FieldKey, 'playername' | 'email'>[] = [
   'firstName',
   'lastName',
   'avatarUrl',
@@ -34,9 +37,9 @@ const OPTIONAL_FIELDS: Exclude<FieldKey, 'playername' | 'email'>[] = [
  */
 export function getProfileCompleteness(user: Record<string, unknown>): ProfileCompleteness {
   const missingFields = OPTIONAL_FIELDS.filter((key) => !user[key]);
-  const filledCount = 7 - missingFields.length; // playername + email always filled
+  const filledCount = TOTAL_PROFILE_FIELDS - missingFields.length; // playername + email always filled
   return {
-    score: Math.floor((filledCount / 7) * 100),
+    score: Math.floor((filledCount / TOTAL_PROFILE_FIELDS) * 100),
     missingFields,
   };
 }
