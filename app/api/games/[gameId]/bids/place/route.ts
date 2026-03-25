@@ -4,25 +4,10 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, BidStatus } from '@/lib/types';
 import { placeBidSchema, validateRequest } from '@/lib/validation';
 import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
+import { isProTourTeamClass, normalizeTeamKey } from '@/lib/bidding/teamUtils';
 
 // TEMPORARY: Toggle to disable bidding
 const BIDDING_DISABLED = false;
-
-const isProTourTeamClass = (teamClass?: string): boolean => {
-  if (!teamClass) return false;
-  const normalized = teamClass.trim().toLowerCase();
-  return (
-    normalized === 'prt' ||
-    normalized === 'proteam' ||
-    normalized === 'pro team' ||
-    normalized === 'protour' ||
-    normalized === 'pro tour' ||
-    normalized === 'pro'
-  );
-};
-
-const normalizeTeamKey = (name?: string): string =>
-  (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export async function POST(
   request: NextRequest,

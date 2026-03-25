@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { ScrollToTop } from "./ScrollToTop";
 import { BiddingCardView } from "./BiddingCardView";
 import { BiddingListView } from "./BiddingListView";
+import { isProTourTeamClass } from '@/lib/bidding/teamUtils';
 import { BiddingListViewWorldTour } from "./BiddingListViewWorldTour";
 import Countdown from 'react-countdown';
 import { BiddingListViewWorldTourSmall } from "./BiddingListViewWorldTour-small";
@@ -109,19 +110,6 @@ export const Bidding = ({
   const [standingsLoading, setStandingsLoading] = useState(false);
   const [standingsError, setStandingsError] = useState<string | null>(null);
   const [showPrizesModal, setShowPrizesModal] = useState(false);
-
-  const isProTourTeamClass = (teamClass?: string) => {
-    if (!teamClass) return false;
-    const normalized = teamClass.trim().toLowerCase();
-    return (
-      normalized === 'prt' ||
-      normalized === 'proteam' ||
-      normalized === 'pro team' ||
-      normalized === 'protour' ||
-      normalized === 'pro tour' ||
-      normalized === 'pro'
-    );
-  };
 
   // Sorting state for riders list
   type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank';

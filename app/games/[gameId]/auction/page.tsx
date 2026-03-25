@@ -22,6 +22,7 @@ import { AuctionFilters } from "@/components/AuctionFilters";
 import { qualifiesAsNeoProf, calculateAge, getBirthYear } from "@/lib/utils";
 import { Tabs } from "@/components/Tabs";
 import { getCachedAuctionData, setCachedAuctionData, invalidateAuctionCache } from "@/lib/utils/auctionCache";
+import { isProTourTeamClass, normalizeTeamKey } from '@/lib/bidding/teamUtils';
 import { AddRiderTab } from "@/components/AddRiderTab";
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
@@ -1021,22 +1022,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       return budget - wonBidsTotal - activeBidsTotal;
     }
   };
-
-  const isProTourTeamClass = (teamClass?: string) => {
-    if (!teamClass) return false;
-    const normalized = teamClass.trim().toLowerCase();
-    return (
-      normalized === 'prt' ||
-      normalized === 'proteam' ||
-      normalized === 'pro team' ||
-      normalized === 'protour' ||
-      normalized === 'pro tour' ||
-      normalized === 'pro'
-    );
-  };
-
-  const normalizeTeamKey = (name?: string) =>
-    (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
   // Full Grid: compute teams that already have a selected rider
   const teamsWithSelection = useMemo(() => {
