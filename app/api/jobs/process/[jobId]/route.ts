@@ -70,9 +70,9 @@ export async function POST(
   try {
     const { jobId } = await params;
 
-    // Verify internal call (optional - use API key for security)
+    // Verify internal call (required - API key must be present and correct)
     const apiKey = request.headers.get('x-internal-key');
-    if (apiKey && apiKey !== process.env.INTERNAL_API_KEY) {
+    if (!apiKey || apiKey !== process.env.INTERNAL_API_KEY) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

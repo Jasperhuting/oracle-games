@@ -1,38 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as db } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
+import { adminHandler, ApiError } from '@/lib/api/handler';
 
 export const dynamic = 'force-dynamic';
 
 // POST: Mute a user (admin only)
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ roomId: string }> }
-) {
-  try {
-    const { roomId } = await params;
-    const body = await request.json();
-    const { userId, mutedBy, durationMinutes, reason } = body;
+export const POST = adminHandler('mute-user', async ({ uid, request, params }) => {
+  const { roomId } = params;
+  const { userId, durationMinutes, reason } = await request.json();
 
-    if (!userId || !mutedBy || !durationMinutes) {
-      return NextResponse.json(
-        { error: 'Missing required fields: userId, mutedBy, durationMinutes' },
-        { status: 400 }
-      );
-    }
+  if (!userId || !durationMinutes) throw new ApiError('Missing required fields: userId, durationMinutes', 400);
 
-    const mutedUntil = new Date(Date.now() + durationMinutes * 60 * 1000);
+  const mutedUntil = new Date(Date.now() + durationMinutes * 60 * 1000);
 
-    await db.collection(`chat_rooms/${roomId}/muted_users`).add({
-      userId,
-      mutedBy,
-      mutedUntil: Timestamp.fromDate(mutedUntil),
-      reason: reason || null,
-    });
+  await db.collection(`chat_rooms/${roomId}/muted_users`).add({
+    userId,
+    mutedBy: uid,  // from verified token, not body
+    mutedUntil: Timestamp.fromDate(mutedUntil),
+    reason: reason || null,
+  });
 
-    return NextResponse.json({ success: true, mutedUntil: mutedUntil.toISOString() });
-  } catch (error) {
-    console.error('Error muting user:', error);
-    return NextResponse.json({ error: 'Failed to mute user' }, { status: 500 });
-  }
-}
+  return { success: true, mutedUntil: mutedUntil.toISOString() };
+});

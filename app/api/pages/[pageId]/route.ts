@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
+import { adminHandler, ApiError } from '@/lib/api/handler';
 
 export async function GET(
   request: NextRequest,
@@ -42,53 +43,18 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ pageId: string }> }
-) {
-  try {
-    const { pageId } = await params;
-    const body = await request.json();
-    const { content, title } = body;
+export const POST = adminHandler('save-page', async ({ uid, request, params }) => {
+  const { pageId } = params;
+  const { content, title } = await request.json();
 
-    if (!pageId) {
-      return NextResponse.json(
-        { error: 'Page ID is required' },
-        { status: 400 }
-      );
-    }
+  if (content === undefined) throw new ApiError('Content is required', 400);
 
-    if (content === undefined) {
-      return NextResponse.json(
-        { error: 'Content is required' },
-        { status: 400 }
-      );
-    }
+  await adminDb.collection('pages').doc(pageId).set({
+    title: title || pageId,
+    content,
+    updatedAt: Timestamp.now(),
+    updatedBy: uid,
+  }, { merge: true });
 
-    // TODO: Add authentication check here to ensure only admins can edit pages
-    // For now, we'll proceed without authentication
-
-    const pageData = {
-      title: title || pageId,
-      content,
-      updatedAt: Timestamp.now(),
-      // When you add authentication, add: updatedBy: userId
-    };
-
-    await adminDb.collection('pages').doc(pageId).set(pageData, { merge: true });
-
-    return NextResponse.json({
-      success: true,
-      id: pageId,
-      title: pageData.title,
-      content: pageData.content,
-      updatedAt: pageData.updatedAt.toDate().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error saving page:', error);
-    return NextResponse.json(
-      { error: 'Failed to save page' },
-      { status: 500 }
-    );
-  }
-}
+  return { success: true, id: pageId, title: title || pageId, content };
+});
