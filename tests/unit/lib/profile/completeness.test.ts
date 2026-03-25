@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getProfileCompleteness, FIELD_LABELS } from '@/lib/profile/completeness';
+import { getProfileCompleteness, FIELD_LABELS, buildMissingFieldsSentence } from '@/lib/profile/completeness';
 
 describe('getProfileCompleteness', () => {
   it('returns score 28 when only playername and email are set', () => {
@@ -38,5 +38,36 @@ describe('FIELD_LABELS', () => {
     for (const field of optionalFields) {
       expect(FIELD_LABELS[field as keyof typeof FIELD_LABELS]).toBeTruthy();
     }
+  });
+});
+
+describe('buildMissingFieldsSentence', () => {
+  it('returns empty string for 0 missing fields', () => {
+    expect(buildMissingFieldsSentence([])).toBe('');
+  });
+
+  it('formats correctly for 1 missing field', () => {
+    expect(buildMissingFieldsSentence(['avatarUrl'])).toBe(
+      'Voeg een **Avatar** toe om je profiel compleet te maken.'
+    );
+  });
+
+  it('formats correctly for 2 missing fields', () => {
+    expect(buildMissingFieldsSentence(['avatarUrl', 'dateOfBirth'])).toBe(
+      'Voeg een **Avatar** en **Geboortedatum** toe om je profiel compleet te maken.'
+    );
+  });
+
+  it('formats correctly for 3+ missing fields', () => {
+    expect(buildMissingFieldsSentence(['firstName', 'lastName', 'avatarUrl'])).toBe(
+      'Voeg **Voornaam**, **Achternaam** en **Avatar** toe om je profiel compleet te maken.'
+    );
+  });
+
+  it('filters out fields not in FIELD_LABELS', () => {
+    // When mixed valid and invalid fields are passed, only valid ones are used
+    expect(buildMissingFieldsSentence(['playername' as any, 'firstName'])).toBe(
+      'Voeg een **Voornaam** toe om je profiel compleet te maken.'
+    );
   });
 });
