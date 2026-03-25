@@ -270,7 +270,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
             const f1Game = (f1GamesData.games || []).find((game: { gameType?: string; status?: string; isTest?: boolean; name?: string }) =>
               game.gameType === 'f1-prediction' &&
-              ['registration', 'bidding', 'active'].includes(game.status || '') &&
+              game.status !== 'finished' &&
               !game.isTest &&
               !game.name?.toLowerCase().includes('test')
             );
