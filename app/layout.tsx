@@ -5,6 +5,7 @@ import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import AppShellProviders from "@/components/AppShellProviders";
 import { getPlatformConfigFromHost } from "@/lib/platform";
+import { getSessionUserRole } from "@/lib/auth/session-user";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default async function RootLayout({
 }>) {
   const host = (await headers()).get("host");
   const platform = getPlatformConfigFromHost(host);
+  const { isAdmin } = await getSessionUserRole();
 
   return (
     <html lang="nl" data-platform={platform.key}>
@@ -47,7 +49,7 @@ export default async function RootLayout({
         }}
       >
         <SpeedInsights />
-        <AppShellProviders>{children}</AppShellProviders>
+        <AppShellProviders initialIsAdmin={isAdmin}>{children}</AppShellProviders>
       </body>
     </html>
   );

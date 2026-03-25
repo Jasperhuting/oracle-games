@@ -17,7 +17,13 @@ import { TabFocusRefresher } from '@/components/TabFocusRefresher';
 import { registerTokenService } from '@/lib/auth/token-service';
 import { FirebaseTokenAdapter } from '@/lib/auth/adapters/firebase-token-adapter';
 
-export default function AppShellProviders({ children }: { children: React.ReactNode }) {
+export default function AppShellProviders({
+  children,
+  initialIsAdmin,
+}: {
+  children: React.ReactNode;
+  initialIsAdmin: boolean;
+}) {
   const pathname = usePathname();
   const isPublic = isPublicRoute(pathname);
 
@@ -38,7 +44,7 @@ export default function AppShellProviders({ children }: { children: React.ReactN
               {isPublic ? (
                 <main>{children}</main>
               ) : (
-                <LayoutShell>
+                <LayoutShell initialIsAdmin={initialIsAdmin}>
                   <main>{children}</main>
                 </LayoutShell>
               )}

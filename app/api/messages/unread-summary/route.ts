@@ -25,18 +25,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<UnreadSumm
       .where('recipientId', '==', userId)
       .where('read', '==', false);
 
-    const [countSnapshot, latestSnapshot] = await Promise.all([
-      baseQuery.count().get(),
-      baseQuery.orderBy('sentAt', 'desc').limit(5).get(),
-    ]);
-
-    const latestDoc = latestSnapshot.docs.find((doc) => {
+    const unreadSnapshot = await baseQuery.orderBy('sentAt', 'desc').get();
+    const visibleUnreadDocs = unreadSnapshot.docs.filter((doc) => {
       const data = doc.data();
       return !data.deletedAt && !data.deletedByRecipient;
     });
+    const latestDoc = visibleUnreadDocs[0];
 
     return NextResponse.json({
-      count: countSnapshot.data().count,
+      count: visibleUnreadDocs.length,
       latestMessage: latestDoc
         ? {
             id: latestDoc.id,

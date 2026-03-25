@@ -4,6 +4,7 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { auth } from "@/lib/firebase/client";
 import { clearSharedSession } from "@/lib/auth/client-session";
 import { signOut } from "firebase/auth";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -12,20 +13,28 @@ import { Logout, UserCircle, Mail } from "tabler-icons-react";
 import { MenuItem, MenuProvider, Menu } from "./ProfileMenu";
 import { Menubar } from "@ariakit/react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
 import { ProfileMenuButton } from "./header/ProfileMenuButton";
-import { MobileMenu } from "./header/MobileMenu";
 import { PlatformSelector } from "./header/PlatformSelector";
 import { buildPlatformUrl, getAllPlatformConfigs, getPlatformConfig, getPlatformConfigFromHost, type HeaderMenuKey, type PlatformKey } from "@/lib/platform";
 
-export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
+const MobileMenu = dynamic(() => import("./header/MobileMenu").then((mod) => mod.MobileMenu), {
+    ssr: false,
+});
+
+export const Header = ({
+    hideBetaBanner,
+    initialIsAdmin,
+}: {
+    hideBetaBanner: boolean;
+    initialIsAdmin: boolean;
+}) => {
     const pathname = usePathname();
     const router = useRouter();
     const { t } = useTranslation();
 
     const { user, loading, impersonationStatus } = useAuth();
     const { unreadCount } = useUnreadMessages(user?.uid);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
     const [mounted, setMounted] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentPlatform, setCurrentPlatform] = useState<PlatformKey>("cycling");
@@ -38,23 +47,13 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
     }, []);
 
     useEffect(() => {
-        const checkAdminStatus = async () => {
-            if (user) {
-                try {
-                    const response = await fetch(`/api/getUser?userId=${user.uid}`);
-                    if (response.ok) {
-                        const userData = await response.json();
-                        setIsAdmin(userData.userType === 'admin');
-                    }
-                } catch (error) {
-                    console.error('Error checking admin status:', error);
-                }
-            } else {
-                setIsAdmin(false);
-            }
-        };
-        checkAdminStatus();
-    }, [user]);
+        if (!user) {
+            setIsAdmin(false);
+            return;
+        }
+
+        setIsAdmin(initialIsAdmin);
+    }, [initialIsAdmin, user]);
 
     const handleLogout = async () => {
         try {
@@ -282,38 +281,46 @@ export const Header = ({ hideBetaBanner }: { hideBetaBanner: boolean }) => {
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     aria-label={isMenuOpen ? "Sluit menu" : "Open menu"}
                 >
-                    <motion.span
-                        animate={isMenuOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                    <span
                         className="w-6 h-0.5 block"
-                        style={{ background: "var(--platform-header-title)" }}
+                        style={{
+                            background: "var(--platform-header-title)",
+                            transform: isMenuOpen ? "translateY(8px) rotate(45deg)" : "translateY(0) rotate(0)",
+                            transition: "transform 0.3s ease",
+                        }}
                     />
-                    <motion.span
-                        animate={isMenuOpen ? { opacity: 0 } : { opacity: 1 }}
-                        transition={{ duration: 0.2 }}
+                    <span
                         className="w-6 h-0.5 block"
-                        style={{ background: "var(--platform-header-title)" }}
+                        style={{
+                            background: "var(--platform-header-title)",
+                            opacity: isMenuOpen ? 0 : 1,
+                            transition: "opacity 0.2s ease",
+                        }}
                     />
-                    <motion.span
-                        animate={isMenuOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                    <span
                         className="w-6 h-0.5 block"
-                        style={{ background: "var(--platform-header-title)" }}
+                        style={{
+                            background: "var(--platform-header-title)",
+                            transform: isMenuOpen ? "translateY(-8px) rotate(-45deg)" : "translateY(0) rotate(0)",
+                            transition: "transform 0.3s ease",
+                        }}
                     />
                 </button>
 
-                <MobileMenu
-                    isOpen={isMenuOpen}
-                    onClose={() => setIsMenuOpen(false)}
-                    menuItems={visibleMenuItems}
-                    profileItems={profileItems}
-                    user={user}
-                    pathname={pathname}
-                    topOffset={bannerOffset}
-                    currentPlatform={currentPlatform}
-                    platformOptions={platformOptions}
-                    onPlatformChange={handlePlatformChange}
-                />
+                {isMenuOpen ? (
+                    <MobileMenu
+                        isOpen={isMenuOpen}
+                        onClose={() => setIsMenuOpen(false)}
+                        menuItems={visibleMenuItems}
+                        profileItems={profileItems}
+                        user={user}
+                        pathname={pathname}
+                        topOffset={bannerOffset}
+                        currentPlatform={currentPlatform}
+                        platformOptions={platformOptions}
+                        onPlatformChange={handlePlatformChange}
+                    />
+                ) : null}
             </div>
         </header>
     );

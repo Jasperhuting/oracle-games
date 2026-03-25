@@ -36,6 +36,22 @@ export default function InboxComponent() {
 
   const { t } = useTranslation();
 
+  const syncBannerState = useCallback(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('hide-beta-banner') !== null) {
+      localStorage.removeItem('hide-beta-banner');
+    }
+
+    const cookies = document.cookie.split('; ');
+    const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
+
+    if (hideBannerCookie) {
+      const value = hideBannerCookie.split('=')[1];
+      setShowBanner(value !== 'true');
+    } else {
+      setShowBanner(true);
+    }
+  }, []);
+
   const fetchMessages = useCallback(async (targetUserId: string) => {
     setLoading(true);
 
@@ -77,32 +93,8 @@ export default function InboxComponent() {
   }, []);
 
   useEffect(() => {
-    const checkBannerCookie = () => {
-      // Clear any localStorage value (legacy)
-      if (typeof window !== 'undefined' && localStorage.getItem('hide-beta-banner') !== null) {
-        localStorage.removeItem('hide-beta-banner');
-      }
-  
-      const cookies = document.cookie.split('; ');
-      const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
-  
-      if (hideBannerCookie) {
-        // Extract the value after 'hide-beta-banner='
-        const value = hideBannerCookie.split('=')[1];
-        setShowBanner(value !== 'true');
-      } else {
-        setShowBanner(true);
-      }
-    };
-  
-    // Check initially
-    checkBannerCookie();
-  
-    // Poll for cookie changes (since cookies don't trigger events)
-    const interval = setInterval(checkBannerCookie, 100);
-  
-    return () => clearInterval(interval);
-  }, []);
+    syncBannerState();
+  }, [syncBannerState]);
 
   useEffect(() => {
     if (!user) {

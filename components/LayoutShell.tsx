@@ -17,7 +17,24 @@ import {
     setRestoreAdminSessionToken,
 } from "@/lib/auth/impersonation-storage";
 
-export function LayoutShell({ children }: { children: React.ReactNode }) {
+function readShowBannerFromCookie() {
+    const cookies = document.cookie.split('; ');
+    const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
+
+    if (!hideBannerCookie) {
+        return true;
+    }
+
+    return hideBannerCookie.split('=')[1] !== 'true';
+}
+
+export function LayoutShell({
+    children,
+    initialIsAdmin,
+}: {
+    children: React.ReactNode;
+    initialIsAdmin: boolean;
+}) {
     const pathname = usePathname();
     const hideHeader = pathname === "/login" || pathname === "/register" || pathname === "/reset-password";
     const { impersonationStatus } = useAuth();
@@ -30,26 +47,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
     // Check if user has previously hidden the banner
     useEffect(() => {
-        const checkBannerCookie = () => {
-            const cookies = document.cookie.split('; ');
-            const hideBannerCookie = cookies.find(cookie => cookie.startsWith('hide-beta-banner='));
-
-            if (hideBannerCookie) {
-                // Extract the value after 'hide-beta-banner='
-                const value = hideBannerCookie.split('=')[1];
-                setShowBanner(value !== 'true');
-            } else {
-                setShowBanner(true);
-            }
-        };
-
-        // Check initially
-        checkBannerCookie();
-
-        // Poll for cookie changes (since cookies don't trigger events)
-        const interval = setInterval(checkBannerCookie, 100);
-
-        return () => clearInterval(interval);
+        setShowBanner(readShowBannerFromCookie());
     }, []);
 
     useEffect(() => {
@@ -126,7 +124,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                 )}
             </div>
             
-            {!hideHeader && <Header hideBetaBanner={showBanner} />}
+            {!hideHeader && <Header hideBetaBanner={showBanner} initialIsAdmin={initialIsAdmin} />}
             {children}
 
             {/* Desktop: rotated sidebar buttons */}
