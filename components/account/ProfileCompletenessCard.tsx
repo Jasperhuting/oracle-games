@@ -8,7 +8,7 @@ interface ProfileCompletenessCardProps {
   completeness: ProfileCompleteness;
 }
 
-const OPTIONAL_FIELDS: FieldKey[] = [
+const OPTIONAL_FIELDS: Exclude<FieldKey, 'playername' | 'email'>[] = [
   'firstName',
   'lastName',
   'avatarUrl',
