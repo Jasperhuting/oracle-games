@@ -36,7 +36,7 @@ export default async function RootLayout({
   const { isAdmin } = await getSessionUserRole();
 
   return (
-    <html lang="nl" data-platform={platform.key}>
+    <html lang="nl" data-platform={platform.key} data-scroll-behavior="smooth">
       <head>
         <meta name="apple-mobile-web-app-title" content="Oracle games" />
       </head>
