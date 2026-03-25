@@ -72,6 +72,11 @@ async function resolveParams(context?: RouteContext): Promise<Record<string, str
  * Extracts UID from Bearer token or session cookie.
  * Mirrors the private getAuthenticatedUser() in lib/auth/requireAdmin.ts.
  * Throws ApiError(401) if neither is valid.
+ *
+ * Note: a present-but-invalid Bearer token falls through to the session cookie
+ * rather than failing immediately. This is intentional — it allows clients that
+ * send a stale token alongside a valid cookie to continue working seamlessly.
+ * adminHandler uses requireAdmin() directly which has stricter semantics.
  */
 async function getAuthenticatedUid(request: NextRequest): Promise<string> {
   const auth = getServerAuth();
@@ -107,6 +112,10 @@ async function getAuthenticatedUid(request: NextRequest): Promise<string> {
 /**
  * For routes that need no authentication.
  * Still wraps try/catch and converts thrown ApiError to correct HTTP status.
+ *
+ * Note: the handler fn must return a JSON-serialisable value. Routes that need
+ * to return a non-JSON response (stream, redirect, raw binary) should not use
+ * this factory — return a NextResponse directly instead.
  */
 export function publicHandler(
   label: string,
@@ -126,6 +135,8 @@ export function publicHandler(
 /**
  * For routes that require a logged-in user.
  * ctx.uid is the authenticated user's Firebase UID (from Bearer token or session cookie).
+ *
+ * Note: the handler fn must return a JSON-serialisable value. See publicHandler for details.
  */
 export function userHandler(
   label: string,
