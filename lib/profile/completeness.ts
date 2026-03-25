@@ -28,6 +28,10 @@ const OPTIONAL_FIELDS: Exclude<FieldKey, 'playername' | 'email'>[] = [
   'preferredLanguage',
 ];
 
+/**
+ * Compute profile completeness for a user document.
+ * @precondition `user.playername` and `user.email` are assumed to be non-empty (always filled at registration).
+ */
 export function getProfileCompleteness(user: Record<string, unknown>): ProfileCompleteness {
   const missingFields = OPTIONAL_FIELDS.filter((key) => !user[key]);
   const filledCount = 7 - missingFields.length; // playername + email always filled
