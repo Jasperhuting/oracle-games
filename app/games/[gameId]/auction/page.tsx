@@ -354,7 +354,9 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       }
 
       userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
-      allBidsData = userBids.filter((b: Bid) => b.status !== 'active'); // For non-admins, allBids is just their bids
+      if (!userIsAdmin) {
+        allBidsData = userBids.filter((b: Bid) => b.status !== 'active'); // For non-admins, allBids is just their bids
+      }
 
       const filteredUserBidsFromAPI = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');
 

@@ -178,4 +178,13 @@ describe("buildBiddableRiders", () => {
     const result = buildBiddableRiders(opts);
     expect(result[0].highestBidder).toBeUndefined();
   });
+
+  it("uses 1 as effectiveMinBid when rider has 0 points (auctioneer)", () => {
+    const opts: BuildRidersOptions = {
+      ...baseOpts,
+      riders: [makeRider({ nameID: "zero-points-rider", points: 0 })],
+    };
+    const result = buildBiddableRiders(opts);
+    expect(result[0].effectiveMinBid).toBe(1);
+  });
 });
