@@ -16,6 +16,7 @@ export default async function WelkomPage() {
     redirect('/login');
   }
 
+  // email_verified is optional in DecodedIdToken; undefined also fails intentionally
   if (decodedToken.email_verified !== true) {
     redirect('/login');
   }
