@@ -53,44 +53,34 @@
   ],
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 60,
-      "memory": 1024
+      "maxDuration": 60
     },
     "app/api/scraper/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/scrape/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/run-scraper/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/cron/scrape-todays-races/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/cron/process-scrape-jobs/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/jobs/process/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/admin/rescrape-year/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/cron/scrape-race-calendar/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     },
     "app/api/admin/sync-race-calendar/**/*.ts": {
-      "maxDuration": 300,
-      "memory": 3008
+      "maxDuration": 300
     }
   }
 }
