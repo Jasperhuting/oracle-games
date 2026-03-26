@@ -9,6 +9,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { f1Db } from '@/lib/firebase/client';
 import {
@@ -38,26 +39,27 @@ export function useF1Season(): SubscriptionQueryResult<F1Season | null> & { seas
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const docRef = doc(f1Db, F1_COLLECTIONS.SEASONS, String(CURRENT_SEASON));
     
-    const unsubscribe = onSnapshot(
-      docRef,
-      (snapshot) => {
+    getDoc(docRef)
+      .then((snapshot) => {
+        if (cancelled) return;
         if (snapshot.exists()) {
           setSeason(snapshot.data() as F1Season);
         } else {
           setSeason(null);
         }
         setLoading(false);
-      },
-      (err) => {
+      })
+      .catch((err) => {
+        if (cancelled) return;
         console.error('Error fetching season:', err);
         setError(err);
         setLoading(false);
-      }
-    );
+      });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, []);
 
   return { data: season, season, loading, error };
@@ -72,27 +74,28 @@ export function useF1Teams(season: number = CURRENT_SEASON): SubscriptionQueryRe
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const q = query(
       collection(f1Db, F1_COLLECTIONS.TEAMS),
       where('season', '==', season),
       where('isActive', '==', true)
     );
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
+    getDocs(q)
+      .then((snapshot) => {
+        if (cancelled) return;
         const teamsData = snapshot.docs.map(doc => doc.data() as F1Team);
         setTeams(teamsData);
         setLoading(false);
-      },
-      (err) => {
+      })
+      .catch((err) => {
+        if (cancelled) return;
         console.error('Error fetching teams:', err);
         setError(err);
         setLoading(false);
-      }
-    );
+      });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, [season]);
 
   return { data: teams, teams, loading, error };
@@ -107,27 +110,28 @@ export function useF1Drivers(season: number = CURRENT_SEASON): SubscriptionQuery
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const q = query(
       collection(f1Db, F1_COLLECTIONS.DRIVERS),
       where('season', '==', season),
       where('isActive', '==', true)
     );
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
+    getDocs(q)
+      .then((snapshot) => {
+        if (cancelled) return;
         const driversData = snapshot.docs.map(doc => doc.data() as F1Driver);
         setDrivers(driversData);
         setLoading(false);
-      },
-      (err) => {
+      })
+      .catch((err) => {
+        if (cancelled) return;
         console.error('Error fetching drivers:', err);
         setError(err);
         setLoading(false);
-      }
-    );
+      });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, [season]);
 
   return { data: drivers, drivers, loading, error };
@@ -176,28 +180,29 @@ export function useF1Races(season: number = CURRENT_SEASON): SubscriptionQueryRe
   useEffect(() => {
     // Query without orderBy to avoid needing composite index
     // Sort client-side instead
+    let cancelled = false;
     const q = query(
       collection(f1Db, F1_COLLECTIONS.RACES),
       where('season', '==', season)
     );
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
+    getDocs(q)
+      .then((snapshot) => {
+        if (cancelled) return;
         const racesData = snapshot.docs
           .map(doc => doc.data() as F1Race)
           .sort((a, b) => a.round - b.round);
         setRaces(racesData);
         setLoading(false);
-      },
-      (err) => {
+      })
+      .catch((err) => {
+        if (cancelled) return;
         console.error('Error fetching races:', err);
         setError(err);
         setLoading(false);
-      }
-    );
+      });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, [season]);
 
   return { data: races, races, loading, error };
