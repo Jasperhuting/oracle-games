@@ -19,36 +19,6 @@ interface ActiveGamesCardProps {
   userId: string;
 }
 
-interface ParticipantSummary {
-  id?: string;
-  gameId: string;
-  playername?: string;
-  status?: string;
-  ranking?: number;
-  totalPoints?: number;
-}
-
-interface TeamSummary {
-  participantId?: string;
-  userId: string;
-  playername?: string;
-  ranking?: number;
-  totalPoints?: number;
-}
-
-interface SlipstreamStandingEntry {
-  userId: string;
-  playername: string;
-  ranking: number;
-  value: number;
-}
-
-interface SlipstreamStandingsResponse {
-  success?: boolean;
-  yellowJersey?: SlipstreamStandingEntry[];
-  greenJersey?: SlipstreamStandingEntry[];
-}
-
 interface F1ParticipantSummary {
   id: string;
   userId: string;
@@ -112,147 +82,14 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
           setLoading(false);
         }
 
-        // Fetch user's participations
-        const participantsResponse = await fetch(`/api/gameParticipants?userId=${userId}`);
-        if (!participantsResponse.ok) {
+        // Fetch all games summary in a single server-side call
+        const summaryResponse = await fetch(`/api/account/games-summary`);
+        if (!summaryResponse.ok) {
           setLoading(false);
           return;
         }
-
-        const participantsData = await participantsResponse.json();
-        const participants = ((participantsData.participants || []) as ParticipantSummary[])
-          .filter((participant) => {
-            const isActive = participant.status === 'active';
-            const isPendingGameId = participant.gameId?.endsWith('-pending');
-            return isActive && !isPendingGameId;
-          });
-        const participantsByGameId = new Map<string, ParticipantSummary[]>();
-
-        participants.forEach((participant) => {
-          const normalizedGameId = participant.gameId?.replace(/-pending$/, '');
-          if (!normalizedGameId) return;
-          if (!participantsByGameId.has(normalizedGameId)) {
-            participantsByGameId.set(normalizedGameId, []);
-          }
-          participantsByGameId.get(normalizedGameId)!.push(participant);
-        });
-
-        // Get unique game IDs (remove -pending suffix)
-        const gameIds = [...new Set(
-          participants
-            .map((p) => p.gameId.replace(/-pending$/, ''))
-            .filter((id: string) => id)
-        )] as string[];
-
-        const activeGames = (await Promise.all(
-          gameIds.map(async (gameId) => {
-            try {
-              const gameResponse = await fetch(`/api/games/${gameId}`);
-
-              if (!gameResponse.ok) return null;
-
-              const gameData = await gameResponse.json();
-              const game = gameData.game;
-
-              // Only show active, bidding, or registration games
-              if (!['registration', 'bidding', 'active'].includes(game?.status)) {
-                return null;
-              }
-
-              // Skip test games
-              if (game.isTest || game.name?.toLowerCase().includes('test')) {
-                return null;
-              }
-
-              // Determine sport type
-              const sportType = getSportType(game.gameType);
-
-              // Get standings to find user's ranking and points
-              let totalParticipants = 0;
-              const userParticipantsForGame = participantsByGameId.get(gameId) || [];
-              const activeParticipantsForGame = userParticipantsForGame.filter((p) => p.status === 'active');
-              const preferredParticipants =
-                activeParticipantsForGame.length > 0 ? activeParticipantsForGame : userParticipantsForGame;
-
-              const fallbackParticipant =
-                preferredParticipants.find((p) => typeof p.ranking === 'number' && p.ranking > 0) ||
-                preferredParticipants.find((p) => typeof p.totalPoints === 'number' && p.totalPoints > 0) ||
-                preferredParticipants[0];
-              let userRanking = fallbackParticipant?.ranking || 0;
-              let userPoints = fallbackParticipant?.totalPoints || 0;
-              let lastScoreUpdate: string | null = null;
-
-              if (game.gameType === 'slipstream') {
-                const slipstreamStandingsResponse = await fetch(`/api/games/${gameId}/slipstream/standings`);
-                if (slipstreamStandingsResponse.ok) {
-                  const slipstreamStandingsData = await slipstreamStandingsResponse.json() as SlipstreamStandingsResponse;
-                  const yellowJersey = slipstreamStandingsData.yellowJersey || [];
-                  totalParticipants = yellowJersey.length;
-                  lastScoreUpdate = game.updatedAt || null;
-
-                  const preferredPlayerNames = new Set(
-                    preferredParticipants
-                      .map((p) => p.playername?.trim().toLowerCase())
-                      .filter((name): name is string => Boolean(name))
-                  );
-
-                  const userStanding = yellowJersey.find((entry) =>
-                    entry.userId === userId ||
-                    (entry.playername ? preferredPlayerNames.has(entry.playername.trim().toLowerCase()) : false)
-                  );
-                  if (userStanding) {
-                    userRanking = userStanding.ranking || 0;
-                    userPoints = userStanding.value || 0;
-                  }
-                }
-              } else {
-                const standingsResponse = await fetch(`/api/games/${gameId}/teams-overview`);
-                if (standingsResponse.ok) {
-                  const standingsData = await standingsResponse.json();
-                  const teams = (standingsData.teams || []) as TeamSummary[];
-                  totalParticipants = teams.length;
-                  lastScoreUpdate = standingsData.lastScoreUpdate || null;
-
-                  const preferredParticipantIds = new Set(
-                    preferredParticipants
-                      .map((p) => p.id)
-                      .filter((id): id is string => Boolean(id))
-                  );
-                  const preferredPlayerNames = new Set(
-                    preferredParticipants
-                      .map((p) => p.playername?.trim().toLowerCase())
-                      .filter((name): name is string => Boolean(name))
-                  );
-
-                  // Find user's entry in the standings
-                  const userTeam = teams.find((team) =>
-                    team.userId === userId ||
-                    (team.participantId ? preferredParticipantIds.has(team.participantId) : false) ||
-                    (team.playername ? preferredPlayerNames.has(team.playername.trim().toLowerCase()) : false)
-                  );
-                  if (userTeam) {
-                    userRanking = userTeam.ranking || 0;
-                    userPoints = userTeam.totalPoints || 0;
-                  }
-                }
-              }
-
-              return {
-                gameId,
-                gameName: game.division ? `${game.name} - ${game.division}` : game.name,
-                gameType: game.gameType,
-                sportType,
-                ranking: userRanking,
-                totalParticipants,
-                totalPoints: userPoints,
-                status: game.status,
-                lastScoreUpdate,
-              } as ActiveGame;
-            } catch {
-              return null;
-            }
-          })
-        )).filter((game): game is ActiveGame => Boolean(game));
+        const summaryData = await summaryResponse.json();
+        const activeGames = (summaryData.games || []) as ActiveGame[];
 
         try {
           const [f1GamesResponse, f1ParticipantsResponse, f1StandingsResponse] = await Promise.all([
