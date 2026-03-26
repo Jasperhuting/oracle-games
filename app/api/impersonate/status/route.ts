@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb, getServerAuth } from '@/lib/firebase/server';
+import { adminAuth, adminDb } from '@/lib/firebase/server';
 import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
     const impersonationCookie = cookieStore.get('impersonation')?.value;
-    const sessionCookie = cookieStore.get('session')?.value;
 
     if (!impersonationCookie) {
       return NextResponse.json({
@@ -16,25 +15,6 @@ export async function GET() {
 
     const impersonationData = JSON.parse(impersonationCookie);
     const { realAdminId, impersonatedUserId } = impersonationData;
-
-    if (sessionCookie) {
-      try {
-        const auth = getServerAuth();
-        const decodedSession = await auth.verifySessionCookie(sessionCookie);
-
-        if (decodedSession.uid !== impersonatedUserId) {
-          return NextResponse.json({
-            isImpersonating: false,
-            clearedBecauseSessionUserDiffers: true,
-            sessionUserId: decodedSession.uid,
-            realAdminId,
-            impersonatedUserId,
-          });
-        }
-      } catch (error) {
-        console.error('Error verifying session cookie for impersonation status:', error);
-      }
-    }
 
     // Get admin and impersonated user data
     const [adminUserDoc, targetUserDoc] = await Promise.all([

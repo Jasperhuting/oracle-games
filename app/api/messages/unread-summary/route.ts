@@ -30,8 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UnreadSumm
     const baseQuery = adminDb
       .collection('messages')
       .where('recipientId', '==', userId)
-      .where('read', '==', false)
-      .where('deletedByRecipient', '!=', true);
+      .where('read', '==', false);
 
     // Run count and latest-message fetch in parallel — 2 reads total regardless of message count
     const [countResult, latestSnapshot] = await Promise.all([
@@ -39,8 +38,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<UnreadSumm
       baseQuery.orderBy('sentAt', 'desc').limit(3).get(),
     ]);
 
-    // Filter for first non-deleted message (deletedAt check in memory)
-    const latestDoc = latestSnapshot.docs.find((doc) => !doc.data().deletedAt) ?? null;
+    // Filter soft-deleted messages in memory (avoids Firestore != inequality + orderBy conflict)
+    const latestDoc = latestSnapshot.docs.find((doc) => !doc.data().deletedAt && !doc.data().deletedByRecipient) ?? null;
 
     return NextResponse.json({
       count: countResult.data().count,
