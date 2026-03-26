@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
-import type { DocumentData, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import type { DocumentData } from 'firebase-admin/firestore';
 import { GameData, Team } from '@/lib/types';
 import { getRiderReferenceDataCached } from '@/lib/firebase/rider-reference-cache';
 
@@ -311,41 +311,18 @@ export async function GET(
       team.ranking = currentRank;
     });
 
-    // Find the most recent score update for this game
+    // Find the most recent score update for this game — single indexed query
     let lastScoreUpdate: string | null = null;
     try {
-      // Avoid composite index requirement by only ordering on createdAt
-      // and filtering by gameId in memory.
-      const batchSize = 100;
-      const maxBatches = 10;
-      let latestMatch: QueryDocumentSnapshot<DocumentData> | undefined;
-      let lastDoc: QueryDocumentSnapshot<DocumentData> | undefined;
+      const latestUpdateSnapshot = await db
+        .collection('scoreUpdates')
+        .where('gamesAffected', 'array-contains', gameId)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get();
 
-      for (let batch = 0; batch < maxBatches && !latestMatch; batch++) {
-        let query = db
-          .collection('scoreUpdates')
-          .orderBy('createdAt', 'desc')
-          .limit(batchSize);
-
-        if (lastDoc) {
-          query = query.startAfter(lastDoc);
-        }
-
-        const recentUpdatesSnapshot = await query.get();
-        if (recentUpdatesSnapshot.empty) {
-          break;
-        }
-
-        latestMatch = recentUpdatesSnapshot.docs.find((doc) => {
-          const data = doc.data();
-          return Array.isArray(data?.gamesAffected) && data.gamesAffected.includes(gameId);
-        });
-
-        lastDoc = recentUpdatesSnapshot.docs[recentUpdatesSnapshot.docs.length - 1];
-      }
-
-      if (latestMatch) {
-        const updateData = latestMatch.data();
+      if (!latestUpdateSnapshot.empty) {
+        const updateData = latestUpdateSnapshot.docs[0].data();
         if (updateData?.calculatedAt) {
           lastScoreUpdate = updateData.calculatedAt;
         } else if (updateData?.createdAt?.toDate) {
