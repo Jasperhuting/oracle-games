@@ -1,0 +1,1 @@
+[     886ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3210/api/auth/session/restore:0

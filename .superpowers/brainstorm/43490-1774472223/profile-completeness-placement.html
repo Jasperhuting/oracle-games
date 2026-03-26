@@ -1,0 +1,70 @@
+<h2>Waar staat de completeness-balk?</h2>
+<p class="subtitle">Twee varianten voor de positie op de accountpagina</p>
+
+<div class="split">
+  <div class="mockup" style="cursor:pointer;border:2px solid transparent;border-radius:12px;transition:border-color 0.2s" onclick="this.style.borderColor='#02554d';document.getElementById('b').style.borderColor='transparent';recordChoice('a','Bovenaan — aparte card')">
+    <div class="mockup-header">A — Aparte card bovenaan</div>
+    <div class="mockup-body" style="display:flex;flex-direction:column;gap:10px;padding:16px">
+      <!-- Profile completion card -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:600;font-size:13px;color:#166534">Profiel aanvullen</span>
+          <span style="font-size:12px;color:#166534;font-weight:600">2/4</span>
+        </div>
+        <div style="background:#dcfce7;border-radius:999px;height:8px;overflow:hidden">
+          <div style="background:#16a34a;width:50%;height:100%;border-radius:999px"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="background:#16a34a;color:white;border-radius:999px;padding:3px 10px;font-size:11px">✓ Spelersnaam</span>
+          <span style="background:#16a34a;color:white;border-radius:999px;padding:3px 10px;font-size:11px">✓ Email</span>
+          <span style="background:#fef9c3;color:#854d0e;border-radius:999px;padding:3px 10px;font-size:11px">+ Avatar</span>
+          <span style="background:#fef9c3;color:#854d0e;border-radius:999px;padding:3px 10px;font-size:11px">+ Geboortedatum</span>
+        </div>
+        <div style="margin-top:10px">
+          <button style="background:#02554d;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;font-weight:600">Profiel aanvullen →</button>
+        </div>
+      </div>
+      <!-- Rest of page -->
+      <div class="placeholder" style="height:60px;opacity:0.4">CarriereCard</div>
+      <div class="placeholder" style="height:40px;opacity:0.3">Actieve spellen</div>
+    </div>
+  </div>
+
+  <div class="mockup" id="b" style="cursor:pointer;border:2px solid transparent;border-radius:12px;transition:border-color 0.2s" onclick="this.style.borderColor='#02554d';document.getElementById('a-mock').style.borderColor='transparent';recordChoice('b','In CarriereCard — geïntegreerd')">
+    <div class="mockup-header">B — In CarriereCard geïntegreerd</div>
+    <div class="mockup-body" id="a-mock" style="display:flex;flex-direction:column;gap:10px;padding:16px">
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
+        <!-- Profile card with nudge -->
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+          <div style="position:relative">
+            <div style="width:52px;height:52px;border-radius:999px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>
+            <div style="position:absolute;bottom:-2px;right:-2px;background:#f59e0b;border-radius:999px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:bold;border:2px solid white">!</div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px">JasperHuting</div>
+            <div style="font-size:11px;color:#6b7280">Oracle Games Admin</div>
+          </div>
+        </div>
+        <!-- Progress in card -->
+        <div style="background:#f9fafb;border-radius:8px;padding:10px;border:1px solid #f3f4f6">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:11px;color:#6b7280">Profiel volledigheid</span>
+            <span style="font-size:11px;font-weight:700;color:#02554d">50%</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:999px;height:6px;overflow:hidden">
+            <div style="background:#02554d;width:50%;height:100%;border-radius:999px"></div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:#6b7280">Voeg een <strong>avatar</strong> en <strong>geboortedatum</strong> toe →</div>
+        </div>
+      </div>
+      <div class="placeholder" style="height:40px;opacity:0.3">Actieve spellen</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function recordChoice(choice, text) {
+  if (typeof toggleSelect === 'function') return;
+  fetch('/.record', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'click',choice,text,timestamp:Date.now()})}).catch(()=>{});
+}
+</script>

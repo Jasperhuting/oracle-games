@@ -1,0 +1,5 @@
+{"type":"server-started","port":60181,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:60181","screen_dir":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/43490-1774472223"}
+{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/43490-1774472223/profile-completeness-placement.html"}
+{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/43490-1774472223/onboarding-design.html"}
+{"type":"screen-added","file":"/Users/jasperhuting/Documents/projecten/oracle games/oracle-games/.superpowers/brainstorm/43490-1774472223/onboarding-design-v2.html"}
+{"type":"server-stopped","reason":"idle timeout"}

@@ -21,7 +21,7 @@ export default function HistoryPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px] bg-gray-50">
+        <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px]">
             <div className="mx-auto container max-w-4xl">
                 {/* Header */}
                 <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
