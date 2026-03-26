@@ -3,6 +3,20 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { GAME_STATUSES } from '@/lib/types/games';
 import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
+import { unstable_cache, revalidateTag } from 'next/cache';
+
+// Cached fetch of game status document to reduce Firestore reads
+const getGameStatus = unstable_cache(
+  async (id: string) => {
+    const db = getServerFirebase();
+    const gameDoc = await db.collection('games').doc(id).get();
+    if (!gameDoc.exists) return null;
+    const data = gameDoc.data();
+    return { status: data?.status, auctionStatus: data?.config?.auctionStatus };
+  },
+  ['game-status'],
+  { revalidate: 60, tags: ['game-status'] }
+);
 
 // GET game status (lightweight endpoint for cache version checking)
 export async function GET(
@@ -11,24 +25,20 @@ export async function GET(
 ) {
   try {
     const { gameId } = await params;
-    const db = getServerFirebase();
 
-    const gameRef = db.collection('games').doc(gameId);
-    const gameDoc = await gameRef.get();
+    const result = await getGameStatus(gameId);
 
-    if (!gameDoc.exists) {
+    if (!result) {
       return NextResponse.json(
         { error: 'Game not found' },
         { status: 404 }
       );
     }
 
-    const gameData = gameDoc.data();
-
     return jsonWithCacheVersion({
       success: true,
-      status: gameData?.status,
-      auctionStatus: gameData?.config?.auctionStatus,
+      status: result.status,
+      auctionStatus: result.auctionStatus,
     });
   } catch (error) {
     console.error('Error fetching game status:', error);
@@ -103,6 +113,9 @@ export async function PATCH(
 
     // Update game status
     await gameRef.update(updateData);
+
+    // Invalidate the cache for this game's status so the new status is fetched immediately
+    revalidateTag('game-status', {});
 
     // Log the status change with auction status details for auction games
     const logDetails: Record<string, unknown> = {
