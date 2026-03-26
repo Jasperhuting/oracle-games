@@ -8,6 +8,7 @@ import {
   where,
   onSnapshot,
   doc,
+  getDocs,
 } from 'firebase/firestore';
 import { f1Db } from '@/lib/firebase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -157,27 +158,25 @@ export function useF1UserPredictions(season: number = CURRENT_SEASON): Subscript
       return;
     }
 
+    let cancelled = false;
     const q = query(
       collection(f1Db, F1_COLLECTIONS.PREDICTIONS),
       where('userId', '==', user.uid),
       where('season', '==', season)
     );
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const predictionsData = snapshot.docs.map(doc => doc.data() as F1Prediction);
-        setPredictions(predictionsData);
-        setLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching predictions:', err);
-        setError(err);
-        setLoading(false);
-      }
-    );
+    getDocs(q).then((snapshot) => {
+      if (cancelled) return;
+      setPredictions(snapshot.docs.map(doc => doc.data() as F1Prediction));
+      setLoading(false);
+    }).catch((err) => {
+      if (cancelled) return;
+      console.error('Error fetching predictions:', err);
+      setError(err);
+      setLoading(false);
+    });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, [user?.uid, season]);
 
   return { data: predictions, predictions, loading, error };
