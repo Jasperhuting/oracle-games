@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Button } from "./Button";
 import Link from "next/link";
@@ -98,43 +98,47 @@ export const UserList = () => {
     fetchLoginPatterns();
   }, [user, isAdmin]);
 
-  // Set up Firestore realtime listener
+  // Fetch users with one-time getDocs call
+  const fetchUsers = async () => {
+    if (!user || !isAdmin) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Create query for users collection
+      const usersQuery = query(
+        collection(db, 'users'),
+        orderBy('createdAt', 'desc')
+      );
+
+      // One-time fetch instead of realtime listener
+      const snapshot = await getDocs(usersQuery);
+      const usersList: User[] = [];
+      snapshot.forEach((doc) => {
+        usersList.push({
+          uid: doc.id,
+          ...doc.data()
+        } as User);
+      });
+      setUsers(usersList);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setError('Kon gebruikers niet laden. Mogelijk ontbreken de juiste rechten.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch users on mount and when user/isAdmin changes
   useEffect(() => {
     if (!user || !isAdmin) {
       setLoading(false);
       return;
     }
 
-    // Create query for users collection
-    const usersQuery = query(
-      collection(db, 'users'),
-      orderBy('createdAt', 'desc')
-    );
-
-    // Set up realtime listener with onSnapshot
-    const unsubscribe = onSnapshot(
-      usersQuery,
-      (snapshot) => {
-        const usersList: User[] = [];
-        snapshot.forEach((doc) => {
-          usersList.push({
-            uid: doc.id,
-            ...doc.data()
-          } as User);
-        });
-        setUsers(usersList);
-        setLoading(false);
-        setError(null);
-      },
-      (error) => {
-        console.error('Error fetching users:', error);
-        setError('Kon gebruikers niet laden. Mogelijk ontbreken de juiste rechten.');
-        setLoading(false);
-      }
-    );
-
-    // Cleanup listener on unmount
-    return () => unsubscribe();
+    void fetchUsers();
   }, [user, isAdmin]);
 
   const confirmDeleteUser = (userId: string) => {
@@ -537,6 +541,14 @@ export const UserList = () => {
               className="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
             >
               {sortDirection === 'asc' ? '⬆︎' : '⬇︎'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoading(true); void fetchUsers(); }}
+              disabled={loading}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Vernieuwen...' : 'Vernieuwen'}
             </button>
           </div>
         </div>
