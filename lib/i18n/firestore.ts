@@ -1,4 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/client";
 
 const TRANSLATIONS_CACHE_KEY = "oracle_translations_";
@@ -27,14 +27,11 @@ export function getCachedTranslations(locale: string): Record<string, unknown> |
 }
 
 export const listenTranslations = (locale: string, callback: (data: Record<string, unknown>) => void) => {
-  let isActive = true;
   const ref = doc(db, "translations", locale);
 
-  const fetchTranslations = async () => {
-    try {
-      const snapshot = await getDoc(ref);
-      if (!isActive) return;
-
+  const unsubscribe = onSnapshot(
+    ref,
+    (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data() || {};
         writeCachedTranslations(locale, data);
@@ -42,20 +39,13 @@ export const listenTranslations = (locale: string, callback: (data: Record<strin
       } else {
         callback({});
       }
-    } catch (error) {
-      console.error('Error fetching translations:', error);
-      if (!isActive) return;
+    },
+    (error) => {
+      console.error('Error listening to translations:', error);
       callback({});
     }
-  };
+  );
 
-  void fetchTranslations();
-  const pollInterval = setInterval(() => {
-    void fetchTranslations();
-  }, 30000);
-
-  return () => {
-    isActive = false;
-    clearInterval(pollInterval);
-  };
+  // Return cleanup function — same interface as before
+  return unsubscribe;
 };
