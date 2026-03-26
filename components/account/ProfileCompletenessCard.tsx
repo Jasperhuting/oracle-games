@@ -40,105 +40,37 @@ export function ProfileCompletenessCard({
   };
 
   return (
-    <div
-      style={{
-        background: '#f0fdf4',
-        border: '1px solid #bbf7d0',
-        borderRadius: '12px',
-        padding: '16px',
-      }}
-    >
+    <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
       {/* Header row */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '12px',
-        }}
-      >
+      <div className="flex justify-between mb-3">
         <div>
-          <div
-            style={{
-              fontWeight: 700,
-              fontSize: '14px',
-              color: '#166534',
-            }}
-          >
+          <div className="font-bold text-sm text-green-800">
             Maak je profiel compleet
           </div>
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#166534',
-              marginTop: '1px',
-            }}
-          >
+          <div className="text-xs text-green-800 mt-px">
             {filledCount} van {TOTAL_PROFILE_FIELDS} velden ingevuld
           </div>
         </div>
-        <div
-          style={{
-            fontSize: '18px',
-            fontWeight: 800,
-            color: '#16a34a',
-          }}
-        >
+        <div className="text-lg font-extrabold text-green-600">
           {completeness.score}%
         </div>
       </div>
 
       {/* Progress bar */}
-      <div
-        style={{
-          background: '#dcfce7',
-          borderRadius: '999px',
-          height: '8px',
-          overflow: 'hidden',
-          marginBottom: '12px',
-        }}
-      >
+      <div className="bg-green-100 rounded-full h-2 overflow-hidden mb-3">
         <div
-          style={{
-            background: '#16a34a',
-            width: `${completeness.score}%`,
-            height: '100%',
-            borderRadius: '999px',
-          }}
+          className="bg-green-600 h-full rounded-full"
+          style={{ width: `${completeness.score}%` }}
         />
       </div>
 
       {/* Chips row */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '6px',
-          marginBottom: '14px',
-        }}
-      >
+      <div className="flex flex-wrap gap-1.5 mb-[14px]">
         {/* Always shown: hardcoded green chips */}
-        <div
-          style={{
-            background: '#16a34a',
-            color: 'white',
-            borderRadius: '999px',
-            padding: '3px 10px',
-            fontSize: '11px',
-            fontWeight: 500,
-          }}
-        >
+        <div className="bg-green-600 text-white rounded-full px-[10px] py-[3px] text-[11px] font-medium">
           ✓ Spelersnaam
         </div>
-        <div
-          style={{
-            background: '#16a34a',
-            color: 'white',
-            borderRadius: '999px',
-            padding: '3px 10px',
-            fontSize: '11px',
-            fontWeight: 500,
-          }}
-        >
+        <div className="bg-green-600 text-white rounded-full px-[10px] py-[3px] text-[11px] font-medium">
           ✓ E-mail
         </div>
 
@@ -148,14 +80,7 @@ export function ProfileCompletenessCard({
           return (
             <div
               key={field}
-              style={{
-                background: isMissing ? '#fef9c3' : '#16a34a',
-                color: isMissing ? '#854d0e' : 'white',
-                borderRadius: '999px',
-                padding: '3px 10px',
-                fontSize: '11px',
-                fontWeight: 500,
-              }}
+              className={`rounded-full px-[10px] py-[3px] text-[11px] font-medium ${isMissing ? 'bg-yellow-100 text-yellow-800' : 'bg-green-600 text-white'}`}
             >
               {isMissing ? '+ ' : '✓ '}
               {FIELD_LABELS[field]}
@@ -165,38 +90,16 @@ export function ProfileCompletenessCard({
       </div>
 
       {/* CTA row */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'center',
-        }}
-      >
+      <div className="flex items-center gap-2">
         <button
           onClick={handleNavigate}
-          style={{
-            background: '#02554d',
-            color: 'white',
-            border: 'none',
-            borderRadius: '7px',
-            padding: '8px 16px',
-            fontSize: '13px',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
+          className="bg-[#02554d] text-white border-none rounded-lg px-4 py-2 text-[13px] font-semibold cursor-pointer"
         >
           Profiel aanvullen →
         </button>
         <button
           onClick={handleDismiss}
-          style={{
-            background: 'transparent',
-            color: '#6b7280',
-            border: 'none',
-            fontSize: '12px',
-            cursor: 'pointer',
-            padding: '8px',
-          }}
+          className="bg-transparent text-gray-500 border-none text-xs cursor-pointer p-2"
         >
           Later
         </button>

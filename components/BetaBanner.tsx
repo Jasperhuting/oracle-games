@@ -16,23 +16,12 @@ export const BetaBanner = ({ setShowBanner }: { setShowBanner: (show: boolean) =
 
     return (
         <div
-            className="fixed top-0 left-0 right-0 z-50 text-center h-[36px]"
-            style={{
-                background: "var(--platform-banner-bg)",
-                color: "var(--platform-banner-text)",
-            }}
+            className="fixed top-0 left-0 right-0 z-50 text-center h-[36px] bg-[var(--platform-banner-bg)] text-[var(--platform-banner-text)]"
         >
             <span className="text-sm h-[36px] flex items-center justify-center">{t('betaBanner.description')}</span>
             <button
-                className="absolute top-0 right-0 h-[36px] w-[36px] flex items-center justify-center cursor-pointer transition-colors"
-                style={{ color: "var(--platform-banner-text)" }}
+                className="absolute top-0 right-0 h-[36px] w-[36px] flex items-center justify-center cursor-pointer transition-colors text-[var(--platform-banner-text)] hover:bg-[var(--platform-banner-hover)]"
                 onClick={setShowBannerCookie}
-                onMouseEnter={(event) => {
-                    event.currentTarget.style.background = "var(--platform-banner-hover)";
-                }}
-                onMouseLeave={(event) => {
-                    event.currentTarget.style.background = "transparent";
-                }}
             >
                 <X className="h-6 w-6" />
             </button>

@@ -217,8 +217,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
           <div className="flex-shrink-0 relative">
             {readOnly ? (
               <div
-                className="rounded-full overflow-hidden border-2 border-gray-200 bg-gray-200 flex items-center justify-center"
-                style={{ width: 100, height: 100 }}
+                className="w-[100px] h-[100px] rounded-full overflow-hidden border-2 border-gray-200 bg-gray-200 flex items-center justify-center"
               >
                 {currentAvatarUrl ? (
                   <Image

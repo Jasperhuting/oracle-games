@@ -95,9 +95,8 @@ export default function MessageNotification() {
 
   return (
     <div
-      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-2xl px-4 animate-slide-down cursor-pointer"
+      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-2xl px-4 animate-slide-down cursor-pointer pointer-events-auto"
       onClick={handleClick}
-      style={{ pointerEvents: 'auto' }}
     >
       <div className="bg-white border-l-4 border-primary shadow-xl rounded-lg p-4 cursor-pointer hover:shadow-2xl transition-shadow">
         <div className="flex items-center gap-3">

@@ -103,8 +103,7 @@ export function AvatarUpload({ currentAvatarUrl, onUploadSuccess, size = 80 }: A
       >
         {currentAvatarUrl ? (
           <div
-            className="rounded-full overflow-hidden border-2 border-gray-200"
-            style={{ width: size, height: size }}
+            className="w-full h-full rounded-full overflow-hidden border-2 border-gray-200"
           >
             <Image
               src={currentAvatarUrl}
@@ -116,8 +115,7 @@ export function AvatarUpload({ currentAvatarUrl, onUploadSuccess, size = 80 }: A
           </div>
         ) : (
           <div
-            className="rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300"
-            style={{ width: size, height: size }}
+            className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300"
           >
             <svg
               className="w-1/2 h-1/2 text-gray-400"

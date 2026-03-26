@@ -20,15 +20,11 @@ export const Menu = React.forwardRef<HTMLDivElement, Ariakit.MenuProps>(
         {...props}
         className={clsx(
           "cursor-pointer relative z-50 flex flex-col min-w-[180px] w-max overflow-auto overscroll-contain rounded-lg border border-solid outline-none",
+          "bg-[var(--platform-mobile-menu-bg)] text-[var(--platform-header-title)] border-[var(--platform-header-border)]",
           "dark:border-[hsl(204,4%,24%)]]",
           props.className
         )}
-        style={{
-          background: "var(--platform-mobile-menu-bg)",
-          color: "var(--platform-header-title)",
-          borderColor: "var(--platform-header-border)",
-          ...props.style,
-        }}
+        style={props.style}
       />
     );
   },

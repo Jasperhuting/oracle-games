@@ -21,9 +21,8 @@ export const ProfileMenuButton = ({ user, loading, pathname, unreadCount, label 
 
     return (
         <MenuItem
-            className="hover:opacity-90"
+            className="hover:opacity-90 bg-transparent text-[var(--platform-header-link)]"
             render={<MenuButton />}
-            style={{ background: "transparent", color: "var(--platform-header-link)" }}
         >
             {displayLabel ? (
                 loading ? '...loading' : (
@@ -44,13 +43,7 @@ export const ProfileMenuButton = ({ user, loading, pathname, unreadCount, label 
             ) : (
                 <Link
                     href={'/login'}
-                    className="whitespace-nowrap"
-                    style={{
-                        color: '/login' === pathname
-                            ? "var(--platform-header-link-active)"
-                            : "var(--platform-header-title)",
-                        fontWeight: '/login' === pathname ? 700 : 400,
-                    }}
+                    className={`whitespace-nowrap ${'/login' === pathname ? 'text-[var(--platform-header-link-active)] font-bold' : 'text-[var(--platform-header-title)]'}`}
                 >
                     Login
                 </Link>

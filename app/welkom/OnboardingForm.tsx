@@ -78,126 +78,121 @@ export function OnboardingForm({}: OnboardingFormProps) {
     router.push('/');
   };
 
+  const labelClass = 'block mb-1 text-[11px] font-semibold text-gray-500 uppercase tracking-[.05em]';
+  const inputClass = 'w-full border border-gray-300 rounded-md px-[10px] py-2 text-[13px]';
+
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px' }}>
+    <div className="max-w-[480px] mx-auto p-6">
       {/* Welcome header */}
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <div style={{ fontSize: '32px', marginBottom: '8px' }}>👋</div>
-        <h1 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 700 }}>Welkom bij Oracle Games!</h1>
-        <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
+      <div className="text-center mb-6">
+        <div className="text-[32px] mb-2">👋</div>
+        <h1 className="m-0 mb-1.5 text-lg font-bold">Welkom bij Oracle Games!</h1>
+        <p className="m-0 text-[13px] text-gray-500">
           Je account is aangemaakt. Maak je profiel even compleet — dit duurt minder dan een minuut.
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="flex flex-col gap-[14px]">
         {/* Avatar upload */}
-        <div style={{ background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: '10px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-[10px] p-4 flex items-center gap-[14px]">
           <AvatarUpload
             currentAvatarUrl={pendingAvatarUrl}
             onUploadSuccess={(url) => setPendingAvatarUrl(url)}
             size={56}
           />
           <div>
-            <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '2px' }}>Profielfoto</div>
-            <div style={{ fontSize: '12px', color: '#6b7280' }}>Laat anderen zien wie je bent</div>
+            <div className="font-semibold text-[13px] mb-0.5">Profielfoto</div>
+            <div className="text-xs text-gray-500">Laat anderen zien wie je bent</div>
           </div>
         </div>
 
         {/* First name / last name grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div className="grid grid-cols-2 gap-[10px]">
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-              Voornaam
-            </label>
+            <label className={labelClass}>Voornaam</label>
             <input
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Jasper"
-              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 10px', fontSize: '13px' }}
+              className={inputClass}
             />
           </div>
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-              Achternaam
-            </label>
+            <label className={labelClass}>Achternaam</label>
             <input
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Huting"
-              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 10px', fontSize: '13px' }}
+              className={inputClass}
             />
           </div>
         </div>
 
         {/* Date of birth */}
         <div>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-            Geboortedatum
-          </label>
+          <label className={labelClass}>Geboortedatum</label>
           <input
             type="text"
             value={dateOfBirth}
             onChange={(e) => { setDateOfBirth(e.target.value); setDobError(undefined); }}
             placeholder="DD-MM-YYYY"
-            style={{ width: '100%', boxSizing: 'border-box', border: dobError ? '1px solid #ef4444' : '1px solid #d1d5db', borderRadius: '6px', padding: '8px 10px', fontSize: '13px' }}
+            className={`w-full border ${dobError ? 'border-red-500' : 'border-gray-300'} rounded-md px-[10px] py-2 text-[13px]`}
           />
           {dobError && (
-            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#ef4444' }}>{dobError}</p>
+            <p className="mt-1 text-xs text-red-500">{dobError}</p>
           )}
         </div>
 
         {/* Language preference */}
         <div>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-            Taal
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <label className={labelClass}>Taal</label>
+          <div className="grid grid-cols-2 gap-2">
             <div
               onClick={() => setPreferredLanguage('nl')}
-              style={{ border: preferredLanguage === 'nl' ? '2px solid #02554d' : '2px solid #e5e7eb', borderRadius: '8px', padding: '12px', textAlign: 'center', cursor: 'pointer', background: preferredLanguage === 'nl' ? '#f0fdf4' : 'white' }}
+              className={`border-2 ${preferredLanguage === 'nl' ? 'border-[#02554d] bg-green-50' : 'border-gray-200 bg-white'} rounded-lg p-3 text-center cursor-pointer`}
             >
-              <div style={{ fontSize: '18px' }}>🇳🇱</div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: preferredLanguage === 'nl' ? '#02554d' : '#374151', marginTop: '2px' }}>NL</div>
-              <div style={{ fontSize: '12px', color: preferredLanguage === 'nl' ? '#166534' : '#6b7280', marginTop: '1px' }}>Nederlands</div>
+              <div className="text-lg">🇳🇱</div>
+              <div className={`text-[13px] font-bold mt-0.5 ${preferredLanguage === 'nl' ? 'text-[#02554d]' : 'text-gray-700'}`}>NL</div>
+              <div className={`text-xs mt-px ${preferredLanguage === 'nl' ? 'text-green-800' : 'text-gray-500'}`}>Nederlands</div>
             </div>
             <div
               onClick={() => setPreferredLanguage('en')}
-              style={{ border: preferredLanguage === 'en' ? '2px solid #02554d' : '2px solid #e5e7eb', borderRadius: '8px', padding: '12px', textAlign: 'center', cursor: 'pointer', background: preferredLanguage === 'en' ? '#f0fdf4' : 'white' }}
+              className={`border-2 ${preferredLanguage === 'en' ? 'border-[#02554d] bg-green-50' : 'border-gray-200 bg-white'} rounded-lg p-3 text-center cursor-pointer`}
             >
-              <div style={{ fontSize: '18px' }}>🇬🇧</div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: preferredLanguage === 'en' ? '#02554d' : '#374151', marginTop: '2px' }}>EN</div>
-              <div style={{ fontSize: '12px', color: preferredLanguage === 'en' ? '#166534' : '#6b7280', marginTop: '1px' }}>English</div>
+              <div className="text-lg">🇬🇧</div>
+              <div className={`text-[13px] font-bold mt-0.5 ${preferredLanguage === 'en' ? 'text-[#02554d]' : 'text-gray-700'}`}>EN</div>
+              <div className={`text-xs mt-px ${preferredLanguage === 'en' ? 'text-green-800' : 'text-gray-500'}`}>English</div>
             </div>
           </div>
         </div>
 
         {/* CTA */}
-        <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+        <div className="flex gap-[10px] mt-1">
           <button
             type="button"
             onClick={handleSave}
             disabled={submitting}
-            style={{ flex: 1, background: '#02554d', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}
+            className={`flex-1 bg-[#02554d] text-white border-none rounded-lg py-3 text-sm font-semibold ${submitting ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
           >
             Opslaan en verder
           </button>
           <button
             type="button"
             onClick={handleLater}
-            style={{ flex: '0 0 auto', background: 'transparent', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 16px', fontSize: '14px', cursor: 'pointer' }}
+            className="flex-none bg-transparent text-gray-500 border border-gray-200 rounded-lg py-3 px-4 text-sm cursor-pointer"
           >
             Later
           </button>
         </div>
 
         {saveError && (
-          <p style={{ margin: 0, fontSize: '12px', color: '#ef4444', textAlign: 'center' }}>{saveError}</p>
+          <p className="m-0 text-xs text-red-500 text-center">{saveError}</p>
         )}
 
         {/* Footer note */}
-        <p style={{ textAlign: 'center', fontSize: '11px', color: '#9ca3af', margin: 0 }}>
+        <p className="text-center text-[11px] text-gray-400 m-0">
           Je kunt dit altijd later aanpassen via Instellingen
         </p>
       </div>

@@ -41,10 +41,10 @@ export const PlayerRow = ({
             rightContent={
                 <>
                     {player?.team?.teamImage && (
-                        <img 
-                            src={`https://www.procyclingstats.com/${player?.team?.teamImage}`} 
-                            alt={player?.team?.name} 
-                            style={{ width: '20px' }} 
+                        <img
+                            src={`https://www.procyclingstats.com/${player?.team?.teamImage}`}
+                            alt={player?.team?.name}
+                            className="w-5"
                         />
                     )}
                     <span className="text-sm text-gray-500 break-keep whitespace-nowrap">

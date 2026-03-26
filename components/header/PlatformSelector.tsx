@@ -67,12 +67,7 @@ export function PlatformSelector({
             <button
                 type="button"
                 onClick={() => setIsOpen((open) => !open)}
-                className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-[var(--platform-header-accent-soft)] hover:text-[var(--platform-header-link-hover)] ${buttonClassName}`}
-                style={{
-                    color: "var(--platform-header-title)",
-                    background: "var(--platform-header-bg)",
-                    borderColor: "var(--platform-selector-border)",
-                }}
+                className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition-colors hover:bg-[var(--platform-header-accent-soft)] hover:text-[var(--platform-header-link-hover)] text-[var(--platform-header-title)] bg-[var(--platform-header-bg)] border-[var(--platform-selector-border)] ${buttonClassName}`}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
             >
@@ -90,17 +85,10 @@ export function PlatformSelector({
 
             {isOpen && (
                 <div
-                    className={`absolute right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl ${dropdownClassName}`}
-                    style={{
-                        minWidth: "100%",
-                        background: "var(--platform-header-bg)",
-                    }}
+                    className={`absolute right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl min-w-full bg-[var(--platform-header-bg)] ${dropdownClassName}`}
                 >
                     <div className="max-h-72 overflow-y-auto py-2">
-                        <div
-                            className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em]"
-                            style={{ color: "var(--platform-header-link)" }}
-                        >
+                        <div className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--platform-header-link)]">
                             Platforms
                         </div>
                         {platformOptions.map((platform, index) => {
@@ -117,17 +105,10 @@ export function PlatformSelector({
                                         }
                                     }}
                                     className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--platform-header-accent-soft)] hover:text-[var(--platform-header-link-hover)] ${
-                                        index % 2 === 0 ? "" : "bg-black/[0.02]"
+                                        isSelected
+                                            ? 'text-[var(--platform-header-link-active)] bg-[var(--platform-header-accent-soft)] font-semibold'
+                                            : `text-[var(--platform-header-link)] ${index % 2 === 0 ? '' : 'bg-black/[0.02]'}`
                                     }`}
-                                    style={{
-                                        color: isSelected
-                                            ? "var(--platform-header-link-active)"
-                                            : "var(--platform-header-link)",
-                                        background: isSelected
-                                            ? "var(--platform-header-accent-soft)"
-                                            : undefined,
-                                        fontWeight: isSelected ? 600 : 400,
-                                    }}
                                 >
                                     <span className="flex items-center gap-2">
                                         <span aria-hidden="true" className="shrink-0 text-base leading-none">

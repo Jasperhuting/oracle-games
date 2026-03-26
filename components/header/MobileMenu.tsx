@@ -76,19 +76,12 @@ export const MobileMenu = ({
                                 onClose();
                             }
                         }}
-                        className="fixed right-0 md:right-0 w-80 z-50 p-6 overflow-y-auto border rounded-2xl"
-                        style={{
-                            top: menuTopStyle,
-                            height: `h-fit`,
-                            background: "var(--platform-mobile-menu-bg)",
-                            borderColor: "var(--platform-header-border)",
-                            color: "var(--platform-header-title)",
-                            boxShadow: "var(--platform-header-shadow)",
-                        }}
+                        className="fixed right-0 md:right-0 w-80 z-50 p-6 overflow-y-auto border rounded-2xl h-fit bg-[var(--platform-mobile-menu-bg)] border-[var(--platform-header-border)] text-[var(--platform-header-title)] shadow-[var(--platform-header-shadow)]"
+                        style={{ top: menuTopStyle }}
                     >
                         <nav className="flex flex-col gap-4">
                             <div className="flex flex-col gap-2">
-                                <label className="px-1 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--platform-header-link)" }}>
+                                <label className="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--platform-header-link)]">
                                     Platform
                                 </label>
                                 <PlatformSelector
@@ -111,16 +104,7 @@ export const MobileMenu = ({
                                         key={item.name}
                                         href={item.href}
                                         onClick={onClose}
-                                        className="text-lg py-3 px-4 rounded-lg transition-all duration-150"
-                                        style={{
-                                            color: item.href === pathname
-                                                ? "var(--platform-header-link-active)"
-                                                : "var(--platform-header-link)",
-                                            background: item.href === pathname
-                                                ? "var(--platform-header-accent-soft)"
-                                                : "transparent",
-                                            fontWeight: item.href === pathname ? 600 : 400,
-                                        }}
+                                        className={`text-lg py-3 px-4 rounded-lg transition-all duration-150 ${item.href === pathname ? 'text-[var(--platform-header-link-active)] bg-[var(--platform-header-accent-soft)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
                                     >
                                         {item.name}
                                     </Link>
@@ -128,7 +112,7 @@ export const MobileMenu = ({
                             </div>
 
                             {/* Divider */}
-                            {user && <div className="border-t" style={{ borderColor: "var(--platform-header-border)" }} />}
+                            {user && <div className="border-t border-[var(--platform-header-border)]" />}
 
                             {/* Profile Items */}
                             {user && (
@@ -144,16 +128,7 @@ export const MobileMenu = ({
                                                 }
                                                 onClose();
                                             }}
-                                            className="flex items-center gap-3 text-lg py-3 px-4 rounded-lg transition-all duration-150 text-left w-full"
-                                            style={{
-                                                color: item.href === pathname
-                                                    ? "var(--platform-header-link-active)"
-                                                    : "var(--platform-header-link)",
-                                                background: item.href === pathname
-                                                    ? "var(--platform-header-accent-soft)"
-                                                    : "transparent",
-                                                fontWeight: item.href === pathname ? 600 : 400,
-                                            }}
+                                            className={`flex items-center gap-3 text-lg py-3 px-4 rounded-lg transition-all duration-150 text-left w-full ${item.href === pathname ? 'text-[var(--platform-header-link-active)] bg-[var(--platform-header-accent-soft)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
                                         >
                                             {item.icon}
                                             {item.name}
@@ -167,16 +142,7 @@ export const MobileMenu = ({
                                 <Link
                                     href="/login"
                                     onClick={onClose}
-                                    className="text-lg py-3 px-4 rounded-lg transition-all duration-150"
-                                    style={{
-                                        color: '/login' === pathname
-                                            ? "var(--platform-header-link-active)"
-                                            : "var(--platform-header-link)",
-                                        background: '/login' === pathname
-                                            ? "var(--platform-header-accent-soft)"
-                                            : "transparent",
-                                        fontWeight: '/login' === pathname ? 600 : 400,
-                                    }}
+                                    className={`text-lg py-3 px-4 rounded-lg transition-all duration-150 ${'/login' === pathname ? 'text-[var(--platform-header-link-active)] bg-[var(--platform-header-accent-soft)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
                                 >
                                     Login
                                 </Link>

@@ -185,7 +185,7 @@ function ChatPopup(props: OverlayProps) {
   }, [props.onClose]);
 
   return (
-    <div ref={popupRef} className="fixed bottom-20 right-5 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col rounded-xl bg-white shadow-2xl overflow-hidden border border-gray-200" style={{ height: '520px' }}>
+    <div ref={popupRef} className="fixed bottom-20 right-5 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col rounded-xl bg-white shadow-2xl overflow-hidden border border-gray-200 h-[520px]">
       <OverlayHeader {...props} />
       <OverlayContent {...props} compact={true} />
     </div>

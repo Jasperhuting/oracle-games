@@ -172,13 +172,8 @@ export const Header = ({
 
     return (
         <header
-            className="sticky w-[calc(100%-32px)] md:w-[calc(100%-64px)] z-40 h-[86px] px-4 left-4 right-4 md:left-8 md:right-8 rounded-md border backdrop-blur-md overflow-visible"
-            style={{
-                top: `calc(${bannerOffset}px + var(--header-top))`,
-                background: "var(--platform-header-bg)",
-                borderColor: "var(--platform-header-border)",
-                boxShadow: "var(--platform-header-shadow)",
-            }}
+            className="sticky w-[calc(100%-32px)] md:w-[calc(100%-64px)] z-40 h-[86px] px-4 left-4 right-4 md:left-8 md:right-8 rounded-md border backdrop-blur-md overflow-visible bg-[var(--platform-header-bg)] border-[var(--platform-header-border)] shadow-[var(--platform-header-shadow)]"
+            style={{ top: `calc(${bannerOffset}px + var(--header-top))` }}
         >
             {/* Desktop nav */}
             <div className="container mx-auto hidden h-full lg:block">
@@ -192,39 +187,26 @@ export const Header = ({
                                 width={56}
                                 height={56}
                                 priority
-                                className="cursor-pointer hover:opacity-80 transition-opacity"
-                                style={{ filter: "var(--platform-logo-filter)" }}
+                                className="cursor-pointer hover:opacity-80 transition-opacity [filter:var(--platform-logo-filter)]"
                             />
                         </Link>
-                        <div className="whitespace-nowrap text-3xl ml-4 shrink-0" style={{ color: "var(--platform-header-title)" }}>
+                        <div className="whitespace-nowrap text-3xl ml-4 shrink-0 text-[var(--platform-header-title)]">
                             Oracle Games
                         </div>
 
-                        <div
-                            className="h-8 w-px shrink-0 mx-4"
-                            style={{ background: "var(--platform-header-border)" }}
-                        />
+                        <div className="h-8 w-px shrink-0 mx-4 bg-[var(--platform-header-border)]" />
 
                         <div className="flex items-center">
                             {visibleMenuItems.map((item) => (
                                 <div key={item.name} className="relative flex items-center px-3 h-full group">
                                     <Link
                                         href={item.href}
-                                        className="whitespace-nowrap transition-colors duration-150 hover:[text-shadow:0_0_0.4px_currentColor]"
-                                        style={{
-                                            color: isMenuItemActive(item.href)
-                                                ? "var(--platform-header-link-active)"
-                                                : "var(--platform-header-link)",
-                                            fontWeight: isMenuItemActive(item.href) ? 600 : 400,
-                                        }}
+                                        className={`whitespace-nowrap transition-colors duration-150 hover:[text-shadow:0_0_0.4px_currentColor] ${isMenuItemActive(item.href) ? 'text-[var(--platform-header-link-active)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
                                     >
                                         {item.name}
                                     </Link>
                                     {isMenuItemActive(item.href) && (
-                                        <span
-                                            className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full"
-                                            style={{ backgroundColor: "var(--platform-header-accent)" }}
-                                        />
+                                        <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-[var(--platform-header-accent)]" />
                                     )}
                                 </div>
                             ))}
@@ -257,13 +239,7 @@ export const Header = ({
                                         <MenuItem
                                             key={item.name}
                                             onClick={() => item.onClick ? item.onClick() : router.push(item.href!)}
-                                            className="whitespace-nowrap py-2.5 px-4 transition-colors duration-100 rounded cursor-pointer"
-                                            style={{
-                                                color: item.href && isMenuItemActive(item.href)
-                                                    ? "var(--platform-header-link-active)"
-                                                    : "var(--platform-header-link)",
-                                                fontWeight: item.href && isMenuItemActive(item.href) ? 600 : 400,
-                                            }}
+                                            className={`whitespace-nowrap py-2.5 px-4 transition-colors duration-100 rounded cursor-pointer ${item.href && isMenuItemActive(item.href) ? 'text-[var(--platform-header-link-active)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
                                         >
                                             <span className="mr-2">{item.icon}</span>
                                             {item.name}
@@ -286,11 +262,10 @@ export const Header = ({
                             width={56}
                             height={56}
                             priority
-                            className="cursor-pointer hover:opacity-80 transition-opacity"
-                            style={{ filter: "var(--platform-logo-filter)" }}
+                            className="cursor-pointer hover:opacity-80 transition-opacity [filter:var(--platform-logo-filter)]"
                         />
                     </Link>
-                    <div className="flex-1 whitespace-nowrap text-3xl ml-4" style={{ color: "var(--platform-header-title)" }}>
+                    <div className="flex-1 whitespace-nowrap text-3xl ml-4 text-[var(--platform-header-title)]">
                         Oracle Games
                     </div>
                 </div>
@@ -302,28 +277,16 @@ export const Header = ({
                     aria-label={isMenuOpen ? "Sluit menu" : "Open menu"}
                 >
                     <span
-                        className="w-6 h-0.5 block"
-                        style={{
-                            background: "var(--platform-header-title)",
-                            transform: isMenuOpen ? "translateY(8px) rotate(45deg)" : "translateY(0) rotate(0)",
-                            transition: "transform 0.3s ease",
-                        }}
+                        className="w-6 h-0.5 block bg-[var(--platform-header-title)] transition-transform duration-300 ease-in-out"
+                        style={{ transform: isMenuOpen ? "translateY(8px) rotate(45deg)" : "translateY(0) rotate(0)" }}
                     />
                     <span
-                        className="w-6 h-0.5 block"
-                        style={{
-                            background: "var(--platform-header-title)",
-                            opacity: isMenuOpen ? 0 : 1,
-                            transition: "opacity 0.2s ease",
-                        }}
+                        className="w-6 h-0.5 block bg-[var(--platform-header-title)] transition-opacity duration-200 ease-in-out"
+                        style={{ opacity: isMenuOpen ? 0 : 1 }}
                     />
                     <span
-                        className="w-6 h-0.5 block"
-                        style={{
-                            background: "var(--platform-header-title)",
-                            transform: isMenuOpen ? "translateY(-8px) rotate(-45deg)" : "translateY(0) rotate(0)",
-                            transition: "transform 0.3s ease",
-                        }}
+                        className="w-6 h-0.5 block bg-[var(--platform-header-title)] transition-transform duration-300 ease-in-out"
+                        style={{ transform: isMenuOpen ? "translateY(-8px) rotate(-45deg)" : "translateY(0) rotate(0)" }}
                     />
                 </button>
 

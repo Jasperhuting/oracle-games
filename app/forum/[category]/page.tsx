@@ -279,21 +279,19 @@ export default function ForumCategoryPage() {
                         Laatste activiteit: {topic.lastReplyAt ? new Date(topic.lastReplyAt).toLocaleString('nl-NL') : '—'}
                       </p>
                       <p className="text-sm text-gray-600 mt-2">
-                        {topic.lastReplyPreview || topic.body.replace(/<[^>]*>/g, '').slice(0, 140) || '—'}
+                        {(() => {
+                          const preview = topic.lastReplyPreview || topic.body.replace(/<[^>]*>/g, '') || '—';
+                          const isTruncated = preview.length >= 140;
+                          if (!isTruncated) return preview;
+                          const trimmed = preview.slice(0, 140).replace(/\s+\S*$/, '');
+                          return (
+                            <>
+                              {trimmed}{'... '}
+                              <span className="text-primary font-medium hover:underline">Lees meer</span>
+                            </>
+                          );
+                        })()}
                       </p>
-                      {topic.gameId && (
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            router.push(`/games/${topic.gameId}/dashboard`);
-                          }}
-                          className="text-xs text-primary underline mt-1 inline-block"
-                        >
-                          Open spel
-                        </button>
-                      )}
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">
