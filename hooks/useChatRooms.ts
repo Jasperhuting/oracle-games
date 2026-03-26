@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import type { ChatRoom } from '@/lib/types/chat';
 
 const CHAT_SEEN_EVENT = 'chat-seen-updated';
-const POLL_INTERVAL_MS = 60000;
 
 export interface UseChatRoomsResult {
   rooms: ChatRoom[];
@@ -36,6 +37,12 @@ export function markRoomAsSeen(roomId: string, messageCount: number): void {
   }
 }
 
+const toIso = (val: unknown): string | null => {
+  if (!val) return null;
+  if (typeof (val as any).toDate === 'function') return (val as any).toDate().toISOString();
+  return String(val);
+};
+
 export function useChatRooms(): UseChatRoomsResult {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unreadByRoom, setUnreadByRoom] = useState<Map<string, number>>(new Map());
@@ -44,45 +51,54 @@ export function useChatRooms(): UseChatRoomsResult {
   const roomsRef = useRef<ChatRoom[]>([]);
 
   useEffect(() => {
-    let isActive = true;
+    try {
+      const q = query(
+        collection(db, 'chat_rooms'),
+        where('status', '==', 'open'),
+        orderBy('createdAt', 'desc')
+      );
 
-    const loadRooms = async () => {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
-        return;
-      }
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const fetched: ChatRoom[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            fetched.push({
+              id: doc.id,
+              title: data.title,
+              description: data.description,
+              gameType: data.gameType,
+              closesAt: toIso(data.closesAt) || '',
+              createdAt: toIso(data.createdAt) || '',
+              createdBy: data.createdBy,
+              status: data.status,
+              messageCount: data.messageCount || 0,
+            });
+          });
 
-      try {
-        const response = await fetch('/api/chat/rooms?skipRecount=true', { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error('Failed to load chat rooms');
+          roomsRef.current = fetched;
+          setRooms(fetched);
+          setUnreadByRoom(computeUnreadCounts(fetched));
+          setLoading(false);
+          setError(null);
+        },
+        (err) => {
+          console.error('[useChatRooms] Error listening to rooms:', err);
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setLoading(false);
         }
+      );
 
-        const data = await response.json();
-        if (!isActive) return;
-
-        const fetched = (data.rooms ?? []).filter((room: ChatRoom) => room.status === 'open') as ChatRoom[];
-        roomsRef.current = fetched;
-        setRooms(fetched);
-        setUnreadByRoom(computeUnreadCounts(fetched));
-        setLoading(false);
-        setError(null);
-      } catch (err) {
-        if (!isActive) return;
-        console.error('[useChatRooms] Error loading rooms:', err);
-        setError(err instanceof Error ? err : new Error(String(err)));
-        setLoading(false);
-      }
-    };
-
-    void loadRooms();
-    const intervalId = window.setInterval(() => {
-      void loadRooms();
-    }, POLL_INTERVAL_MS);
-
-    return () => {
-      isActive = false;
-      window.clearInterval(intervalId);
-    };
+      return () => {
+        unsubscribe();
+      };
+    } catch (err) {
+      console.error('[useChatRooms] Error setting up listener:', err);
+      setError(err instanceof Error ? err : new Error(String(err)));
+      setLoading(false);
+      return undefined;
+    }
   }, []);
 
   useEffect(() => {
