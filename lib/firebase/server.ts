@@ -118,7 +118,23 @@ export function getServerAuth() {
   return getAdminAuth(app);
 }
 
-export const adminDb = getServerFirebase();
-export const adminFootballDb = getServerFirebaseFootball();
-export const adminF1Db = getServerFirebaseF1();
-export const adminAuth = getServerAuth();
+// Lazy-initialized singletons — deferred until first use so module import
+// never throws during build when env vars are absent.
+function lazyProxy<T extends object>(factory: () => T): T {
+  let instance: T | undefined;
+  return new Proxy({} as T, {
+    get(_, prop, receiver) {
+      if (!instance) instance = factory();
+      return Reflect.get(instance, prop, receiver);
+    },
+    apply(_, thisArg, args) {
+      if (!instance) instance = factory();
+      return Reflect.apply(instance as unknown as Function, thisArg, args);
+    },
+  });
+}
+
+export const adminDb = lazyProxy(getServerFirebase);
+export const adminFootballDb = lazyProxy(getServerFirebaseFootball);
+export const adminF1Db = lazyProxy(getServerFirebaseF1);
+export const adminAuth = lazyProxy(getServerAuth);
