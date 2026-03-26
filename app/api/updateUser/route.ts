@@ -6,7 +6,7 @@ import { userHandler, ApiError } from '@/lib/api/handler';
 export const POST = userHandler('updateUser', async (ctx) => {
   const { request, uid } = ctx;
   const body = await request.json();
-  const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications, avatarUrl, updates } = body;
+  const { userId, playername, firstName, lastName, dateOfBirth, preferredLanguage, emailNotifications, forumNotifications, avatarUrl, updates } = body;
 
   // If updates object is provided (for admin preferences), handle it separately
   if (updates && userId) {
@@ -127,6 +127,18 @@ export const POST = userHandler('updateUser', async (ctx) => {
   if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
   if (preferredLanguage !== undefined) updateData.preferredLanguage = preferredLanguage;
   if (emailNotifications !== undefined) updateData.emailNotifications = emailNotifications;
+  if (forumNotifications !== undefined) {
+    if (
+      typeof forumNotifications !== 'object' ||
+      forumNotifications === null ||
+      typeof forumNotifications.replyOnMyTopic !== 'boolean' ||
+      typeof forumNotifications.dailyDigest !== 'boolean' ||
+      Object.keys(forumNotifications).length !== 2
+    ) {
+      throw new ApiError('Invalid forumNotifications', 400);
+    }
+    updateData.forumNotifications = forumNotifications;
+  }
   if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
 
   // Get old user data for comparison

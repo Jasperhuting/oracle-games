@@ -33,6 +33,12 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [forumReplyNotif, setForumReplyNotif] = useState<boolean>(
+    userData?.forumNotifications?.replyOnMyTopic ?? true
+  );
+  const [forumDigestNotif, setForumDigestNotif] = useState<boolean>(
+    userData?.forumNotifications?.dailyDigest ?? true
+  );
 
   const dateOfBirth = userData?.dateOfBirth;
   const today = new Date();
@@ -74,6 +80,28 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
     } finally {
       setIsUploadingAvatar(false);
     }
+  };
+
+  const handleForumNotifChange = async (
+    field: 'replyOnMyTopic' | 'dailyDigest',
+    value: boolean
+  ) => {
+    const next = {
+      replyOnMyTopic: field === 'replyOnMyTopic' ? value : forumReplyNotif,
+      dailyDigest: field === 'dailyDigest' ? value : forumDigestNotif,
+    };
+    if (field === 'replyOnMyTopic') setForumReplyNotif(value);
+    else setForumDigestNotif(value);
+
+    await fetch('/api/updateUser', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        playername: userData?.playername || displayName,
+        forumNotifications: next,
+      }),
+    });
   };
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<AccountFormData>({
@@ -306,6 +334,41 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
             <p className="text-xs text-gray-500 mt-1 ml-7">
               {t('account.emailNotificationsDescription')}
             </p>
+          </div>
+
+          {/* Forumnotificaties */}
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Forumnotificaties</h3>
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
+                  checked={forumReplyNotif}
+                  onChange={(e) => handleForumNotifChange('replyOnMyTopic', e.target.checked)}
+                />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Reacties op mijn topics</div>
+                  <div className="text-xs text-gray-500">
+                    Ontvang een e-mail als iemand reageert op een topic waar jij in hebt gepost
+                  </div>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
+                  checked={forumDigestNotif}
+                  onChange={(e) => handleForumNotifChange('dailyDigest', e.target.checked)}
+                />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Dagelijkse samenvatting</div>
+                  <div className="text-xs text-gray-500">
+                    Ontvang elke ochtend een overzicht van nieuwe topics in je spellen
+                  </div>
+                </div>
+              </label>
+            </div>
           </div>
 
           {error && (

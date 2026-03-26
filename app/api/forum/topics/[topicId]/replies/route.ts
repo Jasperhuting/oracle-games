@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/server';
+import { sendReplyNotifications } from '@/lib/forum/notifications';
 
 export async function POST(
   request: NextRequest,
@@ -43,6 +44,15 @@ export async function POST(
       lastReplyUserId: userId,
       updatedAt: now,
     });
+
+    // Fire-and-forget forum reply notification (does not block response)
+    void sendReplyNotifications({
+      topicId,
+      topicTitle: (topicDoc.data()!.title as string) ?? '',
+      topicCreatedBy: (topicDoc.data()!.createdBy as string) ?? '',
+      replyerId: userId,
+      replyPreview: preview,
+    }).catch((err) => console.error('[FORUM-NOTIFY] sendReplyNotifications error:', err));
 
     return NextResponse.json({ id: replyRef.id });
   } catch (error) {

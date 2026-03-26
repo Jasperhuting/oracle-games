@@ -12,6 +12,7 @@ import { GameRulesCard } from "./account/GameRulesCard";
 import { CalendarCard } from "./account/CalendarCard";
 import { getProfileCompleteness } from "@/lib/profile/completeness";
 import { ProfileCompletenessCard } from "./account/ProfileCompletenessCard";
+import { ForumActivityCard } from "./account/ForumActivityCard";
 
 export function AccountPageContent() {
     const { user } = useAuth();
@@ -93,6 +94,9 @@ export function AccountPageContent() {
 
                         {/* Inbox */}
                         <InboxPreview />
+
+                        {/* Forum activiteit */}
+                        <ForumActivityCard />
                     </div>
 
                     {/* Right Column */}
