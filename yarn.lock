@@ -5987,7 +5987,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"faye-websocket@npm:0.11.4, faye-websocket@npm:>=0.6.0":
+"faye-websocket@npm:0.11.4":
   version: 0.11.4
   resolution: "faye-websocket@npm:0.11.4"
   dependencies:
@@ -6092,13 +6092,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"firebase-token-generator@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "firebase-token-generator@npm:2.0.0"
-  checksum: 10c0/71ef8423fcfa918d10419bd56ddd9a8e63c4ed8348cb01f5bcff96cc2eaf4b041e3a672c8f2b5d0afe8eff048bf8a9e7db0dc7556006193e4ece0b176c14c6e9
-  languageName: node
-  linkType: hard
-
 "firebase@npm:^12.5.0":
   version: 12.10.0
   resolution: "firebase@npm:12.10.0"
@@ -6132,26 +6125,6 @@ __metadata:
     "@firebase/storage-compat": "npm:0.4.1"
     "@firebase/util": "npm:1.14.0"
   checksum: 10c0/d5dec2e47056cf554a8de46985aba91b5a0a6f08c87c5cda9a38c6b34a14d19f3b7995ff7817baec0d0d0bd1e6b4fe393df3783aec0d19c2b3b899a66994bba8
-  languageName: node
-  linkType: hard
-
-"firebase@npm:^2.1.2":
-  version: 2.4.2
-  resolution: "firebase@npm:2.4.2"
-  dependencies:
-    faye-websocket: "npm:>=0.6.0"
-  checksum: 10c0/7343123317bb9e9259df7d9b49e13857c68ca2e2450afcafe3b49cb0ac5122cfbfd46c8cb484bcf87b07e63b8780e298a18e5d771b52cd70704b4ea44f6acb90
-  languageName: node
-  linkType: hard
-
-"firestore@npm:^1.1.6":
-  version: 1.1.6
-  resolution: "firestore@npm:1.1.6"
-  dependencies:
-    firebase: "npm:^2.1.2"
-    firebase-token-generator: "npm:^2.0.0"
-    lodash: "npm:^3.1.0"
-  checksum: 10c0/653565beff6c3ca577dc8cae66577f623e6b5fbf975cceb9c267adbcd9f495cb89520098a0b31bb946f1935e9fa1c143ba5039dfc3a6c61930adc3cc0a3f7827
   languageName: node
   linkType: hard
 
@@ -8016,13 +7989,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^3.1.0":
-  version: 3.10.1
-  resolution: "lodash@npm:3.10.1"
-  checksum: 10c0/f5f6d3d87503c3f1db27d49b30a00bb38dc1bd9de716c5febe8970259cc7b447149a0e320452ccaf5996a7a4abd63d94df341bb91bd8d336584ad518d8eab144
-  languageName: node
-  linkType: hard
-
 "lodash@npm:^4.17.21":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
@@ -8849,7 +8815,6 @@ __metadata:
     eslint-config-next: "npm:16.2.1"
     firebase: "npm:^12.5.0"
     firebase-admin: "npm:^13.6.0"
-    firestore: "npm:^1.1.6"
     flag-icons: "npm:^7.5.0"
     framer-motion: "npm:^12.23.24"
     fuse.js: "npm:^7.1.0"
