@@ -57,11 +57,6 @@ interface UserPurchases {
   totalRiders: number;
 }
 
-interface UserData {
-  displayName?: string;
-  email?: string;
-  playername?: string;
-}
 
 interface DivisionData {
   game: Game;
@@ -79,7 +74,6 @@ export function FinalizeOverviewTab() {
   const [loading, setLoading] = useState(true);
   const [gameGroups, setGameGroups] = useState<GameGroupData[]>([]);
   const [riderCache, setRiderCache] = useState<Map<string, RiderData>>(new Map());
-  const [usersCache, setUsersCache] = useState<Map<string, UserData>>(new Map());
   const [teamsCache, setTeamsCache] = useState<Map<string, TeamData>>(new Map());
   const [activeGameTab, setActiveGameTab] = useState<string>('');
   const [activeDivisionTabs, setActiveDivisionTabs] = useState<Map<string, string>>(new Map());
@@ -92,21 +86,6 @@ export function FinalizeOverviewTab() {
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Laad alle users eerst
-      const usersRef = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersRef);
-      const usersMap = new Map<string, UserData>();
-      usersSnapshot.docs.forEach(doc => {
-        const data = doc.data();
-        usersMap.set(doc.id, {
-          displayName: data.displayName,
-          email: data.email,
-          playername: data.playername
-        });
-      });
-      setUsersCache(usersMap);
-      console.log('Loaded users:', usersMap.size);
 
       // Laad alle auctioneer games die actief of bidding zijn
       const gamesRef = collection(db, 'games');
@@ -148,24 +127,8 @@ export function FinalizeOverviewTab() {
           ...doc.data()
         } as PlayerTeam));
 
-        // Laad ook alle bids voor dit spel om de bidAt datum en bid count te krijgen
+        // Laad alle bids voor dit spel om bidAt datum en bid count te krijgen
         const bidsRef = collection(db, 'bids');
-        const wonBidsQuery = query(
-          bidsRef,
-          where('gameId', '==', game.id),
-          where('status', '==', 'won')
-        );
-        const wonBidsSnapshot = await getDocs(wonBidsQuery);
-
-        // Maak een map van userId+riderNameId naar bidAt datum
-        const bidDatesMap = new Map<string, any>();
-        wonBidsSnapshot.docs.forEach(doc => {
-          const bidData = doc.data();
-          const key = `${bidData.userId}_${bidData.riderNameId}`;
-          bidDatesMap.set(key, bidData.bidAt);
-        });
-
-        // Laad ALLE bids (inclusief lost) om bid count te tellen
         const allBidsQuery = query(
           bidsRef,
           where('gameId', '==', game.id)
@@ -174,12 +137,22 @@ export function FinalizeOverviewTab() {
 
         console.log(`[${game.name}] Total bids found:`, allBidsSnapshot.docs.length);
 
-        // Tel aantal biedingen per renner
+        // Maak maps voor bidAt datum (won bids) en bid count (all bids)
+        const bidDatesMap = new Map<string, any>();
         const bidCountMap = new Map<string, number>();
+
         allBidsSnapshot.docs.forEach(doc => {
           const bidData = doc.data();
           const riderKey = bidData.riderNameId;
+
+          // Tel alle biedingen per renner
           bidCountMap.set(riderKey, (bidCountMap.get(riderKey) || 0) + 1);
+
+          // Sla alleen bidAt op voor won bids
+          if (bidData.status === 'won') {
+            const key = `${bidData.userId}_${bidData.riderNameId}`;
+            bidDatesMap.set(key, bidData.bidAt);
+          }
         });
 
         console.log(`[${game.name}] Bid counts per rider:`, Array.from(bidCountMap.entries()).slice(0, 5));
@@ -436,13 +409,9 @@ export function FinalizeOverviewTab() {
           const key = purchase.userId;
 
           if (!userPurchasesMap.has(key)) {
-            const userData = usersMap.get(purchase.userId);
-            const displayName = userData?.playername || userData?.displayName || userData?.email || purchase.userId;
-
             userPurchasesMap.set(key, {
-              playername: displayName,
+              playername: purchase.playername || purchase.userId,
               userId: purchase.userId,
-              userEmail: userData?.email,
               periods: [],
               totalSpent: 0,
               totalRiders: 0
