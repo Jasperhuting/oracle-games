@@ -180,6 +180,12 @@ export function useAuth() {
         hasAttemptedSharedSessionRestore = true;
         setUser(auth.currentUser);
         setLoading(false);
+        // Sync the server-side session cookie with the current Firebase Auth user.
+        // Without this, a stale session cookie (e.g. left over from a previous
+        // impersonation) causes 401s on session-authenticated endpoints.
+        void createSharedSession(auth.currentUser, true).catch(() => {
+          // Best-effort — a sync failure is not fatal; the user can re-login.
+        });
         return;
       }
 

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AvatarUpload } from './AvatarUpload';
-import type { ProfileCompleteness } from '@/lib/profile/completeness';
 
 interface TopResult {
   gameName: string;
@@ -35,10 +34,9 @@ interface CarriereCardProps {
   avatarUrl?: string;
   onAvatarUpdate?: (newAvatarUrl: string) => void;
   readOnly?: boolean;
-  completeness?: ProfileCompleteness;
 }
 
-export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false, completeness = { score: 100, missingFields: [] } }: CarriereCardProps) {
+export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false }: CarriereCardProps) {
   const [topResults, setTopResults] = useState<TopResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
@@ -246,27 +244,6 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 onUploadSuccess={handleAvatarUpload}
                 size={100}
               />
-            )}
-            {!readOnly && completeness.missingFields.length > 0 && (
-              <div style={{
-                position: 'absolute',
-                bottom: -3,
-                right: -3,
-                background: '#f59e0b',
-                borderRadius: '999px',
-                minWidth: '20px',
-                height: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'white',
-                border: '2px solid white',
-                padding: '0 4px',
-              }}>
-                {completeness.missingFields.length}
-              </div>
             )}
           </div>
 
