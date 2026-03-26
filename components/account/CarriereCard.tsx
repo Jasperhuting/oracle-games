@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { AvatarUpload } from './AvatarUpload';
-import { ProfileCompleteness, buildMissingFieldsSentence } from '@/lib/profile/completeness';
+import type { ProfileCompleteness } from '@/lib/profile/completeness';
 
 interface TopResult {
   gameName: string;
@@ -51,7 +50,6 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [oracleStandings, setOracleStandings] = useState<OracleStats[]>([]);
   const [oracleStandingsLoading, setOracleStandingsLoading] = useState(false);
   const currentYear = new Date().getFullYear();
-  const router = useRouter();
 
   // Update local state when prop changes
   useEffect(() => {
@@ -283,35 +281,6 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
           </div>
         </div>
 
-        {!readOnly && completeness.score < 100 && (
-          <div style={{
-            background: '#f9fafb',
-            borderRadius: '8px',
-            padding: '10px 12px',
-            border: '1px solid #f3f4f6',
-            marginTop: '12px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#374151' }}>Profiel volledigheid</span>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#02554d' }}>{completeness.score}%</span>
-            </div>
-            <div style={{ background: '#e5e7eb', borderRadius: '999px', height: '6px', overflow: 'hidden', marginBottom: '8px' }}>
-              <div style={{ background: '#02554d', width: `${completeness.score}%`, height: '100%', borderRadius: '999px' }} />
-            </div>
-            <div style={{ fontSize: '11px', color: '#6b7280' }}
-              dangerouslySetInnerHTML={{ __html: buildMissingFieldsSentence(completeness.missingFields).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#374151">$1</strong>') }}
-            />
-            <div style={{ marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={() => router.push('/account/settings')}
-                style={{ fontSize: '11px', fontWeight: 600, color: '#02554d', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'none' }}
-              >
-                Profiel aanvullen →
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Stats Section */}

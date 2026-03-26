@@ -131,7 +131,7 @@ export const Header = ({
         { key: "footballPredictions", name: "Predictions", href: "/wk-2026/predictions", display: !!user },
         { key: "footballKnockout", name: "Knockout Predictions", href: "/wk-2026/predictions/knockout", display: !!user },
         { key: "footballStandings", name: "Standings", href: "/wk-2026/standings", display: !!user },
-        { key: "admin", name: t('header.menu.admin'), href: adminHref, display: isAdmin },
+        { key: "admin", name: t('header.menu.admin'), href: adminHref, display: isAdmin || impersonationStatus.isImpersonating },
     ];
 
     const currentPlatformConfig = getPlatformConfig(currentPlatform);
