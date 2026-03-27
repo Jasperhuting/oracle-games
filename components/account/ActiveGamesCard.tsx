@@ -124,9 +124,8 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
                 .sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
               const rankIndex = standings.findIndex((standing) => standing.userId === userId);
               const userStanding = rankIndex >= 0 ? standings[rankIndex] : null;
-              // Only use fallback ranking when season hasn't started (no standings at all)
-              const seasonStarted = standings.length > 0;
-              const ranking = rankIndex >= 0 ? rankIndex + 1 : (seasonStarted ? 0 : f1Participants.length);
+              // Show '-' (ranking=0) when user isn't found in standings yet
+              const ranking = rankIndex >= 0 ? rankIndex + 1 : 0;
 
               activeGames.push({
                 gameId: f1Game.id,
