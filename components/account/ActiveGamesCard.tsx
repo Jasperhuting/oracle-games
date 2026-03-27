@@ -19,26 +19,6 @@ interface ActiveGamesCardProps {
   userId: string;
 }
 
-interface F1ParticipantSummary {
-  id: string;
-  userId: string;
-  displayName?: string;
-  season: number;
-  status?: string;
-}
-
-interface F1StandingSummary {
-  userId: string;
-  totalPoints?: number;
-}
-
-interface F1StandingsResponse {
-  success?: boolean;
-  data?: {
-    standings?: F1StandingSummary[];
-    lastUpdated?: string;
-  };
-}
 
 export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
   const [games, setGames] = useState<ActiveGame[]>([]);
@@ -75,7 +55,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
     async function fetchActiveGames() {
       try {
-        const cacheKey = `active-games-summary:v8:${userId}`;
+        const cacheKey = `active-games-summary:v9:${userId}`;
         const cached = readDailyCache(cacheKey);
         if (cached) {
           setGames(cached);
@@ -90,59 +70,6 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
         }
         const summaryData = await summaryResponse.json();
         const activeGames = (summaryData.games || []) as ActiveGame[];
-
-        try {
-          const [f1GamesResponse, f1ParticipantsResponse, f1StandingsResponse] = await Promise.all([
-            fetch('/api/games/list?gameType=f1-prediction&limit=5', { cache: 'no-store' }),
-            fetch('/api/f1/participants?season=2026', { cache: 'no-store' }),
-            fetch('/f1/api/standings?season=2026', { cache: 'no-store' }),
-          ]);
-
-          if (f1GamesResponse.ok && f1ParticipantsResponse.ok) {
-            const [f1GamesData, f1ParticipantsData, f1StandingsData] = await Promise.all([
-              f1GamesResponse.json(),
-              f1ParticipantsResponse.json(),
-              f1StandingsResponse.ok ? f1StandingsResponse.json() : Promise.resolve(null),
-            ]);
-
-            const f1Game = (f1GamesData.games || []).find((game: { gameType?: string; status?: string; isTest?: boolean; name?: string }) =>
-              game.gameType === 'f1-prediction' &&
-              game.status !== 'finished' &&
-              !game.isTest &&
-              !game.name?.toLowerCase().includes('test')
-            );
-
-            const f1Participants = ((f1ParticipantsData.participants || []) as F1ParticipantSummary[]).filter(
-              (participant) => participant.status === 'active'
-            );
-            const userIsF1Participant = f1Participants.some((participant) => participant.userId === userId);
-
-            if (f1Game && userIsF1Participant) {
-              // Sort descending (highest points first) before finding rank
-              const standings = (((f1StandingsData as F1StandingsResponse | null)?.data?.standings || []) as F1StandingSummary[])
-                .slice()
-                .sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
-              const rankIndex = standings.findIndex((standing) => standing.userId === userId);
-              const userStanding = rankIndex >= 0 ? standings[rankIndex] : null;
-              // Show '-' (ranking=0) when user isn't found in standings yet
-              const ranking = rankIndex >= 0 ? rankIndex + 1 : 0;
-
-              activeGames.push({
-                gameId: f1Game.id,
-                gameName: f1Game.name,
-                gameType: f1Game.gameType,
-                sportType: 'f1',
-                ranking,
-                totalParticipants: f1Participants.length,
-                totalPoints: userStanding?.totalPoints || 0,
-                status: f1Game.status,
-                lastScoreUpdate: (f1StandingsData as F1StandingsResponse | null)?.data?.lastUpdated || null,
-              });
-            }
-          }
-        } catch {
-          // Ignore F1 enrichment failures so the regular games card still loads.
-        }
 
         // Sort by sport type, then by name
         activeGames.sort((a, b) => {

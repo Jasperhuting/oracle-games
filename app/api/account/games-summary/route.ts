@@ -1,5 +1,5 @@
 import { userHandler } from '@/lib/api/handler';
-import { getServerFirebase } from '@/lib/firebase/server';
+import { getServerFirebase, getServerFirebaseF1 } from '@/lib/firebase/server';
 
 const cyclingTypes = [
   'auctioneer',
@@ -174,6 +174,53 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
   const games = results.filter(
     (g): g is NonNullable<typeof g> => g !== null,
   );
+
+  // F1 enrichment — queries the separate oracle-games-f1 database
+  try {
+    const f1Db = getServerFirebaseF1();
+    const season = 2026;
+
+    const [participantSnap, allStandingsSnap, f1GamesSnap] = await Promise.all([
+      // Is this user an active F1 participant?
+      f1Db.collection('participants').where('userId', '==', uid).where('season', '==', season).where('status', '==', 'active').limit(1).get(),
+      // All standings for season (needed to compute rank)
+      f1Db.collection('standings').where('season', '==', season).get(),
+      // Active F1 prediction game
+      db.collection('games').where('gameType', '==', 'f1-prediction').where('status', '!=', 'finished').limit(5).get(),
+    ]);
+
+    if (!participantSnap.empty) {
+      const f1Game = f1GamesSnap.docs.find(d => {
+        const g = d.data();
+        return g.isTest !== true && !g.name?.toLowerCase().includes('test');
+      });
+
+      if (f1Game) {
+        const allStandings = allStandingsSnap.docs.map(d => d.data() as { userId: string; totalPoints?: number });
+        const totalParticipants = participantSnap.docs[0].data().status === 'active' ? allStandingsSnap.size : 0;
+
+        // Sort descending to find rank
+        allStandings.sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
+        const rankIndex = allStandings.findIndex(s => s.userId === uid);
+        const userStanding = rankIndex >= 0 ? allStandings[rankIndex] : null;
+        const ranking = rankIndex >= 0 ? rankIndex + 1 : 0;
+
+        games.push({
+          gameId: f1Game.id,
+          gameName: f1Game.data().name ?? 'F1 Prediction',
+          gameType: 'f1-prediction',
+          sportType: 'f1',
+          ranking,
+          totalParticipants: allStandings.length,
+          totalPoints: userStanding?.totalPoints ?? 0,
+          status: f1Game.data().status,
+          lastScoreUpdate: null,
+        });
+      }
+    }
+  } catch {
+    // Ignore F1 enrichment failures so the regular games still show
+  }
 
   return { games };
 });
