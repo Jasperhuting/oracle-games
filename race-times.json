@@ -1,0 +1,2851 @@
+{
+  "vuelta-al-tachira": {
+    "slug": "vuelta-al-tachira",
+    "name": "Vuelta al Táchira en Bicicleta",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-09",
+    "endDate": "2026-01-18"
+  },
+  "santos-women-s-tour": {
+    "slug": "santos-women-s-tour",
+    "name": "Santos Women's Tour Down Under",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-17",
+    "endDate": "2026-01-19"
+  },
+  "vuelta-el-salvador": {
+    "slug": "vuelta-el-salvador",
+    "name": "Tour El Salvador",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-17",
+    "endDate": "2026-01-21"
+  },
+  "pune-grand-tour": {
+    "slug": "pune-grand-tour",
+    "name": "Pune Grand Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-19",
+    "endDate": "2026-01-23"
+  },
+  "tour-down-under": {
+    "slug": "tour-down-under",
+    "name": "Santos Tour Down Under",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-20",
+    "endDate": "2026-01-25"
+  },
+  "tour-of-sharjah": {
+    "slug": "tour-of-sharjah",
+    "name": "Tour of Sharjah",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-23",
+    "endDate": "2026-01-27"
+  },
+  "alula-tour": {
+    "slug": "alula-tour",
+    "name": "AlUla Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-01-27",
+    "endDate": "2026-01-31"
+  },
+  "vuelta-a-la-comunidad-valenciana": {
+    "slug": "vuelta-a-la-comunidad-valenciana",
+    "name": "Volta Comunitat Valenciana",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-08"
+  },
+  "etoile-de-besseges": {
+    "slug": "etoile-de-besseges",
+    "name": "Etoile de Bessèges - Tour du Gard",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-04",
+    "endDate": "2026-02-08"
+  },
+  "uae-tour-women": {
+    "slug": "uae-tour-women",
+    "name": "UAE Tour Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-05",
+    "endDate": "2026-02-08"
+  },
+  "tour-of-oman": {
+    "slug": "tour-of-oman",
+    "name": "Tour of Oman",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-07",
+    "endDate": "2026-02-11"
+  },
+  "setmana-ciclista-valenciana": {
+    "slug": "setmana-ciclista-valenciana",
+    "name": "Setmana Ciclista Volta Femenina de la Comunitat Valenciana",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-12",
+    "endDate": "2026-02-15"
+  },
+  "tour-cycliste-international-la-provence": {
+    "slug": "tour-cycliste-international-la-provence",
+    "name": "Tour de la Provence",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-13",
+    "endDate": "2026-02-15"
+  },
+  "vuelta-ciclista-a-la-region-de-murcia": {
+    "slug": "vuelta-ciclista-a-la-region-de-murcia",
+    "name": "Vuelta a la Región de Murcia “Costa Cálida”",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-13",
+    "endDate": "2026-02-14"
+  },
+  "uae-tour": {
+    "slug": "uae-tour",
+    "name": "UAE Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-16",
+    "endDate": "2026-02-22"
+  },
+  "volta-ao-algarve": {
+    "slug": "volta-ao-algarve",
+    "name": "Volta ao Algarve em Bicicleta",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-18",
+    "endDate": "2026-02-22"
+  },
+  "ruta-del-sol": {
+    "slug": "ruta-del-sol",
+    "name": "Vuelta a Andalucia Ruta Ciclista Del Sol",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-18",
+    "endDate": "2026-02-22"
+  },
+  "tour-of-rwanda": {
+    "slug": "tour-of-rwanda",
+    "name": "Tour du Rwanda",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-22",
+    "endDate": "2026-03-01"
+  },
+  "giro-di-sardegna": {
+    "slug": "giro-di-sardegna",
+    "name": "Giro di Sardegna",
+    "skipped": "multi-stage",
+    "startDate": "2026-02-25",
+    "endDate": "2026-03-01"
+  },
+  "biwase-tour-of-vietnam": {
+    "slug": "biwase-tour-of-vietnam",
+    "name": "BIWASE Tour of Vietnam",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-04",
+    "endDate": "2026-03-08"
+  },
+  "vuelta-extremadura-feminas": {
+    "slug": "vuelta-extremadura-feminas",
+    "name": "Vuelta a Extremadura Femenina",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-06",
+    "endDate": "2026-03-08"
+  },
+  "paris-nice": {
+    "slug": "paris-nice",
+    "name": "Paris-Nice",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-08",
+    "endDate": "2026-03-15"
+  },
+  "tirreno-adriatico": {
+    "slug": "tirreno-adriatico",
+    "name": "Tirreno-Adriatico",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-09",
+    "endDate": "2026-03-15"
+  },
+  "biwase-cup": {
+    "slug": "biwase-cup",
+    "name": "BIWASE Cup",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-10",
+    "endDate": "2026-03-14"
+  },
+  "istrian-spring-tour": {
+    "slug": "istrian-spring-tour",
+    "name": "Istrian Spring Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-12",
+    "endDate": "2026-03-15"
+  },
+  "tour-of-antalya": {
+    "slug": "tour-of-antalya",
+    "name": "Tour of Antalya",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-12",
+    "endDate": "2026-03-15"
+  },
+  "tour-of-rhodes": {
+    "slug": "tour-of-rhodes",
+    "name": "Tour of Rhodes Powered by Rodos Palace",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-12",
+    "endDate": "2026-03-15"
+  },
+  "tour-de-taiwan": {
+    "slug": "tour-de-taiwan",
+    "name": "Tour de Taiwan",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-15",
+    "endDate": "2026-03-19"
+  },
+  "guido-reybrouck-classic": {
+    "slug": "guido-reybrouck-classic",
+    "name": "Guido Reybrouck Classic",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-21",
+    "endDate": "2026-03-22"
+  },
+  "volta-a-catalunya": {
+    "slug": "volta-a-catalunya",
+    "name": "Volta Ciclista a Catalunya",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-23",
+    "endDate": "2026-03-29"
+  },
+  "tour-of-thailand": {
+    "slug": "tour-of-thailand",
+    "name": "The Princess Maha Chakri Sirindhorn's Cup Tour of Thailand",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-24",
+    "endDate": "2026-03-29"
+  },
+  "settimana-internazionale-coppi-e-bartali": {
+    "slug": "settimana-internazionale-coppi-e-bartali",
+    "name": "Settimana Internazionale Coppi e Bartali",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-25",
+    "endDate": "2026-03-29"
+  },
+  "olympias-tour": {
+    "slug": "olympias-tour",
+    "name": "Metec Olympia's Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-25",
+    "endDate": "2026-03-29"
+  },
+  "volta-ao-alentejo": {
+    "slug": "volta-ao-alentejo",
+    "name": "Volta ao Alentejo",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-25",
+    "endDate": "2026-03-29"
+  },
+  "tour-du-bocage-et-de-l-ernee-53": {
+    "slug": "tour-du-bocage-et-de-l-ernee-53",
+    "name": "Tour du Bocage et de l'Ernée 53",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-28",
+    "endDate": "2026-03-29"
+  },
+  "tour-of-thailand-we": {
+    "slug": "tour-of-thailand-we",
+    "name": "The Princess Maha Chakri Sirindhorn's Cup Women's Tour of Thailand",
+    "skipped": "multi-stage",
+    "startDate": "2026-03-31",
+    "endDate": "2026-04-02"
+  },
+  "ster-van-zuid-limburg": {
+    "slug": "ster-van-zuid-limburg",
+    "name": "STER Van Zuid Limburg",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-03",
+    "endDate": "2026-04-06"
+  },
+  "itzulia-basque-country": {
+    "slug": "itzulia-basque-country",
+    "name": "Itzulia Basque Country",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-06",
+    "endDate": "2026-04-11"
+  },
+  "region-pays-de-la-loire": {
+    "slug": "region-pays-de-la-loire",
+    "name": "Région Pays de la Loire Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-07",
+    "endDate": "2026-04-10"
+  },
+  "circuit-des-ardennes-international": {
+    "slug": "circuit-des-ardennes-international",
+    "name": "Circuit des Ardennes",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-08",
+    "endDate": "2026-04-12"
+  },
+  "tour-of-mersin": {
+    "slug": "tour-of-mersin",
+    "name": "Tour of Mersin",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-09",
+    "endDate": "2026-04-12"
+  },
+  "internationale-cottbuser-junioren-etappenfahrt": {
+    "slug": "internationale-cottbuser-junioren-etappenfahrt",
+    "name": "Internationale Cottbuser Junioren-Etappenfahrt",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-10",
+    "endDate": "2026-04-12"
+  },
+  "gran-camino": {
+    "slug": "gran-camino",
+    "name": "O Gran Camiño -  The Historical Route",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-14",
+    "endDate": "2026-04-18"
+  },
+  "tour-of-hainan": {
+    "slug": "tour-of-hainan",
+    "name": "Tour of Hainan",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-15",
+    "endDate": "2026-04-19"
+  },
+  "tour-du-loir-et-cher": {
+    "slug": "tour-du-loir-et-cher",
+    "name": "Tour du Loir et Cher",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-15",
+    "endDate": "2026-04-19"
+  },
+  "volta-castello": {
+    "slug": "volta-castello",
+    "name": "Volta Castelló",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-16",
+    "endDate": "2026-04-18"
+  },
+  "tour-d-algerie-cycliste": {
+    "slug": "tour-d-algerie-cycliste",
+    "name": "Tour d'Algérie",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-17",
+    "endDate": "2026-04-26"
+  },
+  "tour-of-bosnia-and-herzegovina": {
+    "slug": "tour-of-bosnia-and-herzegovina",
+    "name": "Tour of Bosnia and Herzegovina",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-17",
+    "endDate": "2026-04-19"
+  },
+  "penn-ar-bed-pays-d-iroise": {
+    "slug": "penn-ar-bed-pays-d-iroise",
+    "name": "Penn Ar Bed - Bro An Hirwazh",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-19"
+  },
+  "tour-of-the-alps": {
+    "slug": "tour-of-the-alps",
+    "name": "Tour of the Alps",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-20",
+    "endDate": "2026-04-24"
+  },
+  "grand-prix-samarkand": {
+    "slug": "grand-prix-samarkand",
+    "name": "Grand Prix Fergana",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-20",
+    "endDate": "2026-04-21"
+  },
+  "grand-prix-samarkand-ladies": {
+    "slug": "grand-prix-samarkand-ladies",
+    "name": "Grand Prix Fergana Ladies",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-20",
+    "endDate": "2026-04-21"
+  },
+  "banja-luka-belgrade-i": {
+    "slug": "banja-luka-belgrade-i",
+    "name": "Belgrade Banjaluka",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-22",
+    "endDate": "2026-04-25"
+  },
+  "vuelta-asturias": {
+    "slug": "vuelta-asturias",
+    "name": "Vuelta Asturias Julio Alvarez Mendo",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-23",
+    "endDate": "2026-04-26"
+  },
+  "omloop-van-borsele-wj": {
+    "slug": "omloop-van-borsele-wj",
+    "name": "EPZ Omloop van Borsele",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-24",
+    "endDate": "2026-04-26"
+  },
+  "le-tour-de-bretagne": {
+    "slug": "le-tour-de-bretagne",
+    "name": "Le Tour de Bretagne Cycliste",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-25",
+    "endDate": "2026-05-01"
+  },
+  "tour-of-turkey": {
+    "slug": "tour-of-turkey",
+    "name": "Presidential Cycling Tour of Turkiye",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-26",
+    "endDate": "2026-05-03"
+  },
+  "tour-du-benin": {
+    "slug": "tour-du-benin",
+    "name": "Tour du Bénin",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-27",
+    "endDate": "2026-05-02"
+  },
+  "tour-de-romandie": {
+    "slug": "tour-de-romandie",
+    "name": "Tour de Romandie",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-28",
+    "endDate": "2026-05-03"
+  },
+  "tour-of-bostonliq": {
+    "slug": "tour-of-bostonliq",
+    "name": "Tour of Bostonliq",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-28",
+    "endDate": "2026-04-29"
+  },
+  "tour-of-bostonliq-ladies": {
+    "slug": "tour-of-bostonliq-ladies",
+    "name": "Tour of Bostonliq Ladies",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-28",
+    "endDate": "2026-04-29"
+  },
+  "tour-of-the-gila": {
+    "slug": "tour-of-the-gila",
+    "name": "Tour of the Gila Men",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-29",
+    "endDate": "2026-05-03"
+  },
+  "tour-of-the-gila-we": {
+    "slug": "tour-of-the-gila-we",
+    "name": "Tour of the Gila Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-29",
+    "endDate": "2026-05-03"
+  },
+  "vuelta-bantrab": {
+    "slug": "vuelta-bantrab",
+    "name": "Vuelta Bantrab",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-29",
+    "endDate": "2026-05-03"
+  },
+  "la-coupe-du-president-de-la-ville-de-grudziadz": {
+    "slug": "la-coupe-du-president-de-la-ville-de-grudziadz",
+    "name": "Course de Cujavie-Poméranie pour la Coupe du Président de la Ville de Grudziądz",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-30",
+    "endDate": "2026-05-03"
+  },
+  "gracia": {
+    "slug": "gracia",
+    "name": "Gracia",
+    "skipped": "multi-stage",
+    "startDate": "2026-04-30",
+    "endDate": "2026-05-03"
+  },
+  "gp-anicolor": {
+    "slug": "gp-anicolor",
+    "name": "Grande Prémio Anicolor",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-01",
+    "endDate": "2026-05-03"
+  },
+  "grand-prix-west-bohemia": {
+    "slug": "grand-prix-west-bohemia",
+    "name": "Grand Prix West Bohemia",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-02",
+    "endDate": "2026-05-03"
+  },
+  "vuelta-espana-femenina": {
+    "slug": "vuelta-espana-femenina",
+    "name": "Vuelta España Femenina by Carrefour.es",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-03",
+    "endDate": "2026-05-09"
+  },
+  "tour-do-brasil": {
+    "slug": "tour-do-brasil",
+    "name": "Volta Ciclistica Internacional do Estado de São Paulo",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-04",
+    "endDate": "2026-05-08"
+  },
+  "international-tour-of-hellas": {
+    "slug": "international-tour-of-hellas",
+    "name": "ΔΕΗ Tour of Hellas",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-06",
+    "endDate": "2026-05-10"
+  },
+  "course-de-la-paix-junior": {
+    "slug": "course-de-la-paix-junior",
+    "name": "Course de la Paix Juniors",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-07",
+    "endDate": "2026-05-10"
+  },
+  "tour-de-kumano": {
+    "slug": "tour-de-kumano",
+    "name": "Tour de Kumano",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-07",
+    "endDate": "2026-05-10"
+  },
+  "giro-d-italia": {
+    "slug": "giro-d-italia",
+    "name": "Giro d'Italia",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-08",
+    "endDate": "2026-05-31"
+  },
+  "baku-khankendi-azerbaijan-cycling-race": {
+    "slug": "baku-khankendi-azerbaijan-cycling-race",
+    "name": "Baku-Khankendi Azerbaijan Cycling race",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-10",
+    "endDate": "2026-05-14"
+  },
+  "tour-de-hongrie": {
+    "slug": "tour-de-hongrie",
+    "name": "Tour de Hongrie",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-13",
+    "endDate": "2026-05-17"
+  },
+  "fleche-du-sud": {
+    "slug": "fleche-du-sud",
+    "name": "Flèche du Sud",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-13",
+    "endDate": "2026-05-17"
+  },
+  "tour-de-feminin": {
+    "slug": "tour-de-feminin",
+    "name": "Tour de Feminin",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-14",
+    "endDate": "2026-05-17"
+  },
+  "itzulia-women": {
+    "slug": "itzulia-women",
+    "name": "Itzulia Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-15",
+    "endDate": "2026-05-17"
+  },
+  "tour-du-gevaudan-occitanie-femmes": {
+    "slug": "tour-du-gevaudan-occitanie-femmes",
+    "name": "Tour du Gévaudan Occitanie femmes",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-15",
+    "endDate": "2026-05-16"
+  },
+  "yellow-river-estuary-road-cycling-race": {
+    "slug": "yellow-river-estuary-road-cycling-race",
+    "name": "Yellow River Estuary (Dongying) Road Cycling Race",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-16",
+    "endDate": "2026-05-17"
+  },
+  "tour-of-albania": {
+    "slug": "tour-of-albania",
+    "name": "Cycling Tour of Albania",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-18",
+    "endDate": "2026-05-22"
+  },
+  "grand-prix-el-djazair": {
+    "slug": "grand-prix-el-djazair",
+    "name": "Grand Prix El Djazaïr",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-18",
+    "endDate": "2026-05-20"
+  },
+  "ronde-de-l-isard": {
+    "slug": "ronde-de-l-isard",
+    "name": "Ronde de l'Isard",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-20",
+    "endDate": "2026-05-24"
+  },
+  "4-jours-de-dunkerque": {
+    "slug": "4-jours-de-dunkerque",
+    "name": "4 Jours de Dunkerque / Grand Prix des Hauts de France",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-20",
+    "endDate": "2026-05-24"
+  },
+  "vuelta-a-burgos-feminas": {
+    "slug": "vuelta-a-burgos-feminas",
+    "name": "Vuelta a Burgos Feminas",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-21",
+    "endDate": "2026-05-24"
+  },
+  "spie-internationale-junioren-driedaagse": {
+    "slug": "spie-internationale-junioren-driedaagse",
+    "name": "SPIE Internationale Junioren Driedaagse",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-22",
+    "endDate": "2026-05-24"
+  },
+  "gp-internacional-beiras-e-serra-da-estrela": {
+    "slug": "gp-internacional-beiras-e-serra-da-estrela",
+    "name": "Grande Prémio Internacional Beiras e Serra da Estrela",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-22",
+    "endDate": "2026-05-24"
+  },
+  "tour-of-japan": {
+    "slug": "tour-of-japan",
+    "name": "Tour of Japan",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-24",
+    "endDate": "2026-05-31"
+  },
+  "rhone-alpes-isere-tour": {
+    "slug": "rhone-alpes-isere-tour",
+    "name": "Alpes Isère Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-27",
+    "endDate": "2026-05-31"
+  },
+  "tour-of-lithuania": {
+    "slug": "tour-of-lithuania",
+    "name": "Tour of Lithuania",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-27",
+    "endDate": "2026-05-31"
+  },
+  "course-de-la-paix-u23": {
+    "slug": "course-de-la-paix-u23",
+    "name": "Peace Race",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-28",
+    "endDate": "2026-05-31"
+  },
+  "tour-du-pays-de-vaud": {
+    "slug": "tour-du-pays-de-vaud",
+    "name": "Tour du Pays de Vaud",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-28",
+    "endDate": "2026-05-31"
+  },
+  "boucles-de-la-mayenne": {
+    "slug": "boucles-de-la-mayenne",
+    "name": "Boucles de la Mayenne - Crédit Mutuel",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-28",
+    "endDate": "2026-05-31"
+  },
+  "tour-de-bretagne-feminin": {
+    "slug": "tour-de-bretagne-feminin",
+    "name": "Bretagne Ladies Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-29",
+    "endDate": "2026-05-31"
+  },
+  "gipuzkoa-klasika": {
+    "slug": "gipuzkoa-klasika",
+    "name": "Gipuzkoa Klasikoa",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-31"
+  },
+  "giro-d-italia-women": {
+    "slug": "giro-d-italia-women",
+    "name": "Giro d'Italia Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-30",
+    "endDate": "2026-06-07"
+  },
+  "le-trophee-centre-morbihan": {
+    "slug": "le-trophee-centre-morbihan",
+    "name": "Trophée Centre Morbihan",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-31"
+  },
+  "vuelta-ciclista-a-venezuela": {
+    "slug": "vuelta-ciclista-a-venezuela",
+    "name": "Vuelta Ciclista a Venezuela",
+    "skipped": "multi-stage",
+    "startDate": "2026-05-31",
+    "endDate": "2026-06-07"
+  },
+  "tour-de-wallonie": {
+    "slug": "tour-de-wallonie",
+    "name": "Ethias-Tour de Wallonie",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-01",
+    "endDate": "2026-06-05"
+  },
+  "skoda-tour-de-maurice": {
+    "slug": "skoda-tour-de-maurice",
+    "name": "Tour de Maurice",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-02",
+    "endDate": "2026-06-05"
+  },
+  "vuelta-a-colombia-femenina-oro-y-paz": {
+    "slug": "vuelta-a-colombia-femenina-oro-y-paz",
+    "name": "Vuelta a Colombia Femenina",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-02",
+    "endDate": "2026-06-07"
+  },
+  "tour-of-estonia": {
+    "slug": "tour-of-estonia",
+    "name": "Tour of Estonia",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-04",
+    "endDate": "2026-06-06"
+  },
+  "oberosterreichrundfahrt": {
+    "slug": "oberosterreichrundfahrt",
+    "name": "Oberösterreich Rundfahrt",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-04",
+    "endDate": "2026-06-07"
+  },
+  "ronde-de-l-oise": {
+    "slug": "ronde-de-l-oise",
+    "name": "Ronde de l'Oise",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-04",
+    "endDate": "2026-06-07"
+  },
+  "tour-du-cameroun": {
+    "slug": "tour-du-cameroun",
+    "name": "Tour du Cameroun",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-05",
+    "endDate": "2026-06-14"
+  },
+  "cote-d-or-classic-juniors": {
+    "slug": "cote-d-or-classic-juniors",
+    "name": "Côte d'Or Classic Juniors",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-06",
+    "endDate": "2026-06-07"
+  },
+  "g.p.-f.w.r.-baron": {
+    "slug": "g.p.-f.w.r.-baron",
+    "name": "G.P.  F.W.R. Baron - Lago Le Bandie - Pieve Del Grappa",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-06",
+    "endDate": "2026-06-07"
+  },
+  "dauphine": {
+    "slug": "dauphine",
+    "name": "Tour Auvergne - Rhône-Alpes",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-07",
+    "endDate": "2026-06-14"
+  },
+  "tour-de-gyeongnam": {
+    "slug": "tour-de-gyeongnam",
+    "name": "Tour de Gyeongnam",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-09",
+    "endDate": "2026-06-13"
+  },
+  "tour-de-beauce": {
+    "slug": "tour-de-beauce",
+    "name": "Tour de Beauce",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-10",
+    "endDate": "2026-06-14"
+  },
+  "saarland-trofeo": {
+    "slug": "saarland-trofeo",
+    "name": "LVM Saarland Trofeo",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-11",
+    "endDate": "2026-06-14"
+  },
+  "velo-bank-tour-of-sleza-dolny-slask": {
+    "slug": "velo-bank-tour-of-sleza-dolny-slask",
+    "name": "Tour of Ślęża",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-11",
+    "endDate": "2026-06-14"
+  },
+  "tour-of-malopolska": {
+    "slug": "tour-of-malopolska",
+    "name": "Tour of Malopolska",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-11",
+    "endDate": "2026-06-14"
+  },
+  "tour-feminin-international-des-pyrenees": {
+    "slug": "tour-feminin-international-des-pyrenees",
+    "name": "CIC-Tour Féminin des Pyrénées",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-12",
+    "endDate": "2026-06-14"
+  },
+  "giro-ciclistico-d-italia": {
+    "slug": "giro-ciclistico-d-italia",
+    "name": "Giro d'Italia Next Gen",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-14",
+    "endDate": "2026-06-21"
+  },
+  "tour-de-suisse": {
+    "slug": "tour-de-suisse",
+    "name": "Tour de Suisse",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-17",
+    "endDate": "2026-06-21"
+  },
+  "tour-de-suisse-women": {
+    "slug": "tour-de-suisse-women",
+    "name": "Tour de Suisse Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-17",
+    "endDate": "2026-06-21"
+  },
+  "tour-of-belgium": {
+    "slug": "tour-of-belgium",
+    "name": "Baloise Belgium Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-17",
+    "endDate": "2026-06-21"
+  },
+  "tour-of-slovenia": {
+    "slug": "tour-of-slovenia",
+    "name": "Tour of Slovenia",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-17",
+    "endDate": "2026-06-21"
+  },
+  "la-route-d-occitanie": {
+    "slug": "la-route-d-occitanie",
+    "name": "La Route d'Occitanie - CIC",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-18",
+    "endDate": "2026-06-20"
+  },
+  "grand-prix-jizzakh": {
+    "slug": "grand-prix-jizzakh",
+    "name": "Grand Prix Jizzakh",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-18",
+    "endDate": "2026-06-19"
+  },
+  "grand-prix-jizzakh-ladies": {
+    "slug": "grand-prix-jizzakh-ladies",
+    "name": "Grand Prix Jizzakh Ladies",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-18",
+    "endDate": "2026-06-19"
+  },
+  "medzinarodne-dni-cyklistiky-dubnica": {
+    "slug": "medzinarodne-dni-cyklistiky-dubnica",
+    "name": "Medzinárodné Dni Cyklistiky",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-19",
+    "endDate": "2026-06-21"
+  },
+  "volta-ciclista-a-catalunya-femenina": {
+    "slug": "volta-ciclista-a-catalunya-femenina",
+    "name": "Volta Ciclista a Catalunya Femenina",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-19",
+    "endDate": "2026-06-21"
+  },
+  "tour-szlakiem-mazurskich-twierdz": {
+    "slug": "tour-szlakiem-mazurskich-twierdz",
+    "name": "Tour Szlakiem Mazurskich Twierdz",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-19",
+    "endDate": "2026-06-21"
+  },
+  "acht-van-bladel2": {
+    "slug": "acht-van-bladel2",
+    "name": "BESTRONICS Acht van Bladel",
+    "skipped": "multi-stage",
+    "startDate": "2026-06-26",
+    "endDate": "2026-06-28"
+  },
+  "lyon-torino": {
+    "slug": "lyon-torino",
+    "name": "Lyon - Torino",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-03"
+  },
+  "course-cycliste-de-solidarnosc": {
+    "slug": "course-cycliste-de-solidarnosc",
+    "name": "Course Cycliste de Solidarnosc et des Champions Olympiques",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-04"
+  },
+  "volta-a-portugal-feminina": {
+    "slug": "volta-a-portugal-feminina",
+    "name": "Volta a Portugal Feminina",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-05"
+  },
+  "sint-martinusprijs-kontich": {
+    "slug": "sint-martinusprijs-kontich",
+    "name": "Sint Martinusprijs Kontich",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-02",
+    "endDate": "2026-07-05"
+  },
+  "tour-de-france": {
+    "slug": "tour-de-france",
+    "name": "Tour de France",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-04",
+    "endDate": "2026-07-26"
+  },
+  "sibiu-cycling-tour": {
+    "slug": "sibiu-cycling-tour",
+    "name": "Sibiu Cycling Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-04",
+    "endDate": "2026-07-07"
+  },
+  "clasica-provincia-de-chiriqui": {
+    "slug": "clasica-provincia-de-chiriqui",
+    "name": "Clásica Provincia de Chiriquí",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-04",
+    "endDate": "2026-07-05"
+  },
+  "tour-of-austria": {
+    "slug": "tour-of-austria",
+    "name": "Tour of Austria",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-08",
+    "endDate": "2026-07-12"
+  },
+  "tour-du-valromey": {
+    "slug": "tour-du-valromey",
+    "name": "Ain Bugey Valromey Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-10",
+    "endDate": "2026-07-14"
+  },
+  "gp-int-torres-vedras": {
+    "slug": "gp-int-torres-vedras",
+    "name": "GP Internacional Torres Vedras - Trofeu Joaquim Agostinho",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-10",
+    "endDate": "2026-07-12"
+  },
+  "tour-of-magnificent-qinghai": {
+    "slug": "tour-of-magnificent-qinghai",
+    "name": "Tour of Magnificent Qinghai",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-11",
+    "endDate": "2026-07-18"
+  },
+  "tour-de-l-abitibi": {
+    "slug": "tour-de-l-abitibi",
+    "name": "Tour de l'Abitibi",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-14",
+    "endDate": "2026-07-19"
+  },
+  "giro-ciclistico-della-valle-d-aosta-mont-blanc": {
+    "slug": "giro-ciclistico-della-valle-d-aosta-mont-blanc",
+    "name": "Giro Ciclistico della Valle d'Aosta - Mont Blanc",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-15",
+    "endDate": "2026-07-19"
+  },
+  "bene-ladies-tour": {
+    "slug": "bene-ladies-tour",
+    "name": "Baloise Ladies Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-15",
+    "endDate": "2026-07-19"
+  },
+  "la-sportbreizh-u19": {
+    "slug": "la-sportbreizh-u19",
+    "name": "La Sportbreizh U19",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-17",
+    "endDate": "2026-07-19"
+  },
+  "dookola-mazowsza": {
+    "slug": "dookola-mazowsza",
+    "name": "Dookoła Mazowsza",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-22",
+    "endDate": "2026-07-25"
+  },
+  "int.-oberosterreich-juniorenradrundfahrt": {
+    "slug": "int.-oberosterreich-juniorenradrundfahrt",
+    "name": "Junioren Rundfahrt",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-24",
+    "endDate": "2026-07-26"
+  },
+  "watersley-junior-challenge": {
+    "slug": "watersley-junior-challenge",
+    "name": "Watersley Junior Challenge",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-24",
+    "endDate": "2026-07-26"
+  },
+  "tour-de-pologne-women": {
+    "slug": "tour-de-pologne-women",
+    "name": "Tour de Pologne Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-24",
+    "endDate": "2026-07-26"
+  },
+  "banyuwangi-tour-de-ijen": {
+    "slug": "banyuwangi-tour-de-ijen",
+    "name": "Tour de Banyuwangi Ijen",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-27",
+    "endDate": "2026-07-30"
+  },
+  "tour-de-l-ain": {
+    "slug": "tour-de-l-ain",
+    "name": "Tour de l'Ain",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-28",
+    "endDate": "2026-07-30"
+  },
+  "giro-giovani": {
+    "slug": "giro-giovani",
+    "name": "Giro Giovani",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-29",
+    "endDate": "2026-08-01"
+  },
+  "tour-of-denmark": {
+    "slug": "tour-of-denmark",
+    "name": "PostNord Tour of Denmark",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-29",
+    "endDate": "2026-08-02"
+  },
+  "tour-do-rio": {
+    "slug": "tour-do-rio",
+    "name": "Tour do Rio",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-29",
+    "endDate": "2026-08-02"
+  },
+  "kreiz-breizh-elites": {
+    "slug": "kreiz-breizh-elites",
+    "name": "Kreiz Breizh Elites",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-31",
+    "endDate": "2026-08-03"
+  },
+  "tour-cycliste-international-de-la-guadeloupe": {
+    "slug": "tour-cycliste-international-de-la-guadeloupe",
+    "name": "Tour Cycliste International de la Guadeloupe",
+    "skipped": "multi-stage",
+    "startDate": "2026-07-31",
+    "endDate": "2026-08-09"
+  },
+  "tour-de-france-femmes": {
+    "slug": "tour-de-france-femmes",
+    "name": "Tour de France Femmes avec Zwift",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-09"
+  },
+  "clasica-azuero": {
+    "slug": "clasica-azuero",
+    "name": "Clásica Azuero",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-02"
+  },
+  "trans-himalaya-cycling-race": {
+    "slug": "trans-himalaya-cycling-race",
+    "name": "China Xizang Trans-Himalaya",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-02",
+    "endDate": "2026-08-06"
+  },
+  "tour-de-pologne": {
+    "slug": "tour-de-pologne",
+    "name": "Tour de Pologne",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-03",
+    "endDate": "2026-08-09"
+  },
+  "vuelta-a-burgos": {
+    "slug": "vuelta-a-burgos",
+    "name": "Vuelta a Burgos",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-04",
+    "endDate": "2026-08-08"
+  },
+  "tour-of-kahramanmaras": {
+    "slug": "tour-of-kahramanmaras",
+    "name": "Tour of Kahramanmaraş",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-04",
+    "endDate": "2026-08-07"
+  },
+  "volta-a-portugal": {
+    "slug": "volta-a-portugal",
+    "name": "Volta a Portugal em Bicicleta",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-05",
+    "endDate": "2026-08-16"
+  },
+  "tour-of-szeklerland": {
+    "slug": "tour-of-szeklerland",
+    "name": "Tour of Szeklerland",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-06",
+    "endDate": "2026-08-08"
+  },
+  "liege-la-gleize": {
+    "slug": "liege-la-gleize",
+    "name": "Aubel-Thimister-Stavelot",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-07",
+    "endDate": "2026-08-09"
+  },
+  "vuelta-pilsen-a-colombia": {
+    "slug": "vuelta-pilsen-a-colombia",
+    "name": "Vuelta a Colombia",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-07",
+    "endDate": "2026-08-16"
+  },
+  "one-road-one-belt-juniors": {
+    "slug": "one-road-one-belt-juniors",
+    "name": "Nation's Cup Hungary",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-13",
+    "endDate": "2026-08-14"
+  },
+  "arctic-race-of-norway": {
+    "slug": "arctic-race-of-norway",
+    "name": "Arctic Race of Norway",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-13",
+    "endDate": "2026-08-16"
+  },
+  "bizkaikoloreak": {
+    "slug": "bizkaikoloreak",
+    "name": "Bizkaikoloreak",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-13",
+    "endDate": "2026-08-15"
+  },
+  "czech-tour": {
+    "slug": "czech-tour",
+    "name": "Czech Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-13",
+    "endDate": "2026-08-16"
+  },
+  "vuelta-femenina-a-guatemala": {
+    "slug": "vuelta-femenina-a-guatemala",
+    "name": "Vuelta Ciclística Internacional Femenina a Guatemala",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-13",
+    "endDate": "2026-08-16"
+  },
+  "ronde-des-vallees": {
+    "slug": "ronde-des-vallees",
+    "name": "La Ronde Des Vallées",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-15",
+    "endDate": "2026-08-16"
+  },
+  "tour-cycliste-international-feminin-du-burund": {
+    "slug": "tour-cycliste-international-feminin-du-burund",
+    "name": "Tour Cycliste International Féminin du Burundi",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-17",
+    "endDate": "2026-08-22"
+  },
+  "tour-du-limousin": {
+    "slug": "tour-du-limousin",
+    "name": "Tour du Limousin-Périgord - Nouvelle Aquitaine",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-18",
+    "endDate": "2026-08-21"
+  },
+  "the-women-s-tour": {
+    "slug": "the-women-s-tour",
+    "name": "Lloyds Tour of Britain Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-19",
+    "endDate": "2026-08-23"
+  },
+  "renewi-tour": {
+    "slug": "renewi-tour",
+    "name": "Renewi Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-19",
+    "endDate": "2026-08-23"
+  },
+  "deutschland-tour": {
+    "slug": "deutschland-tour",
+    "name": "Lidl Deutschland Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-19",
+    "endDate": "2026-08-23"
+  },
+  "tour-de-l-avenir": {
+    "slug": "tour-de-l-avenir",
+    "name": "Tour de l'Avenir",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-19",
+    "endDate": "2026-08-27"
+  },
+  "vuelta-ciclista-junior-a-la-ribera-del-duero": {
+    "slug": "vuelta-ciclista-junior-a-la-ribera-del-duero",
+    "name": "Vuelta Junior a la Ribera del Duero",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-20",
+    "endDate": "2026-08-23"
+  },
+  "west-bohemia-tour": {
+    "slug": "west-bohemia-tour",
+    "name": "West Bohemia Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-20",
+    "endDate": "2026-08-23"
+  },
+  "baltic-chain-tour": {
+    "slug": "baltic-chain-tour",
+    "name": "Baltic Chain Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-20",
+    "endDate": "2026-08-23"
+  },
+  "orlen-nations-grand-prix-men-junior": {
+    "slug": "orlen-nations-grand-prix-men-junior",
+    "name": "ORLEN Nations Grand Prix Men Junior",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-23"
+  },
+  "orlen-nations-grand-prix-women-junior": {
+    "slug": "orlen-nations-grand-prix-women-junior",
+    "name": "ORLEN Nations Grand Prix Women Junior",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-21",
+    "endDate": "2026-08-23"
+  },
+  "les-boucles-de-l-oise-juniors-trophee-arnaud-coyo": {
+    "slug": "les-boucles-de-l-oise-juniors-trophee-arnaud-coyo",
+    "name": "Boucles de l'Oise Juniors",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-22",
+    "endDate": "2026-08-23"
+  },
+  "vuelta-a-espana": {
+    "slug": "vuelta-a-espana",
+    "name": "La Vuelta Ciclista a España",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-22",
+    "endDate": "2026-09-13"
+  },
+  "tour-du-poitou-charentes-et-de-la-vienne": {
+    "slug": "tour-du-poitou-charentes-et-de-la-vienne",
+    "name": "TPC en Nouvelle-Aquitaine",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-25",
+    "endDate": "2026-08-28"
+  },
+  "giro-della-toscana-int.-femminile": {
+    "slug": "giro-della-toscana-int.-femminile",
+    "name": "Premondiale Giro Toscana Int. Femminile - Memorial Michela Fanini",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-27",
+    "endDate": "2026-08-30"
+  },
+  "tour-of-samsun": {
+    "slug": "tour-of-samsun",
+    "name": "Tour of Samsun",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-27",
+    "endDate": "2026-08-30"
+  },
+  "tour-de-dmz": {
+    "slug": "tour-de-dmz",
+    "name": "Tour de DMZ",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04"
+  },
+  "tour-de-korea": {
+    "slug": "tour-de-korea",
+    "name": "Tour de Korea",
+    "skipped": "multi-stage",
+    "startDate": "2026-08-31",
+    "endDate": "2026-09-04"
+  },
+  "tour-of-britain": {
+    "slug": "tour-of-britain",
+    "name": "Lloyds Tour of Britain Men",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-02",
+    "endDate": "2026-09-06"
+  },
+  "zlm-tour": {
+    "slug": "zlm-tour",
+    "name": "ZLM Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-02",
+    "endDate": "2026-09-06"
+  },
+  "grand-prix-chantal-biya": {
+    "slug": "grand-prix-chantal-biya",
+    "name": "Grand Prix Chantal Biya",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-02",
+    "endDate": "2026-09-06"
+  },
+  "grand-prix-ruebliland": {
+    "slug": "grand-prix-ruebliland",
+    "name": "Grand Prix Rüebliland",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-06"
+  },
+  "tour-of-istanbul": {
+    "slug": "tour-of-istanbul",
+    "name": "Tour of Istanbul",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-06"
+  },
+  "giro-della-regione-friuli-venezia-giulia": {
+    "slug": "giro-della-regione-friuli-venezia-giulia",
+    "name": "Giro della Regione Friuli Venezia Giulia",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-06"
+  },
+  "okolo-jiznich-cech": {
+    "slug": "okolo-jiznich-cech",
+    "name": "Okolo jižních Čech / Tour of South Bohemia",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-06"
+  },
+  "sauerlandrundfahrt": {
+    "slug": "sauerlandrundfahrt",
+    "name": "Sauerlandrundfahrt",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-06"
+  },
+  "tour-of-kosovo": {
+    "slug": "tour-of-kosovo",
+    "name": "Tour of Kosovo",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-03",
+    "endDate": "2026-09-05"
+  },
+  "flanders-tomorrow-tour": {
+    "slug": "flanders-tomorrow-tour",
+    "name": "Flanders Tomorrow Tour",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-04",
+    "endDate": "2026-09-06"
+  },
+  "tour-de-romandie-feminin": {
+    "slug": "tour-de-romandie-feminin",
+    "name": "Tour de Romandie Féminin",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-04",
+    "endDate": "2026-09-06"
+  },
+  "vuelta-a-cantabria-gp-gobierno-de-cantabria2": {
+    "slug": "vuelta-a-cantabria-gp-gobierno-de-cantabria2",
+    "name": "Vuelta a Cantabria - GP. Gobierno de Cantabria",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-04",
+    "endDate": "2026-09-06"
+  },
+  "tour-of-shanghai": {
+    "slug": "tour-of-shanghai",
+    "name": "Tour of Shanghai",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-04",
+    "endDate": "2026-09-06"
+  },
+  "maryland-cycling-classic": {
+    "slug": "maryland-cycling-classic",
+    "name": "Maryland Cycling Classic",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-05",
+    "endDate": "2026-09-07"
+  },
+  "maryland-cycling-classic-women": {
+    "slug": "maryland-cycling-classic-women",
+    "name": "Maryland Cycling Classic Women",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-05",
+    "endDate": "2026-09-07"
+  },
+  "tour-of-bulgaria": {
+    "slug": "tour-of-bulgaria",
+    "name": "Tour of Bulgaria",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-05",
+    "endDate": "2026-09-10"
+  },
+  "tour-of-salalah": {
+    "slug": "tour-of-salalah",
+    "name": "Tour of Salalah",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-06",
+    "endDate": "2026-09-09"
+  },
+  "vuelta-a-ecuador": {
+    "slug": "vuelta-a-ecuador",
+    "name": "Vuelta Ciclística al Ecuador",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-07",
+    "endDate": "2026-09-13"
+  },
+  "tour-of-binzhou": {
+    "slug": "tour-of-binzhou",
+    "name": "Tour of Binzhou",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-08",
+    "endDate": "2026-09-09"
+  },
+  "giro-della-lunigiana2": {
+    "slug": "giro-della-lunigiana2",
+    "name": "Giro Della Lunigiana",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-09",
+    "endDate": "2026-09-12"
+  },
+  "turul-romaniei": {
+    "slug": "turul-romaniei",
+    "name": "Tour of Romania",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-09",
+    "endDate": "2026-09-13"
+  },
+  "tour-darmenie": {
+    "slug": "tour-darmenie",
+    "name": "Tour d'Arménie",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-10",
+    "endDate": "2026-09-13"
+  },
+  "tour-cycliste-feminin-international-ardeche": {
+    "slug": "tour-cycliste-feminin-international-ardeche",
+    "name": "Boucles Drome Ardeche Femmes",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-13"
+  },
+  "tour-du-maroc": {
+    "slug": "tour-du-maroc",
+    "name": "Tour du Maroc Cycliste",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-11",
+    "endDate": "2026-09-20"
+  },
+  "tour-of-taihu-lake": {
+    "slug": "tour-of-taihu-lake",
+    "name": "Tour of Taihu Lake",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-12",
+    "endDate": "2026-09-16"
+  },
+  "giro-d-abruzzo": {
+    "slug": "giro-d-abruzzo",
+    "name": "Il Giro d'Abruzzo",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-18"
+  },
+  "tour-de-luxembourg": {
+    "slug": "tour-de-luxembourg",
+    "name": "Skoda Tour de Luxembourg",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-16",
+    "endDate": "2026-09-20"
+  },
+  "okolo-slovenska": {
+    "slug": "okolo-slovenska",
+    "name": "Okolo Slovenska / Tour de Slovaquie",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-16",
+    "endDate": "2026-09-20"
+  },
+  "giro-mediterraneo-rosa": {
+    "slug": "giro-mediterraneo-rosa",
+    "name": "Giro Mediterraneo in Rosa",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-17",
+    "endDate": "2026-09-20"
+  },
+  "tour-de-serbie": {
+    "slug": "tour-de-serbie",
+    "name": "Tour de Serbie",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-17",
+    "endDate": "2026-09-20"
+  },
+  "tour-of-poyang-lake": {
+    "slug": "tour-of-poyang-lake",
+    "name": "Tour of Poyang Lake",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-17",
+    "endDate": "2026-09-26"
+  },
+  "tour-of-huangshan": {
+    "slug": "tour-of-huangshan",
+    "name": "Tour of Huangshan",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-18",
+    "endDate": "2026-09-20"
+  },
+  "keizer-der-juniores": {
+    "slug": "keizer-der-juniores",
+    "name": "Keizer der Juniores",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-19",
+    "endDate": "2026-09-20"
+  },
+  "tour-of-croatia": {
+    "slug": "tour-of-croatia",
+    "name": "CRO Race",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-22",
+    "endDate": "2026-09-27"
+  },
+  "tour-of-mentougou": {
+    "slug": "tour-of-mentougou",
+    "name": "Tour of Mentougou",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-25",
+    "endDate": "2026-09-27"
+  },
+  "tour-de-langkawi": {
+    "slug": "tour-de-langkawi",
+    "name": "Petronas Le Tour de Langkawi",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-27",
+    "endDate": "2026-10-04"
+  },
+  "vuelta-internacional-femina-a-costa-rica": {
+    "slug": "vuelta-internacional-femina-a-costa-rica",
+    "name": "Vuelta Internacional Femenina a Costa Rica",
+    "skipped": "multi-stage",
+    "startDate": "2026-09-30",
+    "endDate": "2026-10-04"
+  },
+  "remouchamps-ferrieres-remouchamps": {
+    "slug": "remouchamps-ferrieres-remouchamps",
+    "name": "La Philippe Gilbert juniors",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-03",
+    "endDate": "2026-10-04"
+  },
+  "tour-de-santa-catarina": {
+    "slug": "tour-de-santa-catarina",
+    "name": "Volta Ciclística de Santa Catarina",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-07",
+    "endDate": "2026-10-11"
+  },
+  "tour-de-kyushu": {
+    "slug": "tour-de-kyushu",
+    "name": "Tour de Kyushu",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-10",
+    "endDate": "2026-10-12"
+  },
+  "tour-of-chongming-island-world-cup": {
+    "slug": "tour-of-chongming-island-world-cup",
+    "name": "Tour of Chongming Island",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-13",
+    "endDate": "2026-10-15"
+  },
+  "tour-of-guangxi": {
+    "slug": "tour-of-guangxi",
+    "name": "Tour of Guangxi",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-13",
+    "endDate": "2026-10-18"
+  },
+  "simac-ladies-tour": {
+    "slug": "simac-ladies-tour",
+    "name": "Simac Ladies Tour of Holland",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-13",
+    "endDate": "2026-10-18"
+  },
+  "tour-of-holland": {
+    "slug": "tour-of-holland",
+    "name": "Tour of Holland",
+    "skipped": "multi-stage",
+    "startDate": "2026-10-13",
+    "endDate": "2026-10-18"
+  },
+  "nc-australia-we-itt": {
+    "slug": "nc-australia-we-itt",
+    "name": "National Championships Australia WE - ITT",
+    "skipped": "women",
+    "date": "2026-01-08"
+  },
+  "national-championships-australia-wu23---itt-": {
+    "slug": "national-championships-australia-wu23---itt-",
+    "name": "National Championships Australia WU - ITT",
+    "skipped": "women",
+    "date": "2026-01-08"
+  },
+  "nc-thailand-we-itt": {
+    "slug": "nc-thailand-we-itt",
+    "name": "National Championships Thailand WE - ITT",
+    "skipped": "women",
+    "date": "2026-01-16"
+  },
+  "national-championships-thailand-wu23-itt": {
+    "slug": "national-championships-thailand-wu23-itt",
+    "name": "National Championships Thailand WU - ITT",
+    "skipped": "women",
+    "date": "2026-01-16"
+  },
+  "nc-thailand-wu23-road-race": {
+    "slug": "nc-thailand-wu23-road-race",
+    "name": "National Championships Thailand WU - Road Race",
+    "skipped": "women",
+    "date": "2026-01-18"
+  },
+  "schwalbe-womens-one-day-classic": {
+    "slug": "schwalbe-womens-one-day-classic",
+    "name": "Santos Tour Down Under - Women's One Day Race",
+    "skipped": "women",
+    "date": "2026-01-21"
+  },
+  "cadel-evans-great-ocean-we": {
+    "slug": "cadel-evans-great-ocean-we",
+    "name": "Mapei Cadel Evans Great Ocean Road Race - Women",
+    "skipped": "women",
+    "date": "2026-01-31"
+  },
+  "asian-cycling-championships-we-itt": {
+    "slug": "asian-cycling-championships-we-itt",
+    "name": "Asian Continental Championships WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "nc-colombia-we-itt": {
+    "slug": "nc-colombia-we-itt",
+    "name": "National Championships Colombia WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "nc-new-zealand-we-itt": {
+    "slug": "nc-new-zealand-we-itt",
+    "name": "National Championships New Zealand WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "national-championships-new-zealand-u23-we---itt": {
+    "slug": "national-championships-new-zealand-u23-we---itt",
+    "name": "National Championships New Zealand WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "nc-south-africa-we-itt": {
+    "slug": "nc-south-africa-we-itt",
+    "name": "National Championships South Africa WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "nc-south-africa-wu23-itt": {
+    "slug": "nc-south-africa-wu23-itt",
+    "name": "National Championships South Africa WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "nc-zimbabwe-we-itt": {
+    "slug": "nc-zimbabwe-we-itt",
+    "name": "National Championships Zimbabwe WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "asian-cycling-championships-wu23-itt": {
+    "slug": "asian-cycling-championships-wu23-itt",
+    "name": "Asian Continental Championships WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "national-championships-colombia-wu23-itt": {
+    "slug": "national-championships-colombia-wu23-itt",
+    "name": "National Championships Colombia WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-05"
+  },
+  "nc-namibia-we-itt": {
+    "slug": "nc-namibia-we-itt",
+    "name": "National Championships Namibia WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-06"
+  },
+  "ncs-namibia-wu23-itt": {
+    "slug": "ncs-namibia-wu23-itt",
+    "name": "National Championships Namibia WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-06"
+  },
+  "national-championships-uruguay-we-itt": {
+    "slug": "national-championships-uruguay-we-itt",
+    "name": "National Championships Uruguay WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-06"
+  },
+  "national-championships-uruguay-wu23-itt": {
+    "slug": "national-championships-uruguay-wu23-itt",
+    "name": "National Championships Uruguay WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-06"
+  },
+  "national-championships-colombia-wu23-road-race": {
+    "slug": "national-championships-colombia-wu23-road-race",
+    "name": "National Championships Colombia WU - Road Race",
+    "skipped": "women",
+    "date": "2026-02-06"
+  },
+  "national-championships-uruguay-we-road-race": {
+    "slug": "national-championships-uruguay-we-road-race",
+    "name": "National Championships Uruguay WE - Road Race",
+    "skipped": "women",
+    "date": "2026-02-07"
+  },
+  "national-championships-uruguay-wu-road-race": {
+    "slug": "national-championships-uruguay-wu-road-race",
+    "name": "National Championships Uruguay WU - Road Race",
+    "skipped": "women",
+    "date": "2026-02-07"
+  },
+  "asian-cycling-championships-wu23": {
+    "slug": "asian-cycling-championships-wu23",
+    "name": "Asian Continental Championships WU - Road Race",
+    "skipped": "women",
+    "date": "2026-02-10"
+  },
+  "clasica-de-jaen-nation-s-cup-women": {
+    "slug": "clasica-de-jaen-nation-s-cup-women",
+    "name": "Clásica de Jaén Nation's Cup Women",
+    "skipped": "women",
+    "date": "2026-02-15"
+  },
+  "nc-philippines-we-itt": {
+    "slug": "nc-philippines-we-itt",
+    "name": "National Championships Philippines WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-24"
+  },
+  "national-championships-philippines-wu23-itt": {
+    "slug": "national-championships-philippines-wu23-itt",
+    "name": "National Championships Philippines WU - ITT",
+    "skipped": "women",
+    "date": "2026-02-24"
+  },
+  "national-championships-philippines-wu23-road-race": {
+    "slug": "national-championships-philippines-wu23-road-race",
+    "name": "National Championships Philippines WU - Road Race",
+    "skipped": "women",
+    "date": "2026-02-26"
+  },
+  "nc-bolivia-we-itt": {
+    "slug": "nc-bolivia-we-itt",
+    "name": "National Championships Bolivia WE - ITT",
+    "skipped": "women",
+    "date": "2026-02-27"
+  },
+  "omloop-het-nieuwsblad-we": {
+    "slug": "omloop-het-nieuwsblad-we",
+    "name": "Omloop Nieuwsblad WE",
+    "skipped": "women",
+    "date": "2026-02-28"
+  },
+  "nc-chile-we-itt": {
+    "slug": "nc-chile-we-itt",
+    "name": "National Championships Chile WE - ITT",
+    "skipped": "women",
+    "date": "2026-03-06"
+  },
+  "national-championships-chile-wu23-itt": {
+    "slug": "national-championships-chile-wu23-itt",
+    "name": "National Championships Chile WU - ITT",
+    "skipped": "women",
+    "date": "2026-03-06"
+  },
+  "strade-bianche-donne": {
+    "slug": "strade-bianche-donne",
+    "name": "Strade Bianche Donne",
+    "skipped": "women",
+    "date": "2026-03-07"
+  },
+  "trofeo-oro-in-euro": {
+    "slug": "trofeo-oro-in-euro",
+    "name": "Trofeo Oro in Euro - Women's Bike Race",
+    "skipped": "women",
+    "date": "2026-03-08"
+  },
+  "trofeo-alfredo-binda": {
+    "slug": "trofeo-alfredo-binda",
+    "name": "Trofeo Alfredo Binda - Comune di Cittiglio",
+    "skipped": "women",
+    "date": "2026-03-15"
+  },
+  "milano-sanremo-donne": {
+    "slug": "milano-sanremo-donne",
+    "name": "Milano-Sanremo Donne",
+    "skipped": "women",
+    "date": "2026-03-21"
+  },
+  "classic-brugge-de-panne-we": {
+    "slug": "classic-brugge-de-panne-we",
+    "name": "Ronde van Brugge - Tour of Bruges WE",
+    "skipped": "women",
+    "date": "2026-03-26"
+  },
+  "gent-wevelgem-women-elite": {
+    "slug": "gent-wevelgem-women-elite",
+    "name": "In Flanders Fields - In Wevelgem",
+    "skipped": "women",
+    "date": "2026-03-29"
+  },
+  "dwars-door-vlaanderen-we": {
+    "slug": "dwars-door-vlaanderen-we",
+    "name": "Dwars door Vlaanderen / A travers la Flandre WE",
+    "skipped": "women",
+    "date": "2026-04-01"
+  },
+  "national-championships-greece-wu23-itt": {
+    "slug": "national-championships-greece-wu23-itt",
+    "name": "National Championships Greece WU - ITT",
+    "skipped": "women",
+    "date": "2026-04-03"
+  },
+  "national-championships-greece-wu23-road-race": {
+    "slug": "national-championships-greece-wu23-road-race",
+    "name": "National Championships Greece WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-04"
+  },
+  "national-championships-united-arab-emirates-we-itt": {
+    "slug": "national-championships-united-arab-emirates-we-itt",
+    "name": "National Championships United Arab Emirates WE - ITT",
+    "skipped": "women",
+    "date": "2026-04-04"
+  },
+  "national-championships-united-arab-emirates-wu-itt": {
+    "slug": "national-championships-united-arab-emirates-wu-itt",
+    "name": "National Championships United Arab Emirates WU - ITT",
+    "skipped": "women",
+    "date": "2026-04-04"
+  },
+  "ronde-van-vlaanderen-we": {
+    "slug": "ronde-van-vlaanderen-we",
+    "name": "Ronde van Vlaanderen WE",
+    "skipped": "women",
+    "date": "2026-04-05"
+  },
+  "national-championships-greece-we-road-race": {
+    "slug": "national-championships-greece-we-road-race",
+    "name": "National Championships Greece MJ - Road Race",
+    "skipped": "women",
+    "date": "2026-04-05"
+  },
+  "nc-Uzbekistan-wu-itt": {
+    "slug": "nc-Uzbekistan-wu-itt",
+    "name": "National Championships Uzbekistan WU - ITT",
+    "skipped": "women",
+    "date": "2026-04-05"
+  },
+  "region-pays-de-la-loire-tour-feminin": {
+    "slug": "region-pays-de-la-loire-tour-feminin",
+    "name": "Région Pays de la Loire Tour - Féminin",
+    "skipped": "women",
+    "date": "2026-04-08"
+  },
+  "nc-uzbekistan-wu-rr": {
+    "slug": "nc-uzbekistan-wu-rr",
+    "name": "National Championships Uzbekistan WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-08"
+  },
+  "oceania-continental-championships-we-itt": {
+    "slug": "oceania-continental-championships-we-itt",
+    "name": "Oceania Continental Championships WE - ITT",
+    "skipped": "women",
+    "date": "2026-04-09"
+  },
+  "campeonatos-centroamericanos-de-ruta-we-itt": {
+    "slug": "campeonatos-centroamericanos-de-ruta-we-itt",
+    "name": "Campeonato Centroamericano ITT - WE",
+    "skipped": "women",
+    "date": "2026-04-09"
+  },
+  "national-championships-egypt-we-itt": {
+    "slug": "national-championships-egypt-we-itt",
+    "name": "National Championships Egypt WE - ITT",
+    "skipped": "women",
+    "date": "2026-04-10"
+  },
+  "national-championships-egypt-wu-itt": {
+    "slug": "national-championships-egypt-wu-itt",
+    "name": "National Championships Egypt WU - ITT",
+    "skipped": "women",
+    "date": "2026-04-10"
+  },
+  "national-championships-egypt-we-road-race": {
+    "slug": "national-championships-egypt-we-road-race",
+    "name": "National Championships Egypt WE - Road Race",
+    "skipped": "women",
+    "date": "2026-04-11"
+  },
+  "national-championships-united-arab-emirates-we-roa": {
+    "slug": "national-championships-united-arab-emirates-we-roa",
+    "name": "National Championships United Arab Emirates WE - Road Race",
+    "skipped": "women",
+    "date": "2026-04-11"
+  },
+  "campeonatos-centroamericanos-de-ruta-we-road-race": {
+    "slug": "campeonatos-centroamericanos-de-ruta-we-road-race",
+    "name": "Campeonato Centroamericano IRR - WE",
+    "skipped": "women",
+    "date": "2026-04-11"
+  },
+  "national-championships-egypt-wu-road-race": {
+    "slug": "national-championships-egypt-wu-road-race",
+    "name": "National Championships Egypt WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-11"
+  },
+  "nc-united-arab-emirates-wu-road-race": {
+    "slug": "nc-united-arab-emirates-wu-road-race",
+    "name": "National Championships United Arab Emirates WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-11"
+  },
+  "paris-roubaix-we": {
+    "slug": "paris-roubaix-we",
+    "name": "Paris-Roubaix Femmes Hauts-de-France",
+    "skipped": "women",
+    "date": "2026-04-12"
+  },
+  "national-championships-kazakhstan-wu-road-race": {
+    "slug": "national-championships-kazakhstan-wu-road-race",
+    "name": "National Championships Kazakhstan WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-12"
+  },
+  "nc-costa-rica-we-itt": {
+    "slug": "nc-costa-rica-we-itt",
+    "name": "National Championships Costa Rica WE - ITT",
+    "skipped": "women",
+    "date": "2026-04-17"
+  },
+  "national-championships-costa-rica-wu23-itt": {
+    "slug": "national-championships-costa-rica-wu23-itt",
+    "name": "National Championships Costa Rica WU - ITT",
+    "skipped": "women",
+    "date": "2026-04-17"
+  },
+  "national-championships-costa-rica-wu23-road-race": {
+    "slug": "national-championships-costa-rica-wu23-road-race",
+    "name": "National Championships Costa Rica WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-18"
+  },
+  "amstel-gold-race-we": {
+    "slug": "amstel-gold-race-we",
+    "name": "Amstel Gold Race Ladies Edition",
+    "skipped": "women",
+    "date": "2026-04-19"
+  },
+  "grand-prix-feminin-de-chambery": {
+    "slug": "grand-prix-feminin-de-chambery",
+    "name": "Grand Prix Féminin de Chambéry",
+    "skipped": "women",
+    "date": "2026-04-19"
+  },
+  "la-fleche-wallonne-feminine": {
+    "slug": "la-fleche-wallonne-feminine",
+    "name": "La Flèche Wallonne Femmes",
+    "skipped": "women",
+    "date": "2026-04-22"
+  },
+  "nc-panama-we-itt": {
+    "slug": "nc-panama-we-itt",
+    "name": "National Championships Panama WE - ITT",
+    "skipped": "women",
+    "date": "2026-04-24"
+  },
+  "national-championships-panama-wu23-itt": {
+    "slug": "national-championships-panama-wu23-itt",
+    "name": "National Championships Panama WU - ITT",
+    "skipped": "women",
+    "date": "2026-04-24"
+  },
+  "omloop-van-borsele": {
+    "slug": "omloop-van-borsele",
+    "name": "EPZ Omloop van Borsele Women",
+    "skipped": "women",
+    "date": "2026-04-25"
+  },
+  "liege-bastogne-liege-femmes": {
+    "slug": "liege-bastogne-liege-femmes",
+    "name": "Liège-Bastogne-Liège Femmes",
+    "skipped": "women",
+    "date": "2026-04-26"
+  },
+  "national-championships-panama-wu23-road-race": {
+    "slug": "national-championships-panama-wu23-road-race",
+    "name": "National Championships Panama WU - Road Race",
+    "skipped": "women",
+    "date": "2026-04-26"
+  },
+  "gp-de-plumelec-morbihan-dames": {
+    "slug": "gp-de-plumelec-morbihan-dames",
+    "name": "Grand Prix du Morbihan Femmes",
+    "skipped": "women",
+    "date": "2026-05-09"
+  },
+  "navarra-women-s-elite-classics": {
+    "slug": "navarra-women-s-elite-classics",
+    "name": "Navarra Women's Elite Classic",
+    "skipped": "women",
+    "date": "2026-05-13"
+  },
+  "national-championships-united-states-wu-road-race": {
+    "slug": "national-championships-united-states-wu-road-race",
+    "name": "National Championships United States WU - Road Race",
+    "skipped": "women",
+    "date": "2026-05-20"
+  },
+  "bay-wa-r.e-classique-feminine": {
+    "slug": "bay-wa-r.e-classique-feminine",
+    "name": "Tour du Haut Limousin Féminin by Massy Sotec - Trophée Baywa r.e.",
+    "skipped": "women",
+    "date": "2026-05-25"
+  },
+  "copenhagen-sprint-we": {
+    "slug": "copenhagen-sprint-we",
+    "name": "Copenhagen Sprint",
+    "skipped": "women",
+    "date": "2026-06-13"
+  },
+  "national-championships-united-states-wu23-itt": {
+    "slug": "national-championships-united-states-wu23-itt",
+    "name": "National Championships United States WU - ITT",
+    "skipped": "women",
+    "date": "2026-06-16"
+  },
+  "nc-united-states-we-itt": {
+    "slug": "nc-united-states-we-itt",
+    "name": "National Championships United States WE - ITT",
+    "skipped": "women",
+    "date": "2026-06-17"
+  },
+  "women-cycling-day": {
+    "slug": "women-cycling-day",
+    "name": "Women Cycling Day",
+    "skipped": "women",
+    "date": "2026-06-21"
+  },
+  "nc-netherlands-we-itt": {
+    "slug": "nc-netherlands-we-itt",
+    "name": "National Championships Netherlands WE - ITT",
+    "skipped": "women",
+    "date": "2026-06-24"
+  },
+  "2018-national-championships-netherlands-wu23-itt": {
+    "slug": "2018-national-championships-netherlands-wu23-itt",
+    "name": "National Championships Netherlands WU23 - ITT",
+    "skipped": "women",
+    "date": "2026-06-24"
+  },
+  "nc-switzerland-we-itt": {
+    "slug": "nc-switzerland-we-itt",
+    "name": "National Championships Switzerland WE - ITT",
+    "skipped": "women",
+    "date": "2026-06-25"
+  },
+  "grand-prix-valromey-tour-feminin": {
+    "slug": "grand-prix-valromey-tour-feminin",
+    "name": "VALROMEY Tour Féminin I CNR CA",
+    "skipped": "women",
+    "date": "2026-07-11"
+  },
+  "grand-prix-valromey-tour-feminin-ii": {
+    "slug": "grand-prix-valromey-tour-feminin-ii",
+    "name": "VALROMEY Tour Féminin II CNR CA",
+    "skipped": "women",
+    "date": "2026-07-13"
+  },
+  "valromey-tour-feminin-iii": {
+    "slug": "valromey-tour-feminin-iii",
+    "name": "VALROMEY Tour Féminin III CNR CA - Chrono du Grand Colombier",
+    "skipped": "women",
+    "date": "2026-07-14"
+  },
+  "egmont-cycling-race-women": {
+    "slug": "egmont-cycling-race-women",
+    "name": "Egmont Cycling Race Women",
+    "skipped": "women",
+    "date": "2026-08-18"
+  },
+  "Tour-de-Belle-Isle-en-Terre-Kreiz-Breizh-Elites-Da": {
+    "slug": "Tour-de-Belle-Isle-en-Terre-Kreiz-Breizh-Elites-Da",
+    "name": "Kreiz Breizh Elites Féminin",
+    "skipped": "women",
+    "date": "2026-08-27"
+  },
+  "gp-ouest-france-plouay": {
+    "slug": "gp-ouest-france-plouay",
+    "name": "Classic Lorient Agglomération",
+    "skipped": "women",
+    "date": "2026-08-29"
+  },
+  "grand-prix-ceratizit-women-junior": {
+    "slug": "grand-prix-ceratizit-women-junior",
+    "name": "Grand Prix CERATIZIT Women Junior",
+    "skipped": "women",
+    "date": "2026-08-29"
+  },
+  "gp-de-fourmies-la-voix-du-nord-we": {
+    "slug": "gp-de-fourmies-la-voix-du-nord-we",
+    "name": "La Choralis Fourmies Féminine",
+    "skipped": "women",
+    "date": "2026-09-13"
+  },
+  "women-s-cycling-grand-prix-stuttgart": {
+    "slug": "women-s-cycling-grand-prix-stuttgart",
+    "name": "Women’s Cycling Grand Prix Region Stuttgart",
+    "skipped": "women",
+    "date": "2026-09-13"
+  },
+  "chrono-gatineau": {
+    "slug": "chrono-gatineau",
+    "name": "Chrono Féminin de Gatineau",
+    "skipped": "women",
+    "date": "2026-09-16"
+  },
+  "grand-prix-de-wallonie-we": {
+    "slug": "grand-prix-de-wallonie-we",
+    "name": "Lotto Grand Prix de Wallonie Dames",
+    "skipped": "women",
+    "date": "2026-09-16"
+  },
+  "world-championships-wu-itt": {
+    "slug": "world-championships-wu-itt",
+    "name": "World Championships WU - ITT",
+    "skipped": "women",
+    "date": "2026-09-21"
+  },
+  "world-championships-wu-road-race": {
+    "slug": "world-championships-wu-road-race",
+    "name": "World Championships WU - Road Race",
+    "skipped": "women",
+    "date": "2026-09-24"
+  },
+  "world-championships-junior-women": {
+    "slug": "world-championships-junior-women",
+    "name": "World Championships WJ - Road Race",
+    "skipped": "women",
+    "date": "2026-09-25"
+  },
+  "european-championship-we-u23": {
+    "slug": "european-championship-we-u23",
+    "name": "European Continental Championships WU - Road Race",
+    "skipped": "women",
+    "date": "2026-10-02"
+  },
+  "tre-valli-varesine-women-s-race": {
+    "slug": "tre-valli-varesine-women-s-race",
+    "name": "Tre Valli Varesine Women's Race",
+    "skipped": "women",
+    "date": "2026-10-06"
+  },
+  "binche-chimay-binche-pour-dames": {
+    "slug": "binche-chimay-binche-pour-dames",
+    "name": "Binche Chimay Binche pour Dames",
+    "skipped": "women",
+    "date": "2026-10-06"
+  },
+  "uec-road-european-championships-we-itt": {
+    "slug": "uec-road-european-championships-we-itt",
+    "name": "European Continental Championships WE - ITT",
+    "skipped": "women",
+    "date": "2026-10-07"
+  },
+  "european-continental-championships-wu23-itt": {
+    "slug": "european-continental-championships-wu23-itt",
+    "name": "European Continental Championships WU - ITT",
+    "skipped": "women",
+    "date": "2026-10-07"
+  },
+  "giro-del-veneto-women": {
+    "slug": "giro-del-veneto-women",
+    "name": "Veneto Women",
+    "skipped": "women",
+    "date": "2026-10-14"
+  },
+  "tour-of-guangxi-women-s-elite-world-challenge": {
+    "slug": "tour-of-guangxi-women-s-elite-world-challenge",
+    "name": "Tour of Guangxi Women's WorldTour",
+    "skipped": "women",
+    "date": "2026-10-18"
+  },
+  "nc-australia-mj-itt": {
+    "slug": "nc-australia-mj-itt",
+    "name": "National Championships Australia MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-01-07"
+  },
+  "nc-australia-wj-itt": {
+    "slug": "nc-australia-wj-itt",
+    "name": "National Championships Australia WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-01-07"
+  },
+  "nc-australia-wj1": {
+    "slug": "nc-australia-wj1",
+    "name": "National Championships Australia WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-01-10"
+  },
+  "nc-thailand-mj-itt": {
+    "slug": "nc-thailand-mj-itt",
+    "name": "National Championships Thailand MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-01-16"
+  },
+  "nc-thailand-wj-itt": {
+    "slug": "nc-thailand-wj-itt",
+    "name": "National Championships Thailand WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-01-16"
+  },
+  "asian-cycling-championships-mj-itt2": {
+    "slug": "asian-cycling-championships-mj-itt2",
+    "name": "Asian Continental Championships MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-colombia-mj-itt": {
+    "slug": "nc-colombia-mj-itt",
+    "name": "National Championships Colombia MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-colombia-wj-itt": {
+    "slug": "nc-colombia-wj-itt",
+    "name": "National Championships Colombia WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-new-zealand-mj-itt": {
+    "slug": "nc-new-zealand-mj-itt",
+    "name": "National Championships New Zealand MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-new-zealand-wj-itt": {
+    "slug": "nc-new-zealand-wj-itt",
+    "name": "National Championships New Zealand WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-south-africa-mj-itt": {
+    "slug": "nc-south-africa-mj-itt",
+    "name": "National Championships South Africa MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-south-africa-wj-itt": {
+    "slug": "nc-south-africa-wj-itt",
+    "name": "National Championships South Africa WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-zimbabwe-mj-itt": {
+    "slug": "nc-zimbabwe-mj-itt",
+    "name": "National Championships Zimbabwe MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "nc-zimbabwe-wj-itt": {
+    "slug": "nc-zimbabwe-wj-itt",
+    "name": "National Championships Zimbabwe WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-05"
+  },
+  "asian-cycling-championships-wj-itt2": {
+    "slug": "asian-cycling-championships-wj-itt2",
+    "name": "Asian Continental Championships WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-06"
+  },
+  "nc-namibia-mj-itt": {
+    "slug": "nc-namibia-mj-itt",
+    "name": "National Championships Namibia MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-06"
+  },
+  "nc-namibia-wj-itt": {
+    "slug": "nc-namibia-wj-itt",
+    "name": "National Championships Namibia WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-06"
+  },
+  "national-championships-uruguay-mj-itt": {
+    "slug": "national-championships-uruguay-mj-itt",
+    "name": "National Championships Uruguay MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-06"
+  },
+  "national-championships-uruguay-wj-itt": {
+    "slug": "national-championships-uruguay-wj-itt",
+    "name": "National Championships Uruguay WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-06"
+  },
+  "nc-south-africa-wj2": {
+    "slug": "nc-south-africa-wj2",
+    "name": "National Championships South Africa WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-07"
+  },
+  "national-championships-uruguay-wj-road-race": {
+    "slug": "national-championships-uruguay-wj-road-race",
+    "name": "National Championships Uruguay WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-07"
+  },
+  "national-championships-uruguay-mj-road-race": {
+    "slug": "national-championships-uruguay-mj-road-race",
+    "name": "National Championships Uruguay MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-08"
+  },
+  "asian-cycling-championships-mj2": {
+    "slug": "asian-cycling-championships-mj2",
+    "name": "Asian Continental Championships MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-10"
+  },
+  "nc-philippines-mj-itt": {
+    "slug": "nc-philippines-mj-itt",
+    "name": "National Championships Philippines MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-24"
+  },
+  "national-championships-philippines-wj-itt": {
+    "slug": "national-championships-philippines-wj-itt",
+    "name": "National Championships Philippines WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-24"
+  },
+  "national-championships-philippines-wj-road-race": {
+    "slug": "national-championships-philippines-wj-road-race",
+    "name": "National Championships Philippines WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-25"
+  },
+  "national-championships-bolivia-mj-itt": {
+    "slug": "national-championships-bolivia-mj-itt",
+    "name": "National Championships Bolivia MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-27"
+  },
+  "national-championships-bolivia-wj-itt": {
+    "slug": "national-championships-bolivia-wj-itt",
+    "name": "National Championships Bolivia WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-02-27"
+  },
+  "national-championships-bolivia-mj-road-race": {
+    "slug": "national-championships-bolivia-mj-road-race",
+    "name": "National Championships Bolivia MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-28"
+  },
+  "national-championships-bolivia-wj-road-race": {
+    "slug": "national-championships-bolivia-wj-road-race",
+    "name": "National Championships Bolivia WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-02-28"
+  },
+  "kuurne-brussel-kuurne-juniors": {
+    "slug": "kuurne-brussel-kuurne-juniors",
+    "name": "Kuurne - Brussel - Kuurne Juniors",
+    "skipped": "junior",
+    "date": "2026-03-01"
+  },
+  "nc-chile-mj-itt": {
+    "slug": "nc-chile-mj-itt",
+    "name": "National Championships Chile MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-03-06"
+  },
+  "nc-chile-wj-itt": {
+    "slug": "nc-chile-wj-itt",
+    "name": "National Championships Chile WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-03-06"
+  },
+  "national-championships-argentina-mj-itt": {
+    "slug": "national-championships-argentina-mj-itt",
+    "name": "National Championships Argentina MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-03-13"
+  },
+  "national-championships-argentina-wj-itt": {
+    "slug": "national-championships-argentina-wj-itt",
+    "name": "National Championships Argentina WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-03-13"
+  },
+  "national-championships-argentina-mj-road-race": {
+    "slug": "national-championships-argentina-mj-road-race",
+    "name": "National Championships Argentina MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-03-14"
+  },
+  "national-championships-argentina-wj-road-race": {
+    "slug": "national-championships-argentina-wj-road-race",
+    "name": "National Championships Argentina WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-03-14"
+  },
+  "panamerican-championship-mj-itt": {
+    "slug": "panamerican-championship-mj-itt",
+    "name": "Pan-American Continental Championships MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-03-17"
+  },
+  "panamerican-championship-wj-itt": {
+    "slug": "panamerican-championship-wj-itt",
+    "name": "Pan-American Continental Championships WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-03-17"
+  },
+  "pan-american-championships-wj--": {
+    "slug": "pan-american-championships-wj--",
+    "name": "Pan-American Continental Championships WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-03-20"
+  },
+  "bernaudeau-junior": {
+    "slug": "bernaudeau-junior",
+    "name": "Bernaudeau Junior",
+    "skipped": "junior",
+    "date": "2026-03-22"
+  },
+  "national-championships-greece-mj-itt-nc": {
+    "slug": "national-championships-greece-mj-itt-nc",
+    "name": "National Championships Greece MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-03"
+  },
+  "national-championships-greece-wj-itt": {
+    "slug": "national-championships-greece-wj-itt",
+    "name": "National Championships Greece WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-03"
+  },
+  "national-championships-greece-wj-road-race": {
+    "slug": "national-championships-greece-wj-road-race",
+    "name": "National Championships Greece WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-04"
+  },
+  "national-championships-united-arab-emirates-mj-itt": {
+    "slug": "national-championships-united-arab-emirates-mj-itt",
+    "name": "National Championships United Arab Emirates MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-04"
+  },
+  "national-championships-united-arab-emirates-wj-itt": {
+    "slug": "national-championships-united-arab-emirates-wj-itt",
+    "name": "National Championships United Arab Emirates WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-04"
+  },
+  "oceania-continental-championships-mj-itt": {
+    "slug": "oceania-continental-championships-mj-itt",
+    "name": "Oceania Continental Championships MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-09"
+  },
+  "oceania-continental-championships-wj-itt": {
+    "slug": "oceania-continental-championships-wj-itt",
+    "name": "Oceania Continental Championships WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-09"
+  },
+  "road-central-american-championships-mj-itt": {
+    "slug": "road-central-american-championships-mj-itt",
+    "name": "Campeonato Centroamericano MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-09"
+  },
+  "road-central-american-championships-wj-itt": {
+    "slug": "road-central-american-championships-wj-itt",
+    "name": "Campeonato Centroamericano WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-09"
+  },
+  "road-central-american-championships-mj-irr": {
+    "slug": "road-central-american-championships-mj-irr",
+    "name": "Campeonato Centroamericano MJ - IRR",
+    "skipped": "junior",
+    "date": "2026-04-10"
+  },
+  "road-central-american-championships-wj-irr": {
+    "slug": "road-central-american-championships-wj-irr",
+    "name": "Campeonato Centroamericano WJ - IRR",
+    "skipped": "junior",
+    "date": "2026-04-10"
+  },
+  "national-championships-egypt-wj-itt": {
+    "slug": "national-championships-egypt-wj-itt",
+    "name": "National Championships Egypt WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-10"
+  },
+  "national-championships-united-arab-emirates-mj-roa": {
+    "slug": "national-championships-united-arab-emirates-mj-roa",
+    "name": "National Championships United Arab Emirates MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-11"
+  },
+  "national-championships-egypt-wj-road-race": {
+    "slug": "national-championships-egypt-wj-road-race",
+    "name": "National Championships Egypt WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-11"
+  },
+  "nc-united-arab-emirates-wj-road-race": {
+    "slug": "nc-united-arab-emirates-wj-road-race",
+    "name": "National Championships United Arab Emirates WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-11"
+  },
+  "paris-roubaix-juniors": {
+    "slug": "paris-roubaix-juniors",
+    "name": "Paris-Roubaix Juniors",
+    "skipped": "junior",
+    "date": "2026-04-12"
+  },
+  "national-championships-egypt-mj-itt": {
+    "slug": "national-championships-egypt-mj-itt",
+    "name": "National Championships Egypt MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-17"
+  },
+  "nc-peru-mj-itt": {
+    "slug": "nc-peru-mj-itt",
+    "name": "National Championships Peru MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-18"
+  },
+  "national-championships-egypt-mj-road-race": {
+    "slug": "national-championships-egypt-mj-road-race",
+    "name": "National Championships Egypt MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-18"
+  },
+  "national-championships-peru-wj-itt": {
+    "slug": "national-championships-peru-wj-itt",
+    "name": "National Championships Peru WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-18"
+  },
+  "national-championships-peru-wj-road-race": {
+    "slug": "national-championships-peru-wj-road-race",
+    "name": "National Championships Peru WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-19"
+  },
+  "nc-panama-mj-itt": {
+    "slug": "nc-panama-mj-itt",
+    "name": "National Championships Panama MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-24"
+  },
+  "national-championships-panama-wj-itt": {
+    "slug": "national-championships-panama-wj-itt",
+    "name": "National Championships Panama WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-04-24"
+  },
+  "national-championships-panama-wj-road-race": {
+    "slug": "national-championships-panama-wj-road-race",
+    "name": "National Championships Panama WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-04-26"
+  },
+  "la-classique-des-alpes-juniors": {
+    "slug": "la-classique-des-alpes-juniors",
+    "name": "La Classique des Alpes Juniors",
+    "skipped": "junior",
+    "date": "2026-06-06"
+  },
+  "nc-united-states-mj-itt": {
+    "slug": "nc-united-states-mj-itt",
+    "name": "National Championships United States MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-06-16"
+  },
+  "nc-united-states-wj-itt": {
+    "slug": "nc-united-states-wj-itt",
+    "name": "National Championships United States WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-06-16"
+  },
+  "nc-united-states-mj2": {
+    "slug": "nc-united-states-mj2",
+    "name": "National Championships United States MJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-06-20"
+  },
+  "nc-netherlands-mj-itt": {
+    "slug": "nc-netherlands-mj-itt",
+    "name": "National Championships Netherlands MJ - ITT",
+    "skipped": "junior",
+    "date": "2026-06-24"
+  },
+  "nc-netherlands-wj-itt": {
+    "slug": "nc-netherlands-wj-itt",
+    "name": "National Championships Netherlands WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-06-24"
+  },
+  "gp-plouay-junior-men": {
+    "slug": "gp-plouay-junior-men",
+    "name": "GP Plouay Junior Men",
+    "skipped": "junior",
+    "date": "2026-08-28"
+  },
+  "world-championships-wj-itt": {
+    "slug": "world-championships-wj-itt",
+    "name": "World Championships WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-09-22"
+  },
+  "european-continental-championships-wj-road-race": {
+    "slug": "european-continental-championships-wj-road-race",
+    "name": "European Continental Championships WJ - Road Race",
+    "skipped": "junior",
+    "date": "2026-10-04"
+  },
+  "european-championship-wj-itt": {
+    "slug": "european-championship-wj-itt",
+    "name": "European Continental Championships WJ - ITT",
+    "skipped": "junior",
+    "date": "2026-10-07"
+  },
+  "milano-rapallo": {
+    "slug": "milano-rapallo",
+    "name": "Milano-Rapallo gara in linea",
+    "skipped": "stage-race-2x",
+    "date": "2026-09-20"
+  },
+  "great-ocean-road-race": {
+    "slug": "great-ocean-road-race",
+    "name": "Mapei Cadel Evans Great Ocean Road Race - Men",
+    "date": "2026-02-01",
+    "noTimeTable": true
+  },
+  "omloop-het-nieuwsblad": {
+    "slug": "omloop-het-nieuwsblad",
+    "name": "Omloop Nieuwsblad ME",
+    "date": "2026-02-28",
+    "finishTime": "16:57",
+    "scrapeAfter": "17:57",
+    "url2025": "https://www.procyclingstats.com/race/omloop-het-nieuwsblad/2025/result/info/time-table"
+  },
+  "strade-bianche": {
+    "slug": "strade-bianche",
+    "name": "Strade Bianche",
+    "date": "2026-03-07",
+    "finishTime": "18:13",
+    "scrapeAfter": "19:13",
+    "url2025": "https://www.procyclingstats.com/race/strade-bianche/2025/result/info/time-table"
+  },
+  "milano-sanremo": {
+    "slug": "milano-sanremo",
+    "name": "Milano-Sanremo",
+    "date": "2026-03-21",
+    "finishTime": "18:21",
+    "scrapeAfter": "19:21",
+    "url2025": "https://www.procyclingstats.com/race/milano-sanremo/2025/result/info/time-table"
+  },
+  "classic-brugge-de-panne": {
+    "slug": "classic-brugge-de-panne",
+    "name": "Ronde Van Brugge - Tour of Bruges ME",
+    "date": "2026-03-25",
+    "finishTime": "18:06",
+    "scrapeAfter": "19:06",
+    "url2025": "https://www.procyclingstats.com/race/classic-brugge-de-panne/2025/result/info/time-table"
+  },
+  "e3-harelbeke": {
+    "slug": "e3-harelbeke",
+    "name": "E3 Saxo Classic ME",
+    "date": "2026-03-27",
+    "finishTime": "18:41",
+    "scrapeAfter": "19:41",
+    "url2025": "https://www.procyclingstats.com/race/e3-harelbeke/2025/result/info/time-table"
+  },
+  "gent-wevelgem": {
+    "slug": "gent-wevelgem",
+    "name": "In Flanders Fields - From Middelkerke to Wevelgem",
+    "date": "2026-03-29",
+    "finishTime": "17:35",
+    "scrapeAfter": "18:35",
+    "url2025": "https://www.procyclingstats.com/race/gent-wevelgem/2025/result/info/time-table"
+  },
+  "dwars-door-vlaanderen": {
+    "slug": "dwars-door-vlaanderen",
+    "name": "Dwars door Vlaanderen - A travers la Flandre ME",
+    "date": "2026-04-01",
+    "finishTime": "17:10",
+    "scrapeAfter": "18:10",
+    "url2025": "https://www.procyclingstats.com/race/dwars-door-vlaanderen/2025/result/info/time-table"
+  },
+  "ronde-van-vlaanderen": {
+    "slug": "ronde-van-vlaanderen",
+    "name": "Ronde van Vlaanderen ME",
+    "date": "2026-04-05",
+    "finishTime": "17:21",
+    "scrapeAfter": "18:21",
+    "url2025": "https://www.procyclingstats.com/race/ronde-van-vlaanderen/2025/result/info/time-table"
+  },
+  "paris-roubaix": {
+    "slug": "paris-roubaix",
+    "name": "Paris-Roubaix Hauts-de-France",
+    "date": "2026-04-12",
+    "finishTime": "17:39",
+    "scrapeAfter": "18:39",
+    "url2025": "https://www.procyclingstats.com/race/paris-roubaix/2025/result/info/time-table"
+  },
+  "amstel-gold-race": {
+    "slug": "amstel-gold-race",
+    "name": "Amstel Gold Race",
+    "date": "2026-04-19",
+    "finishTime": "18:10",
+    "scrapeAfter": "19:10",
+    "url2025": "https://www.procyclingstats.com/race/amstel-gold-race/2025/result/info/time-table"
+  },
+  "la-fleche-wallonne": {
+    "slug": "la-fleche-wallonne",
+    "name": "La Flèche Wallonne",
+    "date": "2026-04-22",
+    "finishTime": "16:58",
+    "scrapeAfter": "17:58",
+    "url2025": "https://www.procyclingstats.com/race/la-fleche-wallonne/2025/result/info/time-table"
+  },
+  "liege-bastogne-liege": {
+    "slug": "liege-bastogne-liege",
+    "name": "Liège-Bastogne-Liège",
+    "date": "2026-04-26",
+    "finishTime": "17:08",
+    "scrapeAfter": "18:08",
+    "url2025": "https://www.procyclingstats.com/race/liege-bastogne-liege/2025/result/info/time-table"
+  },
+  "eschborn-frankfurt": {
+    "slug": "eschborn-frankfurt",
+    "name": "Eschborn-Frankfurt",
+    "date": "2026-05-01",
+    "finishTime": "18:26",
+    "scrapeAfter": "19:26",
+    "url2025": "https://www.procyclingstats.com/race/eschborn-frankfurt/2025/result/info/time-table"
+  },
+  "copenhagen-sprint": {
+    "slug": "copenhagen-sprint",
+    "name": "Copenhagen Sprint",
+    "date": "2026-06-14",
+    "finishTime": "17:15",
+    "scrapeAfter": "18:15",
+    "url2025": "https://www.procyclingstats.com/race/copenhagen-sprint/2025/result/info/time-table"
+  },
+  "san-sebastian": {
+    "slug": "san-sebastian",
+    "name": "DSSK (Donostia San Sebastian Klasikoa)",
+    "date": "2026-08-01",
+    "error": "fetch failed"
+  },
+  "cyclassics-hamburg": {
+    "slug": "cyclassics-hamburg",
+    "name": "ADAC Cyclassics",
+    "date": "2026-08-16",
+    "finishTime": "17:10",
+    "scrapeAfter": "18:10",
+    "url2025": "https://www.procyclingstats.com/race/cyclassics-hamburg/2025/result/info/time-table"
+  },
+  "bretagne-classic": {
+    "slug": "bretagne-classic",
+    "name": "Bretagne Classic - CIC",
+    "date": "2026-08-30",
+    "finishTime": "17:57",
+    "scrapeAfter": "18:57",
+    "url2025": "https://www.procyclingstats.com/race/bretagne-classic/2025/result/info/time-table"
+  },
+  "gp-quebec": {
+    "slug": "gp-quebec",
+    "name": "Grand Prix Cycliste de Québec",
+    "date": "2026-09-11",
+    "finishTime": "16:39",
+    "scrapeAfter": "17:39",
+    "url2025": "https://www.procyclingstats.com/race/gp-quebec/2025/result/info/time-table"
+  },
+  "gp-montreal": {
+    "slug": "gp-montreal",
+    "name": "Grand Prix Cycliste de Montréal",
+    "date": "2026-09-13",
+    "finishTime": "16:41",
+    "scrapeAfter": "17:41",
+    "url2025": "https://www.procyclingstats.com/race/gp-montreal/2025/result/info/time-table"
+  },
+  "il-lombardia": {
+    "slug": "il-lombardia",
+    "name": "Il Lombardia",
+    "date": "2026-10-10",
+    "finishTime": "17:30",
+    "scrapeAfter": "18:30",
+    "url2025": "https://www.procyclingstats.com/race/il-lombardia/2025/result/info/time-table"
+  }
+}
