@@ -181,23 +181,25 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
     const season = 2026;
 
     const [participantSnap, allStandingsSnap, f1GamesSnap] = await Promise.all([
-      // Is this user an active F1 participant?
-      f1Db.collection('participants').where('userId', '==', uid).where('season', '==', season).where('status', '==', 'active').limit(1).get(),
-      // All standings for season (needed to compute rank)
+      // Is this user an F1 participant this season? (equality filters only — no index needed)
+      f1Db.collection('participants').where('userId', '==', uid).where('season', '==', season).limit(1).get(),
+      // All standings for season
       f1Db.collection('standings').where('season', '==', season).get(),
-      // Active F1 prediction game
-      db.collection('games').where('gameType', '==', 'f1-prediction').where('status', '!=', 'finished').limit(5).get(),
+      // F1 games — filter in memory to avoid inequality index requirement
+      db.collection('games').where('gameType', '==', 'f1-prediction').limit(10).get(),
     ]);
 
-    if (!participantSnap.empty) {
+    const isActiveParticipant = !participantSnap.empty &&
+      participantSnap.docs[0].data().status === 'active';
+
+    if (isActiveParticipant) {
       const f1Game = f1GamesSnap.docs.find(d => {
         const g = d.data();
-        return g.isTest !== true && !g.name?.toLowerCase().includes('test');
+        return g.status !== 'finished' && g.isTest !== true && !g.name?.toLowerCase().includes('test');
       });
 
       if (f1Game) {
         const allStandings = allStandingsSnap.docs.map(d => d.data() as { userId: string; totalPoints?: number });
-        const totalParticipants = participantSnap.docs[0].data().status === 'active' ? allStandingsSnap.size : 0;
 
         // Sort descending to find rank
         allStandings.sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
@@ -218,7 +220,8 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
         });
       }
     }
-  } catch {
+  } catch (err) {
+    console.error('[GAMES_SUMMARY] F1 enrichment failed:', err);
     // Ignore F1 enrichment failures so the regular games still show
   }
 
