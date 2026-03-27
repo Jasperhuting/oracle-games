@@ -126,8 +126,21 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
 
         if (game.gameType === 'slipstream') {
           const slipstreamData = participantData?.slipstreamData;
-          ranking = slipstreamData?.yellowJerseyRanking ?? 0;
           totalPoints = slipstreamData?.totalGreenJerseyPoints ?? 0;
+
+          // Compute yellow jersey ranking from all participants' totalTimeLostSeconds
+          // (yellowJerseyRanking in the doc is never written back, so derive it dynamically)
+          const userTimeLost: number = slipstreamData?.totalTimeLostSeconds ?? 0;
+          const allParticipantsSnap = await db
+            .collection('gameParticipants')
+            .where('gameId', '==', gameId)
+            .where('status', '==', 'active')
+            .get();
+          const timeLostValues = allParticipantsSnap.docs.map(
+            d => (d.data().slipstreamData?.totalTimeLostSeconds as number) ?? 0
+          );
+          // Rank = number of participants with strictly less time lost + 1 (handles ties correctly)
+          ranking = timeLostValues.filter(t => t < userTimeLost).length + 1;
         } else {
           ranking = participantData?.ranking ?? 0;
           totalPoints = participantData?.totalPoints ?? 0;

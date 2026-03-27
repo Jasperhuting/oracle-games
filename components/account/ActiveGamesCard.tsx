@@ -75,7 +75,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
     async function fetchActiveGames() {
       try {
-        const cacheKey = `active-games-summary:v7:${userId}`;
+        const cacheKey = `active-games-summary:v8:${userId}`;
         const cached = readDailyCache(cacheKey);
         if (cached) {
           setGames(cached);
