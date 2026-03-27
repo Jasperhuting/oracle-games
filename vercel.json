@@ -28,7 +28,7 @@
     },
     {
       "path": "/api/cron/scrape-todays-races",
-      "schedule": "0 0 * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/process-scrape-jobs",

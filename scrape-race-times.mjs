@@ -1,20 +1,23 @@
 /**
  * Scrape finish times for all single-day 2026 men's elite races from ProCyclingStats.
  *
- * Run: node scrape-race-times.mjs
+ * Run: SCRAPINGBEE_API_KEY=your_key node scrape-race-times.mjs
  * Output: race-times.json
- *
- * Uses headless:false to bypass Cloudflare — a browser window will open briefly.
  */
 
-import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { writeFileSync } from 'fs';
 
 const BASE_URL = 'https://www.procyclingstats.com';
 const YEAR = 2026;
+const API_KEY = process.env.SCRAPINGBEE_API_KEY;
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+if (!API_KEY) {
+  console.error('Missing SCRAPINGBEE_API_KEY env var.\nRun: SCRAPINGBEE_API_KEY=your_key node scrape-race-times.mjs');
+  process.exit(1);
+}
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function parsePCSDate(dateStr, year) {
   const match = dateStr.match(/(\d{2})\.(\d{2})/);
@@ -35,8 +38,21 @@ function delay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-function randomDelay(min, max) {
-  return delay(min + Math.random() * (max - min));
+async function sbFetch(url, waitFor = 'table.basic') {
+  const apiUrl = new URL('https://app.scrapingbee.com/api/v1/');
+  apiUrl.searchParams.set('api_key', API_KEY);
+  apiUrl.searchParams.set('url', url);
+  apiUrl.searchParams.set('render_js', 'true');
+  apiUrl.searchParams.set('premium_proxy', 'true');
+  apiUrl.searchParams.set('block_resources', 'true');
+  if (waitFor) apiUrl.searchParams.set('wait_for', waitFor);
+
+  const res = await fetch(apiUrl.toString());
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`ScrapingBee ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.text();
 }
 
 // ─── filters ─────────────────────────────────────────────────────────────────
@@ -61,16 +77,13 @@ function isJuniorRace(race) {
   return false;
 }
 
-// ─── step 1: get all 2026 races with dates ──────────────────────────────────
+// ─── step 1: get all 2026 races ───────────────────────────────────────────────
 
-async function getRaces(page) {
+async function getRaces() {
   const url = `${BASE_URL}/races.php?s=&year=${YEAR}&circuit=&class=&filter=Filter`;
-  console.log(`\n📋  Fetching races list...`);
+  console.log(`\n📋  Fetching races list via ScrapingBee...`);
 
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('table.basic tr', { timeout: 30000 });
-
-  const html = await page.content();
+  const html = await sbFetch(url, 'table.basic');
   const $ = cheerio.load(html);
   const races = [];
 
@@ -111,34 +124,11 @@ async function getRaces(page) {
   return races;
 }
 
-// ─── step 3+4: fetch time-table and parse ───────────────────────────────────
+// ─── step 2: fetch time-table ────────────────────────────────────────────────
 
-function isChallengePage(html) {
-  const lower = html.toLowerCase();
-  return lower.includes('just a moment') || lower.includes('checking your browser') || lower.includes('even geduld');
-}
-
-async function waitForChallengeToResolve(page) {
-  // Wait up to 30s for Cloudflare to auto-solve in the visible browser
-  for (let i = 0; i < 30; i++) {
-    await delay(1000);
-    const html = await page.content();
-    if (!isChallengePage(html)) return true;
-  }
-  return false;
-}
-
-async function getFinishTime(page, slug) {
+async function getFinishTime(slug) {
   const url = `${BASE_URL}/race/${slug}/2025/result/info/time-table`;
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-  let html = await page.content();
-  if (isChallengePage(html)) {
-    process.stdout.write(`(challenge, waiting...) `);
-    const resolved = await waitForChallengeToResolve(page);
-    if (!resolved) throw new Error('Cloudflare challenge — blocked');
-    html = await page.content();
-  }
+  const html = await sbFetch(url, 'table.basic');
 
   const $ = cheerio.load(html);
   const table = $('table.basic');
@@ -159,117 +149,86 @@ async function getFinishTime(page, slug) {
 
 // ─── main ────────────────────────────────────────────────────────────────────
 
-const browser = await puppeteer.launch({
-  headless: false,
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
-});
+const allRaces = await getRaces();
 
-try {
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080 });
-  await page.setUserAgent(
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-  );
+// ── filter
+const singleDay  = allRaces.filter(r => r.startDate && r.endDate && r.startDate === r.endDate);
+const multiStage = allRaces.filter(r => r.startDate !== r.endDate || !r.startDate);
+const women      = singleDay.filter(r => isWomenRace(r));
+const juniors    = singleDay.filter(r => !isWomenRace(r) && isJuniorRace(r));
+const stageRaces = singleDay.filter(r => !isWomenRace(r) && !isJuniorRace(r) && r.classification.startsWith('2.'));
+const menElite   = singleDay.filter(r => r.classification === '1.UWT');
 
-  // Block images/fonts to speed things up
-  await page.setRequestInterception(true);
-  page.on('request', req => {
-    if (['image', 'font', 'media'].includes(req.resourceType())) {
-      req.abort();
-    } else {
-      req.continue();
-    }
-  });
+console.log(`\n🏁  Single-day races: ${singleDay.length}`);
+console.log(`   Men's elite (checking): ${menElite.length}`);
+console.log(`   Women (skipped):        ${women.length}`);
+console.log(`   Juniors (skipped):      ${juniors.length}`);
+console.log(`   Stage races 2.x (skipped): ${stageRaces.length}`);
+console.log(`🚴  Multi-stage (skipped): ${multiStage.length}`);
 
-  // ── 1. get all 2026 races
-  const allRaces = await getRaces(page);
-
-  // ── 2. filter
-  const singleDay  = allRaces.filter(r => r.startDate && r.endDate && r.startDate === r.endDate);
-  const multiStage = allRaces.filter(r => r.startDate !== r.endDate || !r.startDate);
-  const women      = singleDay.filter(r => isWomenRace(r));
-  const juniors    = singleDay.filter(r => !isWomenRace(r) && isJuniorRace(r));
-  const stageRaces = singleDay.filter(r => !isWomenRace(r) && !isJuniorRace(r) && r.classification.startsWith('2.'));
-  const menElite   = singleDay.filter(r => !isWomenRace(r) && !isJuniorRace(r) && !r.classification.startsWith('2.'));
-
-  console.log(`\n🏁  Single-day races: ${singleDay.length}`);
-  console.log(`   Men's elite (checking): ${menElite.length}`);
-  console.log(`   Women (skipped):        ${women.length}`);
-  console.log(`   Juniors (skipped):      ${juniors.length}`);
-  console.log(`   Stage races 2.x (skipped): ${stageRaces.length}`);
-  console.log(`🚴  Multi-stage (skipped): ${multiStage.length}`);
-
-  // ── 3. build results with skipped races
-  const results = {};
-  for (const race of multiStage) {
-    results[race.slug] = { slug: race.slug, name: race.name, skipped: 'multi-stage', startDate: race.startDate, endDate: race.endDate };
-  }
-  for (const race of women) {
-    results[race.slug] = { slug: race.slug, name: race.name, skipped: 'women', date: race.startDate };
-  }
-  for (const race of juniors) {
-    results[race.slug] = { slug: race.slug, name: race.name, skipped: 'junior', date: race.startDate };
-  }
-  for (const race of stageRaces) {
-    results[race.slug] = { slug: race.slug, name: race.name, skipped: 'stage-race-2x', date: race.startDate };
-  }
-
-  // ── 4. check time-tables for men's elite
-  let found = 0, noTable = 0, errors = 0;
-  console.log(`\n⏱   Checking time-tables...\n`);
-
-  for (let i = 0; i < menElite.length; i++) {
-    const race = menElite[i];
-    process.stdout.write(`[${i + 1}/${menElite.length}] ${race.slug} ... `);
-
-    try {
-      const finishTime = await getFinishTime(page, race.slug);
-
-      if (finishTime) {
-        const scrapeAfter = addMinutes(finishTime, 60);
-        console.log(`✓  ${finishTime} → scrape after ${scrapeAfter}`);
-        results[race.slug] = {
-          slug: race.slug,
-          name: race.name,
-          date: race.startDate,
-          finishTime,
-          scrapeAfter,
-          url2025: `${BASE_URL}/race/${race.slug}/2025/result/info/time-table`,
-        };
-        found++;
-      } else {
-        console.log('no time-table');
-        noTable++;
-        results[race.slug] = { slug: race.slug, name: race.name, date: race.startDate, noTimeTable: true };
-      }
-    } catch (err) {
-      console.log(`ERROR: ${err.message.split('\n')[0]}`);
-      errors++;
-      results[race.slug] = { slug: race.slug, name: race.name, date: race.startDate, error: err.message.split('\n')[0] };
-    }
-
-    // Random delay 1–3s between requests, longer pause every 30 races
-    await randomDelay(1000, 3000);
-    if ((i + 1) % 30 === 0) {
-      console.log(`   ⏸  Pausing 15s after ${i + 1} races...`);
-      await delay(15000);
-    }
-  }
-
-  // ── 5. save
-  writeFileSync('race-times.json', JSON.stringify(results, null, 2));
-
-  console.log('\n────────────────────────────────────────');
-  console.log(`✅  Done!`);
-  console.log(`   With time-table:       ${found}`);
-  console.log(`   No time-table:         ${noTable}`);
-  console.log(`   Errors:                ${errors}`);
-  console.log(`   Women (skipped):       ${women.length}`);
-  console.log(`   Juniors (skipped):     ${juniors.length}`);
-  console.log(`   Stage 2.x (skipped):   ${stageRaces.length}`);
-  console.log(`   Multi-stage (skipped): ${multiStage.length}`);
-  console.log(`   Output → race-times.json`);
-
-} finally {
-  await browser.close();
+// ── build results skeleton with skipped races
+const results = {};
+for (const race of multiStage) {
+  results[race.slug] = { slug: race.slug, name: race.name, skipped: 'multi-stage', startDate: race.startDate, endDate: race.endDate };
 }
+for (const race of women) {
+  results[race.slug] = { slug: race.slug, name: race.name, skipped: 'women', date: race.startDate };
+}
+for (const race of juniors) {
+  results[race.slug] = { slug: race.slug, name: race.name, skipped: 'junior', date: race.startDate };
+}
+for (const race of stageRaces) {
+  results[race.slug] = { slug: race.slug, name: race.name, skipped: 'stage-race-2x', date: race.startDate };
+}
+
+// ── fetch time-tables
+let found = 0, noTable = 0, errors = 0;
+console.log(`\n⏱   Checking time-tables...\n`);
+
+for (let i = 0; i < menElite.length; i++) {
+  const race = menElite[i];
+  process.stdout.write(`[${i + 1}/${menElite.length}] ${race.slug} ... `);
+
+  try {
+    const finishTime = await getFinishTime(race.slug);
+
+    if (finishTime) {
+      const scrapeAfter = addMinutes(finishTime, 60);
+      console.log(`✓  ${finishTime} → scrape after ${scrapeAfter}`);
+      results[race.slug] = {
+        slug: race.slug,
+        name: race.name,
+        date: race.startDate,
+        finishTime,
+        scrapeAfter,
+        url2025: `${BASE_URL}/race/${race.slug}/2025/result/info/time-table`,
+      };
+      found++;
+    } else {
+      console.log('no time-table');
+      noTable++;
+      results[race.slug] = { slug: race.slug, name: race.name, date: race.startDate, noTimeTable: true };
+    }
+  } catch (err) {
+    console.log(`ERROR: ${err.message.split('\n')[0]}`);
+    errors++;
+    results[race.slug] = { slug: race.slug, name: race.name, date: race.startDate, error: err.message.split('\n')[0] };
+  }
+
+  // Small delay to be respectful (ScrapingBee handles rate limiting on their end)
+  await delay(300);
+}
+
+// ── save
+writeFileSync('race-times.json', JSON.stringify(results, null, 2));
+
+console.log('\n────────────────────────────────────────');
+console.log(`✅  Done!`);
+console.log(`   With time-table:       ${found}`);
+console.log(`   No time-table:         ${noTable}`);
+console.log(`   Errors:                ${errors}`);
+console.log(`   Women (skipped):       ${women.length}`);
+console.log(`   Juniors (skipped):     ${juniors.length}`);
+console.log(`   Stage 2.x (skipped):   ${stageRaces.length}`);
+console.log(`   Multi-stage (skipped): ${multiStage.length}`);
+console.log(`   Output → race-times.json`);

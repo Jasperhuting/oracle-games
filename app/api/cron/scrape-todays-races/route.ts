@@ -128,6 +128,18 @@ export async function GET(request: NextRequest) {
   const todayYear = Number(todayStr.split('-')[0]);
   const targetDates = getCompletedRaceDates(new Date(), 3);
 
+  // Current time in Amsterdam (HH:MM) for scrapeAfter comparisons
+  const nowParts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const nowHH = nowParts.find(p => p.type === 'hour')?.value ?? '00';
+  const nowAmsterdam = `${nowHH}:${nowParts.find(p => p.type === 'minute')?.value ?? '00'}`;
+  // The midnight run (00:xx Amsterdam) triggers a one-time nightly re-scrape for scrapeAfter races
+  const isMidnightRun = parseInt(nowHH, 10) === 0;
+
   const runStartedAt = Date.now();
 
   try {
@@ -181,7 +193,10 @@ export async function GET(request: NextRequest) {
 
       const windowStart = targetDates[targetDates.length - 1];
       const windowEnd = targetDates[0];
-      if (endStr < windowStart || startStr > windowEnd) {
+      const isToday = startStr === todayStr && endStr === todayStr;
+      const isInPastWindow = endStr >= windowStart && startStr <= windowEnd;
+
+      if (!isToday && !isInPastWindow) {
         continue;
       }
 
@@ -190,13 +205,26 @@ export async function GET(request: NextRequest) {
 
       if (isSingleDay) {
         const year = raceData.year || new Date().getFullYear();
-        if (targetDates.some(dateStr => dateStr >= startStr && dateStr <= endStr)) {
+
+        // For today's races: only proceed if scrapeAfter time has been reached
+        if (isToday) {
+          const scrapeAfter: string = raceData.scrapeAfter || '';
+          if (!scrapeAfter || nowAmsterdam < scrapeAfter) {
+            skipped.push(`${raceSlug} (today, scrapeAfter ${scrapeAfter || 'not set'}, now ${nowAmsterdam})`);
+            continue;
+          }
+        }
+
+        if (isToday || targetDates.some(dateStr => dateStr >= startStr && dateStr <= endStr)) {
           const alreadyScraped = await hasExistingScrape(db, {
             race: raceSlug,
             year,
             type: 'result',
           });
-          if (alreadyScraped) {
+          // For scrapeAfter races: re-scrape once at midnight for safety / late result changes.
+          // For all other races: skip if already done.
+          const allowNightlyRescrape = !!raceData.scrapeAfter && !isToday && isMidnightRun;
+          if (alreadyScraped && !allowNightlyRescrape) {
             skipped.push(`${raceSlug} (result already scraped)`);
             continue;
           }
