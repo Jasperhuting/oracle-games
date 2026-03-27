@@ -664,6 +664,60 @@ export async function POST(request: NextRequest) {
 
 
 
+    // Sync gameParticipants.totalPoints and ranking for all affected games
+    void (async () => {
+      for (const affectedGameId of gamesAffectedIds) {
+        try {
+          // Sum pointsScored per userId from playerTeams
+          const ridersSnap = await db.collection('playerTeams')
+            .where('gameId', '==', affectedGameId)
+            .where('active', '==', true)
+            .get();
+
+          const pointsByUser = new Map<string, number>();
+          for (const riderDoc of ridersSnap.docs) {
+            const d = riderDoc.data();
+            const uid = d.userId as string;
+            if (!uid) continue;
+            pointsByUser.set(uid, (pointsByUser.get(uid) ?? 0) + (Number(d.pointsScored) || 0));
+          }
+
+          if (pointsByUser.size === 0) continue;
+
+          // Get all active participants for this game
+          const participantsSnap = await db.collection('gameParticipants')
+            .where('gameId', '==', affectedGameId)
+            .where('status', '==', 'active')
+            .get();
+
+          // Build sorted list by totalPoints descending
+          const ranked = participantsSnap.docs
+            .map(doc => ({
+              ref: doc.ref,
+              userId: doc.data().userId as string,
+              points: pointsByUser.get(doc.data().userId) ?? Number(doc.data().totalPoints) ?? 0,
+              currentRanking: doc.data().ranking as number ?? 0,
+              currentTotalPoints: doc.data().totalPoints as number ?? 0,
+            }))
+            .sort((a, b) => b.points - a.points);
+
+          let rank = 1;
+          const writes: Promise<unknown>[] = [];
+          for (let i = 0; i < ranked.length; i++) {
+            if (i > 0 && ranked[i].points < ranked[i - 1].points) rank = i + 1;
+            const entry = ranked[i];
+            if (entry.ranking !== rank || entry.currentTotalPoints !== entry.points) {
+              writes.push(entry.ref.update({ totalPoints: entry.points, ranking: rank }));
+            }
+          }
+          await Promise.all(writes);
+          console.log(`[CALCULATE_POINTS] Synced rankings for game ${affectedGameId}: ${writes.length} participants updated`);
+        } catch (err) {
+          console.error(`[CALCULATE_POINTS] Failed to sync rankings for game ${affectedGameId}:`, err);
+        }
+      }
+    })().catch(err => console.error('[CALCULATE_POINTS] Ranking sync error:', err));
+
     // Trigger rider scraping for detailed points data
     console.log(`[CALCULATE_POINTS] Triggering rider scraping for detailed points data`);
     try {
