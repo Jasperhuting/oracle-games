@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { Flag } from "@/components/Flag";
 import { useCallback, useEffect, useState } from "react";
+import { AlertCircle, Check } from "tabler-icons-react";
 import countriesList from '@/lib/country.json';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +47,9 @@ export default function PlayerPredictionsPage() {
     const [draggedTeam, setDraggedTeam] = useState<TeamInPoule | null>(null);
     const [draggedFromPosition, setDraggedFromPosition] = useState<number | null>(null);
     const [isJoining, setIsJoining] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveFeedback, setSaveFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
     const handleJoinWk = async () => {
         if (!user) return;
@@ -302,9 +306,12 @@ export default function PlayerPredictionsPage() {
 
     const savePredictions = async () => {
         if (!user) {
-            alert('You must be logged in to save predictions');
+            setSaveFeedback({ type: 'error', text: 'Je moet ingelogd zijn om voorspellingen op te slaan.' });
             return;
         }
+
+        setIsSaving(true);
+        setSaveFeedback(null);
 
         try {
             const response = await fetch('/api/wk-2026/predictions', {
@@ -318,13 +325,20 @@ export default function PlayerPredictionsPage() {
             });
 
             if (response.ok) {
-                alert('Predictions saved successfully!');
+                const savedAt = new Date().toLocaleTimeString('nl-NL', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
+                setLastSavedAt(savedAt);
+                setSaveFeedback({ type: 'success', text: 'Je voorspellingen zijn opgeslagen.' });
             } else {
-                alert('Error saving predictions');
+                setSaveFeedback({ type: 'error', text: 'Opslaan is mislukt. Probeer het opnieuw.' });
             }
         } catch (error) {
             console.error('Error saving predictions:', error);
-            alert('Error saving predictions');
+            setSaveFeedback({ type: 'error', text: 'Opslaan is mislukt. Probeer het opnieuw.' });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -378,12 +392,12 @@ export default function PlayerPredictionsPage() {
             {/* Poule Selector */}
             <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-3">Select Poule:</h2>
-                <div className="flex gap-2 flex-wrap">
+                <div className="grid gap-2 flex-wrap grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-12">
                     {POULES.map(pouleId => (
                         <button
                             key={pouleId}
                             onClick={() => setSelectedPoule(pouleId)}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                            className={`px-4 py-2 rounded-lg font-semibold transition-colors min-w-[100px] ${
                                 selectedPoule === pouleId
                                     ? 'bg-[#ff9900] text-white'
                                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -450,20 +464,21 @@ export default function PlayerPredictionsPage() {
                 <h2 className="text-xl font-semibold mb-4">Predicted Standings - Poule {selectedPoule.toUpperCase()}</h2>
                 <p className="text-sm text-gray-600 mb-4">Based on your predicted match scores</p>
 
-                <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden max-w-4xl">
-                    <table className="w-full">
+                <div className="bg-white border-2 border-gray-300 rounded-lg max-w-4xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                    <table className="min-w-[640px] w-full">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Pos</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Team</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">P</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">W</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">D</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">L</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">GF</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">GA</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">GD</th>
-                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Pts</th>
+                                <th className="sticky left-0 z-20 w-[52px] min-w-[52px] bg-gray-100 px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Pos</th>
+                                <th className="sticky left-[52px] z-20 min-w-[180px] bg-gray-100 px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Team</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">P</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">W</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">D</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">L</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">GF</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">GA</th>
+                                <th className="min-w-[52px] px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase">GD</th>
+                                <th className="min-w-[60px] px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase">Pts</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -476,32 +491,33 @@ export default function PlayerPredictionsPage() {
                                         key={stats.teamId}
                                         className={`border-t ${isQualified ? 'bg-green-50' : ''}`}
                                     >
-                                        <td className="px-4 py-3">
+                                        <td className={`sticky left-0 z-10 px-2 py-3 ${isQualified ? 'bg-green-50' : 'bg-white'}`}>
                                             <div className="w-6 h-6 flex items-center justify-center bg-gray-200 text-gray-700 rounded-full text-sm font-bold">
                                                 {index + 1}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center">
+                                        <td className={`sticky left-[52px] z-10 px-4 py-3 ${isQualified ? 'bg-green-50' : 'bg-white'}`}>
+                                            <div className="flex min-w-[180px] items-center">
                                                 <Flag countryCode={country?.code || stats.team.id} width={24} className="min-w-[24px] min-h-[24px]" />
-                                                <span className="ml-2 font-medium">{stats.team.name}</span>
+                                                <span className="ml-2 font-medium whitespace-nowrap">{stats.team.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-center">{stats.played}</td>
-                                        <td className="px-4 py-3 text-center">{stats.won}</td>
-                                        <td className="px-4 py-3 text-center">{stats.drawn}</td>
-                                        <td className="px-4 py-3 text-center">{stats.lost}</td>
-                                        <td className="px-4 py-3 text-center">{stats.goalsFor}</td>
-                                        <td className="px-4 py-3 text-center">{stats.goalsAgainst}</td>
-                                        <td className="px-4 py-3 text-center font-medium">
+                                        <td className="px-3 py-3 text-center">{stats.played}</td>
+                                        <td className="px-3 py-3 text-center">{stats.won}</td>
+                                        <td className="px-3 py-3 text-center">{stats.drawn}</td>
+                                        <td className="px-3 py-3 text-center">{stats.lost}</td>
+                                        <td className="px-3 py-3 text-center">{stats.goalsFor}</td>
+                                        <td className="px-3 py-3 text-center">{stats.goalsAgainst}</td>
+                                        <td className="px-3 py-3 text-center font-medium">
                                             {stats.goalDifference > 0 ? '+' : ''}{stats.goalDifference}
                                         </td>
-                                        <td className="px-4 py-3 text-center font-bold text-lg">{stats.points}</td>
+                                        <td className="px-3 py-3 text-center font-bold text-lg">{stats.points}</td>
                                     </tr>
                                 );
                             })}
                         </tbody>
                     </table>
+                    </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                     <span className="inline-block w-3 h-3 bg-green-50 border border-green-200 mr-1"></span>
@@ -565,12 +581,38 @@ export default function PlayerPredictionsPage() {
 
             {/* Save Button */}
             <div className="sticky bottom-4 z-20 mt-8 flex justify-end">
-                <div className="rounded-2xl border border-orange-200 bg-white/90 p-2 shadow-lg backdrop-blur">
+                <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-white/90 p-2 shadow-lg backdrop-blur">
+                    {saveFeedback && (
+                        <div
+                            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-sm ${
+                                saveFeedback.type === 'success'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                    : 'border-red-200 bg-red-50 text-red-800'
+                            }`}
+                        >
+                            <span
+                                className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                                    saveFeedback.type === 'success'
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-red-600 text-white'
+                                }`}
+                            >
+                                {saveFeedback.type === 'success' ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                            </span>
+                            <div className="leading-tight">
+                                <div className="font-semibold">{saveFeedback.text}</div>
+                                {saveFeedback.type === 'success' && lastSavedAt && (
+                                    <div className="text-xs text-emerald-700">Laatst opgeslagen om {lastSavedAt}</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <button
                         onClick={savePredictions}
-                        className="px-6 py-3 bg-[#ff9900] text-white rounded-lg hover:bg-[#e68a00] transition-colors font-semibold"
+                        disabled={isSaving}
+                        className="px-6 py-3 bg-[#ff9900] text-white rounded-lg hover:bg-[#e68a00] transition-colors font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Save My Predictions
+                        {isSaving ? 'Opslaan...' : 'Save My Predictions'}
                     </button>
                 </div>
             </div>

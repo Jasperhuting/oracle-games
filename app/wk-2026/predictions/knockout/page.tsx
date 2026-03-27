@@ -9,6 +9,8 @@ import { authorizedFetch } from '@/lib/auth/token-service';
 import { KNOCKOUT_MATCHES, KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
 import { POULES } from '../../page';
 import { useWk2026Participant } from '../../hooks';
+import { Flag } from '@/components/Flag';
+import countriesList from '@/lib/country.json';
 
 interface GroupTeamEntry {
   name: string;
@@ -518,6 +520,23 @@ export default function KnockoutPredictionsPage() {
     return teamId;
   };
 
+  const getTeamFlagCode = (teamId: string | null | undefined): string => {
+    if (!teamId) return '';
+
+    const teamName = getTeamName(teamId);
+    const country = countriesList.find((entry: { name: string; code: string }) =>
+      entry.name.toLowerCase() === teamName.toLowerCase()
+    );
+
+    return country?.code || teamId;
+  };
+
+  const renderTeamFlag = (teamId: string, size = 30): ReactElement => (
+    <span className="inline-flex items-center" title={getTeamName(teamId)}>
+      <Flag countryCode={getTeamFlagCode(teamId)} width={size} />
+    </span>
+  );
+
   // Get potential teams when winner isn't decided yet - recursively
   const getPotentialTeams = (teamSource: string): string[] => {
     if (teamSource.startsWith('winner_') || teamSource.startsWith('loser_')) {
@@ -544,16 +563,27 @@ export default function KnockoutPredictionsPage() {
   // Display team or potential teams
   const displayTeam = (teamId: string | null | undefined, teamSource: string): ReactElement => {
     if (teamId) {
-      return <span>{getTeamName(teamId)}</span>;
+      return renderTeamFlag(teamId, 32);
     }
 
     // Check if we can show potential teams
     const potentialTeams = getPotentialTeams(teamSource);
 
+    let gridCols = potentialTeams.length;
+
+    if (potentialTeams.length >= 8) {
+      gridCols = 4;
+    }
+    
+
     if (potentialTeams.length > 0) {
       return (
-        <span className="text-gray-600 italic text-sm">
-          {potentialTeams.map(team => getTeamName(team)).join(' / ')}
+        <span className={`grid grid-cols-${gridCols}  items-center gap-2`}>
+          {potentialTeams.map((team) => (
+            <span key={team} className="inline-flex items-center" title={getTeamName(team)}>
+              <Flag countryCode={getTeamFlagCode(team)} width={24} />
+            </span>
+          ))}
         </span>
       );
     }
@@ -624,7 +654,7 @@ export default function KnockoutPredictionsPage() {
                       <div className="text-sm font-medium text-gray-700 mb-1">
                         {match.team1Source}
                       </div>
-                      <div className="text-lg font-semibold">
+                      <div className="text-lg font-semibold flex flex-start">
                         {displayTeam(match.team1, match.team1Source)}
                       </div>
                     </div>
@@ -653,7 +683,7 @@ export default function KnockoutPredictionsPage() {
                       <div className="text-sm font-medium text-gray-700 mb-1">
                         {match.team2Source}
                       </div>
-                      <div className="text-lg font-semibold">
+                      <div className="flex w-full justify-end text-lg font-semibold">
                         {displayTeam(match.team2, match.team2Source)}
                       </div>
                     </div>
@@ -682,13 +712,13 @@ export default function KnockoutPredictionsPage() {
 
                   {match.winner && match.team1Score !== match.team2Score && (
                     <div className="mt-2 text-sm text-green-700 font-semibold">
-                      Winner: {getTeamName(match.winner)}
+                      Winner: <span className="ml-1 inline-flex align-middle">{renderTeamFlag(match.winner, 24)}</span>
                     </div>
                   )}
 
                   {match.winner && match.team1Score === match.team2Score && match.team1Score !== null && (
                     <div className="mt-2 text-sm text-green-700 font-semibold">
-                      Winner after penalties: {getTeamName(match.winner)}
+                      Winner after penalties: <span className="ml-1 inline-flex align-middle">{renderTeamFlag(match.winner, 24)}</span>
                     </div>
                   )}
                 </div>
