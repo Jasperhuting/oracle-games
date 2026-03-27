@@ -79,7 +79,6 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
         const [
           gameDoc,
           countSnap,
-          playerTeamSnap,
           scoreUpdateSnap,
         ] = await Promise.all([
           // Game document
@@ -91,14 +90,6 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
             .where('gameId', '==', gameId)
             .where('status', '==', 'active')
             .count()
-            .get(),
-
-          // User's playerTeam for ranking + points
-          db
-            .collection('playerTeams')
-            .where('gameId', '==', gameId)
-            .where('userId', '==', uid)
-            .limit(1)
             .get(),
 
           // Last score update
@@ -126,22 +117,20 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
 
         const totalParticipants = countSnap.data().count;
 
-        const playerTeamData = playerTeamSnap.empty
-          ? null
-          : playerTeamSnap.docs[0].data();
+        // Ranking and points live in gameParticipants for all game types
+        const participantDoc = participantsSnap.docs.find(d => d.data().gameId === gameId);
+        const participantData = participantDoc?.data();
 
         let ranking: number;
         let totalPoints: number;
 
         if (game.gameType === 'slipstream') {
-          // Slipstream rankings live in gameParticipants.slipstreamData, not playerTeams
-          const participantDoc = participantsSnap.docs.find(d => d.data().gameId === gameId);
-          const slipstreamData = participantDoc?.data()?.slipstreamData;
+          const slipstreamData = participantData?.slipstreamData;
           ranking = slipstreamData?.yellowJerseyRanking ?? 0;
           totalPoints = slipstreamData?.totalGreenJerseyPoints ?? 0;
         } else {
-          ranking = playerTeamData?.ranking ?? 0;
-          totalPoints = playerTeamData?.totalPoints ?? 0;
+          ranking = participantData?.ranking ?? 0;
+          totalPoints = participantData?.totalPoints ?? 0;
         }
 
         const lastScoreUpdate: string | null = scoreUpdateSnap.empty
