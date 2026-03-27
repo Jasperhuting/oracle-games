@@ -232,7 +232,7 @@ const WK2026Page = () => {
 
             <div className="mb-8">
                 <h2 className="text-xl font-semibold mb-4">Poules (4 positions per poule)</h2>
-                <div className="grid grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     {POULES.map((poule) => {
                         const teamsInPoule = getTeamsInPoule(poule);
                         const isFull = teamsInPoule.length >= 4;
@@ -323,7 +323,7 @@ const WK2026Page = () => {
                                 onDragStart={() => handleDragStart(team)}
                                 className="relative flex flex-row items-center p-4 bg-white border-2 border-[#ffcc80] rounded-lg cursor-move hover:shadow-lg transition-shadow"
                             >
-                                <Flag countryCode={country?.code || team.id} width={40} />
+                                <Flag countryCode={country?.code || team.id} width={40} className="min-w-[40px] min-h-[40px]" />
                                 <span className={`ml-2 font-bold absolute right-1 top-1 rounded-full w-6 h-6 flex items-center justify-center bg-[#ff9900] text-white text-xs ${team.pot === 1 && 'bg-red-500'} ${team.pot === 2 && 'bg-yellow-500'} ${team.pot === 3 && 'bg-green-500'} ${team.pot === 4 && 'bg-purple-500'} `}>{team.pot}</span>
                                 <h2 className="ml-2 font-medium truncate">{team.name}</h2>
                             </div>

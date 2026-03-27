@@ -27,22 +27,24 @@ export async function GET(request: NextRequest): Promise<NextResponse<UnreadSumm
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const baseQuery = adminDb
+    const unreadSnapshot = await adminDb
       .collection('messages')
       .where('recipientId', '==', userId)
-      .where('read', '==', false);
+      .where('read', '==', false)
+      .orderBy('sentAt', 'desc')
+      .get();
 
-    // Run count and latest-message fetch in parallel — 2 reads total regardless of message count
-    const [countResult, latestSnapshot] = await Promise.all([
-      baseQuery.count().get(),
-      baseQuery.orderBy('sentAt', 'desc').limit(3).get(),
-    ]);
+    // Keep the badge aligned with the actual inbox list by excluding soft-deleted
+    // recipient messages from both the count and the latest preview.
+    const visibleUnreadDocs = unreadSnapshot.docs.filter((doc) => {
+      const data = doc.data();
+      return !data.deletedAt && !data.deletedByRecipient;
+    });
 
-    // Filter soft-deleted messages in memory (avoids Firestore != inequality + orderBy conflict)
-    const latestDoc = latestSnapshot.docs.find((doc) => !doc.data().deletedAt && !doc.data().deletedByRecipient) ?? null;
+    const latestDoc = visibleUnreadDocs[0] ?? null;
 
     return NextResponse.json({
-      count: countResult.data().count,
+      count: visibleUnreadDocs.length,
       latestMessage: latestDoc
         ? {
             id: latestDoc.id,

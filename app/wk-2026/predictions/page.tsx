@@ -483,7 +483,7 @@ export default function PlayerPredictionsPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center">
-                                                <Flag countryCode={country?.code || stats.team.id} width={24} />
+                                                <Flag countryCode={country?.code || stats.team.id} width={24} className="min-w-[24px] min-h-[24px]" />
                                                 <span className="ml-2 font-medium">{stats.team.name}</span>
                                             </div>
                                         </td>
@@ -529,7 +529,7 @@ export default function PlayerPredictionsPage() {
                                 {/* Team 1 */}
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center flex-1">
-                                        <Flag countryCode={country1?.code || team1.id} width={24} />
+                                        <Flag countryCode={country1?.code || team1.id} width={24}  />
                                         <span className="ml-2 font-medium">{team1.name}</span>
                                     </div>
                                     <input
@@ -545,7 +545,7 @@ export default function PlayerPredictionsPage() {
                                 {/* Team 2 */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center flex-1">
-                                        <Flag countryCode={country2?.code || team2.id} width={24} />
+                                        <Flag countryCode={country2?.code || team2.id} width={24} className="min-w-[24px] min-h-[24px]" />
                                         <span className="ml-2 font-medium">{team2.name}</span>
                                     </div>
                                     <input

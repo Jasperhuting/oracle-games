@@ -635,7 +635,7 @@ export default function KnockoutPredictionsPage() {
                         min="0"
                         value={match.team1Score ?? ''}
                         onChange={(e) => handleScoreChange(match.id, 'team1', e.target.value)}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-center"
+                        className="w-16 min-w-[32px] px-2 py-1 border border-gray-300 rounded text-center"
                         placeholder="0"
                       />
                       <span className="text-gray-500">-</span>
@@ -644,7 +644,7 @@ export default function KnockoutPredictionsPage() {
                         min="0"
                         value={match.team2Score ?? ''}
                         onChange={(e) => handleScoreChange(match.id, 'team2', e.target.value)}
-                        className="w-16 px-2 py-1 border border-gray-300 rounded text-center"
+                        className="w-16 min-w-[32px] px-2 py-1 border border-gray-300 rounded text-center"
                         placeholder="0"
                       />
                     </div>

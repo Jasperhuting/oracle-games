@@ -13,6 +13,10 @@ interface Message {
   sentAt: string;
 }
 
+function isInboxPath(pathname: string): boolean {
+  return pathname === '/inbox' || pathname === '/wk-2026/inbox';
+}
+
 export default function MessageNotification() {
   const { user } = useAuth();
   const userId = user?.uid;
@@ -55,7 +59,7 @@ export default function MessageNotification() {
     }
 
     if (!seenMessageIdsRef.current.has(latestMessage.id)) {
-      const isOnInboxPage = window.location.pathname === '/inbox';
+      const isOnInboxPage = isInboxPath(window.location.pathname);
 
       if (!isOnInboxPage) {
         setNotification(latestMessage);

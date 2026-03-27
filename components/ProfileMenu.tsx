@@ -51,7 +51,7 @@ export const MenuItem = React.forwardRef<HTMLDivElement, Ariakit.MenuItemProps>(
         className={clsx(
           "flex cursor-pointer scroll-m-2 items-center gap-2 rounded outline-none pb-[6px]",
           "aria-disabled:opacity-25",
-          "data-[active-item]:text-black",
+          "data-[active-item]:text-[var(--platform-header-link-hover)]",
           props.className
         )}
       />

@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     'puppeteer-extra-plugin-stealth',
     "@sparticuz/chromium-min"
   ],
+  allowedDevOrigins: ['cycling.oracle-games.local', 'football.oracle-games.local', 'f1.oracle-games.local'],
   turbopack: {
     root: path.resolve(__dirname),
   },
