@@ -100,24 +100,26 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
 
       if (adminToken) {
         try {
-          // Immediately sign in with the admin token instead of storing it
-          console.log('Signing in with admin token immediately...');
-          await signInWithCustomToken(auth, adminToken);
-          console.log('Successfully signed in as admin');
+          // Sign back in as admin
+          const userCredential = await signInWithCustomToken(auth, adminToken);
 
-          // Navigate to admin page after successful sign-in
+          // Refresh the server-side session cookie so SSR sees isAdmin=true
+          const idToken = await userCredential.user.getIdToken();
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+
+          // Navigate to admin page after session is restored
           window.location.href = '/admin';
         } catch (signInError) {
           console.error('Error signing in with admin token:', signInError);
-          // If immediate sign-in fails, fall back to storing the token
           localStorage.setItem('restore_admin_session', adminToken);
-          console.log('Stored restore_admin_session token as fallback');
-          // Force reload to trigger restore flow
           window.location.href = '/admin';
         }
       } else {
         console.error('No admin token available for restore!');
-        // Redirect anyway to force a fresh login
         window.location.href = '/admin';
       }
     } catch (error) {
