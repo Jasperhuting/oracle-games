@@ -130,8 +130,19 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
           ? null
           : playerTeamSnap.docs[0].data();
 
-        const ranking: number = playerTeamData?.ranking ?? 0;
-        const totalPoints: number = playerTeamData?.totalPoints ?? 0;
+        let ranking: number;
+        let totalPoints: number;
+
+        if (game.gameType === 'slipstream') {
+          // Slipstream rankings live in gameParticipants.slipstreamData, not playerTeams
+          const participantDoc = participantsSnap.docs.find(d => d.data().gameId === gameId);
+          const slipstreamData = participantDoc?.data()?.slipstreamData;
+          ranking = slipstreamData?.yellowJerseyRanking ?? 0;
+          totalPoints = slipstreamData?.totalGreenJerseyPoints ?? 0;
+        } else {
+          ranking = playerTeamData?.ranking ?? 0;
+          totalPoints = playerTeamData?.totalPoints ?? 0;
+        }
 
         const lastScoreUpdate: string | null = scoreUpdateSnap.empty
           ? null
