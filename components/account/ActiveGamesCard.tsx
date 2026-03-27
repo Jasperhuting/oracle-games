@@ -118,16 +118,21 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
             const userIsF1Participant = f1Participants.some((participant) => participant.userId === userId);
 
             if (f1Game && userIsF1Participant) {
-              const standings = ((f1StandingsData as F1StandingsResponse | null)?.data?.standings || []) as F1StandingSummary[];
-              const ranking = standings.findIndex((standing) => standing.userId === userId);
-              const userStanding = ranking >= 0 ? standings[ranking] : null;
+              // Sort descending (highest points first) before finding rank
+              const standings = (((f1StandingsData as F1StandingsResponse | null)?.data?.standings || []) as F1StandingSummary[])
+                .slice()
+                .sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
+              const rankIndex = standings.findIndex((standing) => standing.userId === userId);
+              const userStanding = rankIndex >= 0 ? standings[rankIndex] : null;
+              // If user has no standings entry yet (season not started), rank them last
+              const ranking = rankIndex >= 0 ? rankIndex + 1 : f1Participants.length;
 
               activeGames.push({
                 gameId: f1Game.id,
                 gameName: f1Game.name,
                 gameType: f1Game.gameType,
                 sportType: 'f1',
-                ranking: ranking >= 0 ? ranking + 1 : 0,
+                ranking,
                 totalParticipants: f1Participants.length,
                 totalPoints: userStanding?.totalPoints || 0,
                 status: f1Game.status,
