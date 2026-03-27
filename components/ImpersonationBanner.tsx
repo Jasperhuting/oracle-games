@@ -6,18 +6,20 @@ interface ImpersonationBannerProps {
   impersonatedUserName: string;
   adminName: string;
   onStop: () => void;
+  stopping?: boolean;
   topOffset: number; // 0 or 36 depending on beta banner
 }
 
-export const ImpersonationBanner = ({ 
-  impersonatedUserName, 
-  adminName, 
+export const ImpersonationBanner = ({
+  impersonatedUserName,
+  adminName,
   onStop,
-  topOffset 
+  stopping = false,
+  topOffset
 }: ImpersonationBannerProps) => {
   return (
-    <div 
-      className="fixed left-0 right-0 z-50 bg-purple-600 text-white h-[24px] text-[9px]" 
+    <div
+      className="fixed left-0 right-0 z-50 bg-purple-600 text-white h-[24px] text-[9px]"
       style={{ top: `${topOffset}px` }}
     >
       <div className="container mx-auto px-8 h-full flex items-center justify-between">
@@ -31,9 +33,10 @@ export const ImpersonationBanner = ({
         <Button
           onClick={onStop}
           variant="white"
-          className="px-4 pb-1 pt-0 cursor-pointer text-[12px]"
+          disabled={stopping}
+          className="px-4 pb-1 pt-0 cursor-pointer text-[12px] disabled:opacity-60"
         >
-          Stop Impersonation
+          {stopping ? 'Stoppen...' : 'Stop Impersonation'}
         </Button>
       </div>
     </div>

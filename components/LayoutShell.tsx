@@ -16,6 +16,8 @@ import {
     getAdminRestoreToken,
     setRestoreAdminSessionToken,
 } from "@/lib/auth/impersonation-storage";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 
 function readShowBannerFromCookie() {
     const cookies = document.cookie.split('; ');
@@ -37,7 +39,8 @@ export function LayoutShell({
 }) {
     const pathname = usePathname();
     const hideHeader = pathname === "/login" || pathname === "/register" || pathname === "/reset-password";
-    const { impersonationStatus } = useAuth();
+    const { impersonationStatus, refreshImpersonationStatus } = useAuth();
+    const [stoppingImpersonation, setStoppingImpersonation] = useState(false);
 
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [showBercPopup, setShowBercPopup] = useState(false);
@@ -69,39 +72,43 @@ export function LayoutShell({
     }, []);
 
     const stopImpersonation = async () => {
-        console.log('LayoutShell: stopImpersonation called');
+        if (stoppingImpersonation) return;
+        setStoppingImpersonation(true);
         try {
+            // Sign out the impersonated Firebase user immediately so the
+            // shared-session restore on the next page load doesn't
+            // re-create the session for the wrong user.
+            await signOut(auth);
+
             const response = await fetch('/api/impersonate/stop', {
                 method: 'POST',
             });
-            
-            if (!response.ok) {
-                throw new Error('Failed to stop impersonation');
-            }
-            
-            const data = await response.json();
-            
-            // Get the admin restore token from localStorage
+
+            // Even on a non-OK response (e.g. cookie already gone) we still
+            // want to clean up client state and redirect so the user isn't stuck.
+            const data = response.ok ? await response.json() : {};
+
+            // Get the admin restore token from localStorage or API response
             const adminToken = getAdminRestoreToken() || data.adminToken;
-            
-            // Clear impersonation tokens and state
+
+            // Clear all client-side impersonation state
             clearAllImpersonationClientState();
-            
+
             if (adminToken) {
-                // Store admin token temporarily to restore session
                 setRestoreAdminSessionToken(adminToken);
-                console.log('Stored restore_admin_session token');
-            } else {
-                console.error('No admin token available for restore!');
             }
-            
-            // Small delay to ensure localStorage is written before redirect
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // Force reload to admin page - this will trigger the restore flow in useAuth
+
+            // Update the in-memory status so the banner disappears immediately
+            await refreshImpersonationStatus();
+
+            // Navigate to admin page — the restore flow in useAuth will
+            // sign the admin back in via the stored restore token.
             window.location.href = '/admin';
         } catch (error) {
             console.error('Error stopping impersonation:', error);
+            // Best-effort redirect so the user is never stuck
+            clearAllImpersonationClientState();
+            window.location.href = '/admin';
         }
     };
 
@@ -119,6 +126,7 @@ export function LayoutShell({
                         impersonatedUserName={impersonationStatus.impersonatedUser?.displayName || impersonationStatus.impersonatedUser?.email || 'Unknown'}
                         adminName={impersonationStatus.realAdmin?.displayName || impersonationStatus.realAdmin?.email || 'Unknown'}
                         onStop={stopImpersonation}
+                        stopping={stoppingImpersonation}
                         topOffset={showBanner ? 36 : 0}
                     />
                 )}
