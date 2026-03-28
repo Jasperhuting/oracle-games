@@ -634,6 +634,10 @@ function getManagedScraperProvider(): "scrapingbee" | "zyte" | null {
   return null;
 }
 
+function logSelectedScraperProvider(provider: "scrapingbee" | "zyte" | "local", logLabel: string) {
+  console.log(`[${logLabel}] Scraper provider: ${provider}`);
+}
+
 export async function fetchPageHtml(options: {
   url: string;
   selectors: string[];
@@ -648,13 +652,17 @@ export async function fetchPageHtml(options: {
     const provider = getManagedScraperProvider();
 
     if (provider === "scrapingbee") {
+      logSelectedScraperProvider("scrapingbee", options.logLabel ?? "scraper");
       return fetchPageHtmlViaScrapingBee(options);
     }
 
     if (provider === "zyte") {
+      logSelectedScraperProvider("zyte", options.logLabel ?? "scraper");
       return fetchPageHtmlViaZyte(options);
     }
   }
+
+  logSelectedScraperProvider("local", options.logLabel ?? "scraper");
 
   const {
     url,
