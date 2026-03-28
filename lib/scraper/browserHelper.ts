@@ -20,7 +20,9 @@ const PROXY_USERNAME = process.env.SCRAPER_PROXY_USERNAME ?? "";
 const PROXY_PASSWORD = process.env.SCRAPER_PROXY_PASSWORD ?? "";
 const PROXY_ENABLED = !!(PROXY_HOST && PROXY_PORT);
 
+const SCRAPER_PROVIDER = (process.env.SCRAPER_PROVIDER ?? "").toLowerCase();
 const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY ?? "";
+const ZYTE_API_KEY = process.env.ZYTE_API_KEY ?? "";
 
 const SCRAPER_LOCK_COLLECTION = "runtimeLocks";
 const LOCK_TTL_MS = parsePositiveInt(
@@ -513,6 +515,125 @@ async function fetchPageHtmlViaScrapingBee(options: {
   throw lastError instanceof Error ? lastError : new Error("Unknown scrape error");
 }
 
+async function fetchPageHtmlViaZyte(options: {
+  url: string;
+  selectors: string[];
+  noDataTexts?: string[];
+  noDataErrorMessage?: string;
+  logLabel?: string;
+  maxAttempts?: number;
+}): Promise<string> {
+  const {
+    url,
+    selectors,
+    noDataTexts = [],
+    noDataErrorMessage,
+    logLabel = "scraper",
+    maxAttempts = 2,
+  } = options;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`[${logLabel}] Zyte: Fetching ${url} (attempt ${attempt}/${maxAttempts})`);
+
+      const waitForSelector = selectors.find(Boolean);
+      const payload: Record<string, unknown> = {
+        url,
+        browserHtml: true,
+      };
+
+      if (waitForSelector) {
+        payload.actions = [
+          {
+            action: "waitForSelector",
+            selector: {
+              type: "css",
+              value: waitForSelector,
+              state: "attached",
+            },
+          },
+        ];
+      }
+
+      const authToken = Buffer.from(`${ZYTE_API_KEY}:`).toString("base64");
+      const response = await fetch("https://api.zyte.com/v1/extract", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${authToken}`,
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Zyte error ${response.status}: ${errorText.slice(0, 300)}`);
+      }
+
+      const data = await response.json() as { browserHtml?: string };
+      const html = data.browserHtml;
+
+      if (!html || typeof html !== "string") {
+        throw new Error("Zyte error: browserHtml missing from response");
+      }
+
+      const bodyText = html.toLowerCase();
+
+      if (bodyText.includes("just a moment") || bodyText.includes("checking your browser")) {
+        throw new Error(
+          noDataErrorMessage
+            ? `${noDataErrorMessage} (Cloudflare challenge not resolved)`
+            : "Cloudflare challenge not resolved — page not available"
+        );
+      }
+
+      const matchedNoData = noDataTexts.find((text) =>
+        bodyText.includes(text.toLowerCase())
+      );
+      if (matchedNoData) {
+        throw new Error(noDataErrorMessage || matchedNoData);
+      }
+
+      return html;
+    } catch (error) {
+      lastError = error;
+      if (!isTransientScrapeError(error) || attempt >= maxAttempts) {
+        throw error;
+      }
+      await delay(attempt * 750);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Unknown scrape error");
+}
+
+function getManagedScraperProvider(): "scrapingbee" | "zyte" | null {
+  if (SCRAPER_PROVIDER === "zyte" && ZYTE_API_KEY) {
+    return "zyte";
+  }
+
+  if (SCRAPER_PROVIDER === "scrapingbee" && SCRAPINGBEE_API_KEY) {
+    return "scrapingbee";
+  }
+
+  if (SCRAPER_PROVIDER) {
+    return null;
+  }
+
+  if (SCRAPINGBEE_API_KEY) {
+    return "scrapingbee";
+  }
+
+  if (ZYTE_API_KEY) {
+    return "zyte";
+  }
+
+  return null;
+}
+
 export async function fetchPageHtml(options: {
   url: string;
   selectors: string[];
@@ -522,9 +643,17 @@ export async function fetchPageHtml(options: {
   logLabel?: string;
   maxAttempts?: number;
 }): Promise<string> {
-  // Use ScrapingBee on production when API key is configured — bypasses Cloudflare without Puppeteer
-  if (isProduction && SCRAPINGBEE_API_KEY) {
-    return fetchPageHtmlViaScrapingBee(options);
+  // Use a managed anti-bot provider in production when configured.
+  if (isProduction) {
+    const provider = getManagedScraperProvider();
+
+    if (provider === "scrapingbee") {
+      return fetchPageHtmlViaScrapingBee(options);
+    }
+
+    if (provider === "zyte") {
+      return fetchPageHtmlViaZyte(options);
+    }
   }
 
   const {
@@ -631,6 +760,7 @@ export function classifyScrapeError(error: unknown): {
     | "navigation"
     | "timeout"
     | "availability"
+    | "provider"
     | "validation"
     | "unknown";
   retryable: boolean;
@@ -647,6 +777,20 @@ export function classifyScrapeError(error: unknown): {
 
   if (message.includes("Navigation timeout") || message.includes("timed out")) {
     return { message, category: "timeout", retryable: true };
+  }
+
+  if (
+    message.includes("ScrapingBee error 401") ||
+    message.includes("ScrapingBee error 402") ||
+    message.includes("ScrapingBee error 403") ||
+    message.includes("Monthly API calls limit reached") ||
+    message.includes("Zyte error 401") ||
+    message.includes("Zyte error 402") ||
+    message.includes("Zyte error 403") ||
+    message.includes("invalid api key") ||
+    message.includes("Invalid API key")
+  ) {
+    return { message, category: "provider", retryable: false };
   }
 
   if (

@@ -400,8 +400,8 @@ type ScrapeResult = {
   stage?: number;
   resultPreview?: string[];
   retryable?: boolean;
-  failureReason?: 'validation' | 'unsupported' | 'resource' | 'navigation' | 'timeout' | 'availability' | 'unknown';
-  errorCategory?: 'resource' | 'navigation' | 'timeout' | 'availability' | 'validation' | 'unknown';
+  failureReason?: 'validation' | 'unsupported' | 'resource' | 'navigation' | 'timeout' | 'availability' | 'provider' | 'unknown';
+  errorCategory?: 'resource' | 'navigation' | 'timeout' | 'availability' | 'provider' | 'validation' | 'unknown';
 };
 
 const getRiderDisplayName = (row: any): string => {

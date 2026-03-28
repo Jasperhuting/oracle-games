@@ -110,6 +110,47 @@ async function hasPendingJob(
   return !pendingSnap.empty;
 }
 
+function isFatalScrapeFailure(error: string | undefined): boolean {
+  if (!error) return false;
+
+  return (
+    error.includes('ScrapingBee error 401') ||
+    error.includes('ScrapingBee error 402') ||
+    error.includes('ScrapingBee error 403') ||
+    error.includes('Monthly API calls limit reached') ||
+    error.includes('Invalid API key') ||
+    error.includes('invalid api key')
+  );
+}
+
+async function hasRecentFatalFailedJob(
+  db: ReturnType<typeof getServerFirebase>,
+  race: string,
+  year: number,
+  type: string,
+  stage?: number,
+): Promise<boolean> {
+  let query = db.collection('jobs')
+    .where('type', '==', 'scraper')
+    .where('status', '==', 'failed')
+    .where('data.race', '==', race)
+    .where('data.year', '==', year)
+    .where('data.type', '==', type) as FirebaseFirestore.Query;
+
+  if (stage !== undefined) {
+    query = query.where('data.stage', '==', stage);
+  }
+
+  const failedSnap = await query.limit(5).get();
+  return failedSnap.docs.some((doc) => {
+    const data = doc.data() as { error?: string; completedAt?: string };
+    if (!isFatalScrapeFailure(data.error)) return false;
+
+    const completedAtMs = data.completedAt ? Date.parse(data.completedAt) : NaN;
+    return !Number.isFinite(completedAtMs) || Date.now() - completedAtMs < 24 * 60 * 60 * 1000;
+  });
+}
+
 export async function GET(request: NextRequest) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
   const authHeader = request.headers.get('authorization');
@@ -232,6 +273,10 @@ export async function GET(request: NextRequest) {
             skipped.push(`${raceSlug} (result job already queued)`);
             continue;
           }
+          if (!dryRun && !notifyOnly && await hasRecentFatalFailedJob(db, raceSlug, year, 'result')) {
+            skipped.push(`${raceSlug} (recent fatal result failure, not re-queuing)`);
+            continue;
+          }
           if (dryRun || notifyOnly) {
             outcomes.push({
               raceSlug,
@@ -311,6 +356,10 @@ export async function GET(request: NextRequest) {
           }
           if (!dryRun && !notifyOnly && await hasPendingJob(db, raceSlug, year, 'stage', stageNumber)) {
             skipped.push(`${raceSlug} (stage ${stageNumber} job already queued)`);
+            continue;
+          }
+          if (!dryRun && !notifyOnly && await hasRecentFatalFailedJob(db, raceSlug, year, 'stage', stageNumber)) {
+            skipped.push(`${raceSlug} (stage ${stageNumber} recent fatal failure, not re-queuing)`);
             continue;
           }
 
