@@ -310,11 +310,19 @@ export function useAuth() {
     syncImpersonatedAuthUser();
   }, [impersonationStatus, user]);
 
+  const resolvedImpersonationStatus: ImpersonationStatus =
+    impersonationStatus.isImpersonating &&
+    user &&
+    impersonationStatus.impersonatedUser?.uid &&
+    user.uid !== impersonationStatus.impersonatedUser.uid
+      ? { isImpersonating: false }
+      : impersonationStatus;
+
   return { 
     user, 
     loading: loading || restoringSession, 
     isAuthenticated: !!user,
-    impersonationStatus,
+    impersonationStatus: resolvedImpersonationStatus,
     refreshImpersonationStatus,
     clearImpersonationStatus,
     restoringSession,

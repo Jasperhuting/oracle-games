@@ -199,6 +199,7 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
       });
 
       if (f1Game) {
+        const nonF1Games = games.filter(game => game.gameType !== 'f1-prediction');
         const allStandings = allStandingsSnap.docs.map(d => d.data() as { userId: string; totalPoints?: number });
 
         // Sort descending to find rank
@@ -207,7 +208,7 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
         const userStanding = rankIndex >= 0 ? allStandings[rankIndex] : null;
         const ranking = rankIndex >= 0 ? rankIndex + 1 : 0;
 
-        games.push({
+        nonF1Games.push({
           gameId: f1Game.id,
           gameName: f1Game.data().name ?? 'F1 Prediction',
           gameType: 'f1-prediction',
@@ -218,6 +219,9 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
           status: f1Game.data().status,
           lastScoreUpdate: null,
         });
+
+        games.length = 0;
+        games.push(...nonF1Games);
       }
     }
   } catch (err) {

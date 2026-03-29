@@ -55,7 +55,7 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
 
     async function fetchActiveGames() {
       try {
-        const cacheKey = `active-games-summary:v9:${userId}`;
+        const cacheKey = `active-games-summary:v10:${userId}`;
         const cached = readDailyCache(cacheKey);
         if (cached) {
           setGames(cached);
@@ -268,26 +268,4 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
       )}
     </div>
   );
-}
-
-function getSportType(gameType: string): 'cycling' | 'f1' | 'other' {
-  const cyclingTypes = [
-    'auctioneer',
-    'slipstream',
-    'last-man-standing',
-    'poisoned-cup',
-    'nations-cup',
-    'rising-stars',
-    'country-roads',
-    'worldtour-manager',
-    'fan-flandrien',
-    'full-grid',
-    'marginal-gains',
-  ];
-
-  const f1Types = ['f1-prediction'];
-
-  if (cyclingTypes.includes(gameType)) return 'cycling';
-  if (f1Types.includes(gameType)) return 'f1';
-  return 'other';
 }
