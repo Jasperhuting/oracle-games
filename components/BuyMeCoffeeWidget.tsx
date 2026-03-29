@@ -1,7 +1,21 @@
 'use client'
 
-import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
+
+function CoffeeBadge({ size = 'sm' }: { size?: 'sm' | 'md' }) {
+  const classes = size === 'md'
+    ? 'h-6 w-6 text-sm'
+    : 'h-4 w-4 text-[10px]';
+
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex items-center justify-center rounded-full bg-white/80 text-[#5b3a00] ${classes}`}
+    >
+      ☕
+    </span>
+  );
+}
 
 export function BuyMeCoffeeWidget({ isExpanded }: { isExpanded?: boolean }) {
   const { user } = useAuth();
@@ -36,12 +50,7 @@ export function BuyMeCoffeeWidget({ isExpanded }: { isExpanded?: boolean }) {
         className="hidden md:flex fixed bottom-[250px] rotate-90 -left-[64px] z-50 rounded-t-lg bg-[#FFDD00] text-[#000000] px-4 py-2 cursor-pointer hover:bg-[#FFED4E] transition-colors items-center gap-2"
         title="Support Oracle Games"
       >
-        <Image
-          src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
-          alt="Buy me a coffee"
-          width={12}
-          height={12}
-        />
+        <CoffeeBadge />
         <span className="text-sm whitespace-nowrap">Buy me a coffee</span>
       </a>
     );
@@ -57,12 +66,7 @@ export function BuyMeCoffeeWidget({ isExpanded }: { isExpanded?: boolean }) {
       className="flex items-center gap-2 bg-[#FFDD00] text-[#000000] px-3 py-2 rounded-lg cursor-pointer hover:bg-[#FFED4E] transition-colors"
       title="Support Oracle Games"
     >
-      <Image
-        src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
-        alt="Buy me a coffee"
-        width={16}
-        height={16}
-      />
+      <CoffeeBadge size="md" />
       <span className="text-sm whitespace-nowrap">Buy me a coffee</span>
     </a>
   );

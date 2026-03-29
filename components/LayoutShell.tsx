@@ -39,7 +39,7 @@ export function LayoutShell({
 }) {
     const pathname = usePathname();
     const hideHeader = pathname === "/login" || pathname === "/register" || pathname === "/reset-password";
-    const { impersonationStatus, refreshImpersonationStatus } = useAuth();
+    const { impersonationStatus, refreshImpersonationStatus, clearImpersonationStatus } = useAuth();
     const [stoppingImpersonation, setStoppingImpersonation] = useState(false);
 
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -50,7 +50,13 @@ export function LayoutShell({
 
     // Check if user has previously hidden the banner
     useEffect(() => {
-        setShowBanner(readShowBannerFromCookie());
+        const frame = window.requestAnimationFrame(() => {
+            setShowBanner(readShowBannerFromCookie());
+        });
+
+        return () => {
+            window.cancelAnimationFrame(frame);
+        };
     }, []);
 
     useEffect(() => {
@@ -93,13 +99,16 @@ export function LayoutShell({
 
             // Clear all client-side impersonation state
             clearAllImpersonationClientState();
+            clearImpersonationStatus();
 
             if (adminToken) {
                 setRestoreAdminSessionToken(adminToken);
             }
 
-            // Update the in-memory status so the banner disappears immediately
-            await refreshImpersonationStatus();
+            // Best-effort server re-check after clearing local state.
+            // The optimistic clear above avoids a stale banner when the
+            // cookie removal has not propagated to the next request yet.
+            void refreshImpersonationStatus();
 
             // Navigate to admin page — the restore flow in useAuth will
             // sign the admin back in via the stored restore token.
@@ -108,6 +117,7 @@ export function LayoutShell({
             console.error('Error stopping impersonation:', error);
             // Best-effort redirect so the user is never stuck
             clearAllImpersonationClientState();
+            clearImpersonationStatus();
             window.location.href = '/admin';
         }
     };

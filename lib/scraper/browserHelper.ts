@@ -551,7 +551,6 @@ async function fetchPageHtmlViaZyte(options: {
             selector: {
               type: "css",
               value: waitForSelector,
-              state: "attached",
             },
           },
         ];
@@ -573,7 +572,15 @@ async function fetchPageHtmlViaZyte(options: {
         throw new Error(`Zyte error ${response.status}: ${errorText.slice(0, 300)}`);
       }
 
-      const data = await response.json() as { browserHtml?: string };
+      const responseText = await response.text();
+      let data: { browserHtml?: string };
+
+      try {
+        data = JSON.parse(responseText) as { browserHtml?: string };
+      } catch {
+        throw new Error(`Zyte returned non-JSON response: ${responseText.slice(0, 300)}`);
+      }
+
       const html = data.browserHtml;
 
       if (!html || typeof html !== "string") {

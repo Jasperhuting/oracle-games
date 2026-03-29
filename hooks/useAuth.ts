@@ -40,6 +40,10 @@ export function useAuth() {
     globalImpersonationListeners.forEach(listener => listener(status));
   };
 
+  const clearImpersonationStatus = useCallback(() => {
+    updateGlobalImpersonationStatus({ isImpersonating: false });
+  }, []);
+
   // Function to refresh impersonation status
   const refreshImpersonationStatus = useCallback(async () => {
     if (isCheckingImpersonation) {
@@ -312,6 +316,7 @@ export function useAuth() {
     isAuthenticated: !!user,
     impersonationStatus,
     refreshImpersonationStatus,
+    clearImpersonationStatus,
     restoringSession,
   };
 }

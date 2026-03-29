@@ -105,6 +105,15 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
         }
     };
 
+    const coffeeIcon = (
+        <span
+            aria-hidden="true"
+            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-sm text-[#5b3a00]"
+        >
+            ☕
+        </span>
+    );
+
     return (
         <div ref={containerRef} className="md:hidden fixed bottom-4 left-4 z-50 flex flex-col gap-3">
             {showPrizesModal && (
@@ -203,13 +212,7 @@ export function MobileFloatingMenu({ onFeedbackClick }: MobileFloatingMenuProps)
                         onClick={handleCoffeeButtonClick}
                         className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-[#FFDD00] hover:bg-[#FFED4E] overflow-hidden ${coffeeExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
                     >
-                        <Image
-                            src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg"
-                            alt="Buy me a coffee"
-                            width={24}
-                            height={24}
-                            className="flex-shrink-0"
-                        />
+                        {coffeeIcon}
                         <span className={`text-sm text-black font-medium whitespace-nowrap transition-all duration-300 ${coffeeExpanded ? 'opacity-100 max-w-[150px]' : 'opacity-0 max-w-0'}`}>
                             Buy me a coffee
                         </span>
