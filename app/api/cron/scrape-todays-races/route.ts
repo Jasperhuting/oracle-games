@@ -540,6 +540,21 @@ export async function GET(request: NextRequest) {
         ? `\n\n⚠️ Skipped (${skippedCount}):\n${shownSkipped.join('\n')}${skippedCount > shownSkipped.length ? '\n…' : ''}`
         : '';
 
+    const shouldSendTelegramSummary =
+      summaryLines.length > 0 || queuedJobs > 0 || stoppedEarly;
+
+    if (!shouldSendTelegramSummary) {
+      return Response.json({
+        success: true,
+        date: todayStr,
+        dryRun,
+        stoppedEarly,
+        outcomes,
+        skipped,
+        telegramSkipped: true,
+      });
+    }
+
     const telegramMessage = [
       `🕛 <b>Daily Race Scrape Queue</b> (${todayStr})`,
       '',
