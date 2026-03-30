@@ -45,6 +45,58 @@ const logPointsCalculation = async (details: Record<string, unknown>) => {
   }
 };
 
+const triggerSlipstreamCalculations = async ({
+  race,
+  stageResults,
+  source,
+}: {
+  race: string;
+  stageResults: unknown[];
+  source: string;
+}) => {
+  if (!Array.isArray(stageResults) || stageResults.length === 0) {
+    return;
+  }
+
+  try {
+    const db = getServerFirebase();
+    const slipstreamGamesSnap = await db.collection('games')
+      .where('gameType', '==', 'slipstream')
+      .where('status', 'in', ['active', 'bidding'])
+      .get();
+
+    for (const gameDoc of slipstreamGamesSnap.docs) {
+      const gameData = gameDoc.data();
+      const countingRaces: { raceSlug: string }[] = gameData.config?.countingRaces ?? [];
+      const matchingRace = countingRaces.find(r => r.raceSlug === race);
+      if (!matchingRace) continue;
+
+      try {
+        const { POST: calculateSlipstream } = await import('@/app/api/games/[gameId]/slipstream/calculate-results/route');
+        const mockReq = new NextRequest(
+          `http://localhost:3000/api/games/${gameDoc.id}/slipstream/calculate-results`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ raceSlug: race, stageResults }),
+          }
+        );
+        const slipRes = await calculateSlipstream(mockReq, { params: Promise.resolve({ gameId: gameDoc.id }) });
+        if (slipRes.status === 200) {
+          console.log(`[jobs/process] Slipstream calculation completed for game ${gameDoc.id} race ${race} via ${source}`);
+        } else {
+          const errData = await slipRes.json();
+          console.error(`[jobs/process] Slipstream calculation failed for game ${gameDoc.id} via ${source}:`, errData);
+        }
+      } catch (slipErr) {
+        console.error(`[jobs/process] Error triggering slipstream for game ${gameDoc.id} via ${source}:`, slipErr);
+      }
+    }
+  } catch (slipstreamErr) {
+    console.error(`[jobs/process] Error querying slipstream games for ${source}:`, slipstreamErr);
+  }
+};
+
 const withTimeout = async <T>(promise: Promise<T>, label: string): Promise<T> => {
   let timeoutId: NodeJS.Timeout;
   const timeoutPromise = new Promise<T>((_, reject) => {
@@ -547,44 +599,11 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         });
       }
 
-      // Trigger slipstream calculation for any slipstream games that include this race
-      try {
-        const db = getServerFirebase();
-        const slipstreamGamesSnap = await db.collection('games')
-          .where('gameType', '==', 'slipstream')
-          .where('status', 'in', ['active', 'bidding'])
-          .get();
-
-        for (const gameDoc of slipstreamGamesSnap.docs) {
-          const gameData = gameDoc.data();
-          const countingRaces: { raceSlug: string }[] = gameData.config?.countingRaces ?? [];
-          const matchingRace = countingRaces.find(r => r.raceSlug === race);
-          if (!matchingRace) continue;
-
-          try {
-            const { POST: calculateSlipstream } = await import('@/app/api/games/[gameId]/slipstream/calculate-results/route');
-            const mockReq = new NextRequest(
-              `http://localhost:3000/api/games/${gameDoc.id}/slipstream/calculate-results`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ raceSlug: race, stageResults: result.stageResults ?? [] }),
-              }
-            );
-            const slipRes = await calculateSlipstream(mockReq, { params: Promise.resolve({ gameId: gameDoc.id }) });
-            if (slipRes.status === 200) {
-              console.log(`[jobs/process] Slipstream calculation completed for game ${gameDoc.id} race ${race} stage ${stage}`);
-            } else {
-              const errData = await slipRes.json();
-              console.error(`[jobs/process] Slipstream calculation failed for game ${gameDoc.id}:`, errData);
-            }
-          } catch (slipErr) {
-            console.error(`[jobs/process] Error triggering slipstream for game ${gameDoc.id}:`, slipErr);
-          }
-        }
-      } catch (slipstreamErr) {
-        console.error(`[jobs/process] Error querying slipstream games for stage ${stage}:`, slipstreamErr);
-      }
+      await triggerSlipstreamCalculations({
+        race,
+        stageResults: result.stageResults ?? [],
+        source: `stage ${stage}`,
+      });
     }
     const stageResult: ScrapeResult = {
       success: save.success,
@@ -622,6 +641,12 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
       };
     }
     if (save.success) {
+      await triggerSlipstreamCalculations({
+        race,
+        stageResults: result.stageResults ?? [],
+        source: 'result',
+      });
+
       try {
         const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
         const calculatePoints = calculatePointsModule.POST;

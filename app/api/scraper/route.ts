@@ -11,6 +11,65 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
 import { classifyScrapeError } from '@/lib/scraper/browserHelper';
 
+const triggerSlipstreamCalculations = async ({
+  race,
+  stageResults,
+  source,
+}: {
+  race: string;
+  stageResults: unknown[];
+  source: string;
+}) => {
+  if (!Array.isArray(stageResults) || stageResults.length === 0) {
+    return;
+  }
+
+  try {
+    const db = getServerFirebase();
+    const slipstreamGamesSnap = await db.collection('games')
+      .where('gameType', '==', 'slipstream')
+      .where('status', 'in', ['active', 'bidding'])
+      .get();
+
+    for (const gameDoc of slipstreamGamesSnap.docs) {
+      const gameData = gameDoc.data();
+      const countingRaces: { raceSlug: string }[] = gameData.config?.countingRaces ?? [];
+      const matchingRace = countingRaces.find(r => r.raceSlug === race);
+      if (!matchingRace) continue;
+
+      try {
+        const { POST: calculateSlipstream } = await import('@/app/api/games/[gameId]/slipstream/calculate-results/route');
+        const mockRequest = new NextRequest(
+          `http://localhost:3000/api/games/${gameDoc.id}/slipstream/calculate-results`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              raceSlug: race,
+              stageResults,
+            }),
+          }
+        );
+
+        const slipstreamResponse = await calculateSlipstream(mockRequest, {
+          params: Promise.resolve({ gameId: gameDoc.id }),
+        });
+
+        if (slipstreamResponse.status === 200) {
+          console.log(`[scraper] Slipstream calculation completed for game ${gameDoc.id} via ${source}`);
+        } else {
+          const errorData = await slipstreamResponse.json();
+          console.error(`[scraper] Slipstream calculation failed for game ${gameDoc.id} via ${source}:`, errorData);
+        }
+      } catch (slipstreamError) {
+        console.error(`[scraper] Error triggering slipstream for game ${gameDoc.id} via ${source}:`, slipstreamError);
+      }
+    }
+  } catch (error) {
+    console.error(`[scraper] Error querying slipstream games for ${source}:`, error);
+  }
+};
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   let requestPayload: {
@@ -266,6 +325,16 @@ export async function POST(request: NextRequest) {
     // Trigger points calculation for stage results, single-day race results, and tour GC results
     if (type === 'stage' || type === 'result' || type === 'tour-gc') {
       try {
+        if (type === 'stage' || type === 'result') {
+          await triggerSlipstreamCalculations({
+            race,
+            stageResults: ('stageResults' in scraperData && Array.isArray(scraperData.stageResults))
+              ? scraperData.stageResults
+              : [],
+            source: type === 'result' ? 'result' : `stage ${stage}`,
+          });
+        }
+
         console.log(`[scraper] Triggering points calculation for ${race} ${type === 'result' ? 'result' : type === 'tour-gc' ? 'tour-gc' : `stage ${stage}`}`);
         const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
         const calculatePoints = calculatePointsModule.POST;
