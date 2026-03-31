@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { getRacesPuppeteer } from '@/lib/scraper/getRacesPuppeteer';
+import { syncRacesToGoogleCalendar } from '@/lib/google-calendar/raceSync';
 import { sendTelegramMessage } from '@/lib/telegram';
 
 const TIME_ZONE = 'Europe/Amsterdam';
@@ -75,6 +76,8 @@ export async function scrapeCalendar(year: number): Promise<Response> {
       }
     }
 
+    const googleCalendarSync = await syncRacesToGoogleCalendar(year);
+
     const message = [
       `📅 <b>Race Calendar Sync</b> (${year})`,
       '',
@@ -82,12 +85,23 @@ export async function scrapeCalendar(year: number): Promise<Response> {
       `🔄 Bijgewerkt: ${updated}`,
       `❌ Fouten: ${errors}`,
       `📋 Totaal gescraped: ${racesData.count}`,
+      googleCalendarSync.enabled
+        ? `🗓️ Google Calendar: ${googleCalendarSync.created} nieuw, ${googleCalendarSync.updated} aangepast, ${googleCalendarSync.unchanged} ongewijzigd, ${googleCalendarSync.failed} mislukt`
+        : `🗓️ Google Calendar: overgeslagen (${googleCalendarSync.reason || 'niet geconfigureerd'})`,
       `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
     ].join('\n');
 
     await sendTelegramMessage(message, { parse_mode: 'HTML' });
 
-    return Response.json({ success: true, year, added, updated, errors, total: racesData.count });
+    return Response.json({
+      success: true,
+      year,
+      added,
+      updated,
+      errors,
+      total: racesData.count,
+      googleCalendarSync,
+    });
   } catch (error) {
     console.error('[scrape-race-calendar] Error:', error);
     return Response.json(
