@@ -137,5 +137,13 @@ describe('google calendar race sync helpers', () => {
         classification: '1.Pro',
       }),
     ).toBe(true);
+
+    expect(
+      __internal.isWomenRace({
+        name: 'Tour of Thailand',
+        slug: 'tour-of-thailand-we',
+        classification: '2.2',
+      }),
+    ).toBe(true);
   });
 });

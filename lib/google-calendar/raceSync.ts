@@ -9,7 +9,7 @@ const APP_TIME_ZONE = 'Europe/Amsterdam';
 const SYNC_CONCURRENCY = 3;
 const MAX_RETRIES = 4;
 const WOMEN_CLASSIFICATIONS = new Set(['1.WWT', '2.WWT', '1.WE', '2.WE', 'WE', 'WWT']);
-const WOMEN_KEYWORDS = ['women', 'woman', 'ladies', 'dames', 'femmes', 'feminin', 'féminin', '-we_', '-we-', '_we'];
+const WOMEN_KEYWORDS = ['women', 'woman', 'ladies', 'dames', 'femmes', 'feminin', 'féminin'];
 
 type SyncStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'failed';
 
@@ -135,7 +135,11 @@ function isWomenRace(race: Pick<RaceRecord, 'name' | 'slug' | 'classification'>)
   }
 
   const haystack = `${race.name || ''} ${race.slug || ''}`.toLowerCase();
-  return WOMEN_KEYWORDS.some((keyword) => haystack.includes(keyword));
+  if (WOMEN_KEYWORDS.some((keyword) => haystack.includes(keyword))) {
+    return true;
+  }
+
+  return /(^|[-_\s])we($|[-_\s\d])/.test(haystack);
 }
 
 function buildEventResource(race: RaceRecord): calendar_v3.Schema$Event {
@@ -268,6 +272,26 @@ async function runWithConcurrency<T>(
   );
 }
 
+function getKnownCalendarIds(config: { calendarId: string; classificationCalendarMap: Record<string, string> }): string[] {
+  return [...new Set([config.calendarId, ...Object.values(config.classificationCalendarMap)])];
+}
+
+async function findRaceEventsInCalendar(
+  calendar: calendar_v3.Calendar,
+  calendarId: string,
+  raceId: string,
+): Promise<calendar_v3.Schema$Event[]> {
+  const response = await withGoogleRetry(() => calendar.events.list({
+    calendarId,
+    privateExtendedProperty: [`oracleRaceId=${raceId}`],
+    maxResults: 20,
+    singleEvents: true,
+    showDeleted: false,
+  }));
+
+  return response.data.items || [];
+}
+
 export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCalendarRaceSyncResult> {
   const client = await getCalendarClient();
   if (!client.config.enabled) {
@@ -297,6 +321,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     .filter((race) => race.name && race.startDate && (race.endDate || race.startDate))
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
   const today = getTodayInAmsterdam();
+  const knownCalendarIds = getKnownCalendarIds(client.config);
 
   const results: GoogleCalendarRaceSyncResult['results'] = [];
   let created = 0;
@@ -316,6 +341,31 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
       let event: calendar_v3.Schema$Event | null | undefined;
       let status: SyncStatus;
       let effectiveEventId = expectedEventId;
+
+      for (const calendarId of knownCalendarIds) {
+        if (calendarId === targetCalendarId) {
+          continue;
+        }
+
+        const misplacedEvents = await findRaceEventsInCalendar(client.calendar, calendarId, race.id);
+        for (const misplacedEvent of misplacedEvents) {
+          if (!misplacedEvent.id) {
+            continue;
+          }
+
+          try {
+            await withGoogleRetry(() => client.calendar.events.delete({
+              calendarId,
+              eventId: misplacedEvent.id!,
+            }));
+            deleted++;
+          } catch (error) {
+            if (!isMissingGoogleEvent(error)) {
+              throw error;
+            }
+          }
+        }
+      }
 
       if (
         race.googleCalendar?.eventId &&
@@ -422,18 +472,27 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
   );
 
   await runWithConcurrency(syncedRacesToDelete, SYNC_CONCURRENCY, async (race) => {
-    try {
-      await withGoogleRetry(() => client.calendar.events.delete({
-        calendarId: race.googleCalendar!.syncedCalendarId!,
-        eventId: race.googleCalendar!.eventId!,
-      }));
-    } catch (error) {
-      if (!isMissingGoogleEvent(error)) {
-        throw error;
+    for (const calendarId of knownCalendarIds) {
+      const matchingEvents = await findRaceEventsInCalendar(client.calendar, calendarId, race.id);
+
+      for (const matchingEvent of matchingEvents) {
+        if (!matchingEvent.id) {
+          continue;
+        }
+
+        try {
+          await withGoogleRetry(() => client.calendar.events.delete({
+            calendarId,
+            eventId: matchingEvent.id!,
+          }));
+          deleted++;
+        } catch (error) {
+          if (!isMissingGoogleEvent(error)) {
+            throw error;
+          }
+        }
       }
     }
-
-    deleted++;
     await db.collection('races').doc(race.id).set({
       googleCalendar: {
         eventId: null,
