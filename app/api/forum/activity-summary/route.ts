@@ -12,24 +12,49 @@ export interface ForumActivityItem {
   lastReplyPreview: string | null;
 }
 
+function toMillis(value: unknown): number {
+  if (value instanceof Timestamp) {
+    return value.toMillis();
+  }
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  return 0;
+}
+
 export const GET = userHandler('forum-activity-summary', async (ctx) => {
   const { uid } = ctx;
 
-  // 1. Get user's game IDs, ordered by most recently joined
+  // 1. Get user's game IDs without requiring a composite index
   const participantsSnap = await adminDb
     .collection('gameParticipants')
     .where('userId', '==', uid)
-    .orderBy('joinedAt', 'desc')
     .get();
 
   if (participantsSnap.empty) {
     return { topics: [] };
   }
 
-  // Cap at 30 for Firestore `in` limit
+  // Cap at 30 for Firestore `in` limit, preserving newest joins first in memory.
   const gameIds = participantsSnap.docs
-    .map((d) => d.data().gameId as string)
-    .filter(Boolean)
+    .map((doc) => {
+      const data = doc.data();
+      return {
+        gameId: data.gameId as string | undefined,
+        joinedAtMs: toMillis(data.joinedAt),
+      };
+    })
+    .filter((participant): participant is { gameId: string; joinedAtMs: number } => Boolean(participant.gameId))
+    .sort((a, b) => b.joinedAtMs - a.joinedAtMs)
+    .map((participant) => participant.gameId)
+    .filter((gameId, index, arr) => arr.indexOf(gameId) === index)
     .slice(0, 30);
 
   if (gameIds.length === 0) {
