@@ -8,6 +8,8 @@ const SOURCE_LABEL = 'oracle-games-race-sync';
 const APP_TIME_ZONE = 'Europe/Amsterdam';
 const SYNC_CONCURRENCY = 3;
 const MAX_RETRIES = 4;
+const WOMEN_CLASSIFICATIONS = new Set(['1.WWT', '2.WWT', '1.WE', '2.WE', 'WE', 'WWT']);
+const WOMEN_KEYWORDS = ['women', 'woman', 'ladies', 'dames', 'femmes', 'feminin', 'féminin', '-we_', '-we-', '_we'];
 
 type SyncStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'failed';
 
@@ -124,6 +126,16 @@ function getTodayInAmsterdam(): string {
 function isPastRace(race: Pick<RaceRecord, 'startDate' | 'endDate'>, today: string): boolean {
   const endDate = race.endDate || race.startDate;
   return endDate < today;
+}
+
+function isWomenRace(race: Pick<RaceRecord, 'name' | 'slug' | 'classification'>): boolean {
+  const classification = race.classification?.trim().toUpperCase() || '';
+  if (WOMEN_CLASSIFICATIONS.has(classification)) {
+    return true;
+  }
+
+  const haystack = `${race.name || ''} ${race.slug || ''}`.toLowerCase();
+  return WOMEN_KEYWORDS.some((keyword) => haystack.includes(keyword));
 }
 
 function buildEventResource(race: RaceRecord): calendar_v3.Schema$Event {
@@ -293,7 +305,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
   let deleted = 0;
   let failed = 0;
 
-  const futureRaces = races.filter((race) => !isPastRace(race, today));
+  const futureRaces = races.filter((race) => !isPastRace(race, today) && !isWomenRace(race));
 
   await runWithConcurrency(futureRaces, SYNC_CONCURRENCY, async (race) => {
     try {
@@ -403,13 +415,13 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     }
   });
 
-  const pastSyncedRaces = races.filter((race) =>
-    isPastRace(race, today) &&
+  const syncedRacesToDelete = races.filter((race) =>
+    (isPastRace(race, today) || isWomenRace(race)) &&
     race.googleCalendar?.eventId &&
     race.googleCalendar?.syncedCalendarId,
   );
 
-  await runWithConcurrency(pastSyncedRaces, SYNC_CONCURRENCY, async (race) => {
+  await runWithConcurrency(syncedRacesToDelete, SYNC_CONCURRENCY, async (race) => {
     try {
       await withGoogleRetry(() => client.calendar.events.delete({
         calendarId: race.googleCalendar!.syncedCalendarId!,
@@ -461,6 +473,7 @@ export const __internal = {
   eventsMatch,
   getTodayInAmsterdam,
   isPastRace,
+  isWomenRace,
   parseClassificationCalendarMap,
   getTargetCalendarId,
 };

@@ -110,4 +110,32 @@ describe('google calendar race sync helpers', () => {
       ),
     ).toBe(false);
   });
+
+  it('marks women races by classification', () => {
+    expect(
+      __internal.isWomenRace({
+        name: 'Ronde van Vlaanderen',
+        slug: 'ronde-van-vlaanderen',
+        classification: '1.WWT',
+      }),
+    ).toBe(true);
+  });
+
+  it('marks women races by slug or name', () => {
+    expect(
+      __internal.isWomenRace({
+        name: 'Paris-Roubaix Femmes',
+        slug: 'paris-roubaix-femmes',
+        classification: '1.UWT',
+      }),
+    ).toBe(true);
+
+    expect(
+      __internal.isWomenRace({
+        name: 'Dwars door Vlaanderen',
+        slug: 'dwars-door-vlaanderen-we_2026',
+        classification: '1.Pro',
+      }),
+    ).toBe(true);
+  });
 });
