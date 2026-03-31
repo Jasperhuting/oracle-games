@@ -4,8 +4,9 @@ import { getServerFirebase } from '@/lib/firebase/server';
 
 const DEFAULT_CALENDAR_ID = 'primary';
 const SOURCE_LABEL = 'oracle-games-race-sync';
+const APP_TIME_ZONE = 'Europe/Amsterdam';
 
-type SyncStatus = 'created' | 'updated' | 'unchanged' | 'failed';
+type SyncStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'failed';
 
 export interface GoogleCalendarRaceSyncResult {
   enabled: boolean;
@@ -16,6 +17,7 @@ export interface GoogleCalendarRaceSyncResult {
   created: number;
   updated: number;
   unchanged: number;
+  deleted: number;
   failed: number;
   total: number;
   results: Array<{
@@ -23,6 +25,7 @@ export interface GoogleCalendarRaceSyncResult {
     eventId?: string;
     status: SyncStatus;
     error?: string;
+    calendarId?: string;
   }>;
 }
 
@@ -50,6 +53,7 @@ function getConfig() {
   const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
   const calendarId = process.env.GOOGLE_CALENDAR_ID || DEFAULT_CALENDAR_ID;
+  const classificationCalendarMap = parseClassificationCalendarMap(process.env.GOOGLE_CALENDAR_CLASS_MAP);
 
   if (!clientId || !clientSecret || !refreshToken) {
     return {
@@ -64,13 +68,59 @@ function getConfig() {
     clientSecret,
     refreshToken,
     calendarId,
+    classificationCalendarMap,
   };
+}
+
+function parseClassificationCalendarMap(rawValue: string | undefined): Record<string, string> {
+  if (!rawValue) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .filter(([, value]) => typeof value === 'string' && value.trim())
+        .map(([key, value]) => [key.trim(), String(value).trim()]),
+    );
+  } catch (error) {
+    throw new Error(
+      `Invalid GOOGLE_CALENDAR_CLASS_MAP JSON: ${error instanceof Error ? error.message : 'Unknown parse error'}`,
+    );
+  }
+}
+
+function getTargetCalendarId(
+  race: Pick<RaceRecord, 'classification'>,
+  config: { calendarId: string; classificationCalendarMap: Record<string, string> },
+): string {
+  const classification = race.classification?.trim();
+  if (classification && config.classificationCalendarMap[classification]) {
+    return config.classificationCalendarMap[classification];
+  }
+
+  return config.calendarId;
 }
 
 function addOneDay(date: string): string {
   const next = new Date(`${date}T00:00:00.000Z`);
   next.setUTCDate(next.getUTCDate() + 1);
   return next.toISOString().slice(0, 10);
+}
+
+function getTodayInAmsterdam(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function isPastRace(race: Pick<RaceRecord, 'startDate' | 'endDate'>, today: string): boolean {
+  const endDate = race.endDate || race.startDate;
+  return endDate < today;
 }
 
 function buildEventResource(race: RaceRecord): calendar_v3.Schema$Event {
@@ -118,7 +168,7 @@ async function findExistingEventId(
   calendarId: string,
   race: RaceRecord,
 ): Promise<string | undefined> {
-  if (race.googleCalendar?.eventId) {
+  if (race.googleCalendar?.eventId && race.googleCalendar?.syncedCalendarId === calendarId) {
     return race.googleCalendar.eventId;
   }
 
@@ -164,6 +214,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
       created: 0,
       updated: 0,
       unchanged: 0,
+      deleted: 0,
       failed: 0,
       total: 0,
       results: [],
@@ -180,25 +231,87 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     .map((doc) => ({ id: doc.id, ...doc.data() } as RaceRecord))
     .filter((race) => race.name && race.startDate && (race.endDate || race.startDate))
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const today = getTodayInAmsterdam();
 
   const results: GoogleCalendarRaceSyncResult['results'] = [];
   let created = 0;
   let updated = 0;
   let unchanged = 0;
+  let deleted = 0;
   let failed = 0;
 
   for (const race of races) {
     try {
+      const targetCalendarId = getTargetCalendarId(race, client.config);
+
+      if (
+        isPastRace(race, today) &&
+        race.googleCalendar?.eventId &&
+        race.googleCalendar?.syncedCalendarId
+      ) {
+        try {
+          await client.calendar.events.delete({
+            calendarId: race.googleCalendar.syncedCalendarId,
+            eventId: race.googleCalendar.eventId,
+          });
+        } catch (error) {
+          if (!isMissingGoogleEvent(error)) {
+            throw error;
+          }
+        }
+
+        deleted++;
+        await db.collection('races').doc(race.id).set({
+          googleCalendar: {
+            eventId: null,
+            eventHtmlLink: null,
+            syncedCalendarId: null,
+            lastSyncedAt: new Date().toISOString(),
+            lastStatus: 'deleted',
+            lastError: null,
+          },
+        }, { merge: true });
+
+        results.push({
+          raceId: race.id,
+          status: 'deleted',
+          calendarId: race.googleCalendar.syncedCalendarId,
+        });
+        continue;
+      }
+
+      if (isPastRace(race, today)) {
+        continue;
+      }
+
       const resource = buildEventResource(race);
-      const existingEventId = await findExistingEventId(client.calendar, client.config.calendarId, race);
+      const existingEventId = await findExistingEventId(client.calendar, targetCalendarId, race);
 
       let event: calendar_v3.Schema$Event | null | undefined;
       let status: SyncStatus;
+      let effectiveEventId = existingEventId;
+
+      if (
+        race.googleCalendar?.eventId &&
+        race.googleCalendar?.syncedCalendarId &&
+        race.googleCalendar.syncedCalendarId !== targetCalendarId
+      ) {
+        try {
+          await client.calendar.events.delete({
+            calendarId: race.googleCalendar.syncedCalendarId,
+            eventId: race.googleCalendar.eventId,
+          });
+        } catch (error) {
+          if (!isMissingGoogleEvent(error)) {
+            throw error;
+          }
+        }
+      }
 
       if (existingEventId) {
         try {
           const existing = await client.calendar.events.get({
-            calendarId: client.config.calendarId,
+            calendarId: targetCalendarId,
             eventId: existingEventId,
           });
 
@@ -208,7 +321,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
             unchanged++;
           } else {
             const updateResponse = await client.calendar.events.update({
-              calendarId: client.config.calendarId,
+              calendarId: targetCalendarId,
               eventId: existingEventId,
               resource,
             });
@@ -222,28 +335,30 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
           }
 
           const insertResponse = await client.calendar.events.insert({
-            calendarId: client.config.calendarId,
+            calendarId: targetCalendarId,
             resource,
           });
           event = insertResponse.data;
           status = 'created';
           created++;
+          effectiveEventId = event?.id || undefined;
         }
       } else {
         const insertResponse = await client.calendar.events.insert({
-          calendarId: client.config.calendarId,
+          calendarId: targetCalendarId,
           resource,
         });
         event = insertResponse.data;
         status = 'created';
         created++;
+        effectiveEventId = event?.id || undefined;
       }
 
       await db.collection('races').doc(race.id).set({
         googleCalendar: {
-          eventId: event?.id || existingEventId || null,
+          eventId: event?.id || effectiveEventId || null,
           eventHtmlLink: event?.htmlLink || null,
-          syncedCalendarId: client.config.calendarId,
+          syncedCalendarId: targetCalendarId,
           lastSyncedAt: new Date().toISOString(),
           lastStatus: status,
           lastError: null,
@@ -252,16 +367,18 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
 
       results.push({
         raceId: race.id,
-        eventId: event?.id || existingEventId,
+        eventId: event?.id || effectiveEventId,
         status,
+        calendarId: targetCalendarId,
       });
     } catch (error) {
       failed++;
       const message = error instanceof Error ? error.message : 'Unknown sync error';
+      const targetCalendarId = getTargetCalendarId(race, client.config);
 
       await db.collection('races').doc(race.id).set({
         googleCalendar: {
-          syncedCalendarId: client.config.calendarId,
+          syncedCalendarId: targetCalendarId,
           lastSyncedAt: new Date().toISOString(),
           lastStatus: 'failed',
           lastError: message,
@@ -272,6 +389,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
         raceId: race.id,
         status: 'failed',
         error: message,
+        calendarId: targetCalendarId,
       });
     }
   }
@@ -283,8 +401,9 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     created,
     updated,
     unchanged,
+    deleted,
     failed,
-    total: races.length,
+    total: races.filter((race) => !isPastRace(race, today)).length,
     results,
   };
 }
@@ -293,4 +412,8 @@ export const __internal = {
   addOneDay,
   buildEventResource,
   eventsMatch,
+  getTodayInAmsterdam,
+  isPastRace,
+  parseClassificationCalendarMap,
+  getTargetCalendarId,
 };

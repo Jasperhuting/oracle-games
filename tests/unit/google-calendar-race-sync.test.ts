@@ -45,4 +45,65 @@ describe('google calendar race sync helpers', () => {
       ),
     ).toBe(false);
   });
+
+  it('parses a classification to calendar mapping from JSON', () => {
+    expect(
+      __internal.parseClassificationCalendarMap('{"1.UWT":"primary","2.UWT":"stage-races@group.calendar.google.com"}'),
+    ).toEqual({
+      '1.UWT': 'primary',
+      '2.UWT': 'stage-races@group.calendar.google.com',
+    });
+  });
+
+  it('selects a mapped calendar based on race classification', () => {
+    expect(
+      __internal.getTargetCalendarId(
+        { classification: '2.UWT' },
+        {
+          calendarId: 'primary',
+          classificationCalendarMap: {
+            '1.UWT': 'one-day@group.calendar.google.com',
+            '2.UWT': 'stage-races@group.calendar.google.com',
+          },
+        },
+      ),
+    ).toBe('stage-races@group.calendar.google.com');
+
+    expect(
+      __internal.getTargetCalendarId(
+        { classification: '1.Pro' },
+        {
+          calendarId: 'primary',
+          classificationCalendarMap: {
+            '1.UWT': 'one-day@group.calendar.google.com',
+          },
+        },
+      ),
+    ).toBe('primary');
+  });
+
+  it('treats races ending before today as past races', () => {
+    expect(
+      __internal.isPastRace(
+        { startDate: '2026-03-20', endDate: '2026-03-25' },
+        '2026-03-31',
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps races ending today or later in sync scope', () => {
+    expect(
+      __internal.isPastRace(
+        { startDate: '2026-03-30', endDate: '2026-03-31' },
+        '2026-03-31',
+      ),
+    ).toBe(false);
+
+    expect(
+      __internal.isPastRace(
+        { startDate: '2026-04-01', endDate: '2026-04-05' },
+        '2026-03-31',
+      ),
+    ).toBe(false);
+  });
 });

@@ -86,7 +86,7 @@ export async function scrapeCalendar(year: number): Promise<Response> {
       `❌ Fouten: ${errors}`,
       `📋 Totaal gescraped: ${racesData.count}`,
       googleCalendarSync.enabled
-        ? `🗓️ Google Calendar: ${googleCalendarSync.created} nieuw, ${googleCalendarSync.updated} aangepast, ${googleCalendarSync.unchanged} ongewijzigd, ${googleCalendarSync.failed} mislukt`
+        ? `🗓️ Google Calendar: ${googleCalendarSync.created} nieuw, ${googleCalendarSync.updated} aangepast, ${googleCalendarSync.unchanged} ongewijzigd, ${googleCalendarSync.deleted} verwijderd, ${googleCalendarSync.failed} mislukt`
         : `🗓️ Google Calendar: overgeslagen (${googleCalendarSync.reason || 'niet geconfigureerd'})`,
       `⏰ ${new Date().toLocaleString('nl-NL', { timeZone: TIME_ZONE })}`,
     ].join('\n');
