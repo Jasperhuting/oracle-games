@@ -1,11 +1,13 @@
 import { google } from 'googleapis';
 import type { calendar_v3 } from 'googleapis';
+import { createHash } from 'node:crypto';
 import { getServerFirebase } from '@/lib/firebase/server';
 
 const DEFAULT_CALENDAR_ID = 'primary';
 const SOURCE_LABEL = 'oracle-games-race-sync';
 const APP_TIME_ZONE = 'Europe/Amsterdam';
-const SYNC_CONCURRENCY = 6;
+const SYNC_CONCURRENCY = 3;
+const MAX_RETRIES = 4;
 
 type SyncStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'failed';
 
@@ -150,8 +152,8 @@ function buildEventResource(race: RaceRecord): calendar_v3.Schema$Event {
 }
 
 function buildGoogleEventId(race: Pick<RaceRecord, 'id'>): string {
-  const normalized = race.id.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return `oracle${normalized}`.slice(0, 1024);
+  const digest = createHash('md5').update(race.id).digest('hex');
+  return `oracle${digest}`;
 }
 
 async function getCalendarClient() {
@@ -195,6 +197,41 @@ function isConflictGoogleEvent(error: unknown): boolean {
     ?? (error as { code?: number; status?: number; response?: { status?: number } })?.response?.status;
 
   return status === 409;
+}
+
+function isRateLimitError(error: unknown): boolean {
+  const status = (error as { code?: number; status?: number; response?: { status?: number } })?.code
+    ?? (error as { code?: number; status?: number; response?: { status?: number } })?.status
+    ?? (error as { code?: number; status?: number; response?: { status?: number } })?.response?.status;
+
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  return status === 403 || status === 429 || message.includes('rate limit exceeded');
+}
+
+function formatGoogleCalendarError(error: unknown, calendarId?: string): string {
+  if (isMissingGoogleEvent(error) && calendarId && calendarId !== DEFAULT_CALENDAR_ID) {
+    return `Calendar not found or not shared with this Google account: ${calendarId}`;
+  }
+
+  return error instanceof Error ? error.message : 'Unknown sync error';
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withGoogleRetry<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (!isRateLimitError(error) || attempt >= MAX_RETRIES) {
+      throw error;
+    }
+
+    const delayMs = 500 * (2 ** attempt);
+    await sleep(delayMs);
+    return withGoogleRetry(fn, attempt + 1);
+  }
 }
 
 async function runWithConcurrency<T>(
@@ -274,10 +311,10 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
         race.googleCalendar.syncedCalendarId !== targetCalendarId
       ) {
         try {
-          await client.calendar.events.delete({
+          await withGoogleRetry(() => client.calendar.events.delete({
             calendarId: race.googleCalendar.syncedCalendarId,
             eventId: race.googleCalendar.eventId,
-          });
+          }));
         } catch (error) {
           if (!isMissingGoogleEvent(error)) {
             throw error;
@@ -286,13 +323,13 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
       }
 
       try {
-        const insertResponse = await client.calendar.events.insert({
+        const insertResponse = await withGoogleRetry(() => client.calendar.events.insert({
           calendarId: targetCalendarId,
           resource: {
             ...resource,
             id: expectedEventId,
           },
-        });
+        }));
         event = insertResponse.data;
         status = 'created';
         created++;
@@ -302,24 +339,24 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
           throw error;
         }
 
-        const existing = await client.calendar.events.get({
+        const existing = await withGoogleRetry(() => client.calendar.events.get({
           calendarId: targetCalendarId,
           eventId: expectedEventId,
-        });
+        }));
 
         if (eventsMatch(existing.data, resource)) {
           event = existing.data;
           status = 'unchanged';
           unchanged++;
         } else {
-          const updateResponse = await client.calendar.events.update({
+          const updateResponse = await withGoogleRetry(() => client.calendar.events.update({
             calendarId: targetCalendarId,
             eventId: expectedEventId,
             resource: {
               ...resource,
               id: expectedEventId,
             },
-          });
+          }));
           event = updateResponse.data;
           status = 'updated';
           updated++;
@@ -345,7 +382,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
       });
     } catch (error) {
       failed++;
-      const message = error instanceof Error ? error.message : 'Unknown sync error';
+      const message = formatGoogleCalendarError(error, getTargetCalendarId(race, client.config));
       const targetCalendarId = getTargetCalendarId(race, client.config);
 
       await db.collection('races').doc(race.id).set({
@@ -374,10 +411,10 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
 
   await runWithConcurrency(pastSyncedRaces, SYNC_CONCURRENCY, async (race) => {
     try {
-      await client.calendar.events.delete({
+      await withGoogleRetry(() => client.calendar.events.delete({
         calendarId: race.googleCalendar!.syncedCalendarId!,
         eventId: race.googleCalendar!.eventId!,
-      });
+      }));
     } catch (error) {
       if (!isMissingGoogleEvent(error)) {
         throw error;

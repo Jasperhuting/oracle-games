@@ -26,7 +26,7 @@ describe('google calendar race sync helpers', () => {
   });
 
   it('builds a deterministic Google event id from the race id', () => {
-    expect(__internal.buildGoogleEventId({ id: 'Tour-Down-Under_2026' })).toBe('oracletourdownunder2026');
+    expect(__internal.buildGoogleEventId({ id: 'Tour-Down-Under_2026' })).toBe('oracle5ea6086e36c5a28486bba952114a9d0e');
   });
 
   it('detects when an existing event is already in sync', () => {
