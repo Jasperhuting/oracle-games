@@ -5,6 +5,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 const DEFAULT_CALENDAR_ID = 'primary';
 const SOURCE_LABEL = 'oracle-games-race-sync';
 const APP_TIME_ZONE = 'Europe/Amsterdam';
+const SYNC_CONCURRENCY = 6;
 
 type SyncStatus = 'created' | 'updated' | 'unchanged' | 'deleted' | 'failed';
 
@@ -148,6 +149,11 @@ function buildEventResource(race: RaceRecord): calendar_v3.Schema$Event {
   };
 }
 
+function buildGoogleEventId(race: Pick<RaceRecord, 'id'>): string {
+  const normalized = race.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return `oracle${normalized}`.slice(0, 1024);
+}
+
 async function getCalendarClient() {
   const config = getConfig();
   if (!config.enabled) {
@@ -161,26 +167,6 @@ async function getCalendarClient() {
     config,
     calendar: google.calendar({ version: 'v3', auth }),
   };
-}
-
-async function findExistingEventId(
-  calendar: calendar_v3.Calendar,
-  calendarId: string,
-  race: RaceRecord,
-): Promise<string | undefined> {
-  if (race.googleCalendar?.eventId && race.googleCalendar?.syncedCalendarId === calendarId) {
-    return race.googleCalendar.eventId;
-  }
-
-  const response = await calendar.events.list({
-    calendarId,
-    privateExtendedProperty: [`oracleRaceId=${race.id}`],
-    maxResults: 1,
-    singleEvents: true,
-    showDeleted: false,
-  });
-
-  return response.data.items?.[0]?.id || undefined;
 }
 
 function eventsMatch(
@@ -201,6 +187,36 @@ function isMissingGoogleEvent(error: unknown): boolean {
     ?? (error as { code?: number; status?: number; response?: { status?: number } })?.response?.status;
 
   return status === 404 || status === 410;
+}
+
+function isConflictGoogleEvent(error: unknown): boolean {
+  const status = (error as { code?: number; status?: number; response?: { status?: number } })?.code
+    ?? (error as { code?: number; status?: number; response?: { status?: number } })?.status
+    ?? (error as { code?: number; status?: number; response?: { status?: number } })?.response?.status;
+
+  return status === 409;
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>,
+): Promise<void> {
+  let index = 0;
+
+  async function next(): Promise<void> {
+    const current = index++;
+    if (current >= items.length) {
+      return;
+    }
+
+    await worker(items[current]);
+    await next();
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => next()),
+  );
 }
 
 export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCalendarRaceSyncResult> {
@@ -240,56 +256,17 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
   let deleted = 0;
   let failed = 0;
 
-  for (const race of races) {
+  const futureRaces = races.filter((race) => !isPastRace(race, today));
+
+  await runWithConcurrency(futureRaces, SYNC_CONCURRENCY, async (race) => {
     try {
       const targetCalendarId = getTargetCalendarId(race, client.config);
-
-      if (
-        isPastRace(race, today) &&
-        race.googleCalendar?.eventId &&
-        race.googleCalendar?.syncedCalendarId
-      ) {
-        try {
-          await client.calendar.events.delete({
-            calendarId: race.googleCalendar.syncedCalendarId,
-            eventId: race.googleCalendar.eventId,
-          });
-        } catch (error) {
-          if (!isMissingGoogleEvent(error)) {
-            throw error;
-          }
-        }
-
-        deleted++;
-        await db.collection('races').doc(race.id).set({
-          googleCalendar: {
-            eventId: null,
-            eventHtmlLink: null,
-            syncedCalendarId: null,
-            lastSyncedAt: new Date().toISOString(),
-            lastStatus: 'deleted',
-            lastError: null,
-          },
-        }, { merge: true });
-
-        results.push({
-          raceId: race.id,
-          status: 'deleted',
-          calendarId: race.googleCalendar.syncedCalendarId,
-        });
-        continue;
-      }
-
-      if (isPastRace(race, today)) {
-        continue;
-      }
-
       const resource = buildEventResource(race);
-      const existingEventId = await findExistingEventId(client.calendar, targetCalendarId, race);
+      const expectedEventId = race.googleCalendar?.eventId || buildGoogleEventId(race);
 
       let event: calendar_v3.Schema$Event | null | undefined;
       let status: SyncStatus;
-      let effectiveEventId = existingEventId;
+      let effectiveEventId = expectedEventId;
 
       if (
         race.googleCalendar?.eventId &&
@@ -308,50 +285,45 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
         }
       }
 
-      if (existingEventId) {
-        try {
-          const existing = await client.calendar.events.get({
-            calendarId: targetCalendarId,
-            eventId: existingEventId,
-          });
-
-          if (eventsMatch(existing.data, resource)) {
-            event = existing.data;
-            status = 'unchanged';
-            unchanged++;
-          } else {
-            const updateResponse = await client.calendar.events.update({
-              calendarId: targetCalendarId,
-              eventId: existingEventId,
-              resource,
-            });
-            event = updateResponse.data;
-            status = 'updated';
-            updated++;
-          }
-        } catch (error) {
-          if (!isMissingGoogleEvent(error)) {
-            throw error;
-          }
-
-          const insertResponse = await client.calendar.events.insert({
-            calendarId: targetCalendarId,
-            resource,
-          });
-          event = insertResponse.data;
-          status = 'created';
-          created++;
-          effectiveEventId = event?.id || undefined;
-        }
-      } else {
+      try {
         const insertResponse = await client.calendar.events.insert({
           calendarId: targetCalendarId,
-          resource,
+          resource: {
+            ...resource,
+            id: expectedEventId,
+          },
         });
         event = insertResponse.data;
         status = 'created';
         created++;
-        effectiveEventId = event?.id || undefined;
+        effectiveEventId = event?.id || expectedEventId;
+      } catch (error) {
+        if (!isConflictGoogleEvent(error)) {
+          throw error;
+        }
+
+        const existing = await client.calendar.events.get({
+          calendarId: targetCalendarId,
+          eventId: expectedEventId,
+        });
+
+        if (eventsMatch(existing.data, resource)) {
+          event = existing.data;
+          status = 'unchanged';
+          unchanged++;
+        } else {
+          const updateResponse = await client.calendar.events.update({
+            calendarId: targetCalendarId,
+            eventId: expectedEventId,
+            resource: {
+              ...resource,
+              id: expectedEventId,
+            },
+          });
+          event = updateResponse.data;
+          status = 'updated';
+          updated++;
+        }
       }
 
       await db.collection('races').doc(race.id).set({
@@ -392,7 +364,44 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
         calendarId: targetCalendarId,
       });
     }
-  }
+  });
+
+  const pastSyncedRaces = races.filter((race) =>
+    isPastRace(race, today) &&
+    race.googleCalendar?.eventId &&
+    race.googleCalendar?.syncedCalendarId,
+  );
+
+  await runWithConcurrency(pastSyncedRaces, SYNC_CONCURRENCY, async (race) => {
+    try {
+      await client.calendar.events.delete({
+        calendarId: race.googleCalendar!.syncedCalendarId!,
+        eventId: race.googleCalendar!.eventId!,
+      });
+    } catch (error) {
+      if (!isMissingGoogleEvent(error)) {
+        throw error;
+      }
+    }
+
+    deleted++;
+    await db.collection('races').doc(race.id).set({
+      googleCalendar: {
+        eventId: null,
+        eventHtmlLink: null,
+        syncedCalendarId: null,
+        lastSyncedAt: new Date().toISOString(),
+        lastStatus: 'deleted',
+        lastError: null,
+      },
+    }, { merge: true });
+
+    results.push({
+      raceId: race.id,
+      status: 'deleted',
+      calendarId: race.googleCalendar!.syncedCalendarId!,
+    });
+  });
 
   return {
     enabled: true,
@@ -403,7 +412,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     unchanged,
     deleted,
     failed,
-    total: races.filter((race) => !isPastRace(race, today)).length,
+    total: futureRaces.length,
     results,
   };
 }
@@ -411,6 +420,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
 export const __internal = {
   addOneDay,
   buildEventResource,
+  buildGoogleEventId,
   eventsMatch,
   getTodayInAmsterdam,
   isPastRace,

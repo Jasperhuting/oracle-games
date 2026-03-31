@@ -25,6 +25,10 @@ describe('google calendar race sync helpers', () => {
     expect(event.extendedProperties?.private?.oracleRaceId).toBe('tour-of-flanders_2026');
   });
 
+  it('builds a deterministic Google event id from the race id', () => {
+    expect(__internal.buildGoogleEventId({ id: 'Tour-Down-Under_2026' })).toBe('oracletourdownunder2026');
+  });
+
   it('detects when an existing event is already in sync', () => {
     const resource = __internal.buildEventResource({
       id: 'paris-roubaix_2026',
