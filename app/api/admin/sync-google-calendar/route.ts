@@ -8,7 +8,7 @@ import { syncRacesToGoogleCalendar } from '@/lib/google-calendar/raceSync';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, year } = await request.json();
+    const { userId, year, limit, cursor } = await request.json();
 
     if (!userId || !year) {
       return NextResponse.json({ error: 'userId and year are required' }, { status: 400 });
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized — admin access required' }, { status: 403 });
     }
 
-    const result = await syncRacesToGoogleCalendar(Number(year));
+    const result = await syncRacesToGoogleCalendar(Number(year), {
+      limit: typeof limit === 'number' ? limit : undefined,
+      cursor: typeof cursor === 'string' ? cursor : undefined,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error('[sync-google-calendar] Error:', error);

@@ -19,6 +19,9 @@ export interface GoogleCalendarRaceSyncResult {
   reason?: string;
   year: number;
   calendarId?: string;
+  hasMore?: boolean;
+  nextCursor?: string | null;
+  limit?: number;
   created: number;
   updated: number;
   unchanged: number;
@@ -52,6 +55,14 @@ interface RaceRecord {
     eventHtmlLink?: string;
   };
 }
+
+interface SyncOptions {
+  limit?: number;
+  cursor?: string | null;
+}
+
+const DEFAULT_SYNC_LIMIT = 120;
+const MAX_SYNC_LIMIT = 200;
 
 function getConfig() {
   const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID;
@@ -292,7 +303,10 @@ async function findRaceEventsInCalendar(
   return response.data.items || [];
 }
 
-export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCalendarRaceSyncResult> {
+export async function syncRacesToGoogleCalendar(
+  year: number,
+  options: SyncOptions = {},
+): Promise<GoogleCalendarRaceSyncResult> {
   const client = await getCalendarClient();
   if (!client.config.enabled) {
     return {
@@ -300,6 +314,9 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
       skipped: true,
       reason: client.config.reason,
       year,
+      hasMore: false,
+      nextCursor: null,
+      limit: 0,
       created: 0,
       updated: 0,
       unchanged: 0,
@@ -322,6 +339,7 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
   const today = getTodayInAmsterdam();
   const knownCalendarIds = getKnownCalendarIds(client.config);
+  const requestedLimit = Math.max(1, Math.min(options.limit ?? DEFAULT_SYNC_LIMIT, MAX_SYNC_LIMIT));
 
   const results: GoogleCalendarRaceSyncResult['results'] = [];
   let created = 0;
@@ -331,8 +349,26 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
   let failed = 0;
 
   const futureRaces = races.filter((race) => !isPastRace(race, today) && !isWomenRace(race));
+  const syncedRacesToDelete = races.filter((race) =>
+    (isPastRace(race, today) || isWomenRace(race)) &&
+    race.googleCalendar?.eventId &&
+    race.googleCalendar?.syncedCalendarId,
+  );
 
-  await runWithConcurrency(futureRaces, SYNC_CONCURRENCY, async (race) => {
+  const workQueue = [
+    ...syncedRacesToDelete.map((race) => ({ kind: 'delete' as const, race })),
+    ...futureRaces.map((race) => ({ kind: 'upsert' as const, race })),
+  ];
+
+  const startIndex = options.cursor
+    ? Math.max(0, workQueue.findIndex((item) => item.race.id === options.cursor))
+    : 0;
+  const queueSlice = workQueue.slice(startIndex, startIndex + requestedLimit);
+
+  await runWithConcurrency(
+    queueSlice.filter((item) => item.kind === 'upsert').map((item) => item.race),
+    SYNC_CONCURRENCY,
+    async (race) => {
     try {
       const targetCalendarId = getTargetCalendarId(race, client.config);
       const resource = buildEventResource(race);
@@ -465,13 +501,10 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     }
   });
 
-  const syncedRacesToDelete = races.filter((race) =>
-    (isPastRace(race, today) || isWomenRace(race)) &&
-    race.googleCalendar?.eventId &&
-    race.googleCalendar?.syncedCalendarId,
-  );
-
-  await runWithConcurrency(syncedRacesToDelete, SYNC_CONCURRENCY, async (race) => {
+  await runWithConcurrency(
+    queueSlice.filter((item) => item.kind === 'delete').map((item) => item.race),
+    SYNC_CONCURRENCY,
+    async (race) => {
     for (const calendarId of knownCalendarIds) {
       const matchingEvents = await findRaceEventsInCalendar(client.calendar, calendarId, race.id);
 
@@ -511,16 +544,21 @@ export async function syncRacesToGoogleCalendar(year: number): Promise<GoogleCal
     });
   });
 
+  const nextItem = workQueue[startIndex + queueSlice.length];
+
   return {
     enabled: true,
     year,
     calendarId: client.config.calendarId,
+    hasMore: Boolean(nextItem),
+    nextCursor: nextItem?.race.id ?? null,
+    limit: requestedLimit,
     created,
     updated,
     unchanged,
     deleted,
     failed,
-    total: futureRaces.length,
+    total: workQueue.length,
     results,
   };
 }
