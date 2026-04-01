@@ -2,13 +2,14 @@
 export const dynamic = "force-dynamic";
 
 import { Flag } from "@/components/Flag";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, Check } from "tabler-icons-react";
 import countriesList from '@/lib/country.json';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
 import { useWk2026Participant } from "../hooks";
 import { authorizedFetch } from "@/lib/auth/token-service";
+import type { MatchResult, HeadToHeadMatch, TeamHistoryResponse } from "@/app/api/wk-2026/team-history/route";
 
 interface Match {
     id: string;
@@ -37,6 +38,74 @@ interface TeamStats {
     points: number;
 }
 
+// ---------- Form-dot helpers ----------
+
+interface FormDotProps {
+    match: MatchResult;
+}
+
+function FormDot({ match }: FormDotProps) {
+    const color =
+        match.result === 'W'
+            ? 'bg-green-500'
+            : match.result === 'D'
+            ? 'bg-orange-400'
+            : 'bg-red-500';
+
+    const label =
+        match.result === 'W' ? 'W' : match.result === 'D' ? 'G' : 'V';
+
+    const tooltip = `${match.teamScore}-${match.opponentScore} vs ${match.opponent} (${match.competition}, ${match.date})`;
+
+    return (
+        <div className="relative group">
+            <div
+                className={`w-5 h-5 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-bold cursor-default`}
+                title={tooltip}
+            >
+                {label}
+            </div>
+            {/* Custom tooltip */}
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50">
+                <div className="bg-gray-900 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                    <span className="font-semibold">{match.teamScore}-{match.opponentScore}</span>{' '}
+                    vs {match.opponent}
+                    <br />
+                    <span className="text-gray-400 text-[10px]">{match.competition} · {match.date}</span>
+                </div>
+                <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1" />
+            </div>
+        </div>
+    );
+}
+
+interface H2HRowProps {
+    match: HeadToHeadMatch;
+    team1Name: string;
+    team2Name: string;
+}
+
+function H2HRow({ match, team1Name, team2Name }: H2HRowProps) {
+    const result =
+        match.team1Score > match.team2Score
+            ? `${team1Name} won`
+            : match.team1Score < match.team2Score
+            ? `${team2Name} won`
+            : 'Gelijkspel';
+
+    return (
+        <div className="flex items-center justify-between text-xs text-gray-600 py-0.5">
+            <span className="text-gray-400 w-20 shrink-0">{match.date.slice(0, 7)}</span>
+            <span className={`font-semibold ${match.team1Score > match.team2Score ? 'text-green-600' : match.team1Score < match.team2Score ? 'text-red-500' : 'text-gray-500'}`}>
+                {match.team1Score} – {match.team2Score}
+            </span>
+            <span className="text-gray-400 w-20 text-right shrink-0 truncate">{result}</span>
+        </div>
+    );
+}
+
+// ---------- Main page ----------
+
 export default function PlayerPredictionsPage() {
     const { user } = useAuth();
     const { isParticipant, loading: participantLoading, refresh: refreshParticipant } = useWk2026Participant(user?.uid || null, 2026);
@@ -50,6 +119,11 @@ export default function PlayerPredictionsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveFeedback, setSaveFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+
+    // Team history (H2H + form) keyed by sorted team pair "teamA__teamB"
+    const [teamHistory, setTeamHistory] = useState<Record<string, TeamHistoryResponse>>({});
+    const [historyLoading, setHistoryLoading] = useState<Record<string, boolean>>({});
+    const fetchedPairs = useRef<Set<string>>(new Set());
 
     const handleJoinWk = async () => {
         if (!user) return;
@@ -158,6 +232,40 @@ export default function PlayerPredictionsPage() {
             fetchPoulesAndPredictions();
         }
     }, [user, fetchPoulesAndPredictions]);
+
+    const fetchTeamHistory = useCallback(async (team1Name: string, team2Name: string) => {
+        const pairKey = [team1Name, team2Name].sort().join('__');
+        if (fetchedPairs.current.has(pairKey)) return;
+        fetchedPairs.current.add(pairKey);
+
+        setHistoryLoading(prev => ({ ...prev, [pairKey]: true }));
+        try {
+            const res = await fetch(
+                `/api/wk-2026/team-history?team1=${encodeURIComponent(team1Name)}&team2=${encodeURIComponent(team2Name)}`
+            );
+            if (res.ok) {
+                const data: TeamHistoryResponse = await res.json();
+                setTeamHistory(prev => ({ ...prev, [pairKey]: data }));
+            }
+        } catch {
+            // silently fail – history is supplemental info
+        } finally {
+            setHistoryLoading(prev => ({ ...prev, [pairKey]: false }));
+        }
+    }, []);
+
+    // Fetch history for all matches in the selected poule
+    useEffect(() => {
+        const pouleData = poules.find(p => p.pouleId === selectedPoule);
+        if (!pouleData) return;
+
+        const teams = pouleData.rankings.filter(Boolean) as TeamInPoule[];
+        for (let i = 0; i < teams.length; i++) {
+            for (let j = i + 1; j < teams.length; j++) {
+                fetchTeamHistory(teams[i].name, teams[j].name);
+            }
+        }
+    }, [selectedPoule, poules, fetchTeamHistory]);
 
     const handleScoreChange = (matchId: string, team: 'team1' | 'team2', score: string) => {
         const scoreValue = score === '' ? null : parseInt(score);
@@ -538,12 +646,26 @@ export default function PlayerPredictionsPage() {
                         const country1 = countriesList.find((c: any) => c.name === team1.name); // eslint-disable-line @typescript-eslint/no-explicit-any
                         const country2 = countriesList.find((c: any) => c.name === team2.name); // eslint-disable-line @typescript-eslint/no-explicit-any
 
+                        const pairKey = [team1.name, team2.name].sort().join('__');
+                        const history = teamHistory[pairKey];
+                        const isLoadingHistory = historyLoading[pairKey];
+
+                        // H2H form is from team1 perspective: if pair is reversed, flip scores
+                        const isReversed = [team1.name, team2.name].sort()[0] !== team1.name;
+                        const t1Form = history ? (isReversed ? history.team2Form : history.team1Form) : [];
+                        const t2Form = history ? (isReversed ? history.team1Form : history.team2Form) : [];
+                        const h2h = history
+                            ? (isReversed
+                                ? history.headToHead.map(m => ({ ...m, team1Score: m.team2Score, team2Score: m.team1Score }))
+                                : history.headToHead)
+                            : [];
+
                         return (
                             <div key={match.id} className="bg-white border-2 border-gray-300 rounded-lg p-4">
                                 <div className="text-sm text-gray-500 mb-2">Match {index + 1}</div>
 
                                 {/* Team 1 */}
-                                <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center flex-1">
                                         <Flag countryCode={country1?.code || team1.id} width={24}  />
                                         <span className="ml-2 font-medium">{team1.name}</span>
@@ -558,8 +680,15 @@ export default function PlayerPredictionsPage() {
                                     />
                                 </div>
 
+                                {/* Team 1 form dots */}
+                                {t1Form.length > 0 && (
+                                    <div className="flex items-center gap-1 mb-2 ml-7">
+                                        {t1Form.map((m, i) => <FormDot key={i} match={m} />)}
+                                    </div>
+                                )}
+
                                 {/* Team 2 */}
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between mb-1 mt-2">
                                     <div className="flex items-center flex-1">
                                         <Flag countryCode={country2?.code || team2.id} width={24} className="min-w-[24px] min-h-[24px]" />
                                         <span className="ml-2 font-medium">{team2.name}</span>
@@ -573,6 +702,35 @@ export default function PlayerPredictionsPage() {
                                         placeholder="0"
                                     />
                                 </div>
+
+                                {/* Team 2 form dots */}
+                                {t2Form.length > 0 && (
+                                    <div className="flex items-center gap-1 mb-2 ml-7">
+                                        {t2Form.map((m, i) => <FormDot key={i} match={m} />)}
+                                    </div>
+                                )}
+
+                                {/* H2H section */}
+                                {isLoadingHistory && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 animate-pulse">
+                                        Onderlinge resultaten laden...
+                                    </div>
+                                )}
+                                {!isLoadingHistory && h2h.length > 0 && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100">
+                                        <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                                            Onderling ({h2h.length}x)
+                                        </div>
+                                        {h2h.map((m, i) => (
+                                            <H2HRow key={i} match={m} team1Name={team1.name} team2Name={team2.name} />
+                                        ))}
+                                    </div>
+                                )}
+                                {!isLoadingHistory && history && h2h.length === 0 && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
+                                        Nog nooit tegen elkaar gespeeld
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
