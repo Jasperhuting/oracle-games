@@ -32,14 +32,20 @@ export interface TeamHistoryResponse {
 const COLLECTION = 'wk2026TeamHistory';
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
 
-const SYSTEM_PROMPT = `You are a football statistics expert with comprehensive knowledge of international football history.
-When asked about two national teams, you provide accurate historical match data in JSON format.
-Always respond with valid JSON only, no markdown, no explanation.`;
+const SYSTEM_PROMPT = `You are a football statistics expert with deep knowledge of international football history going back decades.
+You have access to results from FIFA World Cup, continental championships (UEFA Euro, Copa América, AFCON, Gold Cup, AFC Asian Cup, etc.), qualifying campaigns, Nations League editions, and international friendlies.
+Always respond with valid JSON only — no markdown, no explanation, no prose.`;
 
 function buildPrompt(team1: string, team2: string): string {
-    return `Return historical football data for national teams "${team1}" and "${team2}".
+    return `Return historical international football data for "${team1}" and "${team2}".
 
-Return a JSON object with this exact structure:
+IMPORTANT — head-to-head research instructions:
+- Think carefully before concluding teams have never met. National teams frequently play friendlies against teams from other confederations.
+- Search your knowledge across ALL competition types: FIFA World Cup (group stage, knockouts), World Cup qualifiers, continental cups and their qualifiers, Gold Cup, Copa América, AFCON, Nations League, and ALL international friendlies.
+- Major footballing nations like Brazil, Argentina, France, Germany, Spain, England, etc. have played hundreds of internationals and have almost certainly met most other WK 2026 participants at least once.
+- Only return an empty headToHead array if you are truly certain — after exhaustive recall — that the two nations have NEVER played a senior international match in any competition or friendly.
+
+Return a JSON object with exactly this structure:
 {
   "team1Form": [
     { "date": "YYYY-MM-DD", "opponent": "Country Name", "teamScore": 2, "opponentScore": 1, "result": "W", "competition": "Competition Name" }
@@ -53,13 +59,11 @@ Return a JSON object with this exact structure:
 }
 
 Rules:
-- team1Form: last 5 international matches for "${team1}" (most recent last), use real historical results
-- team2Form: last 5 international matches for "${team2}" (most recent last), use real historical results
-- headToHead: last 5 matches between "${team1}" and "${team2}" (most recent last), or fewer if less exist
-- result: "W" if teamScore > opponentScore, "D" if equal, "L" if teamScore < opponentScore
-- Use real matches from FIFA World Cup, UEFA/CONMEBOL qualifiers, Nations League, friendlies, etc.
-- If teams have never met, return an empty headToHead array
-- Dates must be real match dates
+- team1Form: last 5 senior international matches for "${team1}" (oldest first, most recent last)
+- team2Form: last 5 senior international matches for "${team2}" (oldest first, most recent last)
+- headToHead: up to last 5 matches between "${team1}" and "${team2}" (oldest first, most recent last)
+- result field: "W" = teamScore > opponentScore, "D" = equal, "L" = teamScore < opponentScore
+- All dates must be real calendar dates of actual matches
 - Only return the JSON object, nothing else`;
 }
 

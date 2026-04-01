@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebaseFootball } from '@/lib/firebase/server';
 import { fetchAndStoreHistory, pairKey } from '@/app/api/wk-2026/team-history/route';
 
@@ -12,15 +12,9 @@ function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function GET() {
-    const cronSecret = process.env.CRON_SECRET;
-    // Vercel injects the Authorization header automatically for cron jobs.
-    // In production Vercel sets it; locally we skip the check if CRON_SECRET is absent.
-    if (cronSecret) {
-        // We can't access headers easily in a GET without the request param,
-        // but Vercel cron hits this directly – skip auth for cron-only endpoint.
-        // If you want to protect manual invocations, switch to POST + check header.
-    }
+export async function GET(request: NextRequest) {
+    // ?force=true skips the 24h freshness check and re-fetches everything (useful after prompt changes)
+    const force = new URL(request.url).searchParams.get('force') === 'true';
 
     const db = getServerFirebaseFootball();
 
@@ -68,10 +62,24 @@ export async function GET() {
     }
 
     // 4. Fetch & store each pair with a small delay to avoid rate limits
-    const results: { pair: string; status: 'ok' | 'error'; error?: string }[] = [];
+    const results: { pair: string; status: 'ok' | 'error' | 'skipped'; error?: string }[] = [];
 
     for (const [team1, team2] of allPairs) {
         const key = pairKey(team1, team2);
+
+        // Skip if fresh and not forced
+        if (!force) {
+            const existing = await db.collection('wk2026TeamHistory').doc(key).get();
+            if (existing.exists) {
+                const data = existing.data() as { updatedAt?: string };
+                const age = Date.now() - new Date(data.updatedAt || 0).getTime();
+                if (age < 1000 * 60 * 60 * 20) { // fresher than 20h → skip
+                    results.push({ pair: key, status: 'skipped' });
+                    continue;
+                }
+            }
+        }
+
         try {
             await fetchAndStoreHistory(team1, team2);
             results.push({ pair: key, status: 'ok' });
@@ -88,8 +96,9 @@ export async function GET() {
 
     const ok = results.filter(r => r.status === 'ok').length;
     const failed = results.filter(r => r.status === 'error').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
 
-    console.log(`[refresh-wk-team-history] Done: ${ok} ok, ${failed} failed`);
+    console.log(`[refresh-wk-team-history] Done: ${ok} ok, ${skipped} skipped, ${failed} failed`);
 
-    return NextResponse.json({ ok, failed, total: allPairs.length, results });
+    return NextResponse.json({ ok, skipped, failed, total: allPairs.length, results });
 }
