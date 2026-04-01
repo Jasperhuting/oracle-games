@@ -91,6 +91,16 @@ type PlayerTeamDocument = {
   }>;
 };
 
+type StagePickDocument = {
+  userId?: string;
+  riderId?: string;
+  riderName?: string;
+  riderTeam?: string;
+  points?: number;
+  isPenalty?: boolean;
+  penaltyReason?: string | null;
+};
+
 type BidDocument = {
   riderNameId?: string;
   bidAt?: Date | FirestoreTimestampLike | string;
@@ -427,6 +437,80 @@ async function loadPrimaryGameEntities(gameId: string, gameData: GameDocument): 
     .sort((a, b) => b.points - a.points);
 }
 
+// Game types that use stagePicks instead of playerTeams
+const STAGE_PICK_GAME_TYPES = new Set(["slipstream", "last-man-standing", "fan-flandrien"]);
+
+async function loadStagePickEntities(gameId: string): Promise<StatsEntitySnapshot[]> {
+  const db = getAdminDb();
+  const [participantsSnapshot, stagePicksSnapshot] = await Promise.all([
+    db.collection("gameParticipants").where("gameId", "==", gameId).get(),
+    db.collection("stagePicks").where("gameId", "==", gameId).get(),
+  ]);
+
+  const participantCount = participantsSnapshot.size || 1;
+
+  const aggregates = new Map<
+    string,
+    {
+      key: string;
+      label: string;
+      team: string;
+      totalPoints: number;
+      selectionCount: number;
+      uniquePickers: Set<string>;
+    }
+  >();
+
+  for (const pickDoc of stagePicksSnapshot.docs) {
+    const pick = pickDoc.data() as StagePickDocument;
+    const riderId = pick.riderId;
+    if (!riderId) {
+      continue;
+    }
+    // Skip penalty rows (missed pick, DNF, etc.)
+    if (pick.isPenalty === true || (pick.penaltyReason != null && pick.penaltyReason !== "")) {
+      continue;
+    }
+
+    const aggregate = aggregates.get(riderId) ?? {
+      key: riderId,
+      label: pick.riderName || riderId,
+      team: pick.riderTeam || "Unknown team",
+      totalPoints: 0,
+      selectionCount: 0,
+      uniquePickers: new Set<string>(),
+    };
+
+    aggregate.totalPoints += typeof pick.points === "number" ? pick.points : 0;
+    aggregate.selectionCount += 1;
+    if (pick.userId) {
+      aggregate.uniquePickers.add(pick.userId);
+    }
+    aggregate.label = pick.riderName || aggregate.label;
+    aggregate.team = pick.riderTeam || aggregate.team;
+
+    aggregates.set(riderId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .map((aggregate) => {
+      const selectedByPct = Number(((aggregate.uniquePickers.size / participantCount) * 100).toFixed(1));
+      return {
+        key: aggregate.key,
+        label: aggregate.label,
+        team: aggregate.team,
+        cost: 0,
+        points: aggregate.totalPoints,
+        scoringPoints: aggregate.totalPoints,
+        selectionCount: aggregate.selectionCount,
+        selectedByPct,
+        valueScore: 0,
+        movementDelta: 0,
+      } satisfies StatsEntitySnapshot;
+    })
+    .sort((a, b) => b.selectionCount - a.selectionCount);
+}
+
 async function loadF1SeasonFallback(gameId: string): Promise<StatsEntitySnapshot[]> {
   const season = extractSeasonFromGameId(gameId);
   const f1Db = getServerFirebaseF1();
@@ -594,7 +678,20 @@ export async function loadStatsEntities(gameId: string): Promise<StatsEntitySnap
   const gameDoc = await getGameDocument(gameId);
 
   if (gameDoc.exists) {
-    return loadPrimaryGameEntities(gameId, gameDoc.data() as GameDocument);
+    const gameData = gameDoc.data() as GameDocument;
+    const gameType = gameData.gameType;
+
+    // Stage-pick based games store rider selections in stagePicks, not playerTeams
+    if (gameType && STAGE_PICK_GAME_TYPES.has(gameType)) {
+      return loadStagePickEntities(gameId);
+    }
+
+    // F1 prediction games have their own dedicated loaders; entity tools don't apply
+    if (gameType === "f1-prediction") {
+      return [];
+    }
+
+    return loadPrimaryGameEntities(gameId, gameData);
   }
 
   if (gameId.startsWith("f1-")) {

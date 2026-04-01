@@ -28,11 +28,12 @@ export async function getMostSelected(gameId: string, limit = 5) {
   const rows = await loadStatsEntities(gameId);
   return rows
     .slice()
-    .sort((a, b) => b.selectedByPct - a.selectedByPct)
+    .sort((a, b) => b.selectionCount - a.selectionCount || b.selectedByPct - a.selectedByPct)
     .slice(0, limit)
     .map((row) => ({
       player: row.label,
       team: row.team,
+      selectionCount: row.selectionCount,
       selectedByPct: row.selectedByPct,
       points: row.points,
     }));
