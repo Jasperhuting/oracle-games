@@ -337,12 +337,26 @@ export default function KnockoutPredictionsPage() {
     loadData();
   }, [user, loading, router, participantLoading, isParticipant, loadData]);
 
-  // Load all team history at once from Firestore cache
+  // Load all team history at once from Firestore cache, then recheck unverified empty H2H pairs
   useEffect(() => {
     fetch('/api/wk-2026/team-history/all')
       .then(r => r.ok ? r.json() : {})
-      .then(data => setTeamHistory(data))
-      .catch(() => { /* supplemental info – fail silently */ });
+      .then((data: Record<string, TeamHistoryResponse>) => {
+        setTeamHistory(data);
+
+        Object.entries(data).forEach(([key, history]) => {
+          if (history.headToHead.length === 0 && !history.h2hVerified) {
+            const [team1, team2] = key.split('__');
+            fetch(`/api/wk-2026/team-history?team1=${encodeURIComponent(team1)}&team2=${encodeURIComponent(team2)}&recheck=true`)
+              .then(r => r.ok ? r.json() : null)
+              .then(updated => {
+                if (updated) setTeamHistory(prev => ({ ...prev, [key]: updated }));
+              })
+              .catch(() => {});
+          }
+        });
+      })
+      .catch(() => {});
   }, []);
 
   if (loading || participantLoading) {
