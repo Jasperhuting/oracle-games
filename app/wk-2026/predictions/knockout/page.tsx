@@ -11,6 +11,7 @@ import { POULES } from '../../page';
 import { useWk2026Participant } from '../../hooks';
 import { Flag } from '@/components/Flag';
 import countriesList from '@/lib/country.json';
+import { FormDotsRow, H2HSection, resolveHistory, type TeamHistoryResponse } from '../../components/TeamHistoryDisplay';
 
 interface GroupTeamEntry {
   name: string;
@@ -55,6 +56,7 @@ export default function KnockoutPredictionsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [teamHistory, setTeamHistory] = useState<Record<string, TeamHistoryResponse>>({});
 
   const handleJoinWk = async () => {
     if (!user) return;
@@ -334,6 +336,14 @@ export default function KnockoutPredictionsPage() {
 
     loadData();
   }, [user, loading, router, participantLoading, isParticipant, loadData]);
+
+  // Load all team history at once from Firestore cache
+  useEffect(() => {
+    fetch('/api/wk-2026/team-history/all')
+      .then(r => r.ok ? r.json() : {})
+      .then(data => setTeamHistory(data))
+      .catch(() => { /* supplemental info – fail silently */ });
+  }, []);
 
   if (loading || participantLoading) {
     return (
@@ -638,7 +648,14 @@ export default function KnockoutPredictionsPage() {
             <h2 className="text-2xl font-bold mb-4">{ROUND_LABELS[round as keyof typeof ROUND_LABELS]}</h2>
 
             <div className="space-y-4">
-              {roundMatches.map(match => (
+              {roundMatches.map(match => {
+                const team1Name = match.team1 ? getTeamName(match.team1) : null;
+                const team2Name = match.team2 ? getTeamName(match.team2) : null;
+                const { t1Form, t2Form, h2h, loaded } = (team1Name && team2Name)
+                  ? resolveHistory(team1Name, team2Name, teamHistory)
+                  : { t1Form: [], t2Form: [], h2h: [], loaded: false };
+
+                return (
                 <div key={match.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm text-gray-600">
@@ -657,6 +674,11 @@ export default function KnockoutPredictionsPage() {
                       <div className="text-lg font-semibold flex flex-start">
                         {displayTeam(match.team1, match.team1Source)}
                       </div>
+                      {t1Form.length > 0 && (
+                        <div className="mt-1">
+                          <FormDotsRow form={t1Form} />
+                        </div>
+                      )}
                     </div>
 
                     <div className="col-span-1 flex items-center justify-center gap-2">
@@ -686,8 +708,18 @@ export default function KnockoutPredictionsPage() {
                       <div className="flex w-full justify-end text-lg font-semibold">
                         {displayTeam(match.team2, match.team2Source)}
                       </div>
+                      {t2Form.length > 0 && (
+                        <div className="mt-1 flex justify-end">
+                          <FormDotsRow form={t2Form} />
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* H2H — only when both teams are known and data is loaded */}
+                  {loaded && team1Name && team2Name && (
+                    <H2HSection headToHead={h2h} team1Name={team1Name} team2Name={team2Name} />
+                  )}
 
                   {match.team1Score === match.team2Score && match.team1Score !== null && (
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -722,7 +754,7 @@ export default function KnockoutPredictionsPage() {
                     </div>
                   )}
                 </div>
-              ))}
+              ); })}
             </div>
           </div>
         );
