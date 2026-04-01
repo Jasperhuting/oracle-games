@@ -73,6 +73,7 @@ type F1DriverDocument = {
 
 type PlayerTeamDocument = {
   riderNameId?: string;
+  userId?: string;
   riderName?: string;
   riderTeam?: string;
   pricePaid?: number;
@@ -93,18 +94,41 @@ type PlayerTeamDocument = {
 
 type StagePickDocument = {
   userId?: string;
+  playername?: string;
   riderId?: string;
   riderName?: string;
   riderTeam?: string;
   points?: number;
+  greenJerseyPoints?: number;
   isPenalty?: boolean;
   penaltyReason?: string | null;
 };
 
 type BidDocument = {
   riderNameId?: string;
+  riderName?: string;
+  riderTeam?: string;
+  userId?: string;
+  playername?: string;
+  amount?: number;
   bidAt?: Date | FirestoreTimestampLike | string;
   status?: string;
+};
+
+type DraftPickDocument = {
+  gameId?: string;
+  userId?: string;
+  playername?: string;
+  round?: number;
+  pick?: number;
+  overallPick?: number;
+  riderId?: string;
+  riderName?: string;
+  riderTeam?: string;
+  riderPreviousPoints?: number;
+  riderCurrentPoints?: number;
+  growth?: number;
+  pickedAt?: Date | FirestoreTimestampLike | string;
 };
 
 type GameParticipantDocument = {
@@ -879,6 +903,656 @@ export async function loadF1PopularWinnerPickRows(gameId: string) {
       winnerPickPct: Number(((picks / totalWinnerPicks) * 100).toFixed(1)),
     }))
     .sort((a, b) => b.winnerPickCount - a.winnerPickCount);
+}
+
+// ─── Slipstream / stage-pick specific loaders ────────────────────────────────
+
+export async function loadSlipstreamGreenJerseyRows(gameId: string) {
+  const db = getAdminDb();
+  const stagePicksSnapshot = await db
+    .collection("stagePicks")
+    .where("gameId", "==", gameId)
+    .get();
+
+  const aggregates = new Map<
+    string,
+    { key: string; label: string; team: string; totalGreenPoints: number; pickCount: number }
+  >();
+
+  for (const pickDoc of stagePicksSnapshot.docs) {
+    const pick = pickDoc.data() as StagePickDocument;
+    const riderId = pick.riderId;
+    if (!riderId || pick.isPenalty === true) {
+      continue;
+    }
+
+    const greenPoints =
+      typeof pick.greenJerseyPoints === "number" ? pick.greenJerseyPoints : 0;
+
+    const aggregate = aggregates.get(riderId) ?? {
+      key: riderId,
+      label: pick.riderName || riderId,
+      team: pick.riderTeam || "Unknown team",
+      totalGreenPoints: 0,
+      pickCount: 0,
+    };
+
+    aggregate.totalGreenPoints += greenPoints;
+    aggregate.pickCount += 1;
+    aggregate.label = pick.riderName || aggregate.label;
+    aggregate.team = pick.riderTeam || aggregate.team;
+
+    aggregates.set(riderId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .filter((a) => a.totalGreenPoints > 0)
+    .map((aggregate) => ({
+      rider: aggregate.label,
+      team: aggregate.team,
+      totalGreenJerseyPoints: aggregate.totalGreenPoints,
+      pickCount: aggregate.pickCount,
+      avgGreenPerPick: Number((aggregate.totalGreenPoints / aggregate.pickCount).toFixed(2)),
+    }))
+    .sort((a, b) => b.totalGreenJerseyPoints - a.totalGreenJerseyPoints);
+}
+
+export async function loadSlipstreamPenaltyRows(gameId: string) {
+  const db = getAdminDb();
+  const [participantsSnapshot, stagePicksSnapshot] = await Promise.all([
+    db.collection("gameParticipants").where("gameId", "==", gameId).get(),
+    db.collection("stagePicks").where("gameId", "==", gameId).get(),
+  ]);
+
+  const playerNameMap = new Map<string, string>();
+  for (const doc of participantsSnapshot.docs) {
+    const data = doc.data() as GameParticipantDocument;
+    if (data.userId) {
+      playerNameMap.set(data.userId, data.playername || data.userName || data.userId);
+    }
+  }
+
+  const aggregates = new Map<
+    string,
+    {
+      userId: string;
+      playerName: string;
+      totalPenalties: number;
+      dnf: number;
+      dns: number;
+      missedPick: number;
+      totalPicks: number;
+    }
+  >();
+
+  for (const pickDoc of stagePicksSnapshot.docs) {
+    const pick = pickDoc.data() as StagePickDocument & { userId?: string; playername?: string };
+    if (!pick.userId) {
+      continue;
+    }
+
+    const aggregate = aggregates.get(pick.userId) ?? {
+      userId: pick.userId,
+      playerName: playerNameMap.get(pick.userId) || pick.playername || pick.userId,
+      totalPenalties: 0,
+      dnf: 0,
+      dns: 0,
+      missedPick: 0,
+      totalPicks: 0,
+    };
+
+    aggregate.totalPicks += 1;
+
+    if (pick.isPenalty === true || (pick.penaltyReason != null && pick.penaltyReason !== "")) {
+      aggregate.totalPenalties += 1;
+      if (pick.penaltyReason === "dnf") aggregate.dnf += 1;
+      else if (pick.penaltyReason === "dns") aggregate.dns += 1;
+      else if (pick.penaltyReason === "missed_pick") aggregate.missedPick += 1;
+    }
+
+    aggregates.set(pick.userId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .map((aggregate) => ({
+      player: aggregate.playerName,
+      totalPenalties: aggregate.totalPenalties,
+      totalPicks: aggregate.totalPicks,
+      penaltyRatePct:
+        aggregate.totalPicks > 0
+          ? Number(((aggregate.totalPenalties / aggregate.totalPicks) * 100).toFixed(1))
+          : 0,
+      dnf: aggregate.dnf,
+      dns: aggregate.dns,
+      missedPick: aggregate.missedPick,
+    }))
+    .sort((a, b) => b.totalPenalties - a.totalPenalties);
+}
+
+// ─── Draft game loaders (draftPicks-based) ───────────────────────────────────
+
+export async function loadDraftPickROIRows(gameId: string) {
+  const db = getAdminDb();
+  const [draftPicksSnapshot, playerTeamsSnapshot] = await Promise.all([
+    db.collection("draftPicks").where("gameId", "==", gameId).get(),
+    db.collection("playerTeams").where("gameId", "==", gameId).get(),
+  ]);
+
+  // Build a map from riderId -> pointsScored using playerTeams
+  const riderPoints = new Map<string, number>();
+  for (const teamDoc of playerTeamsSnapshot.docs) {
+    const team = teamDoc.data() as PlayerTeamDocument;
+    if (team.riderNameId) {
+      const pts =
+        typeof team.pointsScored === "number" ? team.pointsScored : team.totalPoints || 0;
+      // Keep the highest if multiple (shouldn't happen but be safe)
+      riderPoints.set(team.riderNameId, Math.max(riderPoints.get(team.riderNameId) ?? 0, pts));
+    }
+  }
+
+  // Aggregate by draft round
+  const roundAggregates = new Map<
+    number,
+    { round: number; totalPoints: number; count: number }
+  >();
+  // Also keep per-pick detail for top picks stat
+  const allPicks: Array<{
+    rider: string;
+    player: string;
+    round: number;
+    overallPick: number;
+    points: number;
+  }> = [];
+
+  for (const pickDoc of draftPicksSnapshot.docs) {
+    const pick = pickDoc.data() as DraftPickDocument;
+    if (!pick.round || !pick.riderId) {
+      continue;
+    }
+
+    const pts = riderPoints.get(pick.riderId) ?? 0;
+    const round = pick.round;
+    const overallPick = pick.overallPick || pick.pick || 0;
+
+    const aggregate = roundAggregates.get(round) ?? { round, totalPoints: 0, count: 0 };
+    aggregate.totalPoints += pts;
+    aggregate.count += 1;
+    roundAggregates.set(round, aggregate);
+
+    allPicks.push({
+      rider: pick.riderName || pick.riderId,
+      player: pick.playername || pick.userId || "Unknown",
+      round,
+      overallPick,
+      points: pts,
+    });
+  }
+
+  return Array.from(roundAggregates.values())
+    .map((aggregate) => ({
+      round: aggregate.round,
+      avgPoints: aggregate.count > 0 ? Number((aggregate.totalPoints / aggregate.count).toFixed(1)) : 0,
+      totalPoints: aggregate.totalPoints,
+      pickCount: aggregate.count,
+    }))
+    .sort((a, b) => a.round - b.round);
+}
+
+export async function loadRisingStarsGrowthRows(gameId: string) {
+  const db = getAdminDb();
+  const draftPicksSnapshot = await db
+    .collection("draftPicks")
+    .where("gameId", "==", gameId)
+    .get();
+
+  return draftPicksSnapshot.docs
+    .map((doc) => {
+      const pick = doc.data() as DraftPickDocument;
+      return {
+        rider: pick.riderName || pick.riderId || "Unknown",
+        player: pick.playername || pick.userId || "Unknown",
+        previousPoints: typeof pick.riderPreviousPoints === "number" ? pick.riderPreviousPoints : 0,
+        currentPoints: typeof pick.riderCurrentPoints === "number" ? pick.riderCurrentPoints : 0,
+        growth: typeof pick.growth === "number" ? pick.growth : 0,
+        round: pick.round || 0,
+        overallPick: pick.overallPick || pick.pick || 0,
+      };
+    })
+    .filter((row) => row.rider !== "Unknown")
+    .sort((a, b) => b.growth - a.growth);
+}
+
+// ─── Auctioneer loaders (bids + playerTeams) ─────────────────────────────────
+
+export async function loadAuctionBudgetEfficiencyRows(gameId: string) {
+  const db = getAdminDb();
+  const [playerTeamsSnapshot, participantsSnapshot] = await Promise.all([
+    db.collection("playerTeams").where("gameId", "==", gameId).get(),
+    db.collection("gameParticipants").where("gameId", "==", gameId).get(),
+  ]);
+
+  const playerNameMap = new Map<string, string>();
+  for (const doc of participantsSnapshot.docs) {
+    const data = doc.data() as GameParticipantDocument;
+    if (data.userId) {
+      playerNameMap.set(data.userId, data.playername || data.userName || data.userId);
+    }
+  }
+
+  const aggregates = new Map<
+    string,
+    { userId: string; playerName: string; spentBudget: number; totalPoints: number; riderCount: number }
+  >();
+
+  for (const teamDoc of playerTeamsSnapshot.docs) {
+    const team = teamDoc.data() as PlayerTeamDocument;
+    if (!team.userId || team.active === false) {
+      continue;
+    }
+
+    const pts =
+      typeof team.pointsScored === "number" ? team.pointsScored : team.totalPoints || 0;
+    const cost = typeof team.pricePaid === "number" ? team.pricePaid : 0;
+
+    const aggregate = aggregates.get(team.userId) ?? {
+      userId: team.userId,
+      playerName: playerNameMap.get(team.userId) || team.userId,
+      spentBudget: 0,
+      totalPoints: 0,
+      riderCount: 0,
+    };
+
+    aggregate.spentBudget += cost;
+    aggregate.totalPoints += pts;
+    aggregate.riderCount += 1;
+
+    aggregates.set(team.userId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .filter((a) => a.spentBudget > 0)
+    .map((aggregate) => ({
+      player: aggregate.playerName,
+      spentBudget: Math.round(aggregate.spentBudget),
+      totalPoints: aggregate.totalPoints,
+      riderCount: aggregate.riderCount,
+      pointsPerCoin: Number((aggregate.totalPoints / aggregate.spentBudget).toFixed(2)),
+    }))
+    .sort((a, b) => b.pointsPerCoin - a.pointsPerCoin);
+}
+
+export async function loadAuctionMostContestedRows(gameId: string) {
+  const db = getAdminDb();
+  const bidsSnapshot = await db.collection("bids").where("gameId", "==", gameId).get();
+
+  const aggregates = new Map<
+    string,
+    {
+      key: string;
+      label: string;
+      team: string;
+      totalBids: number;
+      highestBid: number;
+      uniqueBidders: Set<string>;
+    }
+  >();
+
+  for (const bidDoc of bidsSnapshot.docs) {
+    const bid = bidDoc.data() as BidDocument;
+    const riderNameId = bid.riderNameId;
+    if (!riderNameId) {
+      continue;
+    }
+
+    const aggregate = aggregates.get(riderNameId) ?? {
+      key: riderNameId,
+      label: bid.riderName || riderNameId,
+      team: bid.riderTeam || "Unknown team",
+      totalBids: 0,
+      highestBid: 0,
+      uniqueBidders: new Set<string>(),
+    };
+
+    aggregate.totalBids += 1;
+    if (typeof bid.amount === "number" && bid.amount > aggregate.highestBid) {
+      aggregate.highestBid = bid.amount;
+    }
+    if (bid.userId) {
+      aggregate.uniqueBidders.add(bid.userId);
+    }
+    aggregate.label = bid.riderName || aggregate.label;
+    aggregate.team = bid.riderTeam || aggregate.team;
+
+    aggregates.set(riderNameId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .map((aggregate) => ({
+      rider: aggregate.label,
+      team: aggregate.team,
+      totalBids: aggregate.totalBids,
+      uniqueBidders: aggregate.uniqueBidders.size,
+      highestBid: aggregate.highestBid,
+    }))
+    .sort((a, b) => b.totalBids - a.totalBids);
+}
+
+// ─── Season-level loaders (seasonPoints collection) ──────────────────────────
+
+export async function loadSeasonTopRidersRows(gameId: string) {
+  const context = await getStatsGameContext(gameId);
+  const year = context?.year ?? new Date().getFullYear();
+  const db = getAdminDb();
+
+  const snapshot = await db
+    .collection("seasonPoints")
+    .where("year", "==", year)
+    .orderBy("totalPoints", "desc")
+    .limit(50)
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const data = doc.data() as {
+      riderName?: string;
+      totalPoints?: number;
+      year?: number;
+    };
+    return {
+      rider: data.riderName || doc.id,
+      totalPoints: typeof data.totalPoints === "number" ? data.totalPoints : 0,
+      year: data.year || year,
+    };
+  });
+}
+
+// ─── Player win-rate loader (cross-game, same year + gameType) ────────────────
+
+export async function loadPlayerWinRateRows(gameId: string) {
+  const db = getAdminDb();
+  const gameDoc = await getGameDocument(gameId);
+  if (!gameDoc.exists) {
+    return [];
+  }
+
+  const gameData = gameDoc.data() as GameDocument;
+  const targetYear = gameData.year ?? extractSeasonFromGameId(gameId);
+  const targetType = gameData.gameType;
+
+  let gamesQuery = db.collection("games").where("year", "==", targetYear);
+  if (targetType) {
+    gamesQuery = gamesQuery.where("gameType", "==", targetType) as typeof gamesQuery;
+  }
+  const gamesSnapshot = await gamesQuery.get();
+  const relevantGameIds = new Set(gamesSnapshot.docs.map((doc) => doc.id));
+
+  if (relevantGameIds.size === 0) {
+    return [];
+  }
+
+  const participantsSnapshot = await db.collection("gameParticipants").get();
+
+  const aggregates = new Map<
+    string,
+    {
+      userId: string;
+      playerName: string;
+      totalGames: number;
+      top3Finishes: number;
+      top10Finishes: number;
+      rankings: number[];
+    }
+  >();
+
+  for (const doc of participantsSnapshot.docs) {
+    const data = doc.data() as GameParticipantDocument & { gameId?: string };
+    if (!data.gameId || !relevantGameIds.has(data.gameId) || !data.userId) {
+      continue;
+    }
+    if (typeof data.ranking !== "number" || data.ranking <= 0) {
+      continue;
+    }
+
+    const aggregate = aggregates.get(data.userId) ?? {
+      userId: data.userId,
+      playerName: data.playername || data.userName || data.userId,
+      totalGames: 0,
+      top3Finishes: 0,
+      top10Finishes: 0,
+      rankings: [],
+    };
+
+    aggregate.totalGames += 1;
+    aggregate.rankings.push(data.ranking);
+    if (data.ranking <= 3) aggregate.top3Finishes += 1;
+    if (data.ranking <= 10) aggregate.top10Finishes += 1;
+    aggregate.playerName = data.playername || data.userName || aggregate.playerName;
+
+    aggregates.set(data.userId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .filter((a) => a.totalGames >= 2)
+    .map((aggregate) => ({
+      player: aggregate.playerName,
+      totalGames: aggregate.totalGames,
+      top3Finishes: aggregate.top3Finishes,
+      top3Rate: Number(((aggregate.top3Finishes / aggregate.totalGames) * 100).toFixed(1)),
+      top10Finishes: aggregate.top10Finishes,
+      avgRanking: Number(
+        (aggregate.rankings.reduce((s, r) => s + r, 0) / aggregate.rankings.length).toFixed(1)
+      ),
+    }))
+    .sort(
+      (a, b) => b.top3Finishes - a.top3Finishes || b.top3Rate - a.top3Rate
+    );
+}
+
+// ─── New F1 loaders ───────────────────────────────────────────────────────────
+
+export async function loadF1TeamPopularityRows(gameId: string) {
+  const season = await getF1SeasonForGame(gameId);
+  const f1Db = getServerFirebaseF1();
+  const [predictionsSnapshot, driversSnapshot] = await Promise.all([
+    f1Db.collection("predictions").where("season", "==", season).get(),
+    f1Db.collection("drivers").where("season", "==", season).get(),
+  ]);
+
+  // Map driver shortName -> teamId (first part, e.g. "redbull")
+  const driverTeamMap = new Map<string, string>();
+  for (const doc of driversSnapshot.docs) {
+    const driver = doc.data() as F1DriverDocument & { teamId?: string };
+    const shortName = driver.shortName || doc.id.split("_")[0];
+    if (driver.teamId) {
+      driverTeamMap.set(shortName, driver.teamId.split("_")[0]);
+    }
+  }
+
+  const teamCounts = new Map<string, number>();
+  let total = 0;
+
+  for (const predictionDoc of predictionsSnapshot.docs) {
+    const prediction = predictionDoc.data() as F1PredictionDocument;
+    const winnerPick = prediction.finishOrder?.[0];
+    if (!winnerPick) {
+      continue;
+    }
+    const teamId = driverTeamMap.get(winnerPick);
+    if (!teamId) {
+      continue;
+    }
+    teamCounts.set(teamId, (teamCounts.get(teamId) ?? 0) + 1);
+    total += 1;
+  }
+
+  const denominator = total || 1;
+
+  return Array.from(teamCounts.entries())
+    .map(([team, count]) => ({
+      team,
+      winnerPickCount: count,
+      winnerPickPct: Number(((count / denominator) * 100).toFixed(1)),
+    }))
+    .sort((a, b) => b.winnerPickCount - a.winnerPickCount);
+}
+
+type F1RaceResultDocument = {
+  raceId?: string;
+  season?: number;
+  round?: number;
+  finishOrder?: string[];
+};
+
+export async function loadF1PodiumAccuracyRows(gameId: string) {
+  const season = await getF1SeasonForGame(gameId);
+  const f1Db = getServerFirebaseF1();
+  const [participantsSnapshot, predictionsSnapshot, raceResultsSnapshot] = await Promise.all([
+    f1Db.collection("participants").where("season", "==", season).where("status", "==", "active").get(),
+    f1Db.collection("predictions").where("season", "==", season).get(),
+    f1Db.collection("raceResults").where("season", "==", season).get(),
+  ]);
+
+  const participantMap = new Map<string, string>();
+  for (const doc of participantsSnapshot.docs) {
+    const p = doc.data() as F1ParticipantDocument;
+    if (p.userId) {
+      participantMap.set(p.userId, p.displayName || p.userId);
+    }
+  }
+
+  // Build raceId -> actual top3
+  const resultsMap = new Map<string, string[]>();
+  for (const resultDoc of raceResultsSnapshot.docs) {
+    const result = resultDoc.data() as F1RaceResultDocument;
+    const raceId = result.raceId || resultDoc.id;
+    const top3 = (result.finishOrder || []).slice(0, 3);
+    if (top3.length > 0) {
+      resultsMap.set(raceId, top3);
+    }
+  }
+
+  if (resultsMap.size === 0) {
+    return [];
+  }
+
+  const aggregates = new Map<
+    string,
+    {
+      playerName: string;
+      racesEvaluated: number;
+      exactWinnerHits: number;
+      podiumDriverHits: number;
+    }
+  >();
+
+  for (const predictionDoc of predictionsSnapshot.docs) {
+    const prediction = predictionDoc.data() as F1PredictionDocument;
+    if (!prediction.userId || !prediction.raceId) {
+      continue;
+    }
+
+    const actual = resultsMap.get(prediction.raceId);
+    if (!actual) {
+      continue;
+    }
+
+    const predictedTop3 = (prediction.finishOrder || []).slice(0, 3);
+    const actualSet = new Set(actual);
+
+    const aggregate = aggregates.get(prediction.userId) ?? {
+      playerName: participantMap.get(prediction.userId) || prediction.userId,
+      racesEvaluated: 0,
+      exactWinnerHits: 0,
+      podiumDriverHits: 0,
+    };
+
+    aggregate.racesEvaluated += 1;
+    if (predictedTop3[0] === actual[0]) {
+      aggregate.exactWinnerHits += 1;
+    }
+    for (const driver of predictedTop3) {
+      if (actualSet.has(driver)) {
+        aggregate.podiumDriverHits += 1;
+      }
+    }
+
+    aggregates.set(prediction.userId, aggregate);
+  }
+
+  return Array.from(aggregates.values())
+    .filter((a) => a.racesEvaluated > 0)
+    .map((aggregate) => ({
+      player: aggregate.playerName,
+      racesEvaluated: aggregate.racesEvaluated,
+      exactWinnerHits: aggregate.exactWinnerHits,
+      winnerHitRate: Number(
+        ((aggregate.exactWinnerHits / aggregate.racesEvaluated) * 100).toFixed(1)
+      ),
+      totalPodiumDriverHits: aggregate.podiumDriverHits,
+      avgPodiumHitsPerRace: Number(
+        (aggregate.podiumDriverHits / aggregate.racesEvaluated).toFixed(2)
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        b.totalPodiumDriverHits - a.totalPodiumDriverHits ||
+        b.exactWinnerHits - a.exactWinnerHits
+    );
+}
+
+export async function loadF1DriverAvgPositionRows(gameId: string) {
+  const season = await getF1SeasonForGame(gameId);
+  const f1Db = getServerFirebaseF1();
+  const [predictionsSnapshot, driversSnapshot] = await Promise.all([
+    f1Db.collection("predictions").where("season", "==", season).get(),
+    f1Db.collection("drivers").where("season", "==", season).get(),
+  ]);
+
+  const driverNameMap = buildF1DriverNameMap(
+    driversSnapshot.docs.map((doc) => ({ id: doc.id, data: doc.data() as F1DriverDocument }))
+  );
+
+  const aggregates = new Map<
+    string,
+    { totalPredictedPosition: number; count: number; top3Count: number }
+  >();
+
+  for (const predictionDoc of predictionsSnapshot.docs) {
+    const prediction = predictionDoc.data() as F1PredictionDocument;
+    const finishOrder = prediction.finishOrder || [];
+
+    for (let pos = 0; pos < finishOrder.length; pos++) {
+      const driver = finishOrder[pos];
+      if (!driver) {
+        continue;
+      }
+
+      const aggregate = aggregates.get(driver) ?? {
+        totalPredictedPosition: 0,
+        count: 0,
+        top3Count: 0,
+      };
+
+      aggregate.totalPredictedPosition += pos + 1;
+      aggregate.count += 1;
+      if (pos < 3) {
+        aggregate.top3Count += 1;
+      }
+
+      aggregates.set(driver, aggregate);
+    }
+  }
+
+  return Array.from(aggregates.entries())
+    .filter(([, a]) => a.count > 0)
+    .map(([shortName, aggregate]) => ({
+      driver: driverNameMap.get(shortName) || shortName,
+      avgPredictedPosition: Number(
+        (aggregate.totalPredictedPosition / aggregate.count).toFixed(1)
+      ),
+      predictedTop3Count: aggregate.top3Count,
+      top3Rate: Number(((aggregate.top3Count / aggregate.count) * 100).toFixed(1)),
+    }))
+    .sort((a, b) => a.avgPredictedPosition - b.avgPredictedPosition);
 }
 
 export async function loadTeamDistribution(gameId: string): Promise<TeamDistributionRow[]> {

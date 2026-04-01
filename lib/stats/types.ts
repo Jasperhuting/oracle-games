@@ -7,19 +7,37 @@ export const STATS_IDEA_STATUSES = ["proposed", "accepted", "rejected"] as const
 export const STATS_RUN_TYPES = ["idea_generation", "stat_run"] as const;
 export const STATS_IDEA_SOURCES = ["llm", "template", "manual"] as const;
 export const STATS_TOOL_NAMES = [
+  // Generic cycling game tools (playerTeams-based)
   "getTopScorers",
   "getMostSelected",
   "getBestValuePicks",
   "getBiggestMovers",
   "getTeamDistribution",
+  // Player-level tools (gameParticipants-based)
   "getTopPlayersByPoints",
   "getMostActivePlayers",
   "getBestAverageRankPlayers",
+  "getPlayerWinRate",
+  // Slipstream / stage-pick tools (stagePicks-based)
+  "getSlipstreamGreenJerseyKings",
+  "getSlipstreamPenaltyReport",
+  // Draft game tools (draftPicks-based)
+  "getDraftPickROI",
+  "getRisingStarsGrowth",
+  // Auctioneer tools (bids + playerTeams)
+  "getAuctionBudgetEfficiency",
+  "getAuctionMostContested",
+  // Season-level tools (seasonPoints collection)
+  "getSeasonTopRiders",
+  // F1 prediction tools (oracle-games-f1 database)
   "getF1BestPredictors",
   "getF1MostActivePredictors",
   "getF1BonusSpecialists",
   "getF1PopularWinnerPicks",
   "getF1MissedPredictionRisk",
+  "getF1TeamPopularity",
+  "getF1PodiumAccuracy",
+  "getF1DriverAvgPosition",
 ] as const;
 
 export type StatsAdminRole = (typeof STATS_ADMIN_ROLES)[number];
