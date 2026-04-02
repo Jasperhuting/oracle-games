@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSurveyStatus } from '@/hooks/useSurveyStatus';
@@ -13,11 +13,17 @@ export function SurveyModal() {
   const { user } = useAuth();
   const { shouldShow, loading } = useSurveyStatus(user?.uid);
   const [visible, setVisible] = useState(true);
+  const [delayed, setDelayed] = useState(false);
   const [page, setPage] = useState(0);
   const [answers, setAnswers] = useState<SurveyAnswers>({ q1: '', q2: '', q3: '', q4: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  if (loading || !shouldShow || !visible || !user) return null;
+  useEffect(() => {
+    const timer = setTimeout(() => setDelayed(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading || !shouldShow || !visible || !delayed || !user) return null;
 
   const totalPages = Math.ceil(SURVEY_QUESTIONS.length / QUESTIONS_PER_PAGE);
   const currentQuestions = SURVEY_QUESTIONS.slice(
