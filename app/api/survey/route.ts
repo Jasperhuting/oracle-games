@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       userName: userName || 'Onbekend',
       roundId,
       skipped: skipped ?? false,
-      answers: answers ?? { q1: '', q2: '', q3: '', q4: '' },
+      answers: answers ?? { q1: '', q2: '', q3: '', q4: '', q5: '', q6: '' },
       submittedAt: FieldValue.serverTimestamp(),
     });
 

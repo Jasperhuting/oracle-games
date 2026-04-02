@@ -15,7 +15,7 @@ export function SurveyModal() {
   const [visible, setVisible] = useState(true);
   const [delayed, setDelayed] = useState(false);
   const [page, setPage] = useState(0);
-  const [answers, setAnswers] = useState<SurveyAnswers>({ q1: '', q2: '', q3: '', q4: '' });
+  const [answers, setAnswers] = useState<SurveyAnswers>({ q1: '', q2: '', q3: '', q4: '', q5: '', q6: '' });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function SurveyModal() {
           userName: user.displayName || user.email || 'Onbekend',
           roundId: SURVEY_ROUND_ID,
           skipped: true,
-          answers: { q1: '', q2: '', q3: '', q4: '' },
+          answers: { q1: '', q2: '', q3: '', q4: '', q5: '', q6: '' },
         }),
       });
     } catch {

@@ -3,6 +3,8 @@ export interface SurveyAnswers {
   q2: string;
   q3: string;
   q4: string;
+  q5: string;
+  q6: string;
 }
 
 export interface SurveyResponse {
