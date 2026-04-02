@@ -6,43 +6,94 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { authorizedFetch } from '@/lib/auth/token-service';
-import { KNOCKOUT_MATCHES, KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
-import { POULES } from '../../page';
+import { KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
 import { useWk2026Participant } from '../../hooks';
 import { Flag } from '@/components/Flag';
 import countriesList from '@/lib/country.json';
+import {
+  GroupData,
+  GroupStageMatch,
+  calculateQualifiedTeams,
+  initializeKnockoutMatches,
+  updateKnockoutMatchesWithQualifiedTeams,
+} from '@/lib/wk-2026/knockout-utils';
+import {
+  createTeamHistoryPairKey,
+  orientTeamHistory,
+  reverseTeamHistory,
+  type HeadToHeadMatch,
+  type MatchResult,
+  type StoredTeamHistoryMap,
+  type TeamHistoryResponse,
+} from '@/lib/wk-2026/team-history-types';
 
-interface GroupTeamEntry {
-  name: string;
+interface FormDotProps {
+  match: MatchResult;
 }
 
-interface GroupData {
-  pouleId: string;
-  teams?: Record<string, GroupTeamEntry>;
+function FormDot({ match }: FormDotProps) {
+  const color =
+    match.result === 'W'
+      ? 'bg-green-500'
+      : match.result === 'D'
+      ? 'bg-orange-400'
+      : 'bg-red-500';
+
+  const label = match.result === 'W' ? 'W' : match.result === 'D' ? 'G' : 'V';
+  const tooltip = `${match.teamScore}-${match.opponentScore} vs ${match.opponent} (${match.competition}, ${match.date})`;
+
+  return (
+    <div className="relative group">
+      <div
+        className={`w-5 h-5 rounded-full ${color} flex items-center justify-center text-white text-[9px] font-bold cursor-default`}
+        title={tooltip}
+      >
+        {label}
+      </div>
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden -translate-x-1/2 group-hover:block">
+        <div className="whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-lg">
+          <span className="font-semibold">{match.teamScore}-{match.opponentScore}</span>{' '}
+          vs {match.opponent}
+          <br />
+          <span className="text-[10px] text-gray-400">{match.competition} · {match.date}</span>
+        </div>
+        <div className="mx-auto -mt-1 h-2 w-2 rotate-45 bg-gray-900" />
+      </div>
+    </div>
+  );
 }
 
-interface GroupStageMatch {
-  pouleId: string;
-  team1Id: string;
-  team2Id: string;
-  team1Score: number | null;
-  team2Score: number | null;
+interface H2HRowProps {
+  match: HeadToHeadMatch;
+  team1Name: string;
+  team2Name: string;
 }
 
-interface GroupStanding {
-  teamId: string;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  goalDifference: number;
-  points: number;
-}
+function H2HRow({ match, team1Name, team2Name }: H2HRowProps) {
+  const result =
+    match.team1Score > match.team2Score
+      ? `${team1Name} won`
+      : match.team1Score < match.team2Score
+      ? `${team2Name} won`
+      : 'Gelijkspel';
 
-interface ThirdPlacedStanding extends GroupStanding {
-  poule: string;
+  return (
+    <div className="flex items-center justify-between py-0.5 text-xs text-gray-600">
+      <span className="w-20 shrink-0 text-gray-400">{match.date.slice(0, 7)}</span>
+      <span
+        className={`font-semibold ${
+          match.team1Score > match.team2Score
+            ? 'text-green-600'
+            : match.team1Score < match.team2Score
+            ? 'text-red-500'
+            : 'text-gray-500'
+        }`}
+      >
+        {match.team1Score} – {match.team2Score}
+      </span>
+      <span className="w-20 shrink-0 truncate text-right text-gray-400">{result}</span>
+    </div>
+  );
 }
 
 export default function KnockoutPredictionsPage() {
@@ -52,6 +103,8 @@ export default function KnockoutPredictionsPage() {
 
   const [matches, setMatches] = useState<KnockoutMatch[]>([]);
   const [actualPoules, setActualPoules] = useState<GroupData[]>([]);
+  const [teamHistory, setTeamHistory] = useState<StoredTeamHistoryMap>({});
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isJoining, setIsJoining] = useState(false);
@@ -82,198 +135,6 @@ export default function KnockoutPredictionsPage() {
     }
   };
 
-  // Calculate standings for a poule
-  const calculateStandings = useCallback((pouleId: string, poules: GroupData[], allMatches: GroupStageMatch[]): GroupStanding[] => {
-    const pouleData = poules.find((poule) => poule.pouleId === pouleId);
-    if (!pouleData || !pouleData.teams) return [];
-
-    const teams = Object.keys(pouleData.teams);
-    const pouleMatches = allMatches.filter((match) => match.pouleId === pouleId);
-
-    const stats: Record<string, GroupStanding> = {};
-    teams.forEach(teamId => {
-      stats[teamId] = {
-        teamId,
-        played: 0,
-        won: 0,
-        drawn: 0,
-        lost: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        goalDifference: 0,
-        points: 0,
-      };
-    });
-
-    pouleMatches.forEach((match) => {
-      if (match.team1Score !== null && match.team2Score !== null) {
-        const team1Stats = stats[match.team1Id];
-        const team2Stats = stats[match.team2Id];
-
-        if (team1Stats && team2Stats) {
-          team1Stats.played++;
-          team2Stats.played++;
-          team1Stats.goalsFor += match.team1Score;
-          team1Stats.goalsAgainst += match.team2Score;
-          team2Stats.goalsFor += match.team2Score;
-          team2Stats.goalsAgainst += match.team1Score;
-
-          if (match.team1Score > match.team2Score) {
-            team1Stats.won++;
-            team1Stats.points += 3;
-            team2Stats.lost++;
-          } else if (match.team1Score < match.team2Score) {
-            team2Stats.won++;
-            team2Stats.points += 3;
-            team1Stats.lost++;
-          } else {
-            team1Stats.drawn++;
-            team2Stats.drawn++;
-            team1Stats.points += 1;
-            team2Stats.points += 1;
-          }
-
-          team1Stats.goalDifference = team1Stats.goalsFor - team1Stats.goalsAgainst;
-          team2Stats.goalDifference = team2Stats.goalsFor - team2Stats.goalsAgainst;
-        }
-      }
-    });
-
-    return Object.values(stats).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-      return b.goalsFor - a.goalsFor;
-    });
-  }, []);
-
-  // Calculate all qualified teams based on group standings
-  const calculateQualifiedTeams = useCallback((poules: GroupData[], allMatches: GroupStageMatch[]) => {
-    const qualified: Record<string, string> = {};
-
-    // Get winners and runners-up from each group
-    POULES.forEach(pouleId => {
-      const standings = calculateStandings(pouleId, poules, allMatches);
-      if (standings.length >= 2) {
-        qualified[`1${pouleId.toUpperCase()}`] = standings[0].teamId;
-        qualified[`2${pouleId.toUpperCase()}`] = standings[1].teamId;
-      }
-    });
-
-    // Get best third-placed teams
-    const allThirdPlaced: ThirdPlacedStanding[] = [];
-    POULES.forEach(pouleId => {
-      const standings = calculateStandings(pouleId, poules, allMatches);
-      if (standings.length >= 3) {
-        allThirdPlaced.push({
-          ...standings[2],
-          poule: pouleId.toUpperCase(),
-        });
-      }
-    });
-
-    // Sort third-placed teams
-    const sortedThirdPlaced = allThirdPlaced.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-      return b.won - a.won;
-    });
-
-    // Assign third-placed teams to their slots
-    // The mapping is complex, but follows FIFA's predetermined schedule
-    const thirdPlaceSlots = [
-      { slot: '3A/B/C/D/F', groups: ['A', 'B', 'C', 'D', 'F'] },
-      { slot: '3C/D/F/G/H', groups: ['C', 'D', 'F', 'G', 'H'] },
-      { slot: '3C/E/F/H/I', groups: ['C', 'E', 'F', 'H', 'I'] },
-      { slot: '3E/H/I/J/K', groups: ['E', 'H', 'I', 'J', 'K'] },
-      { slot: '3B/E/F/I/J', groups: ['B', 'E', 'F', 'I', 'J'] },
-      { slot: '3A/E/H/I/J', groups: ['A', 'E', 'H', 'I', 'J'] },
-      { slot: '3E/F/G/I/J', groups: ['E', 'F', 'G', 'I', 'J'] },
-      { slot: '3D/E/I/J/L', groups: ['D', 'E', 'I', 'J', 'L'] },
-    ];
-
-    thirdPlaceSlots.forEach(({ slot, groups }) => {
-      for (const team of sortedThirdPlaced) {
-        if (groups.includes(team.poule) && !Object.values(qualified).includes(team.teamId)) {
-          qualified[slot] = team.teamId;
-          break;
-        }
-      }
-    });
-
-    return qualified;
-  }, [calculateStandings]);
-
-  // Initialize knockout matches with qualified teams
-  const initializeKnockoutMatches = (qualifiedTeams: Record<string, string>): KnockoutMatch[] => {
-    return KNOCKOUT_MATCHES.map(m => {
-      const team1 = qualifiedTeams[m.team1Source] || null;
-      const team2 = qualifiedTeams[m.team2Source] || null;
-
-      return {
-        ...m,
-        team1,
-        team2,
-        team1Score: null,
-        team2Score: null,
-        winner: null,
-      };
-    });
-  };
-
-  // Update existing matches with qualified teams and propagate winners
-  const updateMatchesWithQualifiedTeams = (
-    existingMatches: KnockoutMatch[],
-    qualifiedTeams: Record<string, string>
-  ): KnockoutMatch[] => {
-    const updated = [...existingMatches];
-
-    // First pass: update Round of 32 with qualified teams
-    updated.forEach(match => {
-      if (match.round === 'round_of_32') {
-        match.team1 = qualifiedTeams[match.team1Source] || match.team1;
-        match.team2 = qualifiedTeams[match.team2Source] || match.team2;
-      }
-    });
-
-    // Second pass: propagate winners through the bracket
-    updated.forEach(match => {
-      if (match.round !== 'round_of_32') {
-        // Check if team1Source is a winner reference
-        if (match.team1Source.startsWith('winner_')) {
-          const sourceMatchNum = parseInt(match.team1Source.replace('winner_', ''));
-          const sourceMatch = updated.find(m => m.matchNumber === sourceMatchNum);
-          if (sourceMatch?.winner) {
-            match.team1 = sourceMatch.winner;
-          }
-        } else if (match.team1Source.startsWith('loser_')) {
-          const sourceMatchNum = parseInt(match.team1Source.replace('loser_', ''));
-          const sourceMatch = updated.find(m => m.matchNumber === sourceMatchNum);
-          if (sourceMatch?.winner && sourceMatch?.team1 && sourceMatch?.team2) {
-            match.team1 = sourceMatch.winner === sourceMatch.team1 ? sourceMatch.team2 : sourceMatch.team1;
-          }
-        }
-
-        // Same for team2
-        if (match.team2Source.startsWith('winner_')) {
-          const sourceMatchNum = parseInt(match.team2Source.replace('winner_', ''));
-          const sourceMatch = updated.find(m => m.matchNumber === sourceMatchNum);
-          if (sourceMatch?.winner) {
-            match.team2 = sourceMatch.winner;
-          }
-        } else if (match.team2Source.startsWith('loser_')) {
-          const sourceMatchNum = parseInt(match.team2Source.replace('loser_', ''));
-          const sourceMatch = updated.find(m => m.matchNumber === sourceMatchNum);
-          if (sourceMatch?.winner && sourceMatch?.team1 && sourceMatch?.team2) {
-            match.team2 = sourceMatch.winner === sourceMatch.team1 ? sourceMatch.team2 : sourceMatch.team1;
-          }
-        }
-      }
-    });
-
-    return updated;
-  };
-
   const loadData = useCallback(async () => {
     try {
       // Load poules to determine qualified teams
@@ -302,7 +163,7 @@ export default function KnockoutPredictionsPage() {
 
       if (predictionsData.prediction && predictionsData.prediction.matches) {
         // Update existing predictions with latest qualified teams
-        const updatedMatches = updateMatchesWithQualifiedTeams(
+        const updatedMatches = updateKnockoutMatchesWithQualifiedTeams(
           predictionsData.prediction.matches,
           qualifiedTeams
         );
@@ -318,7 +179,67 @@ export default function KnockoutPredictionsPage() {
       console.error('Error loading data:', error);
       setMessage({ type: 'error', text: 'Failed to load predictions' });
     }
-  }, [calculateQualifiedTeams, user?.uid]);
+  }, [user?.uid]);
+
+  const fetchAllTeamHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const response = await fetch('/api/wk-2026/team-history?all=1');
+      const data = await response.json();
+      setTeamHistory(data.histories || {});
+    } catch (error) {
+      console.error('Error fetching stored team history:', error);
+      setTeamHistory({});
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  const fetchMissingTeamHistory = useCallback(async (team1Name: string, team2Name: string) => {
+    const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
+    if (teamHistory[pairKey]) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/wk-2026/team-history?team1=${encodeURIComponent(team1Name)}&team2=${encodeURIComponent(team2Name)}`
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data: TeamHistoryResponse = await response.json();
+      const [teamA, teamB] = [team1Name, team2Name].sort();
+
+      setTeamHistory((prev) => ({
+        ...prev,
+        [pairKey]: {
+          pairKey,
+          teamA,
+          teamB,
+          data: team1Name === teamA ? data : reverseTeamHistory(data),
+          updatedAt: new Date().toISOString(),
+          tags: ['manual-fallback'],
+        },
+      }));
+    } catch (error) {
+      console.error('Error fetching missing team history:', error);
+    }
+  }, [teamHistory]);
+
+  const getTeamName = useCallback((teamId: string | null | undefined): string => {
+    if (!teamId) return '?';
+
+    for (const poule of actualPoules) {
+      if (poule.teams && poule.teams[teamId]) {
+        return poule.teams[teamId].name;
+      }
+    }
+
+    return teamId;
+  }, [actualPoules]);
 
   useEffect(() => {
     if (loading) return;
@@ -333,7 +254,24 @@ export default function KnockoutPredictionsPage() {
     }
 
     loadData();
-  }, [user, loading, router, participantLoading, isParticipant, loadData]);
+    fetchAllTeamHistory();
+  }, [user, loading, router, participantLoading, isParticipant, loadData, fetchAllTeamHistory]);
+
+  useEffect(() => {
+    matches.forEach((match) => {
+      if (!match.team1 || !match.team2) {
+        return;
+      }
+
+      const team1Name = getTeamName(match.team1);
+      const team2Name = getTeamName(match.team2);
+      const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
+
+      if (!teamHistory[pairKey]) {
+        void fetchMissingTeamHistory(team1Name, team2Name);
+      }
+    });
+  }, [matches, teamHistory, fetchMissingTeamHistory, getTeamName]);
 
   if (loading || participantLoading) {
     return (
@@ -506,20 +444,6 @@ export default function KnockoutPredictionsPage() {
     }
   };
 
-  const getTeamName = (teamId: string | null | undefined): string => {
-    if (!teamId) return '?';
-
-    // Find team in poules
-    for (const poule of actualPoules) {
-      if (poule.teams && poule.teams[teamId]) {
-        return poule.teams[teamId].name;
-      }
-    }
-
-    // If not found, return the team ID (fallback)
-    return teamId;
-  };
-
   const getTeamFlagCode = (teamId: string | null | undefined): string => {
     if (!teamId) return '';
 
@@ -536,6 +460,23 @@ export default function KnockoutPredictionsPage() {
       <Flag countryCode={getTeamFlagCode(teamId)} width={size} />
     </span>
   );
+
+  const getHistoryForMatch = (team1Id: string | null | undefined, team2Id: string | null | undefined): TeamHistoryResponse | null => {
+    if (!team1Id || !team2Id) {
+      return null;
+    }
+
+    const team1Name = getTeamName(team1Id);
+    const team2Name = getTeamName(team2Id);
+    const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
+    const storedHistory = teamHistory[pairKey];
+
+    if (!storedHistory) {
+      return null;
+    }
+
+    return orientTeamHistory(storedHistory.data, team1Name, team2Name);
+  };
 
   // Get potential teams when winner isn't decided yet - recursively
   const getPotentialTeams = (teamSource: string): string[] => {
@@ -638,91 +579,150 @@ export default function KnockoutPredictionsPage() {
             <h2 className="text-2xl font-bold mb-4">{ROUND_LABELS[round as keyof typeof ROUND_LABELS]}</h2>
 
             <div className="space-y-4">
-              {roundMatches.map(match => (
-                <div key={match.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm text-gray-600">
-                      Match {match.matchNumber} - {match.date}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {match.stadium}, {match.location}
-                    </div>
-                  </div>
+              {roundMatches.map(match => {
+                const history = getHistoryForMatch(match.team1, match.team2);
+                const team1Name = match.team1 ? getTeamName(match.team1) : null;
+                const team2Name = match.team2 ? getTeamName(match.team2) : null;
 
-                  <div className="grid grid-cols-7 gap-4 items-center">
-                    <div className="col-span-3">
-                      <div className="text-sm font-medium text-gray-700 mb-1">
-                        {match.team1Source}
+                return (
+                  <div key={match.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm text-gray-600">
+                        Match {match.matchNumber} - {match.date}
                       </div>
-                      <div className="text-lg font-semibold flex flex-start">
-                        {displayTeam(match.team1, match.team1Source)}
+                      <div className="text-xs text-gray-500">
+                        {match.stadium}, {match.location}
                       </div>
                     </div>
 
-                    <div className="col-span-1 flex items-center justify-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={match.team1Score ?? ''}
-                        onChange={(e) => handleScoreChange(match.id, 'team1', e.target.value)}
-                        className="w-16 min-w-[32px] px-2 py-1 border border-gray-300 rounded text-center"
-                        placeholder="0"
-                      />
-                      <span className="text-gray-500">-</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={match.team2Score ?? ''}
-                        onChange={(e) => handleScoreChange(match.id, 'team2', e.target.value)}
-                        className="w-16 min-w-[32px] px-2 py-1 border border-gray-300 rounded text-center"
-                        placeholder="0"
-                      />
+                    <div className="grid grid-cols-7 gap-4 items-center">
+                      <div className="col-span-3">
+                        <div className="text-sm font-medium text-gray-700 mb-1">
+                          {match.team1Source}
+                        </div>
+                        <div className="text-lg font-semibold flex flex-start">
+                          {displayTeam(match.team1, match.team1Source)}
+                        </div>
+                      </div>
+
+                      <div className="col-span-1 flex items-center justify-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={match.team1Score ?? ''}
+                          onChange={(e) => handleScoreChange(match.id, 'team1', e.target.value)}
+                          className="w-16 min-w-[32px] px-2 py-1 border border-gray-300 rounded text-center"
+                          placeholder="0"
+                        />
+                        <span className="text-gray-500">-</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={match.team2Score ?? ''}
+                          onChange={(e) => handleScoreChange(match.id, 'team2', e.target.value)}
+                          className="w-16 min-w-[32px] px-2 py-1 border border-gray-300 rounded text-center"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div className="col-span-3 text-right">
+                        <div className="text-sm font-medium text-gray-700 mb-1">
+                          {match.team2Source}
+                        </div>
+                        <div className="flex w-full justify-end text-lg font-semibold">
+                          {displayTeam(match.team2, match.team2Source)}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="col-span-3 text-right">
-                      <div className="text-sm font-medium text-gray-700 mb-1">
-                        {match.team2Source}
+                    {historyLoading && (
+                      <div className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-400 animate-pulse">
+                        Historische resultaten laden...
                       </div>
-                      <div className="flex w-full justify-end text-lg font-semibold">
-                        {displayTeam(match.team2, match.team2Source)}
-                      </div>
-                    </div>
-                  </div>
+                    )}
 
-                  {match.team1Score === match.team2Score && match.team1Score !== null && (
-                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Winner after penalties:
-                      </label>
-                      <select
-                        value={match.winner || ''}
-                        onChange={(e) => handleWinnerSelect(match.id, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded bg-white"
-                      >
-                        <option value="">Select winner...</option>
-                        {match.team1 && (
-                          <option value={match.team1}>{getTeamName(match.team1)}</option>
+                    {!historyLoading && history && team1Name && team2Name && (
+                      <div className="mt-3 border-t border-gray-100 pt-3">
+                        <div className="space-y-2">
+                          <div>
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                              Laatste 5: {team1Name}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {history.team1Form.map((formMatch, index) => (
+                                <FormDot key={`${match.id}-team1-${index}`} match={formMatch} />
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                              Laatste 5: {team2Name}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {history.team2Form.map((formMatch, index) => (
+                                <FormDot key={`${match.id}-team2-${index}`} match={formMatch} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {history.headToHead.length > 0 ? (
+                          <div className="mt-3 border-t border-gray-100 pt-3">
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                              Onderling ({history.headToHead.length}x)
+                            </div>
+                            {[...history.headToHead].reverse().map((headToHeadMatch, index) => (
+                              <H2HRow
+                                key={`${match.id}-h2h-${index}`}
+                                match={headToHeadMatch}
+                                team1Name={team1Name}
+                                team2Name={team2Name}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-400">
+                            Nog nooit tegen elkaar gespeeld
+                          </div>
                         )}
-                        {match.team2 && (
-                          <option value={match.team2}>{getTeamName(match.team2)}</option>
-                        )}
-                      </select>
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  {match.winner && match.team1Score !== match.team2Score && (
-                    <div className="mt-2 text-sm text-green-700 font-semibold">
-                      Winner: <span className="ml-1 inline-flex align-middle">{renderTeamFlag(match.winner, 24)}</span>
-                    </div>
-                  )}
+                    {match.team1Score === match.team2Score && match.team1Score !== null && (
+                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">
+                          Winner after penalties:
+                        </label>
+                        <select
+                          value={match.winner || ''}
+                          onChange={(e) => handleWinnerSelect(match.id, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded bg-white"
+                        >
+                          <option value="">Select winner...</option>
+                          {match.team1 && (
+                            <option value={match.team1}>{getTeamName(match.team1)}</option>
+                          )}
+                          {match.team2 && (
+                            <option value={match.team2}>{getTeamName(match.team2)}</option>
+                          )}
+                        </select>
+                      </div>
+                    )}
 
-                  {match.winner && match.team1Score === match.team2Score && match.team1Score !== null && (
-                    <div className="mt-2 text-sm text-green-700 font-semibold">
-                      Winner after penalties: <span className="ml-1 inline-flex align-middle">{renderTeamFlag(match.winner, 24)}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {match.winner && match.team1Score !== match.team2Score && (
+                      <div className="mt-2 text-sm text-green-700 font-semibold">
+                        Winner: <span className="ml-1 inline-flex align-middle">{renderTeamFlag(match.winner, 24)}</span>
+                      </div>
+                    )}
+
+                    {match.winner && match.team1Score === match.team2Score && match.team1Score !== null && (
+                      <div className="mt-2 text-sm text-green-700 font-semibold">
+                        Winner after penalties: <span className="ml-1 inline-flex align-middle">{renderTeamFlag(match.winner, 24)}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

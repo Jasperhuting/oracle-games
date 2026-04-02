@@ -2,14 +2,23 @@
 export const dynamic = "force-dynamic";
 
 import { Flag } from "@/components/Flag";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Check } from "tabler-icons-react";
 import countriesList from '@/lib/country.json';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
 import { useWk2026Participant } from "../hooks";
 import { authorizedFetch } from "@/lib/auth/token-service";
-import type { MatchResult, HeadToHeadMatch, TeamHistoryResponse } from "@/app/api/wk-2026/team-history/route";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+    createTeamHistoryPairKey,
+    orientTeamHistory,
+    reverseTeamHistory,
+    type HeadToHeadMatch,
+    type MatchResult,
+    type StoredTeamHistoryMap,
+    type TeamHistoryResponse,
+} from "@/lib/wk-2026/team-history-types";
 
 interface Match {
     id: string;
@@ -36,6 +45,54 @@ interface TeamStats {
     goalsAgainst: number;
     goalDifference: number;
     points: number;
+}
+
+function normalizeManualRankings(
+    currentPoules: PouleRanking[],
+    savedRankings?: PouleRanking[]
+): PouleRanking[] {
+    if (!savedRankings?.length) {
+        return JSON.parse(JSON.stringify(currentPoules));
+    }
+
+    return currentPoules.map((currentPoule) => {
+        const savedPoule = savedRankings.find((ranking) => ranking.pouleId === currentPoule.pouleId);
+        const officialTeams = currentPoule.rankings.filter(Boolean) as TeamInPoule[];
+        const officialTeamsById = new Map(officialTeams.map((team) => [team.id, team]));
+        const usedTeamIds = new Set<string>();
+        const mergedRankings: (TeamInPoule | null)[] = [null, null, null, null];
+
+        savedPoule?.rankings.forEach((team, position) => {
+            if (!team) return;
+
+            const officialTeam = officialTeamsById.get(team.id);
+            if (!officialTeam || usedTeamIds.has(team.id)) return;
+
+            mergedRankings[position] = {
+                ...officialTeam,
+                position,
+            };
+            usedTeamIds.add(team.id);
+        });
+
+        const remainingTeams = officialTeams.filter((team) => !usedTeamIds.has(team.id));
+        for (let position = 0; position < mergedRankings.length; position++) {
+            if (!mergedRankings[position] && remainingTeams.length > 0) {
+                const nextTeam = remainingTeams.shift();
+                if (nextTeam) {
+                    mergedRankings[position] = {
+                        ...nextTeam,
+                        position,
+                    };
+                }
+            }
+        }
+
+        return {
+            pouleId: currentPoule.pouleId,
+            rankings: mergedRankings,
+        };
+    });
 }
 
 // ---------- Form-dot helpers ----------
@@ -108,6 +165,9 @@ function H2HRow({ match, team1Name, team2Name }: H2HRowProps) {
 
 export default function PlayerPredictionsPage() {
     const { user } = useAuth();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { isParticipant, loading: participantLoading, refresh: refreshParticipant } = useWk2026Participant(user?.uid || null, 2026);
     const [poules, setPoules] = useState<PouleRanking[]>([]); // Team assignments from admin
     const [manualRankings, setManualRankings] = useState<PouleRanking[]>([]); // Player's predicted rankings
@@ -121,9 +181,15 @@ export default function PlayerPredictionsPage() {
     const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
     // Team history (H2H + form) keyed by sorted team pair "teamA__teamB"
-    const [teamHistory, setTeamHistory] = useState<Record<string, TeamHistoryResponse>>({});
-    const [historyLoading, setHistoryLoading] = useState<Record<string, boolean>>({});
-    const fetchedPairs = useRef<Set<string>>(new Set());
+    const [teamHistory, setTeamHistory] = useState<StoredTeamHistoryMap>({});
+    const [historyLoading, setHistoryLoading] = useState(false);
+
+    useEffect(() => {
+        const pouleFromUrl = searchParams.get('poule')?.toLowerCase();
+        if (pouleFromUrl && POULES.includes(pouleFromUrl) && pouleFromUrl !== selectedPoule) {
+            setSelectedPoule(pouleFromUrl);
+        }
+    }, [searchParams, selectedPoule]);
 
     const handleJoinWk = async () => {
         if (!user) return;
@@ -190,7 +256,9 @@ export default function PlayerPredictionsPage() {
 
             // Initialize manual rankings from player's predictions or default to admin's poules
             if (predictionsData.predictions?.rankings) {
-                setManualRankings(predictionsData.predictions.rankings);
+                setManualRankings(
+                    normalizeManualRankings(poulesRankings, predictionsData.predictions.rankings)
+                );
             } else {
                 setManualRankings(JSON.parse(JSON.stringify(poulesRankings)));
             }
@@ -227,45 +295,74 @@ export default function PlayerPredictionsPage() {
         }
     }, [user]);
 
-    useEffect(() => {
-        if (user) {
-            fetchPoulesAndPredictions();
-        }
-    }, [user, fetchPoulesAndPredictions]);
-
-    const fetchTeamHistory = useCallback(async (team1Name: string, team2Name: string) => {
-        const pairKey = [team1Name, team2Name].sort().join('__');
-        if (fetchedPairs.current.has(pairKey)) return;
-        fetchedPairs.current.add(pairKey);
-
-        setHistoryLoading(prev => ({ ...prev, [pairKey]: true }));
+    const fetchAllTeamHistory = useCallback(async () => {
+        setHistoryLoading(true);
         try {
-            const res = await fetch(
-                `/api/wk-2026/team-history?team1=${encodeURIComponent(team1Name)}&team2=${encodeURIComponent(team2Name)}`
-            );
-            if (res.ok) {
-                const data: TeamHistoryResponse = await res.json();
-                setTeamHistory(prev => ({ ...prev, [pairKey]: data }));
-            }
-        } catch {
-            // silently fail – history is supplemental info
+            const response = await fetch('/api/wk-2026/team-history?all=1');
+            const data = await response.json();
+            setTeamHistory(data.histories || {});
+        } catch (error) {
+            console.error('Error fetching stored team history:', error);
+            setTeamHistory({});
         } finally {
-            setHistoryLoading(prev => ({ ...prev, [pairKey]: false }));
+            setHistoryLoading(false);
         }
     }, []);
 
-    // Fetch history for all matches in the selected poule
+    const fetchMissingTeamHistory = useCallback(async (team1Name: string, team2Name: string) => {
+        const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
+        if (teamHistory[pairKey]) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/wk-2026/team-history?team1=${encodeURIComponent(team1Name)}&team2=${encodeURIComponent(team2Name)}`
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data: TeamHistoryResponse = await response.json();
+            const [teamA, teamB] = [team1Name, team2Name].sort();
+            setTeamHistory(prev => ({
+                ...prev,
+                [pairKey]: {
+                    pairKey,
+                    teamA,
+                    teamB,
+                    data: team1Name === teamA ? data : reverseTeamHistory(data),
+                    updatedAt: new Date().toISOString(),
+                    tags: ['manual-fallback'],
+                },
+            }));
+        } catch (error) {
+            console.error('Error fetching missing team history:', error);
+        }
+    }, [teamHistory]);
+
+    useEffect(() => {
+        if (user) {
+            fetchPoulesAndPredictions();
+            fetchAllTeamHistory();
+        }
+    }, [user, fetchPoulesAndPredictions, fetchAllTeamHistory]);
+
     useEffect(() => {
         const pouleData = poules.find(p => p.pouleId === selectedPoule);
         if (!pouleData) return;
 
         const teams = pouleData.rankings.filter(Boolean) as TeamInPoule[];
-        for (let i = 0; i < teams.length; i++) {
-            for (let j = i + 1; j < teams.length; j++) {
-                fetchTeamHistory(teams[i].name, teams[j].name);
-            }
-        }
-    }, [selectedPoule, poules, fetchTeamHistory]);
+        teams.forEach((team, index) => {
+            teams.slice(index + 1).forEach((opponent) => {
+                const pairKey = createTeamHistoryPairKey(team.name, opponent.name);
+                if (!teamHistory[pairKey]) {
+                    void fetchMissingTeamHistory(team.name, opponent.name);
+                }
+            });
+        });
+    }, [selectedPoule, poules, teamHistory, fetchMissingTeamHistory]);
 
     const handleScoreChange = (matchId: string, team: 'team1' | 'team2', score: string) => {
         const scoreValue = score === '' ? null : parseInt(score);
@@ -412,6 +509,14 @@ export default function PlayerPredictionsPage() {
         });
     };
 
+    const handleSelectPoule = useCallback((pouleId: string) => {
+        setSelectedPoule(pouleId);
+
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('poule', pouleId);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }, [pathname, router, searchParams]);
+
     const savePredictions = async () => {
         if (!user) {
             setSaveFeedback({ type: 'error', text: 'Je moet ingelogd zijn om voorspellingen op te slaan.' });
@@ -504,7 +609,7 @@ export default function PlayerPredictionsPage() {
                     {POULES.map(pouleId => (
                         <button
                             key={pouleId}
-                            onClick={() => setSelectedPoule(pouleId)}
+                            onClick={() => handleSelectPoule(pouleId)}
                             className={`px-4 py-2 rounded-lg font-semibold transition-colors min-w-[100px] ${
                                 selectedPoule === pouleId
                                     ? 'bg-[#ff9900] text-white'
@@ -646,19 +751,15 @@ export default function PlayerPredictionsPage() {
                         const country1 = countriesList.find((c: any) => c.name === team1.name); // eslint-disable-line @typescript-eslint/no-explicit-any
                         const country2 = countriesList.find((c: any) => c.name === team2.name); // eslint-disable-line @typescript-eslint/no-explicit-any
 
-                        const pairKey = [team1.name, team2.name].sort().join('__');
-                        const history = teamHistory[pairKey];
-                        const isLoadingHistory = historyLoading[pairKey];
-
-                        // H2H form is from team1 perspective: if pair is reversed, flip scores
-                        const isReversed = [team1.name, team2.name].sort()[0] !== team1.name;
-                        const t1Form = history ? (isReversed ? history.team2Form : history.team1Form) : [];
-                        const t2Form = history ? (isReversed ? history.team1Form : history.team2Form) : [];
-                        const h2h = history
-                            ? (isReversed
-                                ? history.headToHead.map(m => ({ ...m, team1Score: m.team2Score, team2Score: m.team1Score }))
-                                : history.headToHead)
-                            : [];
+                        const pairKey = createTeamHistoryPairKey(team1.name, team2.name);
+                        const storedHistory = teamHistory[pairKey];
+                        const history: TeamHistoryResponse | null = storedHistory
+                            ? orientTeamHistory(storedHistory.data, team1.name, team2.name)
+                            : null;
+                        const t1Form = history?.team1Form || [];
+                        const t2Form = history?.team2Form || [];
+                        const h2h = history?.headToHead || [];
+                        const h2hNewestFirst = [...h2h].reverse();
 
                         return (
                             <div key={match.id} className="bg-white border-2 border-gray-300 rounded-lg p-4">
@@ -711,22 +812,22 @@ export default function PlayerPredictionsPage() {
                                 )}
 
                                 {/* H2H section */}
-                                {isLoadingHistory && (
+                                {historyLoading && (
                                     <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 animate-pulse">
                                         Onderlinge resultaten laden...
                                     </div>
                                 )}
-                                {!isLoadingHistory && h2h.length > 0 && (
+                                {!historyLoading && h2h.length > 0 && (
                                     <div className="mt-3 pt-3 border-t border-gray-100">
                                         <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
                                             Onderling ({h2h.length}x)
                                         </div>
-                                        {h2h.map((m, i) => (
+                                        {h2hNewestFirst.map((m, i) => (
                                             <H2HRow key={i} match={m} team1Name={team1.name} team2Name={team2.name} />
                                         ))}
                                     </div>
                                 )}
-                                {!isLoadingHistory && history && h2h.length === 0 && (
+                                {!historyLoading && history && h2h.length === 0 && (
                                     <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
                                         Nog nooit tegen elkaar gespeeld
                                     </div>
