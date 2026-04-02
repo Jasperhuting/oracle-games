@@ -14,6 +14,7 @@ export * from './admin';
 export * from './auth';
 export * from './calendar';
 export * from './messaging';
+export * from './survey';
 export * from './user';
 export * from './context';
 export * from './hooks';
