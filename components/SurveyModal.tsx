@@ -49,6 +49,7 @@ export function SurveyModal() {
     } catch {
       // Stille fout: popup sluiten ook als opslaan mislukt
     } finally {
+      setSubmitting(false);
       setVisible(false);
     }
   };

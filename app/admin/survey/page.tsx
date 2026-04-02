@@ -36,7 +36,7 @@ export default function SurveyAdminPage() {
       .finally(() => setLoading(false));
   }, [isAdmin]);
 
-  if (authLoading || checking) return <p className="p-8 text-center">Laden...</p>;
+  if (authLoading || checking || !isAdmin) return <p className="p-8 text-center">Laden...</p>;
 
   const participated = responses.filter((r) => !r.skipped);
   const skipped = responses.filter((r) => r.skipped);
