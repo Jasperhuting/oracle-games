@@ -3,19 +3,29 @@
  * Compares existing collections against the 'races' collection (source of truth)
  * and checks if any games reference those races.
  *
- * Run with: npx ts-node scripts/find-unused-collections.ts
+ * Run with: npx tsx scripts/find-unused-collections.ts
  */
 
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import * as path from 'path';
+import * as dotenv from 'dotenv';
 
-const serviceAccountPath = '/Users/jasperhuting/serviceAccountKey.json';
+dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 
-const app = initializeApp({
-  credential: cert(serviceAccountPath),
-});
+if (getApps().length === 0) {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-const db = getFirestore(app);
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error('Missing Firebase credentials in .env.local (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)');
+  }
+
+  initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+}
+
+const db = getFirestore();
 
 // Known static (non-race) collections that should always exist
 const KNOWN_STATIC_COLLECTIONS = new Set([
