@@ -5,7 +5,24 @@
  * Uitvoeren: npx tsx seed-wk-team-history.ts
  * (vereist FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY in env)
  */
-import { getServerFirebaseFootball } from './lib/firebase/server';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+function getDb() {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (!projectId || !clientEmail || !privateKey) {
+        throw new Error('Firebase Admin not initialized — missing env vars.');
+    }
+
+    if (!getApps().length) {
+        initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+    }
+
+    return getFirestore();
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -381,7 +398,7 @@ const SEED_DATA = new Map<string, TeamHistoryEntry>([
 // ─── Write to Firestore ───────────────────────────────────────────────────────
 
 async function main() {
-    const db = getServerFirebaseFootball();
+    const db = getDb();
     const collection = db.collection('wk2026TeamHistory');
     const batch = db.batch();
     let count = 0;
