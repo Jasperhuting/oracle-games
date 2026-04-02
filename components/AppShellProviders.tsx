@@ -16,6 +16,7 @@ import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
 import { TabFocusRefresher } from '@/components/TabFocusRefresher';
 import { registerTokenService } from '@/lib/auth/token-service';
 import { FirebaseTokenAdapter } from '@/lib/auth/adapters/firebase-token-adapter';
+import { SurveyModal } from '@/components/SurveyModal';
 
 export default function AppShellProviders({
   children,
@@ -40,6 +41,7 @@ export default function AppShellProviders({
             <TabFocusRefresher />
             {!isPublic && <LastActiveTracker />}
             {!isPublic && <MessageNotification />}
+            {!isPublic && <SurveyModal />}
             <AuthGuard>
               {isPublic ? (
                 <main>{children}</main>
