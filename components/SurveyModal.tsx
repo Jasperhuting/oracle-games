@@ -112,7 +112,7 @@ export function SurveyModal() {
               onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
               placeholder={q.placeholder}
               disabled={submitting}
-              className="w-full bg-black/30 border border-gray-700 rounded-lg p-3 text-sm resize-y min-h-[80px] focus:outline-none focus:border-blue-500"
+              className="w-full bg-black/30 border border-gray-700 rounded-lg p-3 text-sm resize-y min-h-[80px] text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
             />
           </div>
         ))}
