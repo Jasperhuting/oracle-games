@@ -65,9 +65,9 @@ async function withdrawInactivePlayers(gameId: string, dryRun: boolean) {
     process.exit(1);
   }
   const game = gameDoc.data()!;
-  console.log(`Game: ${game.name} (type: ${game.type})`);
-  if (game.type !== 'slipstream') {
-    console.error(`❌ Game type is '${game.type}', expected 'slipstream'`);
+  console.log(`Game: ${game.name} (type: ${game.gameType})`);
+  if (game.gameType !== 'slipstream') {
+    console.error(`❌ Game type is '${game.gameType}', expected 'slipstream'`);
     process.exit(1);
   }
   console.log('');
