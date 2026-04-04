@@ -44,18 +44,19 @@ if (getApps().length === 0) {
 const db = getFirestore();
 
 // Players to withdraw — missed too many races
+// Each entry can have a playername and/or userId for lookup
 const PLAYERS_TO_WITHDRAW = [
-  'Coolietje',
-  'Fieljepper',
-  'Ronde van Westfriesland',
-  'Sons Jelle',
+  { playername: 'Coolietje' },
+  { playername: 'Fieljepper' },
+  { playername: 'Ronde van Westfriesland' },
+  { playername: 'Sons Jelle', userId: 'FF04UwfZhVaIIKIgTOzg8zGEPz83' },
 ];
 
 async function withdrawInactivePlayers(gameId: string, dryRun: boolean) {
   console.log('=== Withdraw Inactive Slipstream Players ===');
   console.log(`Mode: ${dryRun ? 'DRY RUN (no changes will be made)' : 'LIVE (will update status)'}`);
   console.log(`GameId: ${gameId}`);
-  console.log(`Players to withdraw: ${PLAYERS_TO_WITHDRAW.join(', ')}`);
+  console.log(`Players to withdraw: ${PLAYERS_TO_WITHDRAW.map(p => p.playername).join(', ')}`);
   console.log('');
 
   // Verify game exists and is a slipstream game
@@ -72,26 +73,37 @@ async function withdrawInactivePlayers(gameId: string, dryRun: boolean) {
   }
   console.log('');
 
-  // Find participants by playername
+  // Find participants by playername, with userId fallback
   const found: { docId: string; playername: string; currentStatus: string }[] = [];
   const notFound: string[] = [];
 
-  for (const playername of PLAYERS_TO_WITHDRAW) {
-    const snapshot = await db
+  for (const player of PLAYERS_TO_WITHDRAW) {
+    // Try by playername first
+    let snapshot = await db
       .collection('gameParticipants')
       .where('gameId', '==', gameId)
-      .where('playername', '==', playername)
+      .where('playername', '==', player.playername)
       .limit(1)
       .get();
 
+    // Fall back to userId if provided and playername not found
+    if (snapshot.empty && player.userId) {
+      snapshot = await db
+        .collection('gameParticipants')
+        .where('gameId', '==', gameId)
+        .where('userId', '==', player.userId)
+        .limit(1)
+        .get();
+    }
+
     if (snapshot.empty) {
-      notFound.push(playername);
-      console.log(`  ⚠️  Not found: ${playername}`);
+      notFound.push(player.playername);
+      console.log(`  ⚠️  Not found: ${player.playername}`);
     } else {
       const doc = snapshot.docs[0];
       const data = doc.data();
-      found.push({ docId: doc.id, playername, currentStatus: data.status });
-      console.log(`  ✅ Found: ${playername} (status: ${data.status}, docId: ${doc.id})`);
+      found.push({ docId: doc.id, playername: data.playername || player.playername, currentStatus: data.status });
+      console.log(`  ✅ Found: ${data.playername || player.playername} (status: ${data.status}, docId: ${doc.id})`);
     }
   }
 
