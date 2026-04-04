@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     const docId = `${uid}_${SURVEY_ROUND_ID}`;
     const snap = await adminDb.collection('survey_responses').doc(docId).get();
-    return NextResponse.json({ hasResponded: snap.exists() });
+    return NextResponse.json({ hasResponded: snap.exists });
   } catch (error) {
     console.error('Error checking survey status:', error);
     return NextResponse.json({ hasResponded: false });
