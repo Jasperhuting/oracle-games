@@ -473,6 +473,16 @@ export async function POST(
         missedPicks: results.filter(r => r.penaltyReason === 'missed_pick').length,
         dnfPenalties: results.filter(r => r.penaltyReason === 'dnf').length
       },
+      // Diagnostic info to help debug data issues
+      diagnostics: {
+        stageResultsCount: stageResults.length,
+        stageResultsSample: stageResults.slice(0, 5).map(r => ({
+          nameID: r.nameID,
+          shortName: r.shortName,
+          place: r.place,
+          timeDifference: r.timeDifference,
+        })),
+      },
       results: results.sort((a, b) => a.timeLostSeconds - b.timeLostSeconds)
     });
 
