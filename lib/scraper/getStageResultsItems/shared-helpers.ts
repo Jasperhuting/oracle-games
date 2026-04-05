@@ -76,7 +76,9 @@ export function createHelpers($: CheerioAPI) {
       const href1 = $(el).find('td.ridername .cont a').attr('href');
       const href2 = $(el).find('td.ridername a').attr('href');
       const href3 = $(el).find('td[data-code="ridernamelink"] a').attr('href');
-      const href = href1 || href2 || href3 || '';
+      // Broader fallback: any anchor inside the row that links to a rider profile
+      const href4 = $(el).find('a[href*="/rider/"]').first().attr('href');
+      const href = href1 || href2 || href3 || href4 || '';
 
       // Extract rider slug from href (e.g., "/rider/tadej-pogacar" -> "tadej-pogacar")
       const parts = href.split('/').filter(Boolean);
@@ -123,16 +125,19 @@ export function createHelpers($: CheerioAPI) {
     getTimeDifference: (el: DomElement) => {
       // For stage results, get time from the LAST td.time.ar (stage time, not GC time)
       const timeCells = $(el).find('td.time.ar');
-      
+
       if (timeCells.length === 0) return '';
-      
+
       // Get the last time cell (stage time is always last)
       const timeCell = timeCells.last();
-      const time = timeCell.find('.hide').text().trim() || timeCell.find('font').text().trim();
-      
+      // Try .hide span first (older PCS structure), then font, then direct cell text
+      const time = timeCell.find('.hide').text().trim()
+        || timeCell.find('font').text().trim()
+        || timeCell.text().trim();
+
       // If time is ",," it means same time as previous rider
       if (time === ',,') return '0:00';
-      
+
       return time || '';
     },
   };
