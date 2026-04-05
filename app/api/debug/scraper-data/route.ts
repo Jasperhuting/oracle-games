@@ -50,6 +50,8 @@ export async function GET(request: NextRequest) {
               nameID: result.nameID,
               shortName: result.shortName,
               place: result.place,
+              timeDifference: result.timeDifference,
+              gap: result.gap,
               points: result.points,
             }))
           };
@@ -65,6 +67,8 @@ export async function GET(request: NextRequest) {
             nameID: result.nameID,
             shortName: result.shortName,
             place: result.place,
+            timeDifference: result.timeDifference,
+            gap: result.gap,
             points: result.points,
           }))
         };
