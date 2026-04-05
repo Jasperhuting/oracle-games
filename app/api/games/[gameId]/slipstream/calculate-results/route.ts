@@ -181,15 +181,17 @@ export async function POST(
       const existingPick = existingPicks.get(userId);
 
       if (existingPick) {
-        if (existingPick.isPenalty || !existingPick.riderId) {
+        // Only skip if there is truly no rider selected (missed pick).
+        // Do NOT short-circuit on isPenalty=true: that flag may be stale from a
+        // previous bad calculation run, and we must always re-check against the
+        // current stageResults so that a re-run can fix wrong results.
+        if (!existingPick.riderId) {
           penaltyParticipants.push({
             userId,
             playername,
             participantRef,
             existingPick,
-            penaltyReason: existingPick.penaltyReason === 'missed_pick' || !existingPick.riderId
-              ? 'missed_pick'
-              : (existingPick.penaltyReason || 'dnf')
+            penaltyReason: 'missed_pick'
           });
           continue;
         }
