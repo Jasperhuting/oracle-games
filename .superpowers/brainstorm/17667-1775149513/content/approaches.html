@@ -1,0 +1,40 @@
+<h2>3 aanpakken voor de feedback survey</h2>
+<p class="subtitle">Kies de aanpak die het beste past — mijn aanbeveling staat bij optie A</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A ★</div>
+    <div class="content">
+      <h3>Modal popup in de layout (aanbevolen)</h3>
+      <p>Een React modal component dat in <code>AppShellProviders</code> leeft. Bij elke sessiestart controleert het of de gebruiker al heeft deelgenomen aan de huidige ronde. Zo niet: popup tonen.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Voordelen</h4><ul><li>Geen aparte pagina nodig</li><li>Past in bestaande architectuur</li><li>Makkelijk rondes wisselen via een constante in de code</li></ul></div>
+        <div class="cons"><h4>Nadelen</h4><ul><li>Modal moet netjes over alle pagina's werken</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Aparte pagina + popup redirect</h3>
+      <p>Survey heeft een eigen pagina <code>/feedback</code>. De popup toont een korte intro en stuurt gebruikers door naar die pagina om de vragen in te vullen.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Voordelen</h4><ul><li>Directe URL deelbaar</li><li>Meer ruimte voor langere vragen</li></ul></div>
+        <div class="cons"><h4>Nadelen</h4><ul><li>Gebruiker verlaat huidige pagina</li><li>Iets meer werk</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Side drawer (inschui­vend paneel)</h3>
+      <p>Geen popup maar een paneel dat vanuit de zijkant inschuift. Gebruiker kan gewoon doorscrollen op de pagina terwijl het paneel open is.</p>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Voordelen</h4><ul><li>Minder intrusief dan een full-screen overlay</li></ul></div>
+        <div class="cons"><h4>Nadelen</h4><ul><li>Op mobiel onhandig</li><li>Minder opvallend = minder deelname</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

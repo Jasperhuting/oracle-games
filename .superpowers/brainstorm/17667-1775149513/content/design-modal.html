@@ -1,0 +1,63 @@
+<h2>Design: Feedback Survey Modal</h2>
+<p class="subtitle">Zo ziet de popup eruit voor de gebruiker</p>
+
+<div class="mockup">
+  <div class="mockup-header">Popup — verschijnt na inloggen (2 sec vertraging)</div>
+  <div class="mockup-body">
+    <div style="background:#1a1a2e;border-radius:12px;padding:28px;max-width:520px;margin:0 auto;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+        <div>
+          <div style="font-size:1.3em;font-weight:700;color:#fff">Help ons de website verbeteren 🙏</div>
+          <div style="color:#aaa;font-size:0.9em;margin-top:4px">Duurt maar 2 minuten — je kunt ook overslaan</div>
+        </div>
+        <button style="background:none;border:none;color:#888;font-size:1.4em;cursor:pointer;padding:0 0 0 12px">×</button>
+      </div>
+
+      <div style="border-top:1px solid #333;margin-bottom:20px"></div>
+
+      <!-- Vraag 1 -->
+      <div style="margin-bottom:20px">
+        <div style="color:#ccc;font-size:0.85em;font-weight:600;margin-bottom:6px">VRAAG 1 VAN 4</div>
+        <div style="color:#fff;font-weight:500;margin-bottom:8px">Wat mis je nog op de website?</div>
+        <textarea style="width:100%;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font-size:0.9em;resize:vertical;min-height:80px;box-sizing:border-box" placeholder="Bijv. meer statistieken, een mobiele app..."></textarea>
+      </div>
+
+      <!-- Vraag 2 -->
+      <div style="margin-bottom:20px">
+        <div style="color:#ccc;font-size:0.85em;font-weight:600;margin-bottom:6px">VRAAG 2 VAN 4</div>
+        <div style="color:#fff;font-weight:500;margin-bottom:8px">Gebruik je het forum? Wat zou het beter maken?</div>
+        <textarea style="width:100%;background:#0d0d1a;border:1px solid #333;border-radius:8px;color:#fff;padding:10px;font-size:0.9em;resize:vertical;min-height:80px;box-sizing:border-box" placeholder="Bijv. betere notificaties, meer categorieën..."></textarea>
+      </div>
+
+      <!-- Navigatie knoppen -->
+      <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:8px">
+        <button style="background:none;border:1px solid #444;color:#888;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:0.9em">Overslaan — doe niet mee</button>
+        <div style="display:flex;gap:8px">
+          <button style="background:#333;border:none;color:#fff;padding:10px 18px;border-radius:8px;cursor:pointer">← Vorige</button>
+          <button style="background:#4f6ef7;border:none;color:#fff;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600">Volgende →</button>
+        </div>
+      </div>
+
+      <!-- Progress indicator -->
+      <div style="margin-top:16px;display:flex;gap:6px;justify-content:center">
+        <div style="width:28px;height:4px;border-radius:2px;background:#4f6ef7"></div>
+        <div style="width:28px;height:4px;border-radius:2px;background:#4f6ef7"></div>
+        <div style="width:28px;height:4px;border-radius:2px;background:#333"></div>
+        <div style="width:28px;height:4px;border-radius:2px;background:#333"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px">
+  <h3>Wat er achter de schermen gebeurt</h3>
+  <ul style="color:#ccc;line-height:1.8;padding-left:20px">
+    <li>Na inloggen: check Firestore of gebruiker al heeft meegedaan aan huidige ronde</li>
+    <li>Ronde ID = constante in code (bijv. <code>"2026-Q2"</code>) — verander je als je nieuwe ronde wil</li>
+    <li>Antwoorden opgeslagen in Firestore collectie <code>survey_responses</code></li>
+    <li>Geweigerd klikken slaat ook op (zodat popup niet terugkomt)</li>
+    <li>Admin-pagina <code>/admin/survey</code> toont alle antwoorden per gebruiker</li>
+  </ul>
+</div>

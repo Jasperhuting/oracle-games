@@ -111,8 +111,8 @@ export function formatTimeGap(seconds: number): string {
 /**
  * Convert a rider name/ID to a slug format for matching
  */
-function toSlug(name: string): string {
-  return name
+function toSlug(name?: string | null): string {
+  return (name || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')  // Remove diacritics
@@ -130,14 +130,30 @@ function toSlug(name: string): string {
  */
 export function calculateTimeLoss(
   stageResults: StageRider[],
-  riderId: string,
+  riderId: string | null | undefined,
   penaltyMinutes: number = 1
 ): TimeLossResult {
+  const normalizedRiderId = toSlug(riderId);
+
+  if (!normalizedRiderId) {
+    const lastFinisher = getLastFinisher(stageResults);
+    const lastFinisherGap = parseTimeGap(lastFinisher?.timeDifference || lastFinisher?.gap);
+    const penaltySeconds = penaltyMinutes * 60;
+    const totalPenalty = lastFinisherGap + penaltySeconds;
+
+    return {
+      timeLostSeconds: totalPenalty,
+      timeLostFormatted: formatTime(totalPenalty),
+      isPenalty: true,
+      penaltyReason: 'missed_pick'
+    };
+  }
+
   // Find the rider in results
   const riderResult = stageResults.find(r =>
     r.nameID === riderId ||
-    toSlug(r.shortName || '') === riderId ||
-    toSlug(r.nameID || '') === toSlug(riderId)
+    toSlug(r.shortName) === normalizedRiderId ||
+    toSlug(r.nameID) === normalizedRiderId
   );
 
   // Rider not in results - DNF/DNS

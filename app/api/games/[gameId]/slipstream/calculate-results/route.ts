@@ -123,8 +123,10 @@ export async function POST(
         return [data.userId, {
           id: doc.id,
           ref: doc.ref,
-          riderId: data.riderId as string,
-          riderName: data.riderName as string,
+          riderId: (data.riderId as string | null) ?? null,
+          riderName: (data.riderName as string | null) ?? null,
+          isPenalty: !!data.isPenalty,
+          penaltyReason: (data.penaltyReason as 'dnf' | 'dns' | 'dsq' | 'missed_pick' | null) ?? null,
           alreadyProcessed: !!data.processedAt,
           previousTimeLost: (data.timeLostSeconds as number) || 0,
           previousGreenPoints: (data.greenJerseyPoints as number) || 0
@@ -162,8 +164,10 @@ export async function POST(
       existingPick?: {
         id: string;
         ref: FirebaseFirestore.DocumentReference;
-        riderId: string;
-        riderName: string;
+        riderId: string | null;
+        riderName: string | null;
+        isPenalty: boolean;
+        penaltyReason: 'dnf' | 'dns' | 'dsq' | 'missed_pick' | null;
         alreadyProcessed: boolean;
         previousTimeLost: number;
         previousGreenPoints: number;
@@ -177,9 +181,22 @@ export async function POST(
       const existingPick = existingPicks.get(userId);
 
       if (existingPick) {
+        if (existingPick.isPenalty || !existingPick.riderId) {
+          penaltyParticipants.push({
+            userId,
+            playername,
+            participantRef,
+            existingPick,
+            penaltyReason: existingPick.penaltyReason === 'missed_pick' || !existingPick.riderId
+              ? 'missed_pick'
+              : (existingPick.penaltyReason || 'dnf')
+          });
+          continue;
+        }
+
         // Participant made a pick - check if rider finished
-        const riderId = existingPick.riderId as string;
-        const riderName = existingPick.riderName as string;
+        const riderId = existingPick.riderId;
+        const riderName = existingPick.riderName;
 
         const timeLossResult = calculateTimeLoss(
           stageResults,

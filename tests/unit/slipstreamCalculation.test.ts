@@ -173,6 +173,15 @@ describe('calculateTimeLoss', () => {
     expect(result.isPenalty).toBe(true);
   });
 
+  it('should treat null rider ids as a missed pick penalty instead of crashing', () => {
+    const result = calculateTimeLoss(mockRaceResults, null, 1);
+
+    expect(result.timeLostSeconds).toBe(2760);
+    expect(result.timeLostFormatted).toBe('46:00');
+    expect(result.isPenalty).toBe(true);
+    expect(result.penaltyReason).toBe('missed_pick');
+  });
+
   it('should match rider by slug conversion', () => {
     const resultsWithNames: StageRider[] = [
       { nameID: 'tadej-pogacar', shortName: 'Tadej Pogačar', place: 1, timeDifference: '' },
