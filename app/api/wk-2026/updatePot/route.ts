@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
                 acc[team.id] = {
                     name: team.name,
                     pot: team.pot,
-                    position: team.position
+                    position: team.position,
+                    ...(team.possibleTeams ? { possibleTeams: team.possibleTeams } : {})
                 };
                 return acc;
             }, {} as any); // eslint-disable-line @typescript-eslint/no-explicit-any

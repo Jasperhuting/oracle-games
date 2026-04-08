@@ -49,7 +49,8 @@ const WK2026Page = () => {
             }
 
             // Merge team data with saved assignments
-            const teamsWithAssignments = teamsData.teams.map((team: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            const teamsList: any[] = teamsData.teams || []; // eslint-disable-line @typescript-eslint/no-explicit-any
+            const teamsWithAssignments = teamsList.map((team: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                 const assignment = teamAssignments[team.id];
                 return {
                     ...team,
