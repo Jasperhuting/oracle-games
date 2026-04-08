@@ -38,18 +38,34 @@ const WK2026Page = () => {
             if (poulesData.poules) {
                 poulesData.poules.forEach((poule: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (poule.teams) {
+                        // First pass: collect teams with explicit positions
+                        const usedPositions = new Set<number>();
+                        const teamsNeedingPosition: string[] = [];
+
                         Object.entries(poule.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                            teamAssignments[teamId] = {
-                                poule: poule.pouleId,
-                                position: teamData.position
-                            };
+                            if (teamData.position !== null && teamData.position !== undefined) {
+                                teamAssignments[teamId] = { poule: poule.pouleId, position: teamData.position };
+                                usedPositions.add(teamData.position);
+                            } else {
+                                teamsNeedingPosition.push(teamId);
+                            }
                         });
+
+                        // Second pass: assign next available position (0-3) for teams without one
+                        let nextPos = 0;
+                        for (const teamId of teamsNeedingPosition) {
+                            while (usedPositions.has(nextPos)) nextPos++;
+                            teamAssignments[teamId] = { poule: poule.pouleId, position: nextPos };
+                            usedPositions.add(nextPos);
+                            nextPos++;
+                        }
                     }
                 });
             }
 
             // Merge team data with saved assignments
-            const teamsWithAssignments = teamsData.teams.map((team: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            const teamsList: any[] = teamsData.teams || []; // eslint-disable-line @typescript-eslint/no-explicit-any
+            const teamsWithAssignments = teamsList.map((team: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                 const assignment = teamAssignments[team.id];
                 return {
                     ...team,
