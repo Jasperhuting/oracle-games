@@ -38,16 +38,27 @@ const WK2026Page = () => {
             if (poulesData.poules) {
                 poulesData.poules.forEach((poule: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (poule.teams) {
+                        // First pass: collect teams with explicit positions
+                        const usedPositions = new Set<number>();
+                        const teamsNeedingPosition: string[] = [];
+
                         Object.entries(poule.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                            // If position is null but pot is known, derive position from pot (pot 1→0, 2→1, 3→2, 4→3)
-                            const position = (teamData.position !== null && teamData.position !== undefined)
-                                ? teamData.position
-                                : (typeof teamData.pot === 'number' ? teamData.pot - 1 : null);
-                            teamAssignments[teamId] = {
-                                poule: poule.pouleId,
-                                position,
-                            };
+                            if (teamData.position !== null && teamData.position !== undefined) {
+                                teamAssignments[teamId] = { poule: poule.pouleId, position: teamData.position };
+                                usedPositions.add(teamData.position);
+                            } else {
+                                teamsNeedingPosition.push(teamId);
+                            }
                         });
+
+                        // Second pass: assign next available position (0-3) for teams without one
+                        let nextPos = 0;
+                        for (const teamId of teamsNeedingPosition) {
+                            while (usedPositions.has(nextPos)) nextPos++;
+                            teamAssignments[teamId] = { poule: poule.pouleId, position: nextPos };
+                            usedPositions.add(nextPos);
+                            nextPos++;
+                        }
                     }
                 });
             }
