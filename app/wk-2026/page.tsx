@@ -39,9 +39,13 @@ const WK2026Page = () => {
                 poulesData.poules.forEach((poule: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (poule.teams) {
                         Object.entries(poule.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                            // If position is null but pot is known, derive position from pot (pot 1→0, 2→1, 3→2, 4→3)
+                            const position = (teamData.position !== null && teamData.position !== undefined)
+                                ? teamData.position
+                                : (typeof teamData.pot === 'number' ? teamData.pot - 1 : null);
                             teamAssignments[teamId] = {
                                 poule: poule.pouleId,
-                                position: teamData.position
+                                position,
                             };
                         });
                     }

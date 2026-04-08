@@ -27,10 +27,14 @@ export async function POST(request: NextRequest) {
         const updatePromises = Object.entries(pouleMap).map(async ([pouleId, pouleTeams]) => {
             const teamIds = pouleTeams.map(t => t.id);
             const teamData = pouleTeams.reduce((acc, team) => {
+                // Derive position from pot if not explicitly set (pot 1→0, 2→1, 3→2, 4→3)
+                const position = (team.position !== null && team.position !== undefined)
+                    ? team.position
+                    : (typeof team.pot === 'number' ? team.pot - 1 : null);
                 acc[team.id] = {
                     name: team.name,
                     pot: team.pot,
-                    position: team.position,
+                    position,
                     ...(team.possibleTeams ? { possibleTeams: team.possibleTeams } : {})
                 };
                 return acc;
