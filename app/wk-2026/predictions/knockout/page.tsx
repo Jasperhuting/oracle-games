@@ -19,6 +19,7 @@ import {
   initializeKnockoutMatches,
   updateKnockoutMatchesWithQualifiedTeams,
 } from '@/lib/wk-2026/knockout-utils';
+import { TEAM_CODE_MAP } from '@/lib/wk-2026/group-stage-fixtures';
 import {
   createTeamHistoryPairKey,
   orientTeamHistory,
@@ -77,19 +78,28 @@ export default function KnockoutPredictionsPage() {
       const poules: GroupData[] = poulesData.poules || [];
       setActualPoules(poules);
 
-      console.log('Loaded poules:', poules);
+      // Load user's own group stage predictions
+      const userPredResponse = await fetch(`/api/wk-2026/predictions/${user?.uid}`);
+      const userPredData = await userPredResponse.json();
+      const userPredictedMatches: GroupStageMatch[] = userPredData.predictions?.matches || [];
+      const userRankings: Array<{ pouleId: string; rankings: Array<{ id: string } | null> }> =
+        userPredData.predictions?.rankings || [];
 
-      // Load matches to calculate standings
-      const matchesResponse = await fetch('/api/wk-2026/getMatches');
-      const matchesData = await matchesResponse.json();
-      const allMatches: GroupStageMatch[] = matchesData.matches || [];
+      // Use user's predicted match scores for standings (for 3rd-place comparison),
+      // falling back to admin matches if none exist
+      const matchesForStandings: GroupStageMatch[] = userPredictedMatches.length > 0
+        ? userPredictedMatches
+        : (await fetch('/api/wk-2026/getMatches').then(r => r.json()).then(d => d.matches || []));
 
-      console.log('Loaded matches:', allMatches.length);
+      // Calculate qualified teams based on user's predicted scores
+      const qualifiedTeams = calculateQualifiedTeams(poules, matchesForStandings);
 
-      // Calculate qualified teams
-      const qualifiedTeams = calculateQualifiedTeams(poules, allMatches);
-
-      console.log('Qualified teams:', qualifiedTeams);
+      // Override 1st and 2nd place per group with user's manual rankings
+      userRankings.forEach(({ pouleId, rankings }) => {
+        const validTeams = rankings.filter(Boolean) as Array<{ id: string }>;
+        if (validTeams[0]) qualifiedTeams[`1${pouleId.toUpperCase()}`] = validTeams[0].id;
+        if (validTeams[1]) qualifiedTeams[`2${pouleId.toUpperCase()}`] = validTeams[1].id;
+      });
 
       // Load user's knockout predictions
       const predictionsResponse = await fetch(`/api/wk-2026/knockout-predictions?userId=${user?.uid}`);
@@ -101,12 +111,10 @@ export default function KnockoutPredictionsPage() {
           predictionsData.prediction.matches,
           qualifiedTeams
         );
-        console.log('Updated matches:', updatedMatches.slice(0, 3));
         setMatches(updatedMatches);
       } else {
         // Initialize with qualified teams
         const initialMatches = initializeKnockoutMatches(qualifiedTeams);
-        console.log('Initial matches:', initialMatches.slice(0, 3));
         setMatches(initialMatches);
       }
     } catch (error) {
@@ -381,14 +389,17 @@ export default function KnockoutPredictionsPage() {
   const getTeamFlagCode = (teamId: string | null | undefined): string => {
     if (!teamId) return '';
 
-    // Use the raw English name from Firestore, not the Dutch display name
     for (const poule of actualPoules) {
       if (poule.teams && poule.teams[teamId]) {
         const englishName = poule.teams[teamId].name;
-        const country = countriesList.find((entry: { name: string; code: string }) =>
-          entry.name.toLowerCase() === englishName.toLowerCase()
+        // Use TEAM_CODE_MAP first (handles FIFA-specific names like USA, Korea Republic, Türkiye)
+        const fromMap = TEAM_CODE_MAP[englishName];
+        if (fromMap) return fromMap;
+        // Fall back to countriesList
+        const entry = (countriesList as { name: string; code: string }[]).find(
+          (c) => c.name.toLowerCase() === englishName.toLowerCase()
         );
-        return country?.code || teamId;
+        return entry?.code || teamId;
       }
     }
 
@@ -533,6 +544,7 @@ export default function KnockoutPredictionsPage() {
                   team2Score={match.team2Score}
                   winnerId={match.winner}
                   getTeamName={getTeamName}
+                  getTeamFlagCode={getTeamFlagCode}
                   renderTeamDisplay={(teamId, source) => displayTeam(teamId, source)}
                   onScoreChange={handleScoreChange}
                   onWinnerSelect={handleWinnerSelect}

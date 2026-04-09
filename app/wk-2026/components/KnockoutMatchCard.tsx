@@ -19,6 +19,7 @@ export interface KnockoutMatchCardProps {
   team2Score: number | null | undefined;
   winnerId: string | null | undefined;
   getTeamName: (teamId: string | null | undefined) => string;
+  getTeamFlagCode?: (teamId: string | null | undefined) => string;
   renderTeamDisplay: (teamId: string | null | undefined, source: string) => ReactNode;
   onScoreChange: (matchId: string, team: 'team1' | 'team2', score: string) => void;
   onWinnerSelect?: (matchId: string, winnerId: string) => void;
@@ -78,7 +79,7 @@ export function KnockoutMatchCard({
   matchId, matchNumber, date, stadium, location,
   team1Id, team2Id, team1Source, team2Source,
   team1Score, team2Score, winnerId,
-  getTeamName, renderTeamDisplay, onScoreChange, onWinnerSelect,
+  getTeamName, getTeamFlagCode, renderTeamDisplay, onScoreChange, onWinnerSelect,
   history, historyLoading,
 }: KnockoutMatchCardProps) {
   const isTied =
@@ -201,14 +202,14 @@ export function KnockoutMatchCard({
       {winnerId && !isTied && (
         <div className="mt-2 flex items-center gap-1.5 text-xs text-[#ff9900] font-semibold">
           <span>Winnaar:</span>
-          <Flag countryCode={getFlagCode(getTeamName(winnerId), winnerId)} width={16} />
+          <Flag countryCode={getTeamFlagCode ? getTeamFlagCode(winnerId) : getFlagCode(getTeamName(winnerId), winnerId)} width={16} />
           <span>{getTeamName(winnerId)}</span>
         </div>
       )}
       {winnerId && isTied && (
         <div className="mt-2 flex items-center gap-1.5 text-xs text-[#ff9900] font-semibold">
           <span>Na strafschoppen:</span>
-          <Flag countryCode={getFlagCode(getTeamName(winnerId), winnerId)} width={16} />
+          <Flag countryCode={getTeamFlagCode ? getTeamFlagCode(winnerId) : getFlagCode(getTeamName(winnerId), winnerId)} width={16} />
           <span>{getTeamName(winnerId)}</span>
         </div>
       )}
