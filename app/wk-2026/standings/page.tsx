@@ -979,59 +979,88 @@ export default function WkStandingsPage() {
       )}
 
       {!isLoadingStandings && filteredUserStandings.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="mb-4">
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900">
               {selectedSubLeague ? `${selectedSubLeague.name} klassement` : 'Gebruikersklassement'}
             </h2>
-            <p className="text-sm text-gray-600">
-              Klik op een naam om alleen de al gespeelde wedstrijden en voorspellingen van die speler te bekijken.
+            <p className="text-sm text-gray-500 mt-0.5">
+              Klik op een naam om de voorspellingen van die speler te bekijken.
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-xl border-2 border-gray-300 bg-white">
-          <table className="min-w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-700">#</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-700">Speler</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-gray-700">Exacte scores</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-gray-700">Correcte posities</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase text-gray-700">Ingevulde scores</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUserStandings.map((standing, index) => (
-                <tr
+          {/* Column headers */}
+          <div className="hidden sm:flex items-center gap-4 px-6 py-2 bg-gray-50 border-b border-gray-100">
+            <div className="w-8 flex-shrink-0" />
+            <div className="w-8 flex-shrink-0" />
+            <div className="flex-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Speler</div>
+            <div className="w-20 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Exacte scores</div>
+            <div className="w-24 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Correcte posities</div>
+            <div className="w-20 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Ingevuld</div>
+          </div>
+
+          <div className="divide-y divide-gray-50">
+            {filteredUserStandings.map((standing, index) => {
+              const pos = index + 1;
+              const isMe = standing.userId === user?.uid;
+              const medal =
+                pos === 1 ? { bg: 'bg-amber-100', text: 'text-amber-700' } :
+                pos === 2 ? { bg: 'bg-gray-100', text: 'text-gray-500' } :
+                pos === 3 ? { bg: 'bg-orange-100', text: 'text-orange-600' } : null;
+
+              return (
+                <Link
                   key={standing.userId}
-                  className={`border-t ${
-                    standing.userId === user?.uid
-                      ? 'bg-orange-100'
-                      : index < 3
-                        ? 'bg-[#fff7eb]'
-                        : 'bg-white'
+                  href={`/wk-2026/standings/${standing.userId}`}
+                  className={`flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50 ${
+                    isMe ? 'bg-orange-50/40' : pos <= 3 ? 'bg-amber-50/20' : 'bg-white'
                   }`}
                 >
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">{index + 1}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    <Link
-                      href={`/wk-2026/standings/${standing.userId}`}
-                      className="transition-colors hover:text-[#ff9900] hover:underline"
-                    >
+                  {/* Position badge */}
+                  <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
+                    medal ? `${medal.bg} ${medal.text}` : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {pos}
+                  </div>
+
+                  {/* Avatar placeholder */}
+                  <div className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                    isMe ? 'bg-orange-100 text-[#ff9900]' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {standing.userName.slice(0, 1).toUpperCase()}
+                  </div>
+
+                  {/* Name */}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-gray-900 text-sm truncate block">
                       {standing.userName}
-                      {standing.userId === user?.uid ? ' (jij)' : ''}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm font-semibold text-[#9a4d00]">
-                    {standing.exactScores}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-800">{standing.correctPlacements}</td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-800">{standing.totalPredictions}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      {isMe && <span className="ml-1.5 text-xs font-normal text-[#ff9900]">(jij)</span>}
+                    </span>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5 hidden sm:block">Exact</p>
+                      <p className="text-base font-bold text-[#9a4d00]">{standing.exactScores}</p>
+                    </div>
+                    <div className="hidden sm:block text-center w-24">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Posities</p>
+                      <p className="text-sm font-semibold text-gray-700">{standing.correctPlacements}</p>
+                    </div>
+                    <div className="hidden sm:block text-center w-20">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Ingevuld</p>
+                      <p className="text-sm font-semibold text-gray-500">{standing.totalPredictions}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
+
+          <p className="px-6 py-3 text-xs text-gray-400 border-t border-gray-100">
+            Gesorteerd op exacte scores. Klik op een naam om de voorspellingen te bekijken.
+          </p>
         </div>
       )}
     </div>
