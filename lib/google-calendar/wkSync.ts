@@ -79,12 +79,21 @@ function addOneDay(date: string): string {
   return next.toISOString().slice(0, 10);
 }
 
-function addMinutes(time: string, minutes: number): string {
+function addMinutes(date: string, time: string, minutes: number): { date: string; time: string } {
   const [h, m] = time.split(':').map(Number);
-  const total = h * 60 + m + minutes;
-  const hh = Math.floor(total / 60) % 24;
-  const mm = total % 60;
-  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  const totalMinutes = h * 60 + m + minutes;
+  const extraDays = Math.floor(totalMinutes / (24 * 60));
+  const hh = Math.floor(totalMinutes / 60) % 24;
+  const mm = totalMinutes % 60;
+
+  let endDate = date;
+  if (extraDays > 0) {
+    const d = new Date(`${date}T00:00:00.000Z`);
+    d.setUTCDate(d.getUTCDate() + extraDays);
+    endDate = d.toISOString().slice(0, 10);
+  }
+
+  return { date: endDate, time: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}` };
 }
 
 function buildGroupSummary(fixture: typeof GROUP_STAGE_FIXTURES[number]): string {
@@ -107,10 +116,13 @@ function buildEventResource(fixture: WkFixtureItem): calendar_v3.Schema$Event {
 
   const startEnd: Pick<calendar_v3.Schema$Event, 'start' | 'end'> =
     fixture.time && fixture.time !== '00:00'
-      ? {
-          start: { dateTime: `${fixture.date}T${fixture.time}:00`, timeZone: APP_TIME_ZONE },
-          end: { dateTime: `${fixture.date}T${addMinutes(fixture.time, 105)}:00`, timeZone: APP_TIME_ZONE },
-        }
+      ? (() => {
+          const end = addMinutes(fixture.date, fixture.time, 105);
+          return {
+            start: { dateTime: `${fixture.date}T${fixture.time}:00`, timeZone: APP_TIME_ZONE },
+            end: { dateTime: `${end.date}T${end.time}:00`, timeZone: APP_TIME_ZONE },
+          };
+        })()
       : {
           start: { date: fixture.date },
           end: { date: addOneDay(fixture.date) },
