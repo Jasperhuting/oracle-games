@@ -311,7 +311,7 @@ export default function ForumPage() {
         <div className="flex gap-6 items-start">
 
           {/* Desktop sidebar (sticky in-flow, below site header) */}
-          <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[138px] md:top-[154px] max-h-[calc(100vh-138px)] md:max-h-[calc(100vh-154px)] bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[170px] md:top-[186px] max-h-[calc(100vh-170px)] md:max-h-[calc(100vh-154px)] bg-white border border-gray-200 rounded-2xl overflow-hidden">
             {renderSidebarNav()}
           </aside>
 
