@@ -310,15 +310,15 @@ export default function ForumPage() {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex gap-6 items-start">
 
-          {/* Desktop sidebar (sticky in-flow) */}
-          <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[36px] max-h-[calc(100vh-36px)] bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          {/* Desktop sidebar (sticky in-flow, below site header) */}
+          <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[138px] md:top-[154px] max-h-[calc(100vh-138px)] md:max-h-[calc(100vh-154px)] bg-white border border-gray-200 rounded-2xl overflow-hidden">
             {renderSidebarNav()}
           </aside>
 
           {/* ── Main content ──────────────────────────────────────────────── */}
           <main className="flex-1 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
             {/* Top bar */}
-            <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-gray-200 bg-white sticky top-[36px] z-10">
+            <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-gray-200 bg-white">
               {/* Mobile sidebar toggle */}
               <button
                 onClick={() => setSidebarOpen(true)}
