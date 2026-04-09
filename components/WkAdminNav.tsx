@@ -11,6 +11,7 @@ const WK_ADMIN_LINKS = [
   { href: "/wk-2026/pots", label: "Pots overzicht" },
   { href: "/wk-2026/admin/knockout", label: "Knockout" },
   { href: "/wk-2026/admin/standings", label: "Admin predictions" },
+  { href: "/wk-2026/admin/calendar", label: "Kalender sync" },
 ];
 
 export function WkAdminNav() {

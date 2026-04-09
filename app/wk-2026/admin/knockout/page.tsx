@@ -10,6 +10,7 @@ import { Flag } from '@/components/Flag';
 import { WkAdminNav } from '@/components/WkAdminNav';
 
 import countriesList from '@/lib/country.json';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 
 interface KnockoutPrediction {
   userId: string;
@@ -438,7 +439,7 @@ export default function AdminKnockoutPage() {
 
     for (const poule of actualPoules) {
       if (poule.teams?.[teamId]) {
-        return poule.teams[teamId].name;
+        return getCountryDisplayNameNL(poule.teams[teamId].name);
       }
     }
     return teamId;

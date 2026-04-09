@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Flag } from '@/components/Flag';
 import { WkAdminNav } from '@/components/WkAdminNav';
 import countriesList from '@/lib/country.json';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 
 interface PotTeam {
     id?: string;
@@ -105,7 +106,7 @@ export default function PotsPage() {
                                             ) : (
                                                 <Flag countryCode={countryCode} width={24} />
                                             )}
-                                            <span>{mergedTeam.name || 'Onbekend team'}</span>
+                                            <span>{mergedTeam.name ? getCountryDisplayNameNL(mergedTeam.name) : 'Onbekend team'}</span>
                                         </div>
                                     );
                                 })

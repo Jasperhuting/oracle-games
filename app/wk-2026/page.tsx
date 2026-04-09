@@ -6,6 +6,7 @@ import { WkAdminNav } from "@/components/WkAdminNav";
 import { useEffect, useState } from "react";
 
 import countriesList from '@/lib/country.json';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 
 export const POULES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
 
@@ -297,7 +298,7 @@ const WK2026Page = () => {
                                                             </div>
                                                             ) : <Flag countryCode={country?.code || teamAtPosition.id} width={24} />}
                                                     </div>
-                                                    <span className="ml-2 text-sm truncate">{teamAtPosition.name}</span>
+                                                    <span className="ml-2 text-sm truncate">{getCountryDisplayNameNL(teamAtPosition.name)}</span>
                                                 </div>
                                             );
                                         } else {
@@ -341,7 +342,7 @@ const WK2026Page = () => {
                             >
                                 <Flag countryCode={country?.code || team.id} width={40} className="min-w-[40px] min-h-[40px]" />
                                 <span className={`ml-2 font-bold absolute right-1 top-1 rounded-full w-6 h-6 flex items-center justify-center bg-[#ff9900] text-white text-xs ${team.pot === 1 && 'bg-red-500'} ${team.pot === 2 && 'bg-yellow-500'} ${team.pot === 3 && 'bg-green-500'} ${team.pot === 4 && 'bg-purple-500'} `}>{team.pot}</span>
-                                <h2 className="ml-2 font-medium truncate">{team.name}</h2>
+                                <h2 className="ml-2 font-medium truncate">{getCountryDisplayNameNL(team.name)}</h2>
                             </div>
                         );
                     })}

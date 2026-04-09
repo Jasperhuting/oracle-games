@@ -3,6 +3,7 @@
 import { Flag } from "@/components/Flag";
 import { useEffect, useState } from "react";
 import countriesList from '@/lib/country.json';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -353,7 +354,7 @@ export default function GroupsPage() {
                                         <div className="flex-shrink-0">
                                             <Flag countryCode={country?.code || teamAtPosition.id} width={28} />
                                         </div>
-                                        <span className="ml-3 font-medium">{teamAtPosition.name}</span>
+                                        <span className="ml-3 font-medium">{getCountryDisplayNameNL(teamAtPosition.name)}</span>
                                     </div>
                                 );
                             } else {
@@ -415,7 +416,7 @@ export default function GroupsPage() {
                                         <td className="px-4 py-3">
                                             <div className="flex items-center">
                                                 <Flag countryCode={country?.code || stats.team.id} width={24} />
-                                                <span className="ml-2 font-medium">{stats.team.name}</span>
+                                                <span className="ml-2 font-medium">{getCountryDisplayNameNL(stats.team.name)}</span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-center">{stats.played}</td>
@@ -461,7 +462,7 @@ export default function GroupsPage() {
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center flex-1">
                                         <Flag countryCode={country1?.code || team1.id} width={24} />
-                                        <span className="ml-2 font-medium">{team1.name}</span>
+                                        <span className="ml-2 font-medium">{getCountryDisplayNameNL(team1.name)}</span>
                                     </div>
                                     <input
                                         type="number"
@@ -477,7 +478,7 @@ export default function GroupsPage() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center flex-1">
                                         <Flag countryCode={country2?.code || team2.id} width={24} />
-                                        <span className="ml-2 font-medium">{team2.name}</span>
+                                        <span className="ml-2 font-medium">{getCountryDisplayNameNL(team2.name)}</span>
                                     </div>
                                     <input
                                         type="number"

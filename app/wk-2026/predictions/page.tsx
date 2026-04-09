@@ -15,6 +15,7 @@ import {
     type TeamHistoryResponse,
 } from "@/lib/wk-2026/team-history-types";
 import { PoulePredictor } from "@/app/wk-2026/components/PoulePredictor";
+import type { FixtureEntry } from "@/app/api/wk-2026/all-fixtures/route";
 
 interface Match {
     id: string;
@@ -23,6 +24,8 @@ interface Match {
     team2Id: string;
     team1Score: number | null;
     team2Score: number | null;
+    date?: string;
+    time?: string;
 }
 
 interface PouleRanking {
@@ -132,9 +135,16 @@ export default function PlayerPredictionsPage() {
 
     const fetchPoulesAndPredictions = useCallback(async () => {
         try {
-            // Fetch admin's poules (official team assignments)
-            const poulesResponse = await fetch('/api/wk-2026/getPoules');
+            // Fetch admin's poules (official team assignments) + fixtures for dates
+            const [poulesResponse, fixturesResponse] = await Promise.all([
+                fetch('/api/wk-2026/getPoules'),
+                fetch('/api/wk-2026/all-fixtures'),
+            ]);
             const poulesData = await poulesResponse.json();
+            const fixturesData = await fixturesResponse.json();
+            const groupFixtures: FixtureEntry[] = (fixturesData.fixtures ?? []).filter(
+                (f: FixtureEntry) => f.type === 'group'
+            );
 
             // Transform poules data into rankings
             const poulesRankings: PouleRanking[] = POULES.map(pouleId => {
@@ -189,16 +199,33 @@ export default function PlayerPredictionsPage() {
                         // Check if player has predicted this match
                         const predictedMatch = predictionsData.predictions?.matches?.find((m: any) => m.id === matchId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
+                        // Look up date from official fixtures by matching team names and group
+                        const fixture = groupFixtures.find(f =>
+                            f.group === poule.pouleId &&
+                            (
+                                (f.team1?.name === teams[i].name && f.team2?.name === teams[j].name) ||
+                                (f.team1?.name === teams[j].name && f.team2?.name === teams[i].name)
+                            )
+                        );
+
                         allMatches.push({
                             id: matchId,
                             pouleId: poule.pouleId,
                             team1Id: teams[i].id,
                             team2Id: teams[j].id,
                             team1Score: predictedMatch?.team1Score ?? null,
-                            team2Score: predictedMatch?.team2Score ?? null
+                            team2Score: predictedMatch?.team2Score ?? null,
+                            date: fixture?.date,
+                            time: fixture?.time,
                         });
                     }
                 }
+            });
+
+            allMatches.sort((a, b) => {
+                const dateA = `${a.date ?? '9999-99-99'} ${a.time ?? '99:99'}`;
+                const dateB = `${b.date ?? '9999-99-99'} ${b.time ?? '99:99'}`;
+                return dateA.localeCompare(dateB);
             });
 
             setMatches(allMatches);

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Flag } from '@/components/Flag';
 import countriesList from '@/lib/country.json';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 import {
   createTeamHistoryPairKey,
   orientTeamHistory,
@@ -24,6 +25,8 @@ export interface PoulePredictorMatch {
   team2Id: string;
   team1Score: number | null;
   team2Score: number | null;
+  date?: string;
+  time?: string;
 }
 
 interface TeamStats {
@@ -48,6 +51,18 @@ export interface PoulePredictorProps {
   onScoreChange: (matchId: string, team: 'team1' | 'team2', score: string) => void;
   teamHistory?: StoredTeamHistoryMap;
   historyLoading?: boolean;
+}
+
+const MONTH_SHORT_NL: Record<number, string> = {
+  1: 'jan', 2: 'feb', 3: 'mrt', 4: 'apr', 5: 'mei', 6: 'jun',
+  7: 'jul', 8: 'aug', 9: 'sep', 10: 'okt', 11: 'nov', 12: 'dec',
+};
+
+function formatMatchDate(date: string, time?: string): string {
+  const day = parseInt(date.slice(8, 10), 10);
+  const month = parseInt(date.slice(5, 7), 10);
+  const label = `${day} ${MONTH_SHORT_NL[month] ?? ''}`;
+  return time ? `${label} · ${time}` : label;
 }
 
 function getFlagCode(name: string, fallbackId: string): string {
@@ -118,9 +133,9 @@ function FormDot({ match }: { match: MatchResult }) {
 }
 
 function H2HRow({ match, team1Name, team2Name }: { match: HeadToHeadMatch; team1Name: string; team2Name: string }) {
-  const result =
-    match.team1Score > match.team2Score ? `${team1Name} won` :
-    match.team1Score < match.team2Score ? `${team2Name} won` : 'Gelijkspel';
+  const winnerName =
+    match.team1Score > match.team2Score ? team1Name :
+    match.team1Score < match.team2Score ? team2Name : null;
 
   return (
     <div className="flex items-center justify-between text-xs text-gray-600 py-0.5">
@@ -128,7 +143,9 @@ function H2HRow({ match, team1Name, team2Name }: { match: HeadToHeadMatch; team1
       <span className={`font-semibold ${match.team1Score > match.team2Score ? 'text-[#ff9900]' : match.team1Score < match.team2Score ? 'text-red-500' : 'text-gray-500'}`}>
         {match.team1Score} – {match.team2Score}
       </span>
-      <span className="text-gray-400 w-24 text-right shrink-0 truncate">{result}</span>
+      <div className="w-24 flex items-center justify-end shrink-0">
+        {winnerName && <Flag countryCode={getFlagCode(winnerName, winnerName)} width={18} />}
+      </div>
     </div>
   );
 }
@@ -192,7 +209,7 @@ export function PoulePredictor({
                   {pos + 1}
                 </span>
                 <Flag countryCode={getFlagCode(team.name, team.id)} width={24} />
-                <span className="text-sm font-medium text-gray-900 flex-1">{team.name}</span>
+                <span className="text-sm font-medium text-gray-900 flex-1">{getCountryDisplayNameNL(team.name)}</span>
                 {pos < 2 && <span className="text-[10px] font-semibold text-[#ff9900]">Door</span>}
               </div>
             ) : (
@@ -231,12 +248,14 @@ export function PoulePredictor({
 
             return (
               <div key={match.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="text-[10px] text-gray-400 mb-3 font-medium uppercase tracking-wide">Wedstrijd {i + 1}</div>
+                <div className="text-[10px] text-gray-400 mb-3 font-medium uppercase tracking-wide">
+                  {match.date ? formatMatchDate(match.date, match.time) : `Wedstrijd ${i + 1}`}
+                </div>
 
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Flag countryCode={getFlagCode(t1.name, t1.id)} width={22} />
-                    <span className="text-sm font-medium text-gray-900 truncate">{t1.name}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">{getCountryDisplayNameNL(t1.name)}</span>
                   </div>
                   <input
                     type="number"
@@ -257,7 +276,7 @@ export function PoulePredictor({
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Flag countryCode={getFlagCode(t2.name, t2.id)} width={22} />
-                    <span className="text-sm font-medium text-gray-900 truncate">{t2.name}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">{getCountryDisplayNameNL(t2.name)}</span>
                   </div>
                   <input
                     type="number"
@@ -334,7 +353,7 @@ export function PoulePredictor({
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <Flag countryCode={getFlagCode(s.team.name, s.teamId)} width={20} />
-                      <span className="text-xs font-medium text-gray-900">{s.team.name}</span>
+                      <span className="text-xs font-medium text-gray-900">{getCountryDisplayNameNL(s.team.name)}</span>
                     </div>
                   </td>
                   <td className="px-2 py-2.5 text-center text-xs text-gray-600">{s.played}</td>

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { POULES, TeamInPoule } from '../../page';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 import { WkAdminNav } from '@/components/WkAdminNav';
 
 interface PouleRanking {
@@ -402,7 +403,7 @@ export default function StandingsPage() {
                   >
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{idx + 1}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{teamStats.team.poule?.toUpperCase()}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{teamStats.team.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{getCountryDisplayNameNL(teamStats.team.name)}</td>
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{teamStats.played}</td>
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{teamStats.won}</td>
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{teamStats.drawn}</td>
@@ -474,7 +475,7 @@ export default function StandingsPage() {
                       const team = actualRanking[idx];
                       return (
                         <td key={idx} className="px-4 py-3 text-sm text-gray-900">
-                          {team ? team.name : '-'}
+                          {team ? getCountryDisplayNameNL(team.name) : '-'}
                         </td>
                       );
                     })}
@@ -514,7 +515,7 @@ export default function StandingsPage() {
                             isCorrect ? 'bg-green-100 text-green-800 font-semibold' : 'text-gray-700'
                           }`}
                         >
-                          {team ? team.name : '-'}
+                          {team ? getCountryDisplayNameNL(team.name) : '-'}
                         </td>
                       );
                     })}
@@ -566,7 +567,7 @@ export default function StandingsPage() {
                   return (
                     <tr key={match.id} className="border-t">
                       <td className="px-4 py-3 text-sm text-gray-800 whitespace-nowrap">
-                        {team1.name} - {team2.name}
+                        {getCountryDisplayNameNL(team1.name)} - {getCountryDisplayNameNL(team2.name)}
                       </td>
                       <td className="px-4 py-3 text-sm text-center font-medium text-gray-900">
                         <div className="flex items-center justify-center gap-2">

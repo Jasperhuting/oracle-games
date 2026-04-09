@@ -1,4 +1,5 @@
 import { Country } from "@/lib/scraper/types";
+import { getCountryNameNL } from "@/lib/country-nl";
 import { CountryRow } from "./CountryRow";
 import { Selector } from "./Selector";
 import countriesList from '@/lib/country.json';
@@ -22,10 +23,12 @@ export const CountrySelector = ({
             multiSelect={multiSelect}
             multiSelectShowSelected={multiSelectShowSelected}
             placeholder={multiSelect ? "Filter on countries..." : "Filter on country..."}
-            getItemLabel={(country) => country.name || ''}
+            getItemLabel={(country) => getCountryNameNL(country.code, country.name)}
             searchFilter={(country, searchTerm) => {
                 const lowerSearch = searchTerm.toLowerCase();
-                return !!(country?.name?.toLowerCase().includes(lowerSearch) ||
+                const nlName = getCountryNameNL(country.code, country.name).toLowerCase();
+                return !!(nlName.includes(lowerSearch) ||
+                         country?.name?.toLowerCase().includes(lowerSearch) ||
                          country?.code?.toLowerCase().includes(lowerSearch));
             }}
             isEqual={(c1, c2) => c1.code === c2.code}

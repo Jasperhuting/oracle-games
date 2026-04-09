@@ -1,0 +1,2185 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - link "Skip to main content" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+      - generic [ref=e5]: Skip to main content
+    - banner [ref=e9]:
+      - generic [ref=e10]:
+        - navigation [ref=e11]:
+          - link "FIFA" [ref=e12] [cursor=pointer]:
+            - /url: /
+            - img "FIFA" [ref=e13]
+          - generic [ref=e14]:
+            - link "TICKETS & HOSPITALITY" [ref=e16] [cursor=pointer]:
+              - /url: https://www.fifa.com/fifaplus/en/tickets?intcmp=(p_fifaplus)_(c_webheader-fwc2026)_(sc_morefifa)_(ssc_ticketing)_(da_04052023)_(l_en)
+            - link "FIFA STORE" [ref=e18] [cursor=pointer]:
+              - /url: https://store.fifa.com/?intcmp=(p_fifaplus)_(c_webheader-fwc2026)_(sc_morefifa)_(ssc_fifastore)_(da_04052023)_(l_en)
+            - link "FIFA REWARDS" [ref=e20] [cursor=pointer]:
+              - /url: https://www.fifa.com/en/rewards/?intcmp=%28p_fifacom%29_%28d_%29_%28c_webuniversal-fwc2026%29_%28sc_rewards%29_%28ssc_%29_%28sssc_%29_%28l_en%29_%28da_18032026%29
+            - link "FIFA+" [ref=e22] [cursor=pointer]:
+              - /url: https://www.plus.fifa.com/?intcmp=(p_fifaplus)_(c_webheader-fwc2026)_(sc_morefifa)_(ssc_originals)_(da_17052023)_(l_en)
+            - link "INSIDE FIFA" [ref=e24] [cursor=pointer]:
+              - /url: https://inside.fifa.com/en/
+        - generic [ref=e26]:
+          - link "FIFA" [ref=e33] [cursor=pointer]:
+            - /url: /en/tournaments/mens/worldcup/canadamexicousa2026
+            - img "FIFA" [ref=e34]
+          - navigation [ref=e36]:
+            - link "SCORES & FIXTURES" [ref=e38] [cursor=pointer]:
+              - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures
+            - link "STANDINGS" [ref=e40] [cursor=pointer]:
+              - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/standings
+            - link "TEAMS" [ref=e42] [cursor=pointer]:
+              - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/teams
+            - link "QUALIFIERS" [ref=e44] [cursor=pointer]:
+              - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/qualifiers
+            - generic [ref=e46] [cursor=pointer]: HOST COUNTRIES AND CITIES
+            - link "TICKETS" [ref=e48] [cursor=pointer]:
+              - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/tickets
+            - link "HOSPITALITY" [ref=e50] [cursor=pointer]:
+              - /url: https://fifaworldcup26.hospitality.fifa.com/en?intcmp=%28p_fifacom%29_%28d_%29_%28c_webheader-fwc2026%29_%28sc_register-interest%29_%28ssc_%29_%28sssc_%29_%28l_en%29_%28da_18032026%29
+            - generic [ref=e52] [cursor=pointer]: FAN HUB
+            - link "ORGANISATION" [ref=e54] [cursor=pointer]:
+              - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/organisation
+            - link "WATCH ON FIFA+" [ref=e56] [cursor=pointer]:
+              - /url: https://www.plus.fifa.com/showcase/fceffc49-6bb9-4c7e-99dc-a032f2797aa5?intcmp=%28p_fifacom%29_%28d_plusfifa%29_%28c_webheader-fwc2026%29_%28sc_fwc-2026-qualifiers%29_%28ssc_%29_%28sssc_%29_%28l_en%29_%28da_18032026%29
+            - generic [ref=e58] [cursor=pointer]: TOURNAMENTS
+          - link "Search" [ref=e331] [cursor=pointer]:
+            - /url: /en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=&wtw-filter=ALL&searchOverlay=1
+            - img "Search" [ref=e332]
+          - button "Language" [ref=e65] [cursor=pointer]:
+            - img "Language" [ref=e66]
+          - button "My Account" [ref=e68] [cursor=pointer]:
+            - img [ref=e69]
+    - generic [ref=e73]:
+      - main [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e336]:
+            - img "FWC 26 - Logo for Countdown" [ref=e338]
+            - generic [ref=e340]:
+              - generic [ref=e341]:
+                - generic [ref=e342]: "63"
+                - generic [ref=e343]: Days
+              - generic [ref=e344]:
+                - generic [ref=e345]: "07"
+                - generic [ref=e346]: Hours
+              - generic [ref=e347]:
+                - generic [ref=e348]: "11"
+                - generic [ref=e349]: mins
+              - generic [ref=e350]:
+                - generic [ref=e351]: "15"
+                - generic [ref=e352]: secs
+          - generic [ref=e354]:
+            - generic [ref=e356]:
+              - heading "Scores & Fixtures" [level=4] [ref=e358]
+              - generic [ref=e359]:
+                - generic [ref=e360]:
+                  - generic [ref=e361]:
+                    - generic [ref=e362]: "Where to watch:"
+                    - combobox [ref=e363] [cursor=pointer]:
+                      - option "Select territory" [selected]
+                      - option "Afghanistan"
+                      - option "Algeria"
+                      - option "Australia"
+                      - option "Austria"
+                      - option "Belgium"
+                      - option "Bahrain"
+                      - option "Bhutan"
+                      - option "Brazil"
+                      - option "Canada"
+                      - option "Colombia"
+                      - option "Comoros"
+                      - option "Denmark"
+                      - option "Djibouti"
+                      - option "Ecuador"
+                      - option "Egypt"
+                      - option "Finland"
+                      - option "Germany"
+                      - option "Hong Kong, China"
+                      - option "Honduras"
+                      - option "Israel"
+                      - option "Japan"
+                      - option "Saudi Arabia"
+                      - option "Morocco"
+                      - option "Mauritania"
+                      - option "Norway"
+                      - option "New Zealand"
+                      - option "Oman"
+                      - option "Panama"
+                      - option "Peru"
+                      - option "Palestine"
+                      - option "Qatar"
+                      - option "Romania"
+                      - option "Sudan"
+                      - option "Singapore"
+                      - option "El Salvador"
+                      - option "Serbia"
+                      - option "South Sudan"
+                      - option "Slovenia"
+                      - option "Tunisia"
+                      - option "United Arab Emirates"
+                      - option "Uruguay"
+                      - option "USA"
+                      - option "Vietnam"
+                  - generic [ref=e364]: Match Time shown in your local time.
+                - 'button "Sort by: Date" [ref=e366] [cursor=pointer]':
+                  - paragraph [ref=e367]: "Sort by:"
+                  - generic [ref=e368]:
+                    - paragraph [ref=e369]: Date
+                    - img [ref=e370]
+                - button "Filter" [ref=e373] [cursor=pointer]:
+                  - paragraph [ref=e374]: Filter
+                  - img [ref=e375]
+            - generic [ref=e383]:
+              - generic [ref=e385]:
+                - generic [ref=e387]:
+                  - generic [ref=e388]: Thursday 11 June 2026
+                  - button "View groups" [ref=e389] [cursor=pointer]
+                - link "Mexico 21:00 South Africa First Stage · Group A · Mexico City Stadium (Mexico City)" [ref=e391] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289273/400021443
+                  - generic [ref=e392]:
+                    - generic [ref=e393]:
+                      - generic [ref=e395]: Mexico
+                      - generic [ref=e398]: 21:00
+                      - generic [ref=e401]: South Africa
+                    - generic [ref=e402]:
+                      - generic [ref=e403]: First Stage
+                      - generic [ref=e404]: ·
+                      - generic [ref=e405]:
+                        - generic [ref=e406]: Group A
+                        - generic [ref=e407]: ·
+                        - generic [ref=e408]:
+                          - generic [ref=e409]: Mexico City Stadium
+                          - generic [ref=e410]: (Mexico City)
+              - generic [ref=e412]:
+                - generic [ref=e414]:
+                  - generic [ref=e415]: Friday 12 June 2026
+                  - button "View groups" [ref=e416] [cursor=pointer]
+                - generic [ref=e417]:
+                  - link "Korea Republic 04:00 Czechia First Stage · Group A · Guadalajara Stadium (Guadalajara)" [ref=e418] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021441
+                    - generic [ref=e419]:
+                      - generic [ref=e420]:
+                        - generic [ref=e422]: Korea Republic
+                        - generic [ref=e425]: 04:00
+                        - generic [ref=e428]: Czechia
+                      - generic [ref=e429]:
+                        - generic [ref=e430]: First Stage
+                        - generic [ref=e431]: ·
+                        - generic [ref=e432]:
+                          - generic [ref=e433]: Group A
+                          - generic [ref=e434]: ·
+                          - generic [ref=e435]:
+                            - generic [ref=e436]: Guadalajara Stadium
+                            - generic [ref=e437]: (Guadalajara)
+                  - link "Canada 21:00 Bosnia-Herzegovina First Stage · Group B · Toronto Stadium (Toronto)" [ref=e438] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021449
+                    - generic [ref=e439]:
+                      - generic [ref=e440]:
+                        - generic [ref=e442]: Canada
+                        - generic [ref=e445]: 21:00
+                        - generic [ref=e448]: Bosnia-Herzegovina
+                      - generic [ref=e449]:
+                        - generic [ref=e450]: First Stage
+                        - generic [ref=e451]: ·
+                        - generic [ref=e452]:
+                          - generic [ref=e453]: Group B
+                          - generic [ref=e454]: ·
+                          - generic [ref=e455]:
+                            - generic [ref=e456]: Toronto Stadium
+                            - generic [ref=e457]: (Toronto)
+              - generic [ref=e459]:
+                - generic [ref=e461]:
+                  - generic [ref=e462]: Saturday 13 June 2026
+                  - button "View groups" [ref=e463] [cursor=pointer]
+                - generic [ref=e464]:
+                  - link "USA 03:00 Paraguay First Stage · Group D · Los Angeles Stadium (Los Angeles)" [ref=e465] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021458
+                    - generic [ref=e466]:
+                      - generic [ref=e467]:
+                        - generic [ref=e469]: USA
+                        - generic [ref=e472]: 03:00
+                        - generic [ref=e475]: Paraguay
+                      - generic [ref=e476]:
+                        - generic [ref=e477]: First Stage
+                        - generic [ref=e478]: ·
+                        - generic [ref=e479]:
+                          - generic [ref=e480]: Group D
+                          - generic [ref=e481]: ·
+                          - generic [ref=e482]:
+                            - generic [ref=e483]: Los Angeles Stadium
+                            - generic [ref=e484]: (Los Angeles)
+                  - link "Qatar 21:00 Switzerland First Stage · Group B · San Francisco Bay Area Stadium (San Francisco Bay Area)" [ref=e485] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021447
+                    - generic [ref=e486]:
+                      - generic [ref=e487]:
+                        - generic [ref=e489]: Qatar
+                        - generic [ref=e492]: 21:00
+                        - generic [ref=e495]: Switzerland
+                      - generic [ref=e496]:
+                        - generic [ref=e497]: First Stage
+                        - generic [ref=e498]: ·
+                        - generic [ref=e499]:
+                          - generic [ref=e500]: Group B
+                          - generic [ref=e501]: ·
+                          - generic [ref=e502]:
+                            - generic [ref=e503]: San Francisco Bay Area Stadium
+                            - generic [ref=e504]: (San Francisco Bay Area)
+              - generic [ref=e506]:
+                - generic [ref=e508]:
+                  - generic [ref=e509]: Sunday 14 June 2026
+                  - button "View groups" [ref=e510] [cursor=pointer]
+                - generic [ref=e511]:
+                  - link "Brazil 00:00 Morocco First Stage · Group C · New York/New Jersey Stadium (New York)" [ref=e512] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021456
+                    - generic [ref=e513]:
+                      - generic [ref=e514]:
+                        - generic [ref=e516]: Brazil
+                        - generic [ref=e519]: 00:00
+                        - generic [ref=e522]: Morocco
+                      - generic [ref=e523]:
+                        - generic [ref=e524]: First Stage
+                        - generic [ref=e525]: ·
+                        - generic [ref=e526]:
+                          - generic [ref=e527]: Group C
+                          - generic [ref=e528]: ·
+                          - generic [ref=e529]:
+                            - generic [ref=e530]: New York/New Jersey Stadium
+                            - generic [ref=e531]: (New York)
+                  - link "Haiti 03:00 Scotland First Stage · Group C · Boston Stadium (Boston)" [ref=e532] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021453
+                    - generic [ref=e533]:
+                      - generic [ref=e534]:
+                        - generic [ref=e536]: Haiti
+                        - generic [ref=e539]: 03:00
+                        - generic [ref=e542]: Scotland
+                      - generic [ref=e543]:
+                        - generic [ref=e544]: First Stage
+                        - generic [ref=e545]: ·
+                        - generic [ref=e546]:
+                          - generic [ref=e547]: Group C
+                          - generic [ref=e548]: ·
+                          - generic [ref=e549]:
+                            - generic [ref=e550]: Boston Stadium
+                            - generic [ref=e551]: (Boston)
+                  - link "Australia 06:00 Türkiye First Stage · Group D · BC Place Vancouver (Vancouver)" [ref=e552] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021463
+                    - generic [ref=e553]:
+                      - generic [ref=e554]:
+                        - generic [ref=e556]: Australia
+                        - generic [ref=e559]: 06:00
+                        - generic [ref=e562]: Türkiye
+                      - generic [ref=e563]:
+                        - generic [ref=e564]: First Stage
+                        - generic [ref=e565]: ·
+                        - generic [ref=e566]:
+                          - generic [ref=e567]: Group D
+                          - generic [ref=e568]: ·
+                          - generic [ref=e569]:
+                            - generic [ref=e570]: BC Place Vancouver
+                            - generic [ref=e571]: (Vancouver)
+                  - link "Germany 19:00 Curaçao First Stage · Group E · Houston Stadium (Houston)" [ref=e572] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021464
+                    - generic [ref=e573]:
+                      - generic [ref=e574]:
+                        - generic [ref=e576]: Germany
+                        - generic [ref=e579]: 19:00
+                        - generic [ref=e582]: Curaçao
+                      - generic [ref=e583]:
+                        - generic [ref=e584]: First Stage
+                        - generic [ref=e585]: ·
+                        - generic [ref=e586]:
+                          - generic [ref=e587]: Group E
+                          - generic [ref=e588]: ·
+                          - generic [ref=e589]:
+                            - generic [ref=e590]: Houston Stadium
+                            - generic [ref=e591]: (Houston)
+                  - link "Netherlands 22:00 Japan First Stage · Group F · Dallas Stadium (Dallas)" [ref=e592] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021470
+                    - generic [ref=e593]:
+                      - generic [ref=e594]:
+                        - generic [ref=e596]: Netherlands
+                        - generic [ref=e599]: 22:00
+                        - generic [ref=e602]: Japan
+                      - generic [ref=e603]:
+                        - generic [ref=e604]: First Stage
+                        - generic [ref=e605]: ·
+                        - generic [ref=e606]:
+                          - generic [ref=e607]: Group F
+                          - generic [ref=e608]: ·
+                          - generic [ref=e609]:
+                            - generic [ref=e610]: Dallas Stadium
+                            - generic [ref=e611]: (Dallas)
+              - generic [ref=e613]:
+                - generic [ref=e615]:
+                  - generic [ref=e616]: Monday 15 June 2026
+                  - button "View groups" [ref=e617] [cursor=pointer]
+                - generic [ref=e618]:
+                  - link "Côte d'Ivoire 01:00 Ecuador First Stage · Group E · Philadelphia Stadium (Philadelphia)" [ref=e619] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021467
+                    - generic [ref=e620]:
+                      - generic [ref=e621]:
+                        - generic [ref=e623]: Côte d'Ivoire
+                        - generic [ref=e626]: 01:00
+                        - generic [ref=e629]: Ecuador
+                      - generic [ref=e630]:
+                        - generic [ref=e631]: First Stage
+                        - generic [ref=e632]: ·
+                        - generic [ref=e633]:
+                          - generic [ref=e634]: Group E
+                          - generic [ref=e635]: ·
+                          - generic [ref=e636]:
+                            - generic [ref=e637]: Philadelphia Stadium
+                            - generic [ref=e638]: (Philadelphia)
+                  - link "Sweden 04:00 Tunisia First Stage · Group F · Monterrey Stadium (Monterrey)" [ref=e639] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021474
+                    - generic [ref=e640]:
+                      - generic [ref=e641]:
+                        - generic [ref=e643]: Sweden
+                        - generic [ref=e646]: 04:00
+                        - generic [ref=e649]: Tunisia
+                      - generic [ref=e650]:
+                        - generic [ref=e651]: First Stage
+                        - generic [ref=e652]: ·
+                        - generic [ref=e653]:
+                          - generic [ref=e654]: Group F
+                          - generic [ref=e655]: ·
+                          - generic [ref=e656]:
+                            - generic [ref=e657]: Monterrey Stadium
+                            - generic [ref=e658]: (Monterrey)
+                  - link "Spain 18:00 Cabo Verde First Stage · Group H · Atlanta Stadium (Atlanta)" [ref=e659] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021482
+                    - generic [ref=e660]:
+                      - generic [ref=e661]:
+                        - generic [ref=e663]: Spain
+                        - generic [ref=e666]: 18:00
+                        - generic [ref=e669]: Cabo Verde
+                      - generic [ref=e670]:
+                        - generic [ref=e671]: First Stage
+                        - generic [ref=e672]: ·
+                        - generic [ref=e673]:
+                          - generic [ref=e674]: Group H
+                          - generic [ref=e675]: ·
+                          - generic [ref=e676]:
+                            - generic [ref=e677]: Atlanta Stadium
+                            - generic [ref=e678]: (Atlanta)
+                  - link "Belgium 21:00 Egypt First Stage · Group G · Seattle Stadium (Seattle)" [ref=e679] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021478
+                    - generic [ref=e680]:
+                      - generic [ref=e681]:
+                        - generic [ref=e683]: Belgium
+                        - generic [ref=e686]: 21:00
+                        - generic [ref=e689]: Egypt
+                      - generic [ref=e690]:
+                        - generic [ref=e691]: First Stage
+                        - generic [ref=e692]: ·
+                        - generic [ref=e693]:
+                          - generic [ref=e694]: Group G
+                          - generic [ref=e695]: ·
+                          - generic [ref=e696]:
+                            - generic [ref=e697]: Seattle Stadium
+                            - generic [ref=e698]: (Seattle)
+              - generic [ref=e700]:
+                - generic [ref=e702]:
+                  - generic [ref=e703]: Tuesday 16 June 2026
+                  - button "View groups" [ref=e704] [cursor=pointer]
+                - generic [ref=e705]:
+                  - link "Saudi Arabia 00:00 Uruguay First Stage · Group H · Miami Stadium (Miami)" [ref=e706] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021486
+                    - generic [ref=e707]:
+                      - generic [ref=e708]:
+                        - generic [ref=e710]: Saudi Arabia
+                        - generic [ref=e713]: 00:00
+                        - generic [ref=e716]: Uruguay
+                      - generic [ref=e717]:
+                        - generic [ref=e718]: First Stage
+                        - generic [ref=e719]: ·
+                        - generic [ref=e720]:
+                          - generic [ref=e721]: Group H
+                          - generic [ref=e722]: ·
+                          - generic [ref=e723]:
+                            - generic [ref=e724]: Miami Stadium
+                            - generic [ref=e725]: (Miami)
+                  - link "IR Iran 03:00 New Zealand First Stage · Group G · Los Angeles Stadium (Los Angeles)" [ref=e726] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021476
+                    - generic [ref=e727]:
+                      - generic [ref=e728]:
+                        - generic [ref=e730]: IR Iran
+                        - generic [ref=e733]: 03:00
+                        - generic [ref=e736]: New Zealand
+                      - generic [ref=e737]:
+                        - generic [ref=e738]: First Stage
+                        - generic [ref=e739]: ·
+                        - generic [ref=e740]:
+                          - generic [ref=e741]: Group G
+                          - generic [ref=e742]: ·
+                          - generic [ref=e743]:
+                            - generic [ref=e744]: Los Angeles Stadium
+                            - generic [ref=e745]: (Los Angeles)
+                  - link "France 21:00 Senegal First Stage · Group I · New York/New Jersey Stadium (New York)" [ref=e746] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021490
+                    - generic [ref=e747]:
+                      - generic [ref=e748]:
+                        - generic [ref=e750]: France
+                        - generic [ref=e753]: 21:00
+                        - generic [ref=e756]: Senegal
+                      - generic [ref=e757]:
+                        - generic [ref=e758]: First Stage
+                        - generic [ref=e759]: ·
+                        - generic [ref=e760]:
+                          - generic [ref=e761]: Group I
+                          - generic [ref=e762]: ·
+                          - generic [ref=e763]:
+                            - generic [ref=e764]: New York/New Jersey Stadium
+                            - generic [ref=e765]: (New York)
+              - generic [ref=e767]:
+                - generic [ref=e769]:
+                  - generic [ref=e770]: Wednesday 17 June 2026
+                  - button "View groups" [ref=e771] [cursor=pointer]
+                - generic [ref=e772]:
+                  - link "Iraq 00:00 Norway First Stage · Group I · Boston Stadium (Boston)" [ref=e773] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021488
+                    - generic [ref=e774]:
+                      - generic [ref=e775]:
+                        - generic [ref=e777]: Iraq
+                        - generic [ref=e780]: 00:00
+                        - generic [ref=e783]: Norway
+                      - generic [ref=e784]:
+                        - generic [ref=e785]: First Stage
+                        - generic [ref=e786]: ·
+                        - generic [ref=e787]:
+                          - generic [ref=e788]: Group I
+                          - generic [ref=e789]: ·
+                          - generic [ref=e790]:
+                            - generic [ref=e791]: Boston Stadium
+                            - generic [ref=e792]: (Boston)
+                  - link "Argentina 03:00 Algeria First Stage · Group J · Kansas City Stadium (Kansas City)" [ref=e793] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021496
+                    - generic [ref=e794]:
+                      - generic [ref=e795]:
+                        - generic [ref=e797]: Argentina
+                        - generic [ref=e800]: 03:00
+                        - generic [ref=e803]: Algeria
+                      - generic [ref=e804]:
+                        - generic [ref=e805]: First Stage
+                        - generic [ref=e806]: ·
+                        - generic [ref=e807]:
+                          - generic [ref=e808]: Group J
+                          - generic [ref=e809]: ·
+                          - generic [ref=e810]:
+                            - generic [ref=e811]: Kansas City Stadium
+                            - generic [ref=e812]: (Kansas City)
+                  - link "Austria 06:00 Jordan First Stage · Group J · San Francisco Bay Area Stadium (San Francisco Bay Area)" [ref=e813] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021498
+                    - generic [ref=e814]:
+                      - generic [ref=e815]:
+                        - generic [ref=e817]: Austria
+                        - generic [ref=e820]: 06:00
+                        - generic [ref=e823]: Jordan
+                      - generic [ref=e824]:
+                        - generic [ref=e825]: First Stage
+                        - generic [ref=e826]: ·
+                        - generic [ref=e827]:
+                          - generic [ref=e828]: Group J
+                          - generic [ref=e829]: ·
+                          - generic [ref=e830]:
+                            - generic [ref=e831]: San Francisco Bay Area Stadium
+                            - generic [ref=e832]: (San Francisco Bay Area)
+                  - link "Portugal 19:00 Congo DR First Stage · Group K · Houston Stadium (Houston)" [ref=e833] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021502
+                    - generic [ref=e834]:
+                      - generic [ref=e835]:
+                        - generic [ref=e837]: Portugal
+                        - generic [ref=e840]: 19:00
+                        - generic [ref=e843]: Congo DR
+                      - generic [ref=e844]:
+                        - generic [ref=e845]: First Stage
+                        - generic [ref=e846]: ·
+                        - generic [ref=e847]:
+                          - generic [ref=e848]: Group K
+                          - generic [ref=e849]: ·
+                          - generic [ref=e850]:
+                            - generic [ref=e851]: Houston Stadium
+                            - generic [ref=e852]: (Houston)
+                  - link "England 22:00 Croatia First Stage · Group L · Dallas Stadium (Dallas)" [ref=e853] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021507
+                    - generic [ref=e854]:
+                      - generic [ref=e855]:
+                        - generic [ref=e857]: England
+                        - generic [ref=e860]: 22:00
+                        - generic [ref=e863]: Croatia
+                      - generic [ref=e864]:
+                        - generic [ref=e865]: First Stage
+                        - generic [ref=e866]: ·
+                        - generic [ref=e867]:
+                          - generic [ref=e868]: Group L
+                          - generic [ref=e869]: ·
+                          - generic [ref=e870]:
+                            - generic [ref=e871]: Dallas Stadium
+                            - generic [ref=e872]: (Dallas)
+              - generic [ref=e874]:
+                - generic [ref=e876]:
+                  - generic [ref=e877]: Thursday 18 June 2026
+                  - button "View groups" [ref=e878] [cursor=pointer]
+                - generic [ref=e879]:
+                  - link "Ghana 01:00 Panama First Stage · Group L · Toronto Stadium (Toronto)" [ref=e880] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021510
+                    - generic [ref=e881]:
+                      - generic [ref=e882]:
+                        - generic [ref=e884]: Ghana
+                        - generic [ref=e887]: 01:00
+                        - generic [ref=e890]: Panama
+                      - generic [ref=e891]:
+                        - generic [ref=e892]: First Stage
+                        - generic [ref=e893]: ·
+                        - generic [ref=e894]:
+                          - generic [ref=e895]: Group L
+                          - generic [ref=e896]: ·
+                          - generic [ref=e897]:
+                            - generic [ref=e898]: Toronto Stadium
+                            - generic [ref=e899]: (Toronto)
+                  - link "Uzbekistan 04:00 Colombia First Stage · Group K · Mexico City Stadium (Mexico City)" [ref=e900] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021504
+                    - generic [ref=e901]:
+                      - generic [ref=e902]:
+                        - generic [ref=e904]: Uzbekistan
+                        - generic [ref=e907]: 04:00
+                        - generic [ref=e910]: Colombia
+                      - generic [ref=e911]:
+                        - generic [ref=e912]: First Stage
+                        - generic [ref=e913]: ·
+                        - generic [ref=e914]:
+                          - generic [ref=e915]: Group K
+                          - generic [ref=e916]: ·
+                          - generic [ref=e917]:
+                            - generic [ref=e918]: Mexico City Stadium
+                            - generic [ref=e919]: (Mexico City)
+                  - link "Czechia 18:00 South Africa First Stage · Group A · Atlanta Stadium (Atlanta)" [ref=e920] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021440
+                    - generic [ref=e921]:
+                      - generic [ref=e922]:
+                        - generic [ref=e924]: Czechia
+                        - generic [ref=e927]: 18:00
+                        - generic [ref=e930]: South Africa
+                      - generic [ref=e931]:
+                        - generic [ref=e932]: First Stage
+                        - generic [ref=e933]: ·
+                        - generic [ref=e934]:
+                          - generic [ref=e935]: Group A
+                          - generic [ref=e936]: ·
+                          - generic [ref=e937]:
+                            - generic [ref=e938]: Atlanta Stadium
+                            - generic [ref=e939]: (Atlanta)
+                  - link "Switzerland 21:00 Bosnia-Herzegovina First Stage · Group B · Los Angeles Stadium (Los Angeles)" [ref=e940] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021446
+                    - generic [ref=e941]:
+                      - generic [ref=e942]:
+                        - generic [ref=e944]: Switzerland
+                        - generic [ref=e947]: 21:00
+                        - generic [ref=e950]: Bosnia-Herzegovina
+                      - generic [ref=e951]:
+                        - generic [ref=e952]: First Stage
+                        - generic [ref=e953]: ·
+                        - generic [ref=e954]:
+                          - generic [ref=e955]: Group B
+                          - generic [ref=e956]: ·
+                          - generic [ref=e957]:
+                            - generic [ref=e958]: Los Angeles Stadium
+                            - generic [ref=e959]: (Los Angeles)
+              - generic [ref=e961]:
+                - generic [ref=e963]:
+                  - generic [ref=e964]: Friday 19 June 2026
+                  - button "View groups" [ref=e965] [cursor=pointer]
+                - generic [ref=e966]:
+                  - link "Canada 00:00 Qatar First Stage · Group B · BC Place Vancouver (Vancouver)" [ref=e967] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021450
+                    - generic [ref=e968]:
+                      - generic [ref=e969]:
+                        - generic [ref=e971]: Canada
+                        - generic [ref=e974]: 00:00
+                        - generic [ref=e977]: Qatar
+                      - generic [ref=e978]:
+                        - generic [ref=e979]: First Stage
+                        - generic [ref=e980]: ·
+                        - generic [ref=e981]:
+                          - generic [ref=e982]: Group B
+                          - generic [ref=e983]: ·
+                          - generic [ref=e984]:
+                            - generic [ref=e985]: BC Place Vancouver
+                            - generic [ref=e986]: (Vancouver)
+                  - link "Mexico 03:00 Korea Republic First Stage · Group A · Guadalajara Stadium (Guadalajara)" [ref=e987] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021442
+                    - generic [ref=e988]:
+                      - generic [ref=e989]:
+                        - generic [ref=e991]: Mexico
+                        - generic [ref=e994]: 03:00
+                        - generic [ref=e997]: Korea Republic
+                      - generic [ref=e998]:
+                        - generic [ref=e999]: First Stage
+                        - generic [ref=e1000]: ·
+                        - generic [ref=e1001]:
+                          - generic [ref=e1002]: Group A
+                          - generic [ref=e1003]: ·
+                          - generic [ref=e1004]:
+                            - generic [ref=e1005]: Guadalajara Stadium
+                            - generic [ref=e1006]: (Guadalajara)
+                  - link "USA 21:00 Australia First Stage · Group D · Seattle Stadium (Seattle)" [ref=e1007] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021462
+                    - generic [ref=e1008]:
+                      - generic [ref=e1009]:
+                        - generic [ref=e1011]: USA
+                        - generic [ref=e1014]: 21:00
+                        - generic [ref=e1017]: Australia
+                      - generic [ref=e1018]:
+                        - generic [ref=e1019]: First Stage
+                        - generic [ref=e1020]: ·
+                        - generic [ref=e1021]:
+                          - generic [ref=e1022]: Group D
+                          - generic [ref=e1023]: ·
+                          - generic [ref=e1024]:
+                            - generic [ref=e1025]: Seattle Stadium
+                            - generic [ref=e1026]: (Seattle)
+              - generic [ref=e1028]:
+                - generic [ref=e1030]:
+                  - generic [ref=e1031]: Saturday 20 June 2026
+                  - button "View groups" [ref=e1032] [cursor=pointer]
+                - generic [ref=e1033]:
+                  - link "Scotland 00:00 Morocco First Stage · Group C · Boston Stadium (Boston)" [ref=e1034] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021454
+                    - generic [ref=e1035]:
+                      - generic [ref=e1036]:
+                        - generic [ref=e1038]: Scotland
+                        - generic [ref=e1041]: 00:00
+                        - generic [ref=e1044]: Morocco
+                      - generic [ref=e1045]:
+                        - generic [ref=e1046]: First Stage
+                        - generic [ref=e1047]: ·
+                        - generic [ref=e1048]:
+                          - generic [ref=e1049]: Group C
+                          - generic [ref=e1050]: ·
+                          - generic [ref=e1051]:
+                            - generic [ref=e1052]: Boston Stadium
+                            - generic [ref=e1053]: (Boston)
+                  - link "Brazil 02:30 Haiti First Stage · Group C · Philadelphia Stadium (Philadelphia)" [ref=e1054] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021457
+                    - generic [ref=e1055]:
+                      - generic [ref=e1056]:
+                        - generic [ref=e1058]: Brazil
+                        - generic [ref=e1061]: 02:30
+                        - generic [ref=e1064]: Haiti
+                      - generic [ref=e1065]:
+                        - generic [ref=e1066]: First Stage
+                        - generic [ref=e1067]: ·
+                        - generic [ref=e1068]:
+                          - generic [ref=e1069]: Group C
+                          - generic [ref=e1070]: ·
+                          - generic [ref=e1071]:
+                            - generic [ref=e1072]: Philadelphia Stadium
+                            - generic [ref=e1073]: (Philadelphia)
+                  - link "Türkiye 05:00 Paraguay First Stage · Group D · San Francisco Bay Area Stadium (San Francisco Bay Area)" [ref=e1074] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021460
+                    - generic [ref=e1075]:
+                      - generic [ref=e1076]:
+                        - generic [ref=e1078]: Türkiye
+                        - generic [ref=e1081]: 05:00
+                        - generic [ref=e1084]: Paraguay
+                      - generic [ref=e1085]:
+                        - generic [ref=e1086]: First Stage
+                        - generic [ref=e1087]: ·
+                        - generic [ref=e1088]:
+                          - generic [ref=e1089]: Group D
+                          - generic [ref=e1090]: ·
+                          - generic [ref=e1091]:
+                            - generic [ref=e1092]: San Francisco Bay Area Stadium
+                            - generic [ref=e1093]: (San Francisco Bay Area)
+                  - link "Netherlands 19:00 Sweden First Stage · Group F · Houston Stadium (Houston)" [ref=e1094] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021472
+                    - generic [ref=e1095]:
+                      - generic [ref=e1096]:
+                        - generic [ref=e1098]: Netherlands
+                        - generic [ref=e1101]: 19:00
+                        - generic [ref=e1104]: Sweden
+                      - generic [ref=e1105]:
+                        - generic [ref=e1106]: First Stage
+                        - generic [ref=e1107]: ·
+                        - generic [ref=e1108]:
+                          - generic [ref=e1109]: Group F
+                          - generic [ref=e1110]: ·
+                          - generic [ref=e1111]:
+                            - generic [ref=e1112]: Houston Stadium
+                            - generic [ref=e1113]: (Houston)
+                  - link "Germany 22:00 Côte d'Ivoire First Stage · Group E · Toronto Stadium (Toronto)" [ref=e1114] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021469
+                    - generic [ref=e1115]:
+                      - generic [ref=e1116]:
+                        - generic [ref=e1118]: Germany
+                        - generic [ref=e1121]: 22:00
+                        - generic [ref=e1124]: Côte d'Ivoire
+                      - generic [ref=e1125]:
+                        - generic [ref=e1126]: First Stage
+                        - generic [ref=e1127]: ·
+                        - generic [ref=e1128]:
+                          - generic [ref=e1129]: Group E
+                          - generic [ref=e1130]: ·
+                          - generic [ref=e1131]:
+                            - generic [ref=e1132]: Toronto Stadium
+                            - generic [ref=e1133]: (Toronto)
+              - generic [ref=e1135]:
+                - generic [ref=e1137]:
+                  - generic [ref=e1138]: Sunday 21 June 2026
+                  - button "View groups" [ref=e1139] [cursor=pointer]
+                - generic [ref=e1140]:
+                  - link "Ecuador 02:00 Curaçao First Stage · Group E · Kansas City Stadium (Kansas City)" [ref=e1141] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021465
+                    - generic [ref=e1142]:
+                      - generic [ref=e1143]:
+                        - generic [ref=e1145]: Ecuador
+                        - generic [ref=e1148]: 02:00
+                        - generic [ref=e1151]: Curaçao
+                      - generic [ref=e1152]:
+                        - generic [ref=e1153]: First Stage
+                        - generic [ref=e1154]: ·
+                        - generic [ref=e1155]:
+                          - generic [ref=e1156]: Group E
+                          - generic [ref=e1157]: ·
+                          - generic [ref=e1158]:
+                            - generic [ref=e1159]: Kansas City Stadium
+                            - generic [ref=e1160]: (Kansas City)
+                  - link "Tunisia 06:00 Japan First Stage · Group F · Monterrey Stadium (Monterrey)" [ref=e1161] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021475
+                    - generic [ref=e1162]:
+                      - generic [ref=e1163]:
+                        - generic [ref=e1165]: Tunisia
+                        - generic [ref=e1168]: 06:00
+                        - generic [ref=e1171]: Japan
+                      - generic [ref=e1172]:
+                        - generic [ref=e1173]: First Stage
+                        - generic [ref=e1174]: ·
+                        - generic [ref=e1175]:
+                          - generic [ref=e1176]: Group F
+                          - generic [ref=e1177]: ·
+                          - generic [ref=e1178]:
+                            - generic [ref=e1179]: Monterrey Stadium
+                            - generic [ref=e1180]: (Monterrey)
+                  - link "Spain 18:00 Saudi Arabia First Stage · Group H · Atlanta Stadium (Atlanta)" [ref=e1181] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021483
+                    - generic [ref=e1182]:
+                      - generic [ref=e1183]:
+                        - generic [ref=e1185]: Spain
+                        - generic [ref=e1188]: 18:00
+                        - generic [ref=e1191]: Saudi Arabia
+                      - generic [ref=e1192]:
+                        - generic [ref=e1193]: First Stage
+                        - generic [ref=e1194]: ·
+                        - generic [ref=e1195]:
+                          - generic [ref=e1196]: Group H
+                          - generic [ref=e1197]: ·
+                          - generic [ref=e1198]:
+                            - generic [ref=e1199]: Atlanta Stadium
+                            - generic [ref=e1200]: (Atlanta)
+                  - link "Belgium 21:00 IR Iran First Stage · Group G · Los Angeles Stadium (Los Angeles)" [ref=e1201] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021477
+                    - generic [ref=e1202]:
+                      - generic [ref=e1203]:
+                        - generic [ref=e1205]: Belgium
+                        - generic [ref=e1208]: 21:00
+                        - generic [ref=e1211]: IR Iran
+                      - generic [ref=e1212]:
+                        - generic [ref=e1213]: First Stage
+                        - generic [ref=e1214]: ·
+                        - generic [ref=e1215]:
+                          - generic [ref=e1216]: Group G
+                          - generic [ref=e1217]: ·
+                          - generic [ref=e1218]:
+                            - generic [ref=e1219]: Los Angeles Stadium
+                            - generic [ref=e1220]: (Los Angeles)
+              - generic [ref=e1222]:
+                - generic [ref=e1224]:
+                  - generic [ref=e1225]: Monday 22 June 2026
+                  - button "View groups" [ref=e1226] [cursor=pointer]
+                - generic [ref=e1227]:
+                  - link "Uruguay 00:00 Cabo Verde First Stage · Group H · Miami Stadium (Miami)" [ref=e1228] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021487
+                    - generic [ref=e1229]:
+                      - generic [ref=e1230]:
+                        - generic [ref=e1232]: Uruguay
+                        - generic [ref=e1235]: 00:00
+                        - generic [ref=e1238]: Cabo Verde
+                      - generic [ref=e1239]:
+                        - generic [ref=e1240]: First Stage
+                        - generic [ref=e1241]: ·
+                        - generic [ref=e1242]:
+                          - generic [ref=e1243]: Group H
+                          - generic [ref=e1244]: ·
+                          - generic [ref=e1245]:
+                            - generic [ref=e1246]: Miami Stadium
+                            - generic [ref=e1247]: (Miami)
+                  - link "New Zealand 03:00 Egypt First Stage · Group G · BC Place Vancouver (Vancouver)" [ref=e1248] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021480
+                    - generic [ref=e1249]:
+                      - generic [ref=e1250]:
+                        - generic [ref=e1252]: New Zealand
+                        - generic [ref=e1255]: 03:00
+                        - generic [ref=e1258]: Egypt
+                      - generic [ref=e1259]:
+                        - generic [ref=e1260]: First Stage
+                        - generic [ref=e1261]: ·
+                        - generic [ref=e1262]:
+                          - generic [ref=e1263]: Group G
+                          - generic [ref=e1264]: ·
+                          - generic [ref=e1265]:
+                            - generic [ref=e1266]: BC Place Vancouver
+                            - generic [ref=e1267]: (Vancouver)
+                  - link "Argentina 19:00 Austria First Stage · Group J · Dallas Stadium (Dallas)" [ref=e1268] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021494
+                    - generic [ref=e1269]:
+                      - generic [ref=e1270]:
+                        - generic [ref=e1272]: Argentina
+                        - generic [ref=e1275]: 19:00
+                        - generic [ref=e1278]: Austria
+                      - generic [ref=e1279]:
+                        - generic [ref=e1280]: First Stage
+                        - generic [ref=e1281]: ·
+                        - generic [ref=e1282]:
+                          - generic [ref=e1283]: Group J
+                          - generic [ref=e1284]: ·
+                          - generic [ref=e1285]:
+                            - generic [ref=e1286]: Dallas Stadium
+                            - generic [ref=e1287]: (Dallas)
+                  - link "France 23:00 Iraq First Stage · Group I · Philadelphia Stadium (Philadelphia)" [ref=e1288] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021492
+                    - generic [ref=e1289]:
+                      - generic [ref=e1290]:
+                        - generic [ref=e1292]: France
+                        - generic [ref=e1295]: 23:00
+                        - generic [ref=e1298]: Iraq
+                      - generic [ref=e1299]:
+                        - generic [ref=e1300]: First Stage
+                        - generic [ref=e1301]: ·
+                        - generic [ref=e1302]:
+                          - generic [ref=e1303]: Group I
+                          - generic [ref=e1304]: ·
+                          - generic [ref=e1305]:
+                            - generic [ref=e1306]: Philadelphia Stadium
+                            - generic [ref=e1307]: (Philadelphia)
+              - generic [ref=e1309]:
+                - generic [ref=e1311]:
+                  - generic [ref=e1312]: Tuesday 23 June 2026
+                  - button "View groups" [ref=e1313] [cursor=pointer]
+                - generic [ref=e1314]:
+                  - link "Norway 02:00 Senegal First Stage · Group I · New York/New Jersey Stadium (New York)" [ref=e1315] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021491
+                    - generic [ref=e1316]:
+                      - generic [ref=e1317]:
+                        - generic [ref=e1319]: Norway
+                        - generic [ref=e1322]: 02:00
+                        - generic [ref=e1325]: Senegal
+                      - generic [ref=e1326]:
+                        - generic [ref=e1327]: First Stage
+                        - generic [ref=e1328]: ·
+                        - generic [ref=e1329]:
+                          - generic [ref=e1330]: Group I
+                          - generic [ref=e1331]: ·
+                          - generic [ref=e1332]:
+                            - generic [ref=e1333]: New York/New Jersey Stadium
+                            - generic [ref=e1334]: (New York)
+                  - link "Jordan 05:00 Algeria First Stage · Group J · San Francisco Bay Area Stadium (San Francisco Bay Area)" [ref=e1335] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021499
+                    - generic [ref=e1336]:
+                      - generic [ref=e1337]:
+                        - generic [ref=e1339]: Jordan
+                        - generic [ref=e1342]: 05:00
+                        - generic [ref=e1345]: Algeria
+                      - generic [ref=e1346]:
+                        - generic [ref=e1347]: First Stage
+                        - generic [ref=e1348]: ·
+                        - generic [ref=e1349]:
+                          - generic [ref=e1350]: Group J
+                          - generic [ref=e1351]: ·
+                          - generic [ref=e1352]:
+                            - generic [ref=e1353]: San Francisco Bay Area Stadium
+                            - generic [ref=e1354]: (San Francisco Bay Area)
+                  - link "Portugal 19:00 Uzbekistan First Stage · Group K · Houston Stadium (Houston)" [ref=e1355] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021503
+                    - generic [ref=e1356]:
+                      - generic [ref=e1357]:
+                        - generic [ref=e1359]: Portugal
+                        - generic [ref=e1362]: 19:00
+                        - generic [ref=e1365]: Uzbekistan
+                      - generic [ref=e1366]:
+                        - generic [ref=e1367]: First Stage
+                        - generic [ref=e1368]: ·
+                        - generic [ref=e1369]:
+                          - generic [ref=e1370]: Group K
+                          - generic [ref=e1371]: ·
+                          - generic [ref=e1372]:
+                            - generic [ref=e1373]: Houston Stadium
+                            - generic [ref=e1374]: (Houston)
+                  - link "England 22:00 Ghana First Stage · Group L · Boston Stadium (Boston)" [ref=e1375] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021506
+                    - generic [ref=e1376]:
+                      - generic [ref=e1377]:
+                        - generic [ref=e1379]: England
+                        - generic [ref=e1382]: 22:00
+                        - generic [ref=e1385]: Ghana
+                      - generic [ref=e1386]:
+                        - generic [ref=e1387]: First Stage
+                        - generic [ref=e1388]: ·
+                        - generic [ref=e1389]:
+                          - generic [ref=e1390]: Group L
+                          - generic [ref=e1391]: ·
+                          - generic [ref=e1392]:
+                            - generic [ref=e1393]: Boston Stadium
+                            - generic [ref=e1394]: (Boston)
+              - generic [ref=e1396]:
+                - generic [ref=e1398]:
+                  - generic [ref=e1399]: Wednesday 24 June 2026
+                  - button "View groups" [ref=e1400] [cursor=pointer]
+                - generic [ref=e1401]:
+                  - link "Panama 01:00 Croatia First Stage · Group L · Toronto Stadium (Toronto)" [ref=e1402] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021511
+                    - generic [ref=e1403]:
+                      - generic [ref=e1404]:
+                        - generic [ref=e1406]: Panama
+                        - generic [ref=e1409]: 01:00
+                        - generic [ref=e1412]: Croatia
+                      - generic [ref=e1413]:
+                        - generic [ref=e1414]: First Stage
+                        - generic [ref=e1415]: ·
+                        - generic [ref=e1416]:
+                          - generic [ref=e1417]: Group L
+                          - generic [ref=e1418]: ·
+                          - generic [ref=e1419]:
+                            - generic [ref=e1420]: Toronto Stadium
+                            - generic [ref=e1421]: (Toronto)
+                  - link "Colombia 04:00 Congo DR First Stage · Group K · Guadalajara Stadium (Guadalajara)" [ref=e1422] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021501
+                    - generic [ref=e1423]:
+                      - generic [ref=e1424]:
+                        - generic [ref=e1426]: Colombia
+                        - generic [ref=e1429]: 04:00
+                        - generic [ref=e1432]: Congo DR
+                      - generic [ref=e1433]:
+                        - generic [ref=e1434]: First Stage
+                        - generic [ref=e1435]: ·
+                        - generic [ref=e1436]:
+                          - generic [ref=e1437]: Group K
+                          - generic [ref=e1438]: ·
+                          - generic [ref=e1439]:
+                            - generic [ref=e1440]: Guadalajara Stadium
+                            - generic [ref=e1441]: (Guadalajara)
+                  - link "Switzerland 21:00 Canada First Stage · Group B · BC Place Vancouver (Vancouver)" [ref=e1442] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021451
+                    - generic [ref=e1443]:
+                      - generic [ref=e1444]:
+                        - generic [ref=e1446]: Switzerland
+                        - generic [ref=e1449]: 21:00
+                        - generic [ref=e1452]: Canada
+                      - generic [ref=e1453]:
+                        - generic [ref=e1454]: First Stage
+                        - generic [ref=e1455]: ·
+                        - generic [ref=e1456]:
+                          - generic [ref=e1457]: Group B
+                          - generic [ref=e1458]: ·
+                          - generic [ref=e1459]:
+                            - generic [ref=e1460]: BC Place Vancouver
+                            - generic [ref=e1461]: (Vancouver)
+                  - link "Bosnia-Herzegovina 21:00 Qatar First Stage · Group B · Seattle Stadium (Seattle)" [ref=e1462] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021448
+                    - generic [ref=e1463]:
+                      - generic [ref=e1464]:
+                        - generic [ref=e1466]: Bosnia-Herzegovina
+                        - generic [ref=e1469]: 21:00
+                        - generic [ref=e1472]: Qatar
+                      - generic [ref=e1473]:
+                        - generic [ref=e1474]: First Stage
+                        - generic [ref=e1475]: ·
+                        - generic [ref=e1476]:
+                          - generic [ref=e1477]: Group B
+                          - generic [ref=e1478]: ·
+                          - generic [ref=e1479]:
+                            - generic [ref=e1480]: Seattle Stadium
+                            - generic [ref=e1481]: (Seattle)
+              - generic [ref=e1483]:
+                - generic [ref=e1485]:
+                  - generic [ref=e1486]: Thursday 25 June 2026
+                  - button "View groups" [ref=e1487] [cursor=pointer]
+                - generic [ref=e1488]:
+                  - link "Scotland 00:00 Brazil First Stage · Group C · Miami Stadium (Miami)" [ref=e1489] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021455
+                    - generic [ref=e1490]:
+                      - generic [ref=e1491]:
+                        - generic [ref=e1493]: Scotland
+                        - generic [ref=e1496]: 00:00
+                        - generic [ref=e1499]: Brazil
+                      - generic [ref=e1500]:
+                        - generic [ref=e1501]: First Stage
+                        - generic [ref=e1502]: ·
+                        - generic [ref=e1503]:
+                          - generic [ref=e1504]: Group C
+                          - generic [ref=e1505]: ·
+                          - generic [ref=e1506]:
+                            - generic [ref=e1507]: Miami Stadium
+                            - generic [ref=e1508]: (Miami)
+                  - link "Morocco 00:00 Haiti First Stage · Group C · Atlanta Stadium (Atlanta)" [ref=e1509] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021452
+                    - generic [ref=e1510]:
+                      - generic [ref=e1511]:
+                        - generic [ref=e1513]: Morocco
+                        - generic [ref=e1516]: 00:00
+                        - generic [ref=e1519]: Haiti
+                      - generic [ref=e1520]:
+                        - generic [ref=e1521]: First Stage
+                        - generic [ref=e1522]: ·
+                        - generic [ref=e1523]:
+                          - generic [ref=e1524]: Group C
+                          - generic [ref=e1525]: ·
+                          - generic [ref=e1526]:
+                            - generic [ref=e1527]: Atlanta Stadium
+                            - generic [ref=e1528]: (Atlanta)
+                  - link "Czechia 03:00 Mexico First Stage · Group A · Mexico City Stadium (Mexico City)" [ref=e1529] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021444
+                    - generic [ref=e1530]:
+                      - generic [ref=e1531]:
+                        - generic [ref=e1533]: Czechia
+                        - generic [ref=e1536]: 03:00
+                        - generic [ref=e1539]: Mexico
+                      - generic [ref=e1540]:
+                        - generic [ref=e1541]: First Stage
+                        - generic [ref=e1542]: ·
+                        - generic [ref=e1543]:
+                          - generic [ref=e1544]: Group A
+                          - generic [ref=e1545]: ·
+                          - generic [ref=e1546]:
+                            - generic [ref=e1547]: Mexico City Stadium
+                            - generic [ref=e1548]: (Mexico City)
+                  - link "South Africa 03:00 Korea Republic First Stage · Group A · Monterrey Stadium (Monterrey)" [ref=e1549] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021445
+                    - generic [ref=e1550]:
+                      - generic [ref=e1551]:
+                        - generic [ref=e1553]: South Africa
+                        - generic [ref=e1556]: 03:00
+                        - generic [ref=e1559]: Korea Republic
+                      - generic [ref=e1560]:
+                        - generic [ref=e1561]: First Stage
+                        - generic [ref=e1562]: ·
+                        - generic [ref=e1563]:
+                          - generic [ref=e1564]: Group A
+                          - generic [ref=e1565]: ·
+                          - generic [ref=e1566]:
+                            - generic [ref=e1567]: Monterrey Stadium
+                            - generic [ref=e1568]: (Monterrey)
+                  - link "Curaçao 22:00 Côte d'Ivoire First Stage · Group E · Philadelphia Stadium (Philadelphia)" [ref=e1569] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021468
+                    - generic [ref=e1570]:
+                      - generic [ref=e1571]:
+                        - generic [ref=e1573]: Curaçao
+                        - generic [ref=e1576]: 22:00
+                        - generic [ref=e1579]: Côte d'Ivoire
+                      - generic [ref=e1580]:
+                        - generic [ref=e1581]: First Stage
+                        - generic [ref=e1582]: ·
+                        - generic [ref=e1583]:
+                          - generic [ref=e1584]: Group E
+                          - generic [ref=e1585]: ·
+                          - generic [ref=e1586]:
+                            - generic [ref=e1587]: Philadelphia Stadium
+                            - generic [ref=e1588]: (Philadelphia)
+                  - link "Ecuador 22:00 Germany First Stage · Group E · New York/New Jersey Stadium (New York)" [ref=e1589] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021466
+                    - generic [ref=e1590]:
+                      - generic [ref=e1591]:
+                        - generic [ref=e1593]: Ecuador
+                        - generic [ref=e1596]: 22:00
+                        - generic [ref=e1599]: Germany
+                      - generic [ref=e1600]:
+                        - generic [ref=e1601]: First Stage
+                        - generic [ref=e1602]: ·
+                        - generic [ref=e1603]:
+                          - generic [ref=e1604]: Group E
+                          - generic [ref=e1605]: ·
+                          - generic [ref=e1606]:
+                            - generic [ref=e1607]: New York/New Jersey Stadium
+                            - generic [ref=e1608]: (New York)
+              - generic [ref=e1610]:
+                - generic [ref=e1612]:
+                  - generic [ref=e1613]: Friday 26 June 2026
+                  - button "View groups" [ref=e1614] [cursor=pointer]
+                - generic [ref=e1615]:
+                  - link "Japan 01:00 Sweden First Stage · Group F · Dallas Stadium (Dallas)" [ref=e1616] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021471
+                    - generic [ref=e1617]:
+                      - generic [ref=e1618]:
+                        - generic [ref=e1620]: Japan
+                        - generic [ref=e1623]: 01:00
+                        - generic [ref=e1626]: Sweden
+                      - generic [ref=e1627]:
+                        - generic [ref=e1628]: First Stage
+                        - generic [ref=e1629]: ·
+                        - generic [ref=e1630]:
+                          - generic [ref=e1631]: Group F
+                          - generic [ref=e1632]: ·
+                          - generic [ref=e1633]:
+                            - generic [ref=e1634]: Dallas Stadium
+                            - generic [ref=e1635]: (Dallas)
+                  - link "Tunisia 01:00 Netherlands First Stage · Group F · Kansas City Stadium (Kansas City)" [ref=e1636] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021473
+                    - generic [ref=e1637]:
+                      - generic [ref=e1638]:
+                        - generic [ref=e1640]: Tunisia
+                        - generic [ref=e1643]: 01:00
+                        - generic [ref=e1646]: Netherlands
+                      - generic [ref=e1647]:
+                        - generic [ref=e1648]: First Stage
+                        - generic [ref=e1649]: ·
+                        - generic [ref=e1650]:
+                          - generic [ref=e1651]: Group F
+                          - generic [ref=e1652]: ·
+                          - generic [ref=e1653]:
+                            - generic [ref=e1654]: Kansas City Stadium
+                            - generic [ref=e1655]: (Kansas City)
+                  - link "Türkiye 04:00 USA First Stage · Group D · Los Angeles Stadium (Los Angeles)" [ref=e1656] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021459
+                    - generic [ref=e1657]:
+                      - generic [ref=e1658]:
+                        - generic [ref=e1660]: Türkiye
+                        - generic [ref=e1663]: 04:00
+                        - generic [ref=e1666]: USA
+                      - generic [ref=e1667]:
+                        - generic [ref=e1668]: First Stage
+                        - generic [ref=e1669]: ·
+                        - generic [ref=e1670]:
+                          - generic [ref=e1671]: Group D
+                          - generic [ref=e1672]: ·
+                          - generic [ref=e1673]:
+                            - generic [ref=e1674]: Los Angeles Stadium
+                            - generic [ref=e1675]: (Los Angeles)
+                  - link "Paraguay 04:00 Australia First Stage · Group D · San Francisco Bay Area Stadium (San Francisco Bay Area)" [ref=e1676] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021461
+                    - generic [ref=e1677]:
+                      - generic [ref=e1678]:
+                        - generic [ref=e1680]: Paraguay
+                        - generic [ref=e1683]: 04:00
+                        - generic [ref=e1686]: Australia
+                      - generic [ref=e1687]:
+                        - generic [ref=e1688]: First Stage
+                        - generic [ref=e1689]: ·
+                        - generic [ref=e1690]:
+                          - generic [ref=e1691]: Group D
+                          - generic [ref=e1692]: ·
+                          - generic [ref=e1693]:
+                            - generic [ref=e1694]: San Francisco Bay Area Stadium
+                            - generic [ref=e1695]: (San Francisco Bay Area)
+                  - link "Norway 21:00 France First Stage · Group I · Boston Stadium (Boston)" [ref=e1696] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021489
+                    - generic [ref=e1697]:
+                      - generic [ref=e1698]:
+                        - generic [ref=e1700]: Norway
+                        - generic [ref=e1703]: 21:00
+                        - generic [ref=e1706]: France
+                      - generic [ref=e1707]:
+                        - generic [ref=e1708]: First Stage
+                        - generic [ref=e1709]: ·
+                        - generic [ref=e1710]:
+                          - generic [ref=e1711]: Group I
+                          - generic [ref=e1712]: ·
+                          - generic [ref=e1713]:
+                            - generic [ref=e1714]: Boston Stadium
+                            - generic [ref=e1715]: (Boston)
+                  - link "Senegal 21:00 Iraq First Stage · Group I · Toronto Stadium (Toronto)" [ref=e1716] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021493
+                    - generic [ref=e1717]:
+                      - generic [ref=e1718]:
+                        - generic [ref=e1720]: Senegal
+                        - generic [ref=e1723]: 21:00
+                        - generic [ref=e1726]: Iraq
+                      - generic [ref=e1727]:
+                        - generic [ref=e1728]: First Stage
+                        - generic [ref=e1729]: ·
+                        - generic [ref=e1730]:
+                          - generic [ref=e1731]: Group I
+                          - generic [ref=e1732]: ·
+                          - generic [ref=e1733]:
+                            - generic [ref=e1734]: Toronto Stadium
+                            - generic [ref=e1735]: (Toronto)
+              - generic [ref=e1737]:
+                - generic [ref=e1739]:
+                  - generic [ref=e1740]: Saturday 27 June 2026
+                  - button "View groups" [ref=e1741] [cursor=pointer]
+                - generic [ref=e1742]:
+                  - link "Cabo Verde 02:00 Saudi Arabia First Stage · Group H · Houston Stadium (Houston)" [ref=e1743] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021485
+                    - generic [ref=e1744]:
+                      - generic [ref=e1745]:
+                        - generic [ref=e1747]: Cabo Verde
+                        - generic [ref=e1750]: 02:00
+                        - generic [ref=e1753]: Saudi Arabia
+                      - generic [ref=e1754]:
+                        - generic [ref=e1755]: First Stage
+                        - generic [ref=e1756]: ·
+                        - generic [ref=e1757]:
+                          - generic [ref=e1758]: Group H
+                          - generic [ref=e1759]: ·
+                          - generic [ref=e1760]:
+                            - generic [ref=e1761]: Houston Stadium
+                            - generic [ref=e1762]: (Houston)
+                  - link "Uruguay 02:00 Spain First Stage · Group H · Guadalajara Stadium (Guadalajara)" [ref=e1763] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021484
+                    - generic [ref=e1764]:
+                      - generic [ref=e1765]:
+                        - generic [ref=e1767]: Uruguay
+                        - generic [ref=e1770]: 02:00
+                        - generic [ref=e1773]: Spain
+                      - generic [ref=e1774]:
+                        - generic [ref=e1775]: First Stage
+                        - generic [ref=e1776]: ·
+                        - generic [ref=e1777]:
+                          - generic [ref=e1778]: Group H
+                          - generic [ref=e1779]: ·
+                          - generic [ref=e1780]:
+                            - generic [ref=e1781]: Guadalajara Stadium
+                            - generic [ref=e1782]: (Guadalajara)
+                  - link "Egypt 05:00 IR Iran First Stage · Group G · Seattle Stadium (Seattle)" [ref=e1783] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021479
+                    - generic [ref=e1784]:
+                      - generic [ref=e1785]:
+                        - generic [ref=e1787]: Egypt
+                        - generic [ref=e1790]: 05:00
+                        - generic [ref=e1793]: IR Iran
+                      - generic [ref=e1794]:
+                        - generic [ref=e1795]: First Stage
+                        - generic [ref=e1796]: ·
+                        - generic [ref=e1797]:
+                          - generic [ref=e1798]: Group G
+                          - generic [ref=e1799]: ·
+                          - generic [ref=e1800]:
+                            - generic [ref=e1801]: Seattle Stadium
+                            - generic [ref=e1802]: (Seattle)
+                  - link "New Zealand 05:00 Belgium First Stage · Group G · BC Place Vancouver (Vancouver)" [ref=e1803] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021481
+                    - generic [ref=e1804]:
+                      - generic [ref=e1805]:
+                        - generic [ref=e1807]: New Zealand
+                        - generic [ref=e1810]: 05:00
+                        - generic [ref=e1813]: Belgium
+                      - generic [ref=e1814]:
+                        - generic [ref=e1815]: First Stage
+                        - generic [ref=e1816]: ·
+                        - generic [ref=e1817]:
+                          - generic [ref=e1818]: Group G
+                          - generic [ref=e1819]: ·
+                          - generic [ref=e1820]:
+                            - generic [ref=e1821]: BC Place Vancouver
+                            - generic [ref=e1822]: (Vancouver)
+                  - link "Panama 23:00 England First Stage · Group L · New York/New Jersey Stadium (New York)" [ref=e1823] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021508
+                    - generic [ref=e1824]:
+                      - generic [ref=e1825]:
+                        - generic [ref=e1827]: Panama
+                        - generic [ref=e1830]: 23:00
+                        - generic [ref=e1833]: England
+                      - generic [ref=e1834]:
+                        - generic [ref=e1835]: First Stage
+                        - generic [ref=e1836]: ·
+                        - generic [ref=e1837]:
+                          - generic [ref=e1838]: Group L
+                          - generic [ref=e1839]: ·
+                          - generic [ref=e1840]:
+                            - generic [ref=e1841]: New York/New Jersey Stadium
+                            - generic [ref=e1842]: (New York)
+                  - link "Croatia 23:00 Ghana First Stage · Group L · Philadelphia Stadium (Philadelphia)" [ref=e1843] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021509
+                    - generic [ref=e1844]:
+                      - generic [ref=e1845]:
+                        - generic [ref=e1847]: Croatia
+                        - generic [ref=e1850]: 23:00
+                        - generic [ref=e1853]: Ghana
+                      - generic [ref=e1854]:
+                        - generic [ref=e1855]: First Stage
+                        - generic [ref=e1856]: ·
+                        - generic [ref=e1857]:
+                          - generic [ref=e1858]: Group L
+                          - generic [ref=e1859]: ·
+                          - generic [ref=e1860]:
+                            - generic [ref=e1861]: Philadelphia Stadium
+                            - generic [ref=e1862]: (Philadelphia)
+              - generic [ref=e1864]:
+                - generic [ref=e1866]:
+                  - generic [ref=e1867]: Sunday 28 June 2026
+                  - button "View groups" [ref=e1868] [cursor=pointer]
+                - generic [ref=e1869]:
+                  - link "Colombia 01:30 Portugal First Stage · Group K · Miami Stadium (Miami)" [ref=e1870] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021505
+                    - generic [ref=e1871]:
+                      - generic [ref=e1872]:
+                        - generic [ref=e1874]: Colombia
+                        - generic [ref=e1877]: 01:30
+                        - generic [ref=e1880]: Portugal
+                      - generic [ref=e1881]:
+                        - generic [ref=e1882]: First Stage
+                        - generic [ref=e1883]: ·
+                        - generic [ref=e1884]:
+                          - generic [ref=e1885]: Group K
+                          - generic [ref=e1886]: ·
+                          - generic [ref=e1887]:
+                            - generic [ref=e1888]: Miami Stadium
+                            - generic [ref=e1889]: (Miami)
+                  - link "Congo DR 01:30 Uzbekistan First Stage · Group K · Atlanta Stadium (Atlanta)" [ref=e1890] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021500
+                    - generic [ref=e1891]:
+                      - generic [ref=e1892]:
+                        - generic [ref=e1894]: Congo DR
+                        - generic [ref=e1897]: 01:30
+                        - generic [ref=e1900]: Uzbekistan
+                      - generic [ref=e1901]:
+                        - generic [ref=e1902]: First Stage
+                        - generic [ref=e1903]: ·
+                        - generic [ref=e1904]:
+                          - generic [ref=e1905]: Group K
+                          - generic [ref=e1906]: ·
+                          - generic [ref=e1907]:
+                            - generic [ref=e1908]: Atlanta Stadium
+                            - generic [ref=e1909]: (Atlanta)
+                  - link "Algeria 04:00 Austria First Stage · Group J · Kansas City Stadium (Kansas City)" [ref=e1910] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021497
+                    - generic [ref=e1911]:
+                      - generic [ref=e1912]:
+                        - generic [ref=e1914]: Algeria
+                        - generic [ref=e1917]: 04:00
+                        - generic [ref=e1920]: Austria
+                      - generic [ref=e1921]:
+                        - generic [ref=e1922]: First Stage
+                        - generic [ref=e1923]: ·
+                        - generic [ref=e1924]:
+                          - generic [ref=e1925]: Group J
+                          - generic [ref=e1926]: ·
+                          - generic [ref=e1927]:
+                            - generic [ref=e1928]: Kansas City Stadium
+                            - generic [ref=e1929]: (Kansas City)
+                  - link "Jordan 04:00 Argentina First Stage · Group J · Dallas Stadium (Dallas)" [ref=e1930] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289273/400021495
+                    - generic [ref=e1931]:
+                      - generic [ref=e1932]:
+                        - generic [ref=e1934]: Jordan
+                        - generic [ref=e1937]: 04:00
+                        - generic [ref=e1940]: Argentina
+                      - generic [ref=e1941]:
+                        - generic [ref=e1942]: First Stage
+                        - generic [ref=e1943]: ·
+                        - generic [ref=e1944]:
+                          - generic [ref=e1945]: Group J
+                          - generic [ref=e1946]: ·
+                          - generic [ref=e1947]:
+                            - generic [ref=e1948]: Dallas Stadium
+                            - generic [ref=e1949]: (Dallas)
+                  - link "2A 21:00 2B Round of 32 · Los Angeles Stadium (Los Angeles)" [ref=e1950] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021518
+                    - generic [ref=e1951]:
+                      - generic [ref=e1952]:
+                        - generic [ref=e1953]:
+                          - generic [ref=e1954]: 2A
+                          - img [ref=e1957]
+                        - generic [ref=e1961]: 21:00
+                        - generic [ref=e1962]:
+                          - img [ref=e1965]
+                          - generic [ref=e1968]: 2B
+                      - generic [ref=e1969]:
+                        - generic [ref=e1970]: Round of 32
+                        - generic [ref=e1971]:
+                          - generic [ref=e1972]: ·
+                          - generic [ref=e1973]:
+                            - generic [ref=e1974]: Los Angeles Stadium
+                            - generic [ref=e1975]: (Los Angeles)
+              - generic [ref=e1977]:
+                - generic [ref=e1979]:
+                  - generic [ref=e1980]: Monday 29 June 2026
+                  - button "View brackets" [ref=e1981] [cursor=pointer]
+                - generic [ref=e1982]:
+                  - link "1C 19:00 2F Round of 32 · Houston Stadium (Houston)" [ref=e1983] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021516
+                    - generic [ref=e1984]:
+                      - generic [ref=e1985]:
+                        - generic [ref=e1986]:
+                          - generic [ref=e1987]: 1C
+                          - img [ref=e1990]
+                        - generic [ref=e1994]: 19:00
+                        - generic [ref=e1995]:
+                          - img [ref=e1998]
+                          - generic [ref=e2001]: 2F
+                      - generic [ref=e2002]:
+                        - generic [ref=e2003]: Round of 32
+                        - generic [ref=e2004]:
+                          - generic [ref=e2005]: ·
+                          - generic [ref=e2006]:
+                            - generic [ref=e2007]: Houston Stadium
+                            - generic [ref=e2008]: (Houston)
+                  - link "1E 22:30 3ABCDF Round of 32 · Boston Stadium (Boston)" [ref=e2009] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021513
+                    - generic [ref=e2010]:
+                      - generic [ref=e2011]:
+                        - generic [ref=e2012]:
+                          - generic [ref=e2013]: 1E
+                          - img [ref=e2016]
+                        - generic [ref=e2020]: 22:30
+                        - generic [ref=e2021]:
+                          - img [ref=e2024]
+                          - generic [ref=e2027]: 3ABCDF
+                      - generic [ref=e2028]:
+                        - generic [ref=e2029]: Round of 32
+                        - generic [ref=e2030]:
+                          - generic [ref=e2031]: ·
+                          - generic [ref=e2032]:
+                            - generic [ref=e2033]: Boston Stadium
+                            - generic [ref=e2034]: (Boston)
+              - generic [ref=e2036]:
+                - generic [ref=e2038]:
+                  - generic [ref=e2039]: Tuesday 30 June 2026
+                  - button "View brackets" [ref=e2040] [cursor=pointer]
+                - generic [ref=e2041]:
+                  - link "1F 03:00 2C Round of 32 · Monterrey Stadium (Monterrey)" [ref=e2042] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021522
+                    - generic [ref=e2043]:
+                      - generic [ref=e2044]:
+                        - generic [ref=e2045]:
+                          - generic [ref=e2046]: 1F
+                          - img [ref=e2049]
+                        - generic [ref=e2053]: 03:00
+                        - generic [ref=e2054]:
+                          - img [ref=e2057]
+                          - generic [ref=e2060]: 2C
+                      - generic [ref=e2061]:
+                        - generic [ref=e2062]: Round of 32
+                        - generic [ref=e2063]:
+                          - generic [ref=e2064]: ·
+                          - generic [ref=e2065]:
+                            - generic [ref=e2066]: Monterrey Stadium
+                            - generic [ref=e2067]: (Monterrey)
+                  - link "2E 19:00 2I Round of 32 · Dallas Stadium (Dallas)" [ref=e2068] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021514
+                    - generic [ref=e2069]:
+                      - generic [ref=e2070]:
+                        - generic [ref=e2071]:
+                          - generic [ref=e2072]: 2E
+                          - img [ref=e2075]
+                        - generic [ref=e2079]: 19:00
+                        - generic [ref=e2080]:
+                          - img [ref=e2083]
+                          - generic [ref=e2086]: 2I
+                      - generic [ref=e2087]:
+                        - generic [ref=e2088]: Round of 32
+                        - generic [ref=e2089]:
+                          - generic [ref=e2090]: ·
+                          - generic [ref=e2091]:
+                            - generic [ref=e2092]: Dallas Stadium
+                            - generic [ref=e2093]: (Dallas)
+                  - link "1I 23:00 3CDFGH Round of 32 · New York/New Jersey Stadium (New York)" [ref=e2094] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021523
+                    - generic [ref=e2095]:
+                      - generic [ref=e2096]:
+                        - generic [ref=e2097]:
+                          - generic [ref=e2098]: 1I
+                          - img [ref=e2101]
+                        - generic [ref=e2105]: 23:00
+                        - generic [ref=e2106]:
+                          - img [ref=e2109]
+                          - generic [ref=e2112]: 3CDFGH
+                      - generic [ref=e2113]:
+                        - generic [ref=e2114]: Round of 32
+                        - generic [ref=e2115]:
+                          - generic [ref=e2116]: ·
+                          - generic [ref=e2117]:
+                            - generic [ref=e2118]: New York/New Jersey Stadium
+                            - generic [ref=e2119]: (New York)
+              - generic [ref=e2121]:
+                - generic [ref=e2123]:
+                  - generic [ref=e2124]: Wednesday 01 July 2026
+                  - button "View brackets" [ref=e2125] [cursor=pointer]
+                - generic [ref=e2126]:
+                  - link "1A 03:00 3CEFHI Round of 32 · Mexico City Stadium (Mexico City)" [ref=e2127] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021520
+                    - generic [ref=e2128]:
+                      - generic [ref=e2129]:
+                        - generic [ref=e2130]:
+                          - generic [ref=e2131]: 1A
+                          - img [ref=e2134]
+                        - generic [ref=e2138]: 03:00
+                        - generic [ref=e2139]:
+                          - img [ref=e2142]
+                          - generic [ref=e2145]: 3CEFHI
+                      - generic [ref=e2146]:
+                        - generic [ref=e2147]: Round of 32
+                        - generic [ref=e2148]:
+                          - generic [ref=e2149]: ·
+                          - generic [ref=e2150]:
+                            - generic [ref=e2151]: Mexico City Stadium
+                            - generic [ref=e2152]: (Mexico City)
+                  - link "1L 18:00 3EHIJK Round of 32 · Atlanta Stadium (Atlanta)" [ref=e2153] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021512
+                    - generic [ref=e2154]:
+                      - generic [ref=e2155]:
+                        - generic [ref=e2156]:
+                          - generic [ref=e2157]: 1L
+                          - img [ref=e2160]
+                        - generic [ref=e2164]: 18:00
+                        - generic [ref=e2165]:
+                          - img [ref=e2168]
+                          - generic [ref=e2171]: 3EHIJK
+                      - generic [ref=e2172]:
+                        - generic [ref=e2173]: Round of 32
+                        - generic [ref=e2174]:
+                          - generic [ref=e2175]: ·
+                          - generic [ref=e2176]:
+                            - generic [ref=e2177]: Atlanta Stadium
+                            - generic [ref=e2178]: (Atlanta)
+                  - link "1G 22:00 3AEHIJ Round of 32 · Seattle Stadium (Seattle)" [ref=e2179] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021525
+                    - generic [ref=e2180]:
+                      - generic [ref=e2181]:
+                        - generic [ref=e2182]:
+                          - generic [ref=e2183]: 1G
+                          - img [ref=e2186]
+                        - generic [ref=e2190]: 22:00
+                        - generic [ref=e2191]:
+                          - img [ref=e2194]
+                          - generic [ref=e2197]: 3AEHIJ
+                      - generic [ref=e2198]:
+                        - generic [ref=e2199]: Round of 32
+                        - generic [ref=e2200]:
+                          - generic [ref=e2201]: ·
+                          - generic [ref=e2202]:
+                            - generic [ref=e2203]: Seattle Stadium
+                            - generic [ref=e2204]: (Seattle)
+              - generic [ref=e2206]:
+                - generic [ref=e2208]:
+                  - generic [ref=e2209]: Thursday 02 July 2026
+                  - button "View brackets" [ref=e2210] [cursor=pointer]
+                - generic [ref=e2211]:
+                  - link "1D 02:00 3BEFIJ Round of 32 · San Francisco Bay Area Stadium (San Francisco Bay Area)" [ref=e2212] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021524
+                    - generic [ref=e2213]:
+                      - generic [ref=e2214]:
+                        - generic [ref=e2215]:
+                          - generic [ref=e2216]: 1D
+                          - img [ref=e2219]
+                        - generic [ref=e2223]: 02:00
+                        - generic [ref=e2224]:
+                          - img [ref=e2227]
+                          - generic [ref=e2230]: 3BEFIJ
+                      - generic [ref=e2231]:
+                        - generic [ref=e2232]: Round of 32
+                        - generic [ref=e2233]:
+                          - generic [ref=e2234]: ·
+                          - generic [ref=e2235]:
+                            - generic [ref=e2236]: San Francisco Bay Area Stadium
+                            - generic [ref=e2237]: (San Francisco Bay Area)
+                  - link "1H 21:00 2J Round of 32 · Los Angeles Stadium (Los Angeles)" [ref=e2238] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021519
+                    - generic [ref=e2239]:
+                      - generic [ref=e2240]:
+                        - generic [ref=e2241]:
+                          - generic [ref=e2242]: 1H
+                          - img [ref=e2245]
+                        - generic [ref=e2249]: 21:00
+                        - generic [ref=e2250]:
+                          - img [ref=e2253]
+                          - generic [ref=e2256]: 2J
+                      - generic [ref=e2257]:
+                        - generic [ref=e2258]: Round of 32
+                        - generic [ref=e2259]:
+                          - generic [ref=e2260]: ·
+                          - generic [ref=e2261]:
+                            - generic [ref=e2262]: Los Angeles Stadium
+                            - generic [ref=e2263]: (Los Angeles)
+              - generic [ref=e2265]:
+                - generic [ref=e2267]:
+                  - generic [ref=e2268]: Friday 03 July 2026
+                  - button "View brackets" [ref=e2269] [cursor=pointer]
+                - generic [ref=e2270]:
+                  - link "2K 01:00 2L Round of 32 · Toronto Stadium (Toronto)" [ref=e2271] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021526
+                    - generic [ref=e2272]:
+                      - generic [ref=e2273]:
+                        - generic [ref=e2274]:
+                          - generic [ref=e2275]: 2K
+                          - img [ref=e2278]
+                        - generic [ref=e2282]: 01:00
+                        - generic [ref=e2283]:
+                          - img [ref=e2286]
+                          - generic [ref=e2289]: 2L
+                      - generic [ref=e2290]:
+                        - generic [ref=e2291]: Round of 32
+                        - generic [ref=e2292]:
+                          - generic [ref=e2293]: ·
+                          - generic [ref=e2294]:
+                            - generic [ref=e2295]: Toronto Stadium
+                            - generic [ref=e2296]: (Toronto)
+                  - link "1B 05:00 3EFGIJ Round of 32 · BC Place Vancouver (Vancouver)" [ref=e2297] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021527
+                    - generic [ref=e2298]:
+                      - generic [ref=e2299]:
+                        - generic [ref=e2300]:
+                          - generic [ref=e2301]: 1B
+                          - img [ref=e2304]
+                        - generic [ref=e2308]: 05:00
+                        - generic [ref=e2309]:
+                          - img [ref=e2312]
+                          - generic [ref=e2315]: 3EFGIJ
+                      - generic [ref=e2316]:
+                        - generic [ref=e2317]: Round of 32
+                        - generic [ref=e2318]:
+                          - generic [ref=e2319]: ·
+                          - generic [ref=e2320]:
+                            - generic [ref=e2321]: BC Place Vancouver
+                            - generic [ref=e2322]: (Vancouver)
+                  - link "2D 20:00 2G Round of 32 · Dallas Stadium (Dallas)" [ref=e2323] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021515
+                    - generic [ref=e2324]:
+                      - generic [ref=e2325]:
+                        - generic [ref=e2326]:
+                          - generic [ref=e2327]: 2D
+                          - img [ref=e2330]
+                        - generic [ref=e2334]: 20:00
+                        - generic [ref=e2335]:
+                          - img [ref=e2338]
+                          - generic [ref=e2341]: 2G
+                      - generic [ref=e2342]:
+                        - generic [ref=e2343]: Round of 32
+                        - generic [ref=e2344]:
+                          - generic [ref=e2345]: ·
+                          - generic [ref=e2346]:
+                            - generic [ref=e2347]: Dallas Stadium
+                            - generic [ref=e2348]: (Dallas)
+              - generic [ref=e2350]:
+                - generic [ref=e2352]:
+                  - generic [ref=e2353]: Saturday 04 July 2026
+                  - button "View brackets" [ref=e2354] [cursor=pointer]
+                - generic [ref=e2355]:
+                  - link "1J 00:00 2H Round of 32 · Miami Stadium (Miami)" [ref=e2356] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021521
+                    - generic [ref=e2357]:
+                      - generic [ref=e2358]:
+                        - generic [ref=e2359]:
+                          - generic [ref=e2360]: 1J
+                          - img [ref=e2363]
+                        - generic [ref=e2367]: 00:00
+                        - generic [ref=e2368]:
+                          - img [ref=e2371]
+                          - generic [ref=e2374]: 2H
+                      - generic [ref=e2375]:
+                        - generic [ref=e2376]: Round of 32
+                        - generic [ref=e2377]:
+                          - generic [ref=e2378]: ·
+                          - generic [ref=e2379]:
+                            - generic [ref=e2380]: Miami Stadium
+                            - generic [ref=e2381]: (Miami)
+                  - link "1K 03:30 3DEIJL Round of 32 · Kansas City Stadium (Kansas City)" [ref=e2382] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289287/400021517
+                    - generic [ref=e2383]:
+                      - generic [ref=e2384]:
+                        - generic [ref=e2385]:
+                          - generic [ref=e2386]: 1K
+                          - img [ref=e2389]
+                        - generic [ref=e2393]: 03:30
+                        - generic [ref=e2394]:
+                          - img [ref=e2397]
+                          - generic [ref=e2400]: 3DEIJL
+                      - generic [ref=e2401]:
+                        - generic [ref=e2402]: Round of 32
+                        - generic [ref=e2403]:
+                          - generic [ref=e2404]: ·
+                          - generic [ref=e2405]:
+                            - generic [ref=e2406]: Kansas City Stadium
+                            - generic [ref=e2407]: (Kansas City)
+                  - link "W73 19:00 W75 Round of 16 · Houston Stadium (Houston)" [ref=e2408] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021530
+                    - generic [ref=e2409]:
+                      - generic [ref=e2410]:
+                        - generic [ref=e2411]:
+                          - generic [ref=e2412]: W73
+                          - img [ref=e2415]
+                        - generic [ref=e2419]: 19:00
+                        - generic [ref=e2420]:
+                          - img [ref=e2423]
+                          - generic [ref=e2426]: W75
+                      - generic [ref=e2427]:
+                        - generic [ref=e2428]: Round of 16
+                        - generic [ref=e2429]:
+                          - generic [ref=e2430]: ·
+                          - generic [ref=e2431]:
+                            - generic [ref=e2432]: Houston Stadium
+                            - generic [ref=e2433]: (Houston)
+                  - link "W74 23:00 W77 Round of 16 · Philadelphia Stadium (Philadelphia)" [ref=e2434] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021533
+                    - generic [ref=e2435]:
+                      - generic [ref=e2436]:
+                        - generic [ref=e2437]:
+                          - generic [ref=e2438]: W74
+                          - img [ref=e2441]
+                        - generic [ref=e2445]: 23:00
+                        - generic [ref=e2446]:
+                          - img [ref=e2449]
+                          - generic [ref=e2452]: W77
+                      - generic [ref=e2453]:
+                        - generic [ref=e2454]: Round of 16
+                        - generic [ref=e2455]:
+                          - generic [ref=e2456]: ·
+                          - generic [ref=e2457]:
+                            - generic [ref=e2458]: Philadelphia Stadium
+                            - generic [ref=e2459]: (Philadelphia)
+              - generic [ref=e2461]:
+                - generic [ref=e2463]:
+                  - generic [ref=e2464]: Sunday 05 July 2026
+                  - button "View brackets" [ref=e2465] [cursor=pointer]
+                - link "W76 22:00 W78 Round of 16 · New York/New Jersey Stadium (New York)" [ref=e2467] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289288/400021532
+                  - generic [ref=e2468]:
+                    - generic [ref=e2469]:
+                      - generic [ref=e2470]:
+                        - generic [ref=e2471]: W76
+                        - img [ref=e2474]
+                      - generic [ref=e2478]: 22:00
+                      - generic [ref=e2479]:
+                        - img [ref=e2482]
+                        - generic [ref=e2485]: W78
+                    - generic [ref=e2486]:
+                      - generic [ref=e2487]: Round of 16
+                      - generic [ref=e2488]:
+                        - generic [ref=e2489]: ·
+                        - generic [ref=e2490]:
+                          - generic [ref=e2491]: New York/New Jersey Stadium
+                          - generic [ref=e2492]: (New York)
+              - generic [ref=e2494]:
+                - generic [ref=e2496]:
+                  - generic [ref=e2497]: Monday 06 July 2026
+                  - button "View brackets" [ref=e2498] [cursor=pointer]
+                - generic [ref=e2499]:
+                  - link "W79 02:00 W80 Round of 16 · Mexico City Stadium (Mexico City)" [ref=e2500] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021531
+                    - generic [ref=e2501]:
+                      - generic [ref=e2502]:
+                        - generic [ref=e2503]:
+                          - generic [ref=e2504]: W79
+                          - img [ref=e2507]
+                        - generic [ref=e2511]: 02:00
+                        - generic [ref=e2512]:
+                          - img [ref=e2515]
+                          - generic [ref=e2518]: W80
+                      - generic [ref=e2519]:
+                        - generic [ref=e2520]: Round of 16
+                        - generic [ref=e2521]:
+                          - generic [ref=e2522]: ·
+                          - generic [ref=e2523]:
+                            - generic [ref=e2524]: Mexico City Stadium
+                            - generic [ref=e2525]: (Mexico City)
+                  - link "W83 21:00 W84 Round of 16 · Dallas Stadium (Dallas)" [ref=e2526] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021529
+                    - generic [ref=e2527]:
+                      - generic [ref=e2528]:
+                        - generic [ref=e2529]:
+                          - generic [ref=e2530]: W83
+                          - img [ref=e2533]
+                        - generic [ref=e2537]: 21:00
+                        - generic [ref=e2538]:
+                          - img [ref=e2541]
+                          - generic [ref=e2544]: W84
+                      - generic [ref=e2545]:
+                        - generic [ref=e2546]: Round of 16
+                        - generic [ref=e2547]:
+                          - generic [ref=e2548]: ·
+                          - generic [ref=e2549]:
+                            - generic [ref=e2550]: Dallas Stadium
+                            - generic [ref=e2551]: (Dallas)
+              - generic [ref=e2553]:
+                - generic [ref=e2555]:
+                  - generic [ref=e2556]: Tuesday 07 July 2026
+                  - button "View brackets" [ref=e2557] [cursor=pointer]
+                - generic [ref=e2558]:
+                  - link "W81 02:00 W82 Round of 16 · Seattle Stadium (Seattle)" [ref=e2559] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021534
+                    - generic [ref=e2560]:
+                      - generic [ref=e2561]:
+                        - generic [ref=e2562]:
+                          - generic [ref=e2563]: W81
+                          - img [ref=e2566]
+                        - generic [ref=e2570]: 02:00
+                        - generic [ref=e2571]:
+                          - img [ref=e2574]
+                          - generic [ref=e2577]: W82
+                      - generic [ref=e2578]:
+                        - generic [ref=e2579]: Round of 16
+                        - generic [ref=e2580]:
+                          - generic [ref=e2581]: ·
+                          - generic [ref=e2582]:
+                            - generic [ref=e2583]: Seattle Stadium
+                            - generic [ref=e2584]: (Seattle)
+                  - link "W86 18:00 W88 Round of 16 · Atlanta Stadium (Atlanta)" [ref=e2585] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021528
+                    - generic [ref=e2586]:
+                      - generic [ref=e2587]:
+                        - generic [ref=e2588]:
+                          - generic [ref=e2589]: W86
+                          - img [ref=e2592]
+                        - generic [ref=e2596]: 18:00
+                        - generic [ref=e2597]:
+                          - img [ref=e2600]
+                          - generic [ref=e2603]: W88
+                      - generic [ref=e2604]:
+                        - generic [ref=e2605]: Round of 16
+                        - generic [ref=e2606]:
+                          - generic [ref=e2607]: ·
+                          - generic [ref=e2608]:
+                            - generic [ref=e2609]: Atlanta Stadium
+                            - generic [ref=e2610]: (Atlanta)
+                  - link "W85 22:00 W87 Round of 16 · BC Place Vancouver (Vancouver)" [ref=e2611] [cursor=pointer]:
+                    - /url: /en/match-centre/match/17/285023/289288/400021535
+                    - generic [ref=e2612]:
+                      - generic [ref=e2613]:
+                        - generic [ref=e2614]:
+                          - generic [ref=e2615]: W85
+                          - img [ref=e2618]
+                        - generic [ref=e2622]: 22:00
+                        - generic [ref=e2623]:
+                          - img [ref=e2626]
+                          - generic [ref=e2629]: W87
+                      - generic [ref=e2630]:
+                        - generic [ref=e2631]: Round of 16
+                        - generic [ref=e2632]:
+                          - generic [ref=e2633]: ·
+                          - generic [ref=e2634]:
+                            - generic [ref=e2635]: BC Place Vancouver
+                            - generic [ref=e2636]: (Vancouver)
+              - generic [ref=e2638]:
+                - generic [ref=e2640]:
+                  - generic [ref=e2641]: Thursday 09 July 2026
+                  - button "View brackets" [ref=e2642] [cursor=pointer]
+                - link "W89 22:00 W90 Quarter-final · Boston Stadium (Boston)" [ref=e2644] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289289/400021536
+                  - generic [ref=e2645]:
+                    - generic [ref=e2646]:
+                      - generic [ref=e2647]:
+                        - generic [ref=e2648]: W89
+                        - img [ref=e2651]
+                      - generic [ref=e2655]: 22:00
+                      - generic [ref=e2656]:
+                        - img [ref=e2659]
+                        - generic [ref=e2662]: W90
+                    - generic [ref=e2663]:
+                      - generic [ref=e2664]: Quarter-final
+                      - generic [ref=e2665]:
+                        - generic [ref=e2666]: ·
+                        - generic [ref=e2667]:
+                          - generic [ref=e2668]: Boston Stadium
+                          - generic [ref=e2669]: (Boston)
+              - generic [ref=e2671]:
+                - generic [ref=e2673]:
+                  - generic [ref=e2674]: Friday 10 July 2026
+                  - button "View brackets" [ref=e2675] [cursor=pointer]
+                - link "W93 21:00 W94 Quarter-final · Los Angeles Stadium (Los Angeles)" [ref=e2677] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289289/400021538
+                  - generic [ref=e2678]:
+                    - generic [ref=e2679]:
+                      - generic [ref=e2680]:
+                        - generic [ref=e2681]: W93
+                        - img [ref=e2684]
+                      - generic [ref=e2688]: 21:00
+                      - generic [ref=e2689]:
+                        - img [ref=e2692]
+                        - generic [ref=e2695]: W94
+                    - generic [ref=e2696]:
+                      - generic [ref=e2697]: Quarter-final
+                      - generic [ref=e2698]:
+                        - generic [ref=e2699]: ·
+                        - generic [ref=e2700]:
+                          - generic [ref=e2701]: Los Angeles Stadium
+                          - generic [ref=e2702]: (Los Angeles)
+              - generic [ref=e2704]:
+                - generic [ref=e2706]:
+                  - generic [ref=e2707]: Saturday 11 July 2026
+                  - button "View brackets" [ref=e2708] [cursor=pointer]
+                - link "W91 23:00 W92 Quarter-final · Miami Stadium (Miami)" [ref=e2710] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289289/400021539
+                  - generic [ref=e2711]:
+                    - generic [ref=e2712]:
+                      - generic [ref=e2713]:
+                        - generic [ref=e2714]: W91
+                        - img [ref=e2717]
+                      - generic [ref=e2721]: 23:00
+                      - generic [ref=e2722]:
+                        - img [ref=e2725]
+                        - generic [ref=e2728]: W92
+                    - generic [ref=e2729]:
+                      - generic [ref=e2730]: Quarter-final
+                      - generic [ref=e2731]:
+                        - generic [ref=e2732]: ·
+                        - generic [ref=e2733]:
+                          - generic [ref=e2734]: Miami Stadium
+                          - generic [ref=e2735]: (Miami)
+              - generic [ref=e2737]:
+                - generic [ref=e2739]:
+                  - generic [ref=e2740]: Sunday 12 July 2026
+                  - button "View brackets" [ref=e2741] [cursor=pointer]
+                - link "W95 03:00 W96 Quarter-final · Kansas City Stadium (Kansas City)" [ref=e2743] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289289/400021537
+                  - generic [ref=e2744]:
+                    - generic [ref=e2745]:
+                      - generic [ref=e2746]:
+                        - generic [ref=e2747]: W95
+                        - img [ref=e2750]
+                      - generic [ref=e2754]: 03:00
+                      - generic [ref=e2755]:
+                        - img [ref=e2758]
+                        - generic [ref=e2761]: W96
+                    - generic [ref=e2762]:
+                      - generic [ref=e2763]: Quarter-final
+                      - generic [ref=e2764]:
+                        - generic [ref=e2765]: ·
+                        - generic [ref=e2766]:
+                          - generic [ref=e2767]: Kansas City Stadium
+                          - generic [ref=e2768]: (Kansas City)
+              - generic [ref=e2770]:
+                - generic [ref=e2772]:
+                  - generic [ref=e2773]: Tuesday 14 July 2026
+                  - button "View brackets" [ref=e2774] [cursor=pointer]
+                - link "W97 21:00 W98 Semi-final · Dallas Stadium (Dallas)" [ref=e2776] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289290/400021541
+                  - generic [ref=e2777]:
+                    - generic [ref=e2778]:
+                      - generic [ref=e2779]:
+                        - generic [ref=e2780]: W97
+                        - img [ref=e2783]
+                      - generic [ref=e2787]: 21:00
+                      - generic [ref=e2788]:
+                        - img [ref=e2791]
+                        - generic [ref=e2794]: W98
+                    - generic [ref=e2795]:
+                      - generic [ref=e2796]: Semi-final
+                      - generic [ref=e2797]:
+                        - generic [ref=e2798]: ·
+                        - generic [ref=e2799]:
+                          - generic [ref=e2800]: Dallas Stadium
+                          - generic [ref=e2801]: (Dallas)
+              - generic [ref=e2803]:
+                - generic [ref=e2805]:
+                  - generic [ref=e2806]: Wednesday 15 July 2026
+                  - button "View brackets" [ref=e2807] [cursor=pointer]
+                - link "W99 21:00 W100 Semi-final · Atlanta Stadium (Atlanta)" [ref=e2809] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289290/400021540
+                  - generic [ref=e2810]:
+                    - generic [ref=e2811]:
+                      - generic [ref=e2812]:
+                        - generic [ref=e2813]: W99
+                        - img [ref=e2816]
+                      - generic [ref=e2820]: 21:00
+                      - generic [ref=e2821]:
+                        - img [ref=e2824]
+                        - generic [ref=e2827]: W100
+                    - generic [ref=e2828]:
+                      - generic [ref=e2829]: Semi-final
+                      - generic [ref=e2830]:
+                        - generic [ref=e2831]: ·
+                        - generic [ref=e2832]:
+                          - generic [ref=e2833]: Atlanta Stadium
+                          - generic [ref=e2834]: (Atlanta)
+              - generic [ref=e2836]:
+                - generic [ref=e2838]:
+                  - generic [ref=e2839]: Saturday 18 July 2026
+                  - button "View brackets" [ref=e2840] [cursor=pointer]
+                - link "RU101 23:00 RU102 Play-off for third place · Miami Stadium (Miami)" [ref=e2842] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289291/400021542
+                  - generic [ref=e2843]:
+                    - generic [ref=e2844]:
+                      - generic [ref=e2845]:
+                        - generic [ref=e2846]: RU101
+                        - img [ref=e2849]
+                      - generic [ref=e2853]: 23:00
+                      - generic [ref=e2854]:
+                        - img [ref=e2857]
+                        - generic [ref=e2860]: RU102
+                    - generic [ref=e2861]:
+                      - generic [ref=e2862]: Play-off for third place
+                      - generic [ref=e2863]:
+                        - generic [ref=e2864]: ·
+                        - generic [ref=e2865]:
+                          - generic [ref=e2866]: Miami Stadium
+                          - generic [ref=e2867]: (Miami)
+              - generic [ref=e2869]:
+                - generic [ref=e2871]:
+                  - generic [ref=e2872]: Sunday 19 July 2026
+                  - button "View brackets" [ref=e2873] [cursor=pointer]
+                - link "W101 21:00 W102 Final · New York/New Jersey Stadium (New York)" [ref=e2875] [cursor=pointer]:
+                  - /url: /en/match-centre/match/17/285023/289292/400021543
+                  - generic [ref=e2876]:
+                    - generic [ref=e2877]:
+                      - generic [ref=e2878]:
+                        - generic [ref=e2879]: W101
+                        - img [ref=e2882]
+                      - generic [ref=e2886]: 21:00
+                      - generic [ref=e2887]:
+                        - img [ref=e2890]
+                        - generic [ref=e2893]: W102
+                    - generic [ref=e2894]:
+                      - generic [ref=e2895]: Final
+                      - generic [ref=e2896]:
+                        - generic [ref=e2897]: ·
+                        - generic [ref=e2898]:
+                          - generic [ref=e2899]: New York/New Jersey Stadium
+                          - generic [ref=e2900]: (New York)
+          - iframe [ref=e2905]:
+            - generic [ref=f2e4]:
+              - generic [ref=f2e5]:
+                - img "Logo" [ref=f2e6]
+                - paragraph [ref=f2e7]: Who will finish top of the group?
+                - link "SUBMIT YOUR PREDICTIONS" [ref=f2e8] [cursor=pointer]:
+                  - /url: /bracket-predictor/en/brackets?groupPredictions=eyJncm91cFN0YWdlUHJlZGljdGlvbnMiOltdLCJ0aGlyZFBsYWNlUXVhbGlmaWVyUHJlZGljdGlvbnMiOltdLCJrbm9ja291dFN0YWdlUHJlZGljdGlvbnMiOnsiUjMyIjpbXSwiUjE2IjpbXSwiUUYiOltdLCJTRiI6W10sIkYiOltdfX0%3D
+                  - button "SUBMIT YOUR PREDICTIONS" [disabled] [ref=f2e9]
+              - generic [ref=f2e11]:
+                - heading "Group A" [level=2] [ref=f2e12]
+                - generic [ref=f2e13]:
+                  - generic [ref=f2e17]:
+                    - button "Mexico MEX" [ref=f2e18] [cursor=pointer]:
+                      - img "Mexico" [ref=f2e19]
+                      - generic [ref=f2e20]: MEX
+                    - button "South Africa RSA" [ref=f2e21] [cursor=pointer]:
+                      - img "South Africa" [ref=f2e22]
+                      - generic [ref=f2e23]: RSA
+                    - button "Korea Republic KOR" [ref=f2e24] [cursor=pointer]:
+                      - img "Korea Republic" [ref=f2e25]
+                      - generic [ref=f2e26]: KOR
+                    - button "Czechia CZE" [ref=f2e27] [cursor=pointer]:
+                      - img "Czechia" [ref=f2e28]
+                      - generic [ref=f2e29]: CZE
+                  - generic [ref=f2e30]:
+                    - paragraph [ref=f2e33]: "1"
+                    - paragraph [ref=f2e36]: "2"
+                    - paragraph [ref=f2e39]: "3"
+                    - paragraph [ref=f2e42]: "4"
+                  - status [ref=f2e43]
+          - generic [ref=e110]:
+            - heading "Latest FIFA World Cup 2026™ news" [level=3] [ref=e112]:
+              - generic [ref=e114]: Latest FIFA World Cup 2026™ news
+            - generic [ref=e117]:
+              - region "Latest FIFA World Cup 2026™ news" [ref=e120]:
+                - group "Slide 1 of 20" [ref=e121]:
+                  - 'link "World Cup wonder goals: Eder’s exquisite chip" [ref=e122] [cursor=pointer]':
+                    - /url: /en/articles/eder-goal-brazil-scotland-1982
+                    - img "FIFA" [ref=e126]
+                    - generic [ref=e129]: "World Cup wonder goals: Eder’s exquisite chip"
+                - group "Slide 2 of 20" [ref=e130]:
+                  - 'link "63 days to go: Italian escapologists" [ref=e131] [cursor=pointer]':
+                    - /url: /en/articles/italy-roberto-baggio-nigeria-1994
+                    - img "FIFA" [ref=e135]
+                    - generic [ref=e138]: "63 days to go: Italian escapologists"
+                - group "Slide 3 of 20" [ref=e139]:
+                  - 'link "Guessand: Côte d''Ivoire is brimming with talent" [ref=e140] [cursor=pointer]':
+                    - /url: /en/articles/cote-divoire-attack-defence-quality
+                    - 'img "Ivory Coast''s forward #22 Evann Guessand (C) celebrates scoring his team''s second goal with Ivory Coast''s defender #17 Guela Doue and Ivory Coast''s forward #15 Amad Diallo during the Africa Cup of Nations (CAN) Group F football match between Gabon and Ivory Coast at the Grand Stadium in Marrakech on December 31, 2025. (Photo by Khaled DESOUKI / AFP via Getty Images)" [ref=e144]'
+                    - generic [ref=e147]: "Guessand: Côte d'Ivoire is brimming with talent"
+                - group [ref=e148]:
+                  - link [ref=e149] [cursor=pointer]:
+                    - /url: /en/articles/sweden-team-profile-and-history
+                    - img [ref=e153]
+                    - generic [ref=e156]: "Sweden at the FIFA World Cup: Team profile and history"
+                - group [ref=e157]:
+                  - link [ref=e158] [cursor=pointer]:
+                    - /url: /en/articles/wales-participations-gap
+                    - img [ref=e162]
+                    - generic [ref=e165]: "64 days to go: The Dragons’ long-awaited return"
+                - group [ref=e166]:
+                  - link [ref=e167] [cursor=pointer]:
+                    - /url: /en/articles/luis-chavez-goal-mexico-saudi-arabia-2022
+                    - img [ref=e171]
+                    - generic [ref=e174]: "World Cup wonder goals: Chavez’s fantastic free-kick"
+                - group [ref=e175]:
+                  - link [ref=e176] [cursor=pointer]:
+                    - /url: /en/articles/iraq-team-profile-history
+                    - img [ref=e180]
+                    - generic [ref=e183]: "Iraq at the FIFA World Cup: Team profile and history"
+                - group [ref=e184]:
+                  - link [ref=e185] [cursor=pointer]:
+                    - /url: /en/articles/world-cup-top-scorer-quiz
+                    - img [ref=e189]
+                    - generic [ref=e192]: The World Cup top scorer quiz
+                - group [ref=e193]:
+                  - link [ref=e194] [cursor=pointer]:
+                    - /url: /en/articles/colombia-possession-1994
+                    - img [ref=e198]
+                    - generic [ref=e201]: "65 days to go: El Pibe and the Questra-keepers"
+                - group [ref=e202]:
+                  - link [ref=e203] [cursor=pointer]:
+                    - /url: /en/articles/teofilo-cubillas-goal-peru-scotland-argentina-1978
+                    - img [ref=e207]
+                    - generic [ref=e210]: "World Cup wonder goals: Cubillas’ outside-of-the-boot special"
+                - group [ref=e211]:
+                  - link [ref=e212] [cursor=pointer]:
+                    - /url: /en/articles/florian-wirtz-germany-quotes-records
+                    - img [ref=e216]
+                    - generic [ref=e219]: "26 Superstars: Florian Wirtz"
+                - group [ref=e220]:
+                  - link [ref=e221] [cursor=pointer]:
+                    - /url: /en/articles/czechia-team-profile-history
+                    - img [ref=e225]
+                    - generic [ref=e228]: "Czechia at the FIFA World Cup: Team profile and history"
+                - group [ref=e229]:
+                  - link [ref=e230] [cursor=pointer]:
+                    - /url: /en/articles/mircea-lucescu-romania-dies
+                    - img [ref=e234]
+                    - generic [ref=e237]: Romania great Lucescu passes away
+                - group [ref=e238]:
+                  - link [ref=e239] [cursor=pointer]:
+                    - /url: /en/articles/agyemang-world-cup-injury
+                    - img [ref=e243]
+                    - generic [ref=e246]: USA forward Agyemang ruled out
+                - group [ref=e247]:
+                  - link [ref=e248] [cursor=pointer]:
+                    - /url: /en/articles/france-seconds-behind-1998
+                    - img [ref=e252]
+                    - generic [ref=e255]: "66 days to go: Thuram makes amends"
+                - group [ref=e256]:
+                  - link [ref=e257] [cursor=pointer]:
+                    - /url: /en/articles/fabio-quagliarella-italy-slovakia-goal-2010
+                    - img [ref=e261]
+                    - generic [ref=e264]: "World Cup wonder goals: Quagliarella’s magical chip"
+                - group [ref=e265]:
+                  - link [ref=e266] [cursor=pointer]:
+                    - /url: /en/articles/josimar-goal-brazil-northern-ireland-1986
+                    - img [ref=e270]
+                    - generic [ref=e273]: "World Cup wonder goals: Josimar seizes his shot"
+                - group [ref=e274]:
+                  - link [ref=e275] [cursor=pointer]:
+                    - /url: /en/articles/gianni-rivera-goal-italy-west-germany-1970
+                    - img [ref=e279]
+                    - generic [ref=e282]: "67 days to go: Rivera wins the relay for Italy"
+                - group [ref=e283]:
+                  - link [ref=e284] [cursor=pointer]:
+                    - /url: /en/articles/earnie-stewart-usa-interview
+                    - img [ref=e288]
+                    - generic [ref=e291]: Stewart on Pochettino, Pepi and USA on home soil
+                - group [ref=e292]:
+                  - link [ref=e293] [cursor=pointer]:
+                    - /url: /en/articles/james-rodriguez-colombia-japan-goal-2014
+                    - img [ref=e297]
+                    - generic [ref=e300]: "World Cup wonder goals: James’ Pantanal pearler"
+              - generic [ref=e301]:
+                - button "Previous Slide" [disabled] [ref=e302]:
+                  - img [ref=e303]
+                - button "Next Slide" [ref=e305] [cursor=pointer]:
+                  - img [ref=e306]
+      - separator [ref=e321]
+  - dialog "We Care About Your Privacy" [ref=e2907]:
+    - generic [ref=e2909]:
+      - generic [ref=e2911]:
+        - heading "We Care About Your Privacy" [level=2] [ref=e2912]
+        - generic [ref=e2913]:
+          - text: We and our 991 partners may store and access personal data, like browsing data or unique identifiers, on your device. Selecting "I Accept" enables tracking technologies to support the purposes shown under "we and our partners process data to provide," whereas selecting "Reject All" or withdrawing your consent will disable them. If trackers are disabled, some content and ads you see may not be as relevant to you. You can resurface this menu to change your choices or withdraw consent at any time by clicking the Manage Cookie Preferences link on the bottom of the webpage. Your choices will have effect within our Website. For more details, refer to our
+          - link "Privacy Policy, opens in a new tab" [ref=e2914] [cursor=pointer]:
+            - /url: https://inside.fifa.com/data-protection-portal/data-protection-policy
+            - text: Privacy Policy
+        - generic [ref=e2915]:
+          - heading "We and our partners process data to provide:" [level=3] [ref=e2916]
+          - paragraph [ref=e2918]:
+            - text: Use precise geolocation data. Actively scan device characteristics for identification. Store and/or access information on a device. Personalised advertising and content, advertising and content measurement, audience research and services development.
+            - button "List of Partners (vendors)" [ref=e2919] [cursor=pointer]
+      - generic [ref=e2921]:
+        - button "I Accept" [ref=e2922] [cursor=pointer]
+        - button "Reject All" [ref=e2923] [cursor=pointer]
+        - button "Show Purposes, Opens the preference center dialog" [ref=e2924] [cursor=pointer]: Show Purposes
