@@ -60,6 +60,16 @@ export default function ForumTopicPage() {
     loadTopic();
   }, [loadTopic]);
 
+  // Mark topic as read when the user opens it
+  useEffect(() => {
+    if (!user || !topicId) return;
+    fetch('/api/forum/read-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topicId }),
+    }).catch(() => {});
+  }, [user, topicId]);
+
   useEffect(() => {
     const loadAdmin = async () => {
       if (!user) return;
