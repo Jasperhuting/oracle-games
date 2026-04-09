@@ -204,27 +204,11 @@ export default function ForumPage() {
     setSidebarOpen(false);
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Sidebar content (shared between mobile + desktop) ───────────────────
 
-  return (
-    <div className="flex h-screen overflow-hidden mt-[36px]">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black/20 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside
-        className={[
-          'fixed md:static inset-y-0 left-0 z-30 flex flex-col bg-white border-r border-gray-200',
-          'w-56 shrink-0 transition-transform duration-200',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        ].join(' ')}
-        style={{ top: 36 }}
-      >
+  function renderSidebarNav() {
+    return (
+      <>
         {/* Sidebar header */}
         <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-100">
           <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold shrink-0">
@@ -233,9 +217,8 @@ export default function ForumPage() {
           <span className="font-bold text-gray-900 text-base">Forum</span>
         </div>
 
-        {/* Sidebar nav */}
+        {/* Nav */}
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {/* All recent */}
           <button
             onClick={() => handleSelect({ type: 'all' })}
             className={navItemClass(isActive({ type: 'all' }))}
@@ -244,7 +227,6 @@ export default function ForumPage() {
             <span className="truncate">Recente berichten</span>
           </button>
 
-          {/* Categories */}
           {categories.length > 0 && (
             <>
               <div className="pt-4 pb-1 px-3">
@@ -258,16 +240,13 @@ export default function ForumPage() {
                   onClick={() => handleSelect({ type: 'category', category: cat })}
                   className={navItemClass(isActive({ type: 'category', category: cat }))}
                 >
-                  <span className="text-base shrink-0">
-                    {CATEGORY_ICONS[cat.slug] || '💬'}
-                  </span>
+                  <span className="text-base shrink-0">{CATEGORY_ICONS[cat.slug] || '💬'}</span>
                   <span className="truncate">{cat.name}</span>
                 </button>
               ))}
             </>
           )}
 
-          {/* Games */}
           {games.length > 0 && (
             <>
               <div className="pt-4 pb-1 px-3">
@@ -299,149 +278,180 @@ export default function ForumPage() {
             <span>Terug naar account</span>
           </Link>
         </div>
+      </>
+    );
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  return (
+    <div className="mt-[36px]">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar (fixed overlay) */}
+      <aside
+        className={[
+          'fixed inset-y-0 left-0 z-30 flex flex-col bg-white border-r border-gray-200',
+          'w-56 transition-transform duration-200 md:hidden',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+        style={{ top: 36 }}
+      >
+        {renderSidebarNav()}
       </aside>
 
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Sticky top bar */}
-        <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-gray-200 bg-white sticky top-0 z-10 shrink-0">
-          {/* Mobile sidebar toggle */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
-            aria-label="Open menu"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+      {/* ── Centered container ───────────────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex gap-6 items-start">
 
-          <h1 className="font-bold text-gray-900 text-base flex-1 truncate">{headerLabel}</h1>
+          {/* Desktop sidebar (sticky in-flow) */}
+          <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[36px] max-h-[calc(100vh-36px)] bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            {renderSidebarNav()}
+          </aside>
 
-          {unreadCount > 0 && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-              {unreadCount} nieuw
-            </span>
-          )}
+          {/* ── Main content ──────────────────────────────────────────────── */}
+          <main className="flex-1 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            {/* Top bar */}
+            <div className="flex items-center gap-3 px-4 md:px-6 py-3 border-b border-gray-200 bg-white sticky top-[36px] z-10">
+              {/* Mobile sidebar toggle */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+                aria-label="Open menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
 
-          {selected.type === 'category' && (
-            <Link
-              href={`/forum/${selected.category.slug}`}
-              className="text-xs text-primary hover:underline shrink-0"
-            >
-              Volledig forum →
-            </Link>
-          )}
-          {selected.type === 'game' && (
-            <Link
-              href={`/forum/game/${selected.game.id}`}
-              className="text-xs text-primary hover:underline shrink-0"
-            >
-              Volledig forum →
-            </Link>
-          )}
-        </div>
+              <h1 className="font-bold text-gray-900 text-base flex-1 truncate">{headerLabel}</h1>
 
-        {/* Topics list */}
-        <div className="flex-1 overflow-y-auto">
-          {loading && (
-            <div className="flex items-center justify-center py-16 text-sm text-gray-400">
-              Laden...
+              {unreadCount > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                  {unreadCount} nieuw
+                </span>
+              )}
+
+              {selected.type === 'category' && (
+                <Link
+                  href={`/forum/${selected.category.slug}`}
+                  className="text-xs text-primary hover:underline shrink-0"
+                >
+                  Volledig forum →
+                </Link>
+              )}
+              {selected.type === 'game' && (
+                <Link
+                  href={`/forum/game/${selected.game.id}`}
+                  className="text-xs text-primary hover:underline shrink-0"
+                >
+                  Volledig forum →
+                </Link>
+              )}
             </div>
-          )}
 
-          {!loading && topics.length === 0 && (
-            <div className="flex items-center justify-center py-16 text-sm text-gray-400">
-              Nog geen berichten.
-            </div>
-          )}
+            {/* Topics list */}
+            {loading && (
+              <div className="flex items-center justify-center py-16 text-sm text-gray-400">
+                Laden...
+              </div>
+            )}
 
-          {!loading && topics.length > 0 && (
-            <div className="divide-y divide-gray-100">
-              {topics.map((topic) => {
-                const unread = isUnread(topic);
-                const contextLabel = topic.gameName || topic.categoryName;
-                const preview = topic.lastReplyPreview
-                  ? topic.lastReplyPreview.replace(/<[^>]*>/g, '').trim()
-                  : topic.body
-                    ? topic.body.replace(/<[^>]*>/g, '').trim()
-                    : null;
+            {!loading && topics.length === 0 && (
+              <div className="flex items-center justify-center py-16 text-sm text-gray-400">
+                Nog geen berichten.
+              </div>
+            )}
 
-                return (
-                  <Link
-                    key={topic.id}
-                    href={`/forum/topic/${topic.id}`}
-                    className="flex items-start gap-3 px-4 md:px-6 py-4 hover:bg-gray-50 transition-colors group"
-                  >
-                    {/* Unread dot */}
-                    <div className="mt-1.5 shrink-0 w-2.5 flex justify-center">
-                      {unread && (
-                        <span className="h-2 w-2 rounded-full bg-blue-500 block" />
-                      )}
-                    </div>
+            {!loading && topics.length > 0 && (
+              <div className="divide-y divide-gray-100">
+                {topics.map((topic) => {
+                  const unread = isUnread(topic);
+                  const contextLabel = topic.gameName || topic.categoryName;
+                  const preview = topic.lastReplyPreview
+                    ? topic.lastReplyPreview.replace(/<[^>]*>/g, '').trim()
+                    : topic.body
+                      ? topic.body.replace(/<[^>]*>/g, '').trim()
+                      : null;
 
-                    {/* Avatar */}
-                    <div className="shrink-0 mt-0.5">
-                      <AvatarBadge
-                        name={topic.lastReplyUserName || topic.createdByName}
-                        avatarUrl={topic.lastReplyUserAvatarUrl || topic.createdByAvatarUrl}
-                        size={36}
-                      />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Title row */}
-                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-0.5">
-                        <span
-                          className={[
-                            'text-sm leading-snug text-gray-900 group-hover:text-primary transition-colors',
-                            unread ? 'font-semibold' : 'font-medium',
-                          ].join(' ')}
-                        >
-                          {topic.title}
-                        </span>
-                        {contextLabel && (
-                          <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 font-medium shrink-0">
-                            {contextLabel}
-                          </span>
-                        )}
-                        {topic.pinned && (
-                          <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 font-medium shrink-0">
-                            Vastgezet
-                          </span>
-                        )}
+                  return (
+                    <Link
+                      key={topic.id}
+                      href={`/forum/topic/${topic.id}`}
+                      className="flex items-start gap-3 px-4 md:px-6 py-4 hover:bg-gray-50 transition-colors group"
+                    >
+                      {/* Unread dot */}
+                      <div className="mt-1.5 shrink-0 w-2.5 flex justify-center">
+                        {unread && <span className="h-2 w-2 rounded-full bg-blue-500 block" />}
                       </div>
 
-                      {/* Meta row */}
-                      <div className="text-xs text-gray-500 mb-1">
-                        <span className="font-medium text-gray-700">
-                          {topic.lastReplyUserName || topic.createdByName}
-                        </span>
-                        <span className="mx-1">·</span>
-                        <span>{formatRelativeTime(topic.lastReplyAt || topic.createdAt)}</span>
-                        {topic.replyCount > 0 && (
-                          <>
-                            <span className="mx-1">·</span>
-                            <span>{topic.replyCount} reactie{topic.replyCount === 1 ? '' : 's'}</span>
-                          </>
-                        )}
+                      {/* Avatar */}
+                      <div className="shrink-0 mt-0.5">
+                        <AvatarBadge
+                          name={topic.lastReplyUserName || topic.createdByName}
+                          avatarUrl={topic.lastReplyUserAvatarUrl || topic.createdByAvatarUrl}
+                          size={36}
+                        />
                       </div>
 
-                      {/* Preview */}
-                      {preview && (
-                        <p className="text-xs text-gray-400 line-clamp-1">
-                          {preview.length > 120 ? preview.slice(0, 120) + '…' : preview}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-0.5">
+                          <span
+                            className={[
+                              'text-sm leading-snug text-gray-900 group-hover:text-primary transition-colors',
+                              unread ? 'font-semibold' : 'font-medium',
+                            ].join(' ')}
+                          >
+                            {topic.title}
+                          </span>
+                          {contextLabel && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 font-medium shrink-0">
+                              {contextLabel}
+                            </span>
+                          )}
+                          {topic.pinned && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 font-medium shrink-0">
+                              Vastgezet
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-xs text-gray-500 mb-1">
+                          <span className="font-medium text-gray-700">
+                            {topic.lastReplyUserName || topic.createdByName}
+                          </span>
+                          <span className="mx-1">·</span>
+                          <span>{formatRelativeTime(topic.lastReplyAt || topic.createdAt)}</span>
+                          {topic.replyCount > 0 && (
+                            <>
+                              <span className="mx-1">·</span>
+                              <span>{topic.replyCount} reactie{topic.replyCount === 1 ? '' : 's'}</span>
+                            </>
+                          )}
+                        </div>
+
+                        {preview && (
+                          <p className="text-xs text-gray-400 line-clamp-1">
+                            {preview.length > 120 ? preview.slice(0, 120) + '…' : preview}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </main>
+
         </div>
-      </main>
+      </div>
     </div>
   );
 }
