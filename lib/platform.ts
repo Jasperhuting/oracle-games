@@ -6,6 +6,7 @@ export type HeaderMenuKey =
   | "forum"
   | "chat"
   | "myGames"
+  | "footballWedstrijden"
   | "footballPredictions"
   | "footballKnockout"
   | "footballStandings"
@@ -77,7 +78,7 @@ const PLATFORM_CONFIGS: PlatformConfig[] = [
     publicEntryPath: "/preview/wk-2026",
     authenticatedEntryPath: "/wk-2026/predictions",
     accountPath: "/wk-2026/account",
-    headerMenuItems: ["footballPredictions", "footballKnockout", "footballStandings", "admin"],
+    headerMenuItems: ["footballWedstrijden", "footballPredictions", "footballKnockout", "footballStandings", "admin"],
     authImages: {
       login: "/homepage_picture_wk.webp",
       register: "/homepage_picture_wk.webp",

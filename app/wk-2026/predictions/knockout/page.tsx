@@ -10,6 +10,7 @@ import { KnockoutMatch, ROUND_LABELS } from '@/lib/types/knockout';
 import { useWk2026Participant } from '../../hooks';
 import { Flag } from '@/components/Flag';
 import countriesList from '@/lib/country.json';
+import { getCountryDisplayNameNL } from '@/lib/country-nl';
 import { KnockoutMatchCard } from '@/app/wk-2026/components/KnockoutMatchCard';
 import {
   GroupData,
@@ -167,7 +168,7 @@ export default function KnockoutPredictionsPage() {
 
     for (const poule of actualPoules) {
       if (poule.teams && poule.teams[teamId]) {
-        return poule.teams[teamId].name;
+        return getCountryDisplayNameNL(poule.teams[teamId].name);
       }
     }
 
@@ -380,12 +381,18 @@ export default function KnockoutPredictionsPage() {
   const getTeamFlagCode = (teamId: string | null | undefined): string => {
     if (!teamId) return '';
 
-    const teamName = getTeamName(teamId);
-    const country = countriesList.find((entry: { name: string; code: string }) =>
-      entry.name.toLowerCase() === teamName.toLowerCase()
-    );
+    // Use the raw English name from Firestore, not the Dutch display name
+    for (const poule of actualPoules) {
+      if (poule.teams && poule.teams[teamId]) {
+        const englishName = poule.teams[teamId].name;
+        const country = countriesList.find((entry: { name: string; code: string }) =>
+          entry.name.toLowerCase() === englishName.toLowerCase()
+        );
+        return country?.code || teamId;
+      }
+    }
 
-    return country?.code || teamId;
+    return teamId;
   };
 
   const renderTeamFlag = (teamId: string, size = 30): ReactElement => (
@@ -443,16 +450,12 @@ export default function KnockoutPredictionsPage() {
     // Check if we can show potential teams
     const potentialTeams = getPotentialTeams(teamSource);
 
-    let gridCols = potentialTeams.length;
-
-    if (potentialTeams.length >= 8) {
-      gridCols = 4;
-    }
-    
+    const cols = potentialTeams.length >= 8 ? 4 : potentialTeams.length >= 4 ? 4 : potentialTeams.length >= 3 ? 3 : 2;
+    const gridClass = cols === 4 ? 'grid-cols-4' : cols === 3 ? 'grid-cols-3' : 'grid-cols-2';
 
     if (potentialTeams.length > 0) {
       return (
-        <span className={`grid grid-cols-${gridCols}  items-center gap-2`}>
+        <span className={`grid ${gridClass} items-center gap-1`}>
           {potentialTeams.map((team) => (
             <span key={team} className="inline-flex items-center" title={getTeamName(team)}>
               <Flag countryCode={getTeamFlagCode(team)} width={24} />

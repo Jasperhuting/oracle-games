@@ -128,6 +128,7 @@ export const Header = ({
         { key: "forum", name: t('header.menu.forum'), href: "/forum", display: isAdmin || impersonationStatus.isImpersonating },
         { key: "chat", name: "Chat", href: "/chat", display: !!user },
         { key: "myGames", name: t('header.menu.myGames'), href: "/myGames", display: false },
+        { key: "footballWedstrijden", name: "Wedstrijden", href: "/wk-2026/wedstrijden", display: !!user },
         { key: "footballPredictions", name: "Predictions", href: "/wk-2026/predictions", display: !!user },
         { key: "footballKnockout", name: "Knockout Predictions", href: "/wk-2026/predictions/knockout", display: !!user },
         { key: "footballStandings", name: "Standings", href: "/wk-2026/standings", display: !!user },

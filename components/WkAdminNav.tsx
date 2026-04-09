@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const WK_ADMIN_LINKS = [
+  { href: "/wk-2026/wedstrijden", label: "Wedstrijden" },
   { href: "/wk-2026/predictions", label: "User predictions" },
   { href: "/wk-2026/admin", label: "Groepen" },
   { href: "/wk-2026", label: "Pots indelen" },
