@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = "force-dynamic";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, Check } from "tabler-icons-react";
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,6 +97,7 @@ export default function PlayerPredictionsPage() {
     const [saveFeedback, setSaveFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
+    const fetchedHistoryPairsRef = useRef<Set<string>>(new Set());
     const [teamHistory, setTeamHistory] = useState<StoredTeamHistoryMap>({});
     const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -251,18 +252,15 @@ export default function PlayerPredictionsPage() {
 
     const fetchMissingTeamHistory = useCallback(async (team1Name: string, team2Name: string) => {
         const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
-        if (teamHistory[pairKey]) {
-            return;
-        }
+        if (fetchedHistoryPairsRef.current.has(pairKey)) return;
+        fetchedHistoryPairsRef.current.add(pairKey);
 
         try {
             const response = await fetch(
                 `/api/wk-2026/team-history?team1=${encodeURIComponent(team1Name)}&team2=${encodeURIComponent(team2Name)}`
             );
 
-            if (!response.ok) {
-                return;
-            }
+            if (!response.ok) return;
 
             const data: TeamHistoryResponse = await response.json();
             const [teamA, teamB] = [team1Name, team2Name].sort();
@@ -279,8 +277,9 @@ export default function PlayerPredictionsPage() {
             }));
         } catch (error) {
             console.error('Error fetching missing team history:', error);
+            fetchedHistoryPairsRef.current.delete(pairKey);
         }
-    }, [teamHistory]);
+    }, []);
 
     useEffect(() => {
         if (user) {
@@ -296,13 +295,10 @@ export default function PlayerPredictionsPage() {
         const teams = pouleData.rankings.filter(Boolean) as TeamInPoule[];
         teams.forEach((team, index) => {
             teams.slice(index + 1).forEach((opponent) => {
-                const pairKey = createTeamHistoryPairKey(team.name, opponent.name);
-                if (!teamHistory[pairKey]) {
-                    void fetchMissingTeamHistory(team.name, opponent.name);
-                }
+                void fetchMissingTeamHistory(team.name, opponent.name);
             });
         });
-    }, [selectedPoule, poules, teamHistory, fetchMissingTeamHistory]);
+    }, [selectedPoule, poules, fetchMissingTeamHistory]);
 
     const handleScoreChange = (matchId: string, team: 'team1' | 'team2', score: string) => {
         const scoreValue = score === '' ? null : parseInt(score);

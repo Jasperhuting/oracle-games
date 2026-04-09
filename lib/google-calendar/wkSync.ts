@@ -133,7 +133,7 @@ function buildEventResource(fixture: WkFixtureItem): calendar_v3.Schema$Event {
 
 function buildEventId(matchNumber: number): string {
   const digest = createHash('md5').update(`wk2026-match-${matchNumber}`).digest('hex');
-  return `oraclewk${digest}`;
+  return `oracle${digest}`;
 }
 
 function eventsMatch(

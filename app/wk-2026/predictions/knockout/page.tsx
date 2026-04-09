@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import type { ReactElement } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { authorizedFetch } from '@/lib/auth/token-service';
@@ -36,6 +36,7 @@ export default function KnockoutPredictionsPage() {
   const { isParticipant, loading: participantLoading, refresh: refreshParticipant } = useWk2026Participant(user?.uid || null, 2026);
   const router = useRouter();
 
+  const fetchedHistoryPairsRef = useRef<Set<string>>(new Set());
   const [matches, setMatches] = useState<KnockoutMatch[]>([]);
   const [actualPoules, setActualPoules] = useState<GroupData[]>([]);
   const [teamHistory, setTeamHistory] = useState<StoredTeamHistoryMap>({});
@@ -139,18 +140,15 @@ export default function KnockoutPredictionsPage() {
 
   const fetchMissingTeamHistory = useCallback(async (team1Name: string, team2Name: string) => {
     const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
-    if (teamHistory[pairKey]) {
-      return;
-    }
+    if (fetchedHistoryPairsRef.current.has(pairKey)) return;
+    fetchedHistoryPairsRef.current.add(pairKey);
 
     try {
       const response = await fetch(
         `/api/wk-2026/team-history?team1=${encodeURIComponent(team1Name)}&team2=${encodeURIComponent(team2Name)}`
       );
 
-      if (!response.ok) {
-        return;
-      }
+      if (!response.ok) return;
 
       const data: TeamHistoryResponse = await response.json();
       const [teamA, teamB] = [team1Name, team2Name].sort();
@@ -168,8 +166,9 @@ export default function KnockoutPredictionsPage() {
       }));
     } catch (error) {
       console.error('Error fetching missing team history:', error);
+      fetchedHistoryPairsRef.current.delete(pairKey);
     }
-  }, [teamHistory]);
+  }, []);
 
   const getTeamName = useCallback((teamId: string | null | undefined): string => {
     if (!teamId) return '?';
@@ -201,19 +200,10 @@ export default function KnockoutPredictionsPage() {
 
   useEffect(() => {
     matches.forEach((match) => {
-      if (!match.team1 || !match.team2) {
-        return;
-      }
-
-      const team1Name = getTeamName(match.team1);
-      const team2Name = getTeamName(match.team2);
-      const pairKey = createTeamHistoryPairKey(team1Name, team2Name);
-
-      if (!teamHistory[pairKey]) {
-        void fetchMissingTeamHistory(team1Name, team2Name);
-      }
+      if (!match.team1 || !match.team2) return;
+      void fetchMissingTeamHistory(getTeamName(match.team1), getTeamName(match.team2));
     });
-  }, [matches, teamHistory, fetchMissingTeamHistory, getTeamName]);
+  }, [matches, fetchMissingTeamHistory, getTeamName]);
 
   if (loading || participantLoading) {
     return (
