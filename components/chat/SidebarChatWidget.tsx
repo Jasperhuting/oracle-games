@@ -263,7 +263,7 @@ export default function SidebarChatWidget() {
 
   // Expanded: full sidebar panel
   return (
-    <div className="fixed left-0 bottom-0 z-[39] w-[272px] bg-white border-r border-gray-200 shadow-xl hidden sm:flex sm:flex-col" style={{ top: headerBottom }}>
+    <div className="fixed left-0 bottom-0 z-[39] w-[272px] bg-white border-r border-t border-gray-200 shadow-xl rounded-tr-lg overflow-hidden hidden sm:flex sm:flex-col" style={{ top: headerBottom }}>
       {selectedRoom ? (
         <ChatPanel
           room={selectedRoom}

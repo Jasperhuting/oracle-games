@@ -215,14 +215,14 @@ export default function ChatInput({
       )}
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-3">
+      <form onSubmit={handleSubmit} className={`flex items-center ${compact ? 'gap-1.5 px-2 py-2' : 'gap-2 px-4 py-3'}`}>
         <input
           ref={inputRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Typ een bericht..."
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm outline-none"
+          className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm outline-none"
           disabled={sending}
           maxLength={1000}
         />
