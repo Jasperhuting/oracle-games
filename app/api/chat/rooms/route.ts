@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         title: data.title,
         description: data.description || null,
         gameType: data.gameType || null,
+        opensAt: data.opensAt?.toDate?.()?.toISOString() || data.opensAt || null,
         closesAt: data.closesAt?.toDate?.()?.toISOString() || data.closesAt,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
         createdBy: data.createdBy,
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, gameType, closesAt, createdBy } = body;
+    const { title, description, gameType, opensAt, closesAt, createdBy } = body;
 
     if (!title || !closesAt || !createdBy) {
       return NextResponse.json(
@@ -65,19 +66,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const roomData = {
+    const now = new Date();
+    const opensAtDate = opensAt ? new Date(opensAt) : null;
+    const status = opensAtDate && opensAtDate > now ? 'scheduled' : 'open';
+
+    const roomData: Record<string, unknown> = {
       title,
       description: description || null,
       gameType: gameType || null,
       closesAt: Timestamp.fromDate(new Date(closesAt)),
       createdAt: Timestamp.now(),
       createdBy,
-      status: 'open',
+      status,
       messageCount: 0,
     };
 
+    if (opensAtDate) {
+      roomData.opensAt = Timestamp.fromDate(opensAtDate);
+    }
+
     const docRef = await db.collection('chat_rooms').add(roomData);
-    return NextResponse.json({ id: docRef.id });
+    return NextResponse.json({ id: docRef.id, status });
   } catch (error) {
     console.error('Error creating chat room:', error);
     return NextResponse.json({ error: 'Failed to create chat room' }, { status: 500 });
