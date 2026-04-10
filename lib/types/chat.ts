@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type ChatRoomStatus = 'open' | 'closed';
+export type ChatRoomStatus = 'open' | 'closed' | 'scheduled';
 export type ChatGameType = 'football' | 'f1' | 'cycling' | null;
 
 export interface ChatRoom {
@@ -8,6 +8,7 @@ export interface ChatRoom {
   title: string;
   description?: string;
   gameType?: ChatGameType;
+  opensAt?: Timestamp | string | null;
   closesAt: Timestamp | string;
   createdAt: Timestamp | string;
   createdBy: string;

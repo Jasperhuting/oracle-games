@@ -69,6 +69,7 @@ export function useChatRooms(): UseChatRoomsResult {
               title: data.title,
               description: data.description,
               gameType: data.gameType,
+              opensAt: toIso(data.opensAt) || null,
               closesAt: toIso(data.closesAt) || '',
               createdAt: toIso(data.createdAt) || '',
               createdBy: data.createdBy,
