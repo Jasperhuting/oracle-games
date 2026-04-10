@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { ChatRoom } from '@/lib/types/chat';
 
 const CHAT_SEEN_EVENT = 'chat-seen-updated';
+const POLL_INTERVAL_MS = 30_000; // 30 seconds
 
 export interface UseChatRoomsResult {
   rooms: ChatRoom[];
@@ -51,54 +52,50 @@ export function useChatRooms(): UseChatRoomsResult {
   const roomsRef = useRef<ChatRoom[]>([]);
 
   useEffect(() => {
-    try {
-      const q = query(
-        collection(db, 'chat_rooms'),
-        where('status', '==', 'open'),
-        orderBy('createdAt', 'desc')
-      );
+    const q = query(
+      collection(db, 'chat_rooms'),
+      where('status', '==', 'open'),
+      orderBy('createdAt', 'desc')
+    );
 
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const fetched: ChatRoom[] = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            fetched.push({
-              id: doc.id,
-              title: data.title,
-              description: data.description,
-              gameType: data.gameType,
-              closesAt: toIso(data.closesAt) || '',
-              createdAt: toIso(data.createdAt) || '',
-              createdBy: data.createdBy,
-              status: data.status,
-              messageCount: data.messageCount || 0,
-            });
+    const fetchRooms = async () => {
+      try {
+        const snapshot = await getDocs(q);
+        const fetched: ChatRoom[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          fetched.push({
+            id: doc.id,
+            title: data.title,
+            description: data.description,
+            gameType: data.gameType,
+            closesAt: toIso(data.closesAt) || '',
+            createdAt: toIso(data.createdAt) || '',
+            createdBy: data.createdBy,
+            status: data.status,
+            messageCount: data.messageCount || 0,
           });
+        });
 
-          roomsRef.current = fetched;
-          setRooms(fetched);
-          setUnreadByRoom(computeUnreadCounts(fetched));
-          setLoading(false);
-          setError(null);
-        },
-        (err) => {
-          console.error('[useChatRooms] Error listening to rooms:', err);
-          setError(err instanceof Error ? err : new Error(String(err)));
-          setLoading(false);
-        }
-      );
+        roomsRef.current = fetched;
+        setRooms(fetched);
+        setUnreadByRoom(computeUnreadCounts(fetched));
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        console.error('[useChatRooms] Error fetching rooms:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        setLoading(false);
+      }
+    };
 
-      return () => {
-        unsubscribe();
-      };
-    } catch (err) {
-      console.error('[useChatRooms] Error setting up listener:', err);
-      setError(err instanceof Error ? err : new Error(String(err)));
-      setLoading(false);
-      return undefined;
-    }
+    // Initial fetch
+    fetchRooms();
+
+    // Poll every 30 seconds instead of keeping a persistent Firestore listener
+    const interval = setInterval(fetchRooms, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
