@@ -1,15 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase, getServerFirebaseF1 } from '@/lib/firebase/server';
 import type { GamesListResponse, ApiErrorResponse, ClientGame } from '@/lib/types';
+import { unstable_cache } from 'next/cache';
 
-export async function GET(request: NextRequest): Promise<NextResponse<GamesListResponse | ApiErrorResponse>> {
-  try {
-    const { searchParams } = new URL(request.url);
-    const year = searchParams.get('year');
-    const status = searchParams.get('status');
-    const gameType = searchParams.get('gameType');
-    const limit = parseInt(searchParams.get('limit') || '50');
+export const GAMES_LIST_CACHE_TAG = 'games-list';
 
+type GamesListResult = {
+  games: ClientGame[];
+  count: number;
+};
+
+const convertTimestamp = (ts: unknown): string | undefined => {
+  if (!ts) return undefined;
+  if (typeof ts === 'string') return ts;
+  if (typeof ts === 'object' && ts !== null) {
+    if ('_seconds' in ts) return new Date((ts as { _seconds: number })._seconds * 1000).toISOString();
+    if ('toDate' in ts && typeof (ts as { toDate: () => Date }).toDate === 'function') {
+      return (ts as { toDate: () => Date }).toDate().toISOString();
+    }
+  }
+  return String(ts);
+};
+
+const fetchGamesList = unstable_cache(
+  async (
+    year: string | null,
+    status: string | null,
+    gameType: string | null,
+    limit: number,
+  ): Promise<GamesListResult> => {
     const db = getServerFirebase();
 
     // Fetch all games and filter in memory while indexes are building
@@ -20,17 +39,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
 
     let games = snapshot.docs.map(doc => {
       const data = doc.data();
-      // Remove timestamp fields before spreading to avoid conflicts
       const { createdAt, updatedAt, registrationOpenDate, registrationCloseDate, teamSelectionDeadline, raceRef, ...restData } = data;
-
-      // Helper to convert Firestore Timestamp to ISO string
-      const convertTimestamp = (ts: any) => {
-        if (!ts) return undefined;
-        if (typeof ts === 'string') return ts;
-        if (ts._seconds) return new Date(ts._seconds * 1000).toISOString();
-        if (ts.toDate) return ts.toDate().toISOString();
-        return ts;
-      };
 
       return {
         id: doc.id,
@@ -40,7 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
         registrationOpenDate: convertTimestamp(registrationOpenDate),
         registrationCloseDate: convertTimestamp(registrationCloseDate),
         teamSelectionDeadline: convertTimestamp(teamSelectionDeadline),
-        raceRef: raceRef?.path || raceRef,
+        raceRef: (raceRef as { path?: string })?.path || raceRef,
       } as ClientGame;
     });
 
@@ -48,16 +57,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
     if (year) {
       games = games.filter(g => g.year === parseInt(year));
     }
-
     if (status) {
       games = games.filter(g => g.status === status);
     }
-
     if (gameType) {
       games = games.filter(g => g.gameType === gameType);
     }
 
-    // Limit results
     games = games.slice(0, limit);
 
     // For F1 games, update playerCount from F1 database
@@ -66,80 +72,63 @@ export async function GET(request: NextRequest): Promise<NextResponse<GamesListR
       try {
         const f1Db = getServerFirebaseF1();
         const f1Season = f1Games[0]?.year || 2026;
-        
-        // Get F1 participants count
+
         const f1ParticipantsSnapshot = await f1Db
           .collection('participants')
           .where('season', '==', f1Season)
           .where('status', '==', 'active')
           .get();
-        
+
         const f1ParticipantCount = f1ParticipantsSnapshot.size;
-        
-        // Update playerCount for all F1 games
-        games = games.map(game => {
-          if (game.gameType === 'f1-prediction') {
-            return {
-              ...game,
-              playerCount: f1ParticipantCount,
-            };
-          }
-          return game;
-        });
-        
-        console.log(`Updated F1 games playerCount to ${f1ParticipantCount} (from F1 database)`);
+
+        games = games.map(game =>
+          game.gameType === 'f1-prediction' ? { ...game, playerCount: f1ParticipantCount } : game
+        );
       } catch (f1Error) {
         console.error('Error fetching F1 participants for games list:', f1Error);
-        // Continue with default playerCount if F1 fetch fails
       }
     }
 
     // Detect divisions for games with multiple divisions
-    // Group games by exact name match
     const gameGroups = new Map<string, typeof games>();
-
     for (const game of games) {
       const key = `${game.name}-${game.gameType}-${game.year}`;
-
-      if (!gameGroups.has(key)) {
-        gameGroups.set(key, []);
-      }
+      if (!gameGroups.has(key)) gameGroups.set(key, []);
       gameGroups.get(key)!.push(game);
     }
 
-    // Add divisions array to games that have multiple instances (divisions)
     const gamesWithDivisions = games.map(game => {
       const key = `${game.name}-${game.gameType}-${game.year}`;
       const relatedGames = gameGroups.get(key) || [];
 
-      // If there are multiple games with the same name, gameType, and year, they are divisions
       if (relatedGames.length > 1) {
-        // Extract division names from the game data or create them based on the division field
         const divisions = relatedGames
-          .map((g, index) => {
-            // If game has division field, use it
-            if (g.division) {
-              return g.division;
-            }
-            // Otherwise, create division names like "Division 1", "Division 2", etc.
-            return `Division ${index + 1}`;
-          })
+          .map((g, index) => g.division ?? `Division ${index + 1}`)
           .filter(Boolean) as string[];
 
-        return {
-          ...game,
-          divisions: divisions.length > 0 ? divisions : undefined,
-        };
+        return { ...game, divisions: divisions.length > 0 ? divisions : undefined };
       }
 
       return game;
     });
 
-    return NextResponse.json({
-      success: true,
-      games: gamesWithDivisions,
-      count: gamesWithDivisions.length,
-    });
+    return { games: gamesWithDivisions, count: gamesWithDivisions.length };
+  },
+  ['games-list'],
+  { tags: [GAMES_LIST_CACHE_TAG], revalidate: 60 },
+);
+
+export async function GET(request: NextRequest): Promise<NextResponse<GamesListResponse | ApiErrorResponse>> {
+  try {
+    const { searchParams } = new URL(request.url);
+    const year = searchParams.get('year');
+    const status = searchParams.get('status');
+    const gameType = searchParams.get('gameType');
+    const limit = parseInt(searchParams.get('limit') || '50');
+
+    const result = await fetchGamesList(year, status, gameType, limit);
+
+    return NextResponse.json({ success: true, ...result });
   } catch (error) {
     console.error('Error fetching games:', error);
     return NextResponse.json(
