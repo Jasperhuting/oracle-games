@@ -11,10 +11,11 @@ interface ChatRoomResponse {
   title: string;
   description: string | null;
   gameType: string | null;
+  opensAt: string | null;
   closesAt: string;
   createdAt: string;
   createdBy: string;
-  status: 'open' | 'closed';
+  status: 'open' | 'closed' | 'scheduled';
   messageCount: number;
 }
 
@@ -32,7 +33,8 @@ function getGameTypeBadge(gameType: string | null) {
   return colors;
 }
 
-function formatDateTime(isoString: string) {
+function formatDateTime(isoString: string | null) {
+  if (!isoString) return '—';
   const date = new Date(isoString);
   return date.toLocaleString('nl-NL', {
     day: '2-digit',
@@ -43,13 +45,27 @@ function formatDateTime(isoString: string) {
   });
 }
 
+function getDefaultOpensAt() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}T14:00`;
+}
+
 function getDefaultClosesAt() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}T23:59`;
+  return `${year}-${month}-${day}T18:00`;
 }
+
+const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
+  open: { bg: 'bg-green-100', text: 'text-green-700', label: 'Open' },
+  closed: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Gesloten' },
+  scheduled: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Gepland' },
+};
 
 export default function AdminChatManagementPage() {
   const { user, loading } = useAuth();
@@ -65,6 +81,7 @@ export default function AdminChatManagementPage() {
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formGameType, setFormGameType] = useState('');
+  const [formOpensAt, setFormOpensAt] = useState(getDefaultOpensAt());
   const [formClosesAt, setFormClosesAt] = useState(getDefaultClosesAt());
   const [formSubmitting, setFormSubmitting] = useState(false);
 
@@ -135,6 +152,7 @@ export default function AdminChatManagementPage() {
           title: formTitle.trim(),
           description: formDescription.trim() || null,
           gameType: formGameType || null,
+          opensAt: formOpensAt ? new Date(formOpensAt).toISOString() : null,
           closesAt: new Date(formClosesAt).toISOString(),
           createdBy: user.uid,
         }),
@@ -145,6 +163,7 @@ export default function AdminChatManagementPage() {
         setFormTitle('');
         setFormDescription('');
         setFormGameType('');
+        setFormOpensAt(getDefaultOpensAt());
         setFormClosesAt(getDefaultClosesAt());
         setShowForm(false);
       } else {
@@ -206,6 +225,10 @@ export default function AdminChatManagementPage() {
     return null;
   }
 
+  const scheduledRooms = rooms.filter((r) => r.status === 'scheduled');
+  const openRooms = rooms.filter((r) => r.status === 'open');
+  const closedRooms = rooms.filter((r) => r.status === 'closed');
+
   return (
     <div className="flex flex-col p-4 sm:p-8 sm:mt-[36px] bg-gray-50">
       <div className="container mx-auto max-w-7xl">
@@ -225,7 +248,12 @@ export default function AdminChatManagementPage() {
         {/* Create New Chat Form */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Nieuwe chatroom aanmaken</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Nieuwe chatroom aanmaken</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Stel een openingstijd in om de chat automatisch te laten starten (bijv. elke dag 14:00 voor de Giro).
+              </p>
+            </div>
             <button
               onClick={() => setShowForm(!showForm)}
               className="px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
@@ -244,7 +272,7 @@ export default function AdminChatManagementPage() {
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Titel van de chatroom"
+                  placeholder="bijv. Giro d'Italia etappe 5"
                 />
               </div>
 
@@ -255,7 +283,7 @@ export default function AdminChatManagementPage() {
                   onChange={(e) => setFormDescription(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Optionele beschrijving"
-                  rows={3}
+                  rows={2}
                 />
               </div>
 
@@ -273,14 +301,38 @@ export default function AdminChatManagementPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sluitdatum + tijd</label>
-                <input
-                  type="datetime-local"
-                  value={formClosesAt}
-                  onChange={(e) => setFormClosesAt(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Openingstijd
+                    <span className="ml-1 text-xs text-gray-400 font-normal">(leeg = direct open)</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formOpensAt}
+                    onChange={(e) => setFormOpensAt(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sluitingstijd *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formClosesAt}
+                    onChange={(e) => setFormClosesAt(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <span className="shrink-0 mt-0.5">💡</span>
+                <span>
+                  Voor de Giro d&apos;Italia kun je alvast alle etappes aanmaken met openingstijd 14:00 en sluitingstijd 18:00. De chat verschijnt automatisch als sidebar op alle pagina&apos;s wanneer hij opent.
+                </span>
               </div>
 
               <div>
@@ -313,81 +365,122 @@ export default function AdminChatManagementPage() {
           )}
 
           {!roomsLoading && !roomsError && rooms.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="py-3 px-4 font-semibold text-gray-700">Titel</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Type</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Status</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Berichten</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Sluit op</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Acties</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rooms.map((room, index) => {
-                    const badge = getGameTypeBadge(room.gameType);
-                    return (
-                      <tr
-                        key={room.id}
-                        className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                      >
-                        <td className="py-3 px-4 font-medium text-gray-900">{room.title}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${badge.bg} ${badge.text}`}>
-                            {badge.label}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          {room.status === 'open' ? (
-                            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                              Open
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                              Gesloten
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">{room.messageCount}</td>
-                        <td className="py-3 px-4 text-gray-600">{formatDateTime(room.closesAt)}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleToggleStatus(room)}
-                              className={`px-3 py-1 text-xs rounded-lg font-semibold transition-colors ${
-                                room.status === 'open'
-                                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                              }`}
-                            >
-                              {room.status === 'open' ? 'Sluiten' : 'Heropenen'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRoom(room)}
-                              className="px-3 py-1 text-xs rounded-lg font-semibold transition-colors bg-red-100 text-red-700 hover:bg-red-200"
-                            >
-                              Verwijderen
-                            </button>
-                            <a
-                              href={`/chat/${room.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1 text-xs rounded-lg font-semibold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            >
-                              Bekijken
-                            </a>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-6">
+              {scheduledRooms.length > 0 && (
+                <RoomsSection
+                  title="Gepland"
+                  rooms={scheduledRooms}
+                  onToggle={handleToggleStatus}
+                  onDelete={handleDeleteRoom}
+                />
+              )}
+              {openRooms.length > 0 && (
+                <RoomsSection
+                  title="Open"
+                  rooms={openRooms}
+                  onToggle={handleToggleStatus}
+                  onDelete={handleDeleteRoom}
+                />
+              )}
+              {closedRooms.length > 0 && (
+                <RoomsSection
+                  title="Gesloten"
+                  rooms={closedRooms}
+                  onToggle={handleToggleStatus}
+                  onDelete={handleDeleteRoom}
+                />
+              )}
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RoomsSection({
+  title,
+  rooms,
+  onToggle,
+  onDelete,
+}: {
+  title: string;
+  rooms: ChatRoomResponse[];
+  onToggle: (room: ChatRoomResponse) => void;
+  onDelete: (room: ChatRoomResponse) => void;
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">{title}</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="py-3 px-4 font-semibold text-gray-700">Titel</th>
+              <th className="py-3 px-4 font-semibold text-gray-700">Type</th>
+              <th className="py-3 px-4 font-semibold text-gray-700">Status</th>
+              <th className="py-3 px-4 font-semibold text-gray-700">Opent op</th>
+              <th className="py-3 px-4 font-semibold text-gray-700">Sluit op</th>
+              <th className="py-3 px-4 font-semibold text-gray-700">Berichten</th>
+              <th className="py-3 px-4 font-semibold text-gray-700">Acties</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rooms.map((room, index) => {
+              const badge = getGameTypeBadge(room.gameType);
+              const statusBadge = STATUS_BADGE[room.status] || STATUS_BADGE.closed;
+              return (
+                <tr
+                  key={room.id}
+                  className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                >
+                  <td className="py-3 px-4 font-medium text-gray-900">{room.title}</td>
+                  <td className="py-3 px-4">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${badge.bg} ${badge.text}`}>
+                      {badge.label}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusBadge.bg} ${statusBadge.text}`}>
+                      {statusBadge.label}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-gray-600 text-xs">{formatDateTime(room.opensAt)}</td>
+                  <td className="py-3 px-4 text-gray-600 text-xs">{formatDateTime(room.closesAt)}</td>
+                  <td className="py-3 px-4 text-gray-600">{room.messageCount}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onToggle(room)}
+                        className={`px-3 py-1 text-xs rounded-lg font-semibold transition-colors ${
+                          room.status === 'open'
+                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                      >
+                        {room.status === 'open' ? 'Sluiten' : 'Openen'}
+                      </button>
+                      <button
+                        onClick={() => onDelete(room)}
+                        className="px-3 py-1 text-xs rounded-lg font-semibold transition-colors bg-red-100 text-red-700 hover:bg-red-200"
+                      >
+                        Verwijderen
+                      </button>
+                      <a
+                        href={`/chat/${room.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 text-xs rounded-lg font-semibold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      >
+                        Bekijken
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

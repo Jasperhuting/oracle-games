@@ -13,6 +13,7 @@ import LanguageWrapper from '@/components/LanguageWrapper';
 import { PlayerTeamsProvider } from '@/contexts/PlayerTeamsContext';
 import { isPublicRoute } from '@/lib/constants/routes';
 import ChatFloatingButton from '@/components/chat/ChatFloatingButton';
+import SidebarChatWidget from '@/components/chat/SidebarChatWidget';
 import { TabFocusRefresher } from '@/components/TabFocusRefresher';
 import { registerTokenService } from '@/lib/auth/token-service';
 import { FirebaseTokenAdapter } from '@/lib/auth/adapters/firebase-token-adapter';
@@ -51,6 +52,7 @@ export default function AppShellProviders({
                 </LayoutShell>
               )}
               {!isPublic && <ChatFloatingButton />}
+              {!isPublic && <SidebarChatWidget />}
             </AuthGuard>
           </PlayerTeamsProvider>
         </RankingsProvider>
