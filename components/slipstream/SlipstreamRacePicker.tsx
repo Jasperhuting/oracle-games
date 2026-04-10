@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Clock, CircleCheck, Lock, AlertCircle, Check } from 'tabler-icons-react';
+import { useTranslation } from 'react-i18next';
 
 interface Race {
   raceId: string;
@@ -44,6 +45,7 @@ export function SlipstreamRacePicker({
   filter: externalFilter,
   onFilterChange
 }: SlipstreamRacePickerProps) {
+  const { t } = useTranslation();
   const [internalFilter, setInternalFilter] = useState<RaceFilter>('needs_pick');
 
   // Use external filter if provided, otherwise use internal state
@@ -85,7 +87,7 @@ export function SlipstreamRacePicker({
           }`}
         >
           <AlertCircle className="w-3.5 h-3.5" />
-          Needs Pick ({needsPickCount})
+          {t('slipstream.needsPick')} ({needsPickCount})
         </button>
         <button
           onClick={() => setFilter('upcoming')}
@@ -95,7 +97,7 @@ export function SlipstreamRacePicker({
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Upcoming
+          {t('slipstream.upcoming')}
         </button>
         <button
           onClick={() => setFilter('finished')}
@@ -105,7 +107,7 @@ export function SlipstreamRacePicker({
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Finished
+          {t('slipstream.finished')}
         </button>
         <button
           onClick={() => setFilter('all')}
@@ -115,32 +117,32 @@ export function SlipstreamRacePicker({
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          All
+          {t('slipstream.all')}
         </button>
       </div>
 
       <div className="text-xs text-gray-500 flex flex-wrap gap-3">
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          {pickedCount} picked
+          {pickedCount} {t('slipstream.picked')}
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-          {needsPickCount} need pick
+          {needsPickCount} {t('slipstream.needPick')}
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-gray-500"></span>
-          {finishedCount} finished
+          {finishedCount} {t('slipstream.finished')}
         </span>
         <span className="text-gray-600 font-medium">
-          {finishedCount}/{totalRaces} races completed
+          {finishedCount}/{totalRaces} {t('slipstream.racesCompleted')}
         </span>
       </div>
 
       <div className="space-y-2 max-h-[min(520px,55vh)] overflow-y-auto overflow-x-hidden">
         {filteredRaces.length === 0 ? (
           <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
-            {filter === 'needs_pick' ? 'All races have picks! 🎉' : 'No races found'}
+            {filter === 'needs_pick' ? t('slipstream.allRacesHavePicks') : t('slipstream.noRacesFound')}
           </div>
         ) : (
           filteredRaces.map(race => {
@@ -183,16 +185,16 @@ export function SlipstreamRacePicker({
                       ) : canPick ? (
                         <div className="mt-1 text-xs text-orange-600 flex items-center gap-1">
                           <AlertCircle className="w-3 h-3" />
-                          No pick yet
+                          {t('slipstream.noPickYet')}
                         </div>
                       ) : null}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     {race.status === 'finished' ? (
-                      <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Finished</span>
+                      <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">{t('slipstream.finished')}</span>
                     ) : race.deadlinePassed || race.status === 'locked' ? (
-                      <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Locked</span>
+                      <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">{t('slipstream.locked')}</span>
                     ) : (
                       <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded text-nowrap">{race.timeUntilDeadlineFormatted}</span>
                     )}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { SlipstreamRacePicker, RaceFilter } from '@/components/slipstream/SlipstreamRacePicker';
 import { SlipstreamRiderSelector } from '@/components/slipstream/SlipstreamRiderSelector';
@@ -72,6 +73,7 @@ interface AdminParticipantData {
 }
 
 export default function SlipstreamPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -272,7 +274,7 @@ export default function SlipstreamPage() {
         } catch (adminErr) {
           console.error('Error loading admin pick overview:', adminErr);
           setAdminOverviewError(
-            adminErr instanceof Error ? adminErr.message : 'Kon resultatenmatrix niet laden'
+            adminErr instanceof Error ? adminErr.message : t('slipstream.errorLoadingMatrix')
           );
         } finally {
           setAdminOverviewLoading(false);
@@ -485,7 +487,7 @@ export default function SlipstreamPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen mt-9 flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading...</div>
+        <div className="text-lg text-gray-600">{t('slipstream.loading')}</div>
       </div>
     );
   }
@@ -507,7 +509,7 @@ export default function SlipstreamPage() {
               href="/games"
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
             >
-              Back
+              {t('slipstream.back')}
             </Link>
           </div>
         </div>
@@ -542,27 +544,27 @@ export default function SlipstreamPage() {
         {/* Your Stats - horizontal bar above layout */}
         {participantData && (
           <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-semibold mb-3">Your Stats</h2>
+            <h2 className="text-lg font-semibold mb-3">{t('slipstream.yourStats')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {participantData.totalTimeLostSeconds > 0 
+                  {participantData.totalTimeLostSeconds > 0
                     ? `+${Math.floor(participantData.totalTimeLostSeconds / 60)}:${(participantData.totalTimeLostSeconds % 60).toString().padStart(2, '0')}`
                     : '0:00'}
                 </div>
-                <div className="text-xs text-gray-500">Time Lost</div>
+                <div className="text-xs text-gray-500">{t('slipstream.timeLost')}</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
                   {participantData.totalGreenJerseyPoints}
                 </div>
-                <div className="text-xs text-gray-500">Green Points</div>
+                <div className="text-xs text-gray-500">{t('slipstream.greenPoints')}</div>
               </div>
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {participantData.picksCount}
                 </div>
-                <div className="text-xs text-gray-500">Picks Made</div>
+                <div className="text-xs text-gray-500">{t('slipstream.picksMade')}</div>
               </div>
             </div>
           </div>
@@ -571,7 +573,7 @@ export default function SlipstreamPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <h2 className="text-lg font-semibold mb-4">Select Race</h2>
+              <h2 className="text-lg font-semibold mb-4">{t('slipstream.selectRace')}</h2>
               <SlipstreamRacePicker
                 races={calendar}
                 selectedRaceSlug={selectedRaceSlug}
@@ -585,7 +587,7 @@ export default function SlipstreamPage() {
 
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <h2 className="text-lg font-semibold mb-4">Select Rider</h2>
+              <h2 className="text-lg font-semibold mb-4">{t('slipstream.selectRider')}</h2>
               {selectedRaceSlug ? (
                 <SlipstreamRiderSelector
                   riders={eligibleRiders}
@@ -596,7 +598,7 @@ export default function SlipstreamPage() {
                 />
               ) : (
                 <div className="p-4 bg-gray-100 rounded-lg text-gray-500 text-sm">
-                  Select a race first
+                  {t('slipstream.selectRaceFirst')}
                 </div>
               )}
               
@@ -606,12 +608,12 @@ export default function SlipstreamPage() {
                     <div className="text-sm text-gray-600">
                       {selectedRace.userPick ? (
                         <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 text-green-700">
-                          Huidige pick: <strong className="text-green-800">{selectedRace.userPick.riderName}</strong>
-                          {selectedRace.userPick.locked && <span className="text-xs text-green-600">(locked)</span>}
+                          {t('slipstream.currentPick')} <strong className="text-green-800">{selectedRace.userPick.riderName}</strong>
+                          {selectedRace.userPick.locked && <span className="text-xs text-green-600">{t('slipstream.lockedLabel')}</span>}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 text-orange-700">
-                          Geen pick voor deze race
+                          {t('slipstream.noPickForRace')}
                         </span>
                       )}
                     </div>
@@ -629,7 +631,7 @@ export default function SlipstreamPage() {
                                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                             }`}
                           >
-                            Annuleren
+                            {t('slipstream.cancel')}
                           </button>
                         )}
                         {selectedRace.userPick && (
@@ -642,7 +644,7 @@ export default function SlipstreamPage() {
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
                           >
-                            {submitting ? 'Bezig...' : 'Pick verwijderen'}
+                            {submitting ? t('slipstream.busy') : t('slipstream.deletePick')}
                           </button>
                         )}
                         <button
@@ -654,7 +656,7 @@ export default function SlipstreamPage() {
                               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           }`}
                         >
-                          {submitting ? 'Bezig...' : selectedRace.userPick ? 'Pick bijwerken' : 'Pick indienen'}
+                          {submitting ? t('slipstream.busy') : selectedRace.userPick ? t('slipstream.updatePick') : t('slipstream.submitPick')}
                         </button>
                         </div>
                       </div>

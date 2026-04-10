@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Trophy } from 'tabler-icons-react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 interface StandingEntry {
   userId: string;
@@ -33,6 +34,7 @@ export function SlipstreamStandings({
   totalRaces,
   currentUserId
 }: SlipstreamStandingsProps) {
+  const { t } = useTranslation();
   const [activeJersey, setActiveJersey] = useState<JerseyType>('yellow');
 
   const standings = activeJersey === 'yellow' ? yellowJersey : greenJersey;
@@ -54,7 +56,7 @@ export function SlipstreamStandings({
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
-            Standings
+            {t('slipstream.standings')}
           </h2>
           <span className="text-sm text-gray-500">
             {racesCompleted}/{totalRaces} races
@@ -70,7 +72,7 @@ export function SlipstreamStandings({
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            🟡 Yellow Jersey
+            🟡 {t('slipstream.yellowJersey')}
           </button>
           <button
             onClick={() => setActiveJersey('green')}
@@ -80,7 +82,7 @@ export function SlipstreamStandings({
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            🟢 Green Jersey
+            🟢 {t('slipstream.greenJersey')}
           </button>
         </div>
       </div>
@@ -88,17 +90,17 @@ export function SlipstreamStandings({
       <div className="p-2">
         <div className="text-xs text-gray-500 px-3 py-2 border-b border-gray-100 grid grid-cols-12 gap-2">
           <div className="col-span-1">#</div>
-          <div className="col-span-5">Player</div>
+          <div className="col-span-5">{t('slipstream.player')}</div>
           <div className="col-span-3 text-right">
-            {activeJersey === 'yellow' ? 'Time Lost' : 'Points'}
+            {activeJersey === 'yellow' ? t('slipstream.timeLostHeader') : t('slipstream.points')}
           </div>
-          <div className="col-span-3 text-right">Gap</div>
+          <div className="col-span-3 text-right">{t('slipstream.gap')}</div>
         </div>
 
         <div className="max-h-[400px] overflow-y-auto">
           {standings.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              No standings yet
+              {t('slipstream.noStandingsYet')}
             </div>
           ) : (
             standings.map((entry, index) => {
@@ -123,14 +125,14 @@ export function SlipstreamStandings({
                         {entry.playername}
                       </Link>
                       {isCurrentUser && (
-                        <span className="ml-1 text-xs text-blue-600">(you)</span>
+                        <span className="ml-1 text-xs text-blue-600">{t('slipstream.you')}</span>
                       )}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {entry.picksCount} picks
+                      {entry.picksCount} {t('slipstream.picks')}
                       {entry.missedPicksCount > 0 && (
                         <span className="text-red-500 ml-1">
-                          ({entry.missedPicksCount} missed)
+                          ({entry.missedPicksCount} {t('slipstream.missed')})
                         </span>
                       )}
                     </div>
@@ -150,9 +152,9 @@ export function SlipstreamStandings({
 
       <div className="p-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
         {activeJersey === 'yellow' ? (
-          <p>🟡 Yellow Jersey: Lowest cumulative time lost wins</p>
+          <p>🟡 {t('slipstream.yellowJerseyInfo')}</p>
         ) : (
-          <p>🟢 Green Jersey: Highest points from top-10 finishes wins</p>
+          <p>🟢 {t('slipstream.greenJerseyInfo')}</p>
         )}
       </div>
     </div>

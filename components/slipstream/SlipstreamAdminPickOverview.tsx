@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CalendarRace {
   raceSlug: string;
@@ -37,6 +38,7 @@ export function SlipstreamAdminPickOverview({
   loading,
   error
 }: SlipstreamAdminPickOverviewProps) {
+  const { t } = useTranslation();
   const raceOptions = useMemo(() => [...races], [races]);
   const [activeSortRaceSlug, setActiveSortRaceSlug] = useState<string>('');
 
@@ -104,20 +106,20 @@ export function SlipstreamAdminPickOverview({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Picksmatrix</h3>
+        <h3 className="font-semibold text-gray-900">{t('slipstream.picksMatrix')}</h3>
         {!loading && (
           <p className="mt-2 text-sm text-gray-500">
-            {participantRows.length} deelnemers • {raceOptions.length} zichtbare races
+            {participantRows.length} {t('slipstream.participants')} • {raceOptions.length} {t('slipstream.visibleRaces')}
             {activeSortRaceSlug && (
               <span className="ml-2 text-gray-600">
-                • Gesorteerd op: {raceOptions.find((race) => race.raceSlug === activeSortRaceSlug)?.raceName}
+                • {t('slipstream.sortedBy')} {raceOptions.find((race) => race.raceSlug === activeSortRaceSlug)?.raceName}
               </span>
             )}
           </p>
         )}
         {!loading && raceOptions.length > 0 && (
           <p className="mt-1 text-xs text-gray-500">
-            Klik op een racekolom om te sorteren op gekozen renner (voornaam). Klik opnieuw om te resetten.
+            {t('slipstream.sortHint')}
           </p>
         )}
       </div>
@@ -129,11 +131,11 @@ export function SlipstreamAdminPickOverview({
       )}
 
       {loading && (
-        <div className="p-4 text-sm text-gray-500">Overzicht laden...</div>
+        <div className="p-4 text-sm text-gray-500">{t('slipstream.loadingOverview')}</div>
       )}
 
       {!loading && !error && participantRows.length === 0 && (
-        <div className="p-4 text-sm text-gray-500">Geen deelnemers gevonden voor dit spel.</div>
+        <div className="p-4 text-sm text-gray-500">{t('slipstream.noParticipantsFound')}</div>
       )}
 
       {!loading && !error && participantRows.length > 0 && raceOptions.length > 0 && (
@@ -142,7 +144,7 @@ export function SlipstreamAdminPickOverview({
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="text-left px-4 py-3 font-medium sticky left-0 bg-gray-50 z-10">
-                  Deelnemer
+                  {t('slipstream.participant')}
                 </th>
                 {raceOptions.map((race) => {
                   const picksCount = participantRows.filter((participant) => {
@@ -158,7 +160,7 @@ export function SlipstreamAdminPickOverview({
                         className={`text-left w-full rounded px-1 py-0.5 transition-colors ${
                           isActiveSort ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-900'
                         }`}
-                        title="Sorteer op deze race"
+                        title={t('slipstream.sortByRace')}
                       >
                         <div className="font-medium">
                           {race.raceName} {isActiveSort ? '↑' : ''}
@@ -209,7 +211,7 @@ export function SlipstreamAdminPickOverview({
       )}
 
       {!loading && !error && raceOptions.length === 0 && (
-        <div className="p-4 text-sm text-gray-500">Nog geen races met verstreken pickdeadline.</div>
+        <div className="p-4 text-sm text-gray-500">{t('slipstream.noRacesWithDeadlinePassed')}</div>
       )}
     </div>
   );

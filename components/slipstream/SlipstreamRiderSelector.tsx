@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlayerRow } from '@/components/PlayerRow';
 import { Selector } from '@/components/Selector';
 import { TeamSelector } from '@/components/TeamSelector';
@@ -23,6 +24,7 @@ export function SlipstreamRiderSelector({
   onSelect,
   disabled = false
 }: SlipstreamRiderSelectorProps) {
+  const { t } = useTranslation();
   const [selectedItems, setSelectedItems] = useState<Rider[]>(
     selectedRider ? [selectedRider] : []
   );
@@ -150,10 +152,10 @@ export function SlipstreamRiderSelector({
   if (disabled) {
     return (
       <div className="p-4 bg-gray-100 rounded-lg text-gray-500">
-        <p className="text-sm">Pick selection is disabled</p>
+        <p className="text-sm">{t('slipstream.pickSelectionDisabled')}</p>
         {selectedRider && (
           <div className="mt-2">
-            <span className="font-medium">Current pick:</span> {selectedRider.name}
+            <span className="font-medium">{t('slipstream.currentPickLabel')}</span> {selectedRider.name}
           </div>
         )}
       </div>
@@ -164,22 +166,22 @@ export function SlipstreamRiderSelector({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs text-gray-600">
         <span className="px-2 py-1 rounded-full bg-gray-100">
-          {availableRiders.length} beschikbaar
+          {availableRiders.length} {t('slipstream.available')}
         </span>
         <span className="px-2 py-1 rounded-full bg-gray-100">
-          {usedRiderIds.length} gebruikt
+          {usedRiderIds.length} {t('slipstream.used')}
         </span>
       </div>
 
       {/* Team Filter */}
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Team</label>
+        <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('slipstream.team')}</label>
         <TeamSelector
           selectedTeams={selectedTeams}
           setSelectedTeams={handleTeamFilterChange}
           multiSelect={false}
           showSelected={false}
-          placeholder="Filter op team..."
+          placeholder={t('slipstream.filterByTeamPlaceholder')}
           showRiderCounts={true}
           teamRiderCounts={teamRiderCounts}
         />
@@ -192,14 +194,14 @@ export function SlipstreamRiderSelector({
               {selectedItems[0].name}
             </div>
             <div className="text-xs text-gray-600 truncate">
-              {getRiderTeamDisplay(selectedItems[0]) || 'Onbekend team'}
+              {getRiderTeamDisplay(selectedItems[0]) || t('slipstream.unknownTeam')}
             </div>
           </div>
           <button
             onClick={() => handleSelect([])}
             className="text-xs font-medium text-red-600 hover:text-red-700"
           >
-            Verwijder
+            {t('slipstream.remove')}
           </button>
         </div>
       )}
@@ -209,7 +211,7 @@ export function SlipstreamRiderSelector({
         selectedItems={selectedItems}
         setSelectedItems={handleSelect}
         multiSelect={false}
-        placeholder="Zoek een renner..."
+        placeholder={t('slipstream.searchRider')}
         getItemLabel={(rider) => rider.name || ''}
         showSelected={false}
         showCheckboxes={false}
@@ -256,7 +258,7 @@ export function SlipstreamRiderSelector({
       {usedRiderIds.length > 0 && (
         <details className="text-xs">
           <summary className="cursor-pointer text-gray-500 hover:text-gray-700">
-            Toon gebruikte renners ({usedRiderIds.length})
+            {t('slipstream.showUsedRiders')} ({usedRiderIds.length})
           </summary>
           <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 max-h-32 overflow-y-auto">
             {usedRiderIds.map((id, i) => {

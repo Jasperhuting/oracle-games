@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, Trash, Calendar, Refresh, Lock, CircleCheck, Clock } from 'tabler-icons-react';
+import { useTranslation } from 'react-i18next';
 
 interface Race {
   raceId: string;
@@ -49,6 +50,7 @@ export function SlipstreamRaceManager({
   races,
   onRacesChange
 }: SlipstreamRaceManagerProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export function SlipstreamRaceManager({
   };
 
   const deleteRace = async (raceSlug: string) => {
-    if (!confirm(`Are you sure you want to remove this race?`)) return;
+    if (!confirm(t('slipstream.deleteRaceConfirm'))) return;
 
     setLoading(true);
     setError(null);
@@ -223,7 +225,7 @@ export function SlipstreamRaceManager({
         <div className="flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2">
             <Calendar className="w-5 h-5" />
-            Race Calendar ({races.length} races)
+            {t('slipstream.raceCalendar')} ({races.length} {t('slipstream.races')})
           </h3>
           <div className="flex gap-2">
             <button
@@ -231,7 +233,7 @@ export function SlipstreamRaceManager({
               className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
             >
               <Plus className="w-4 h-4" />
-              Add Race
+              {t('slipstream.addRace')}
             </button>
             {races.length === 0 && (
               <button
@@ -239,7 +241,7 @@ export function SlipstreamRaceManager({
                 disabled={loading}
                 className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
               >
-                {loading ? 'Adding...' : 'Add 2026 Classics'}
+                {loading ? t('slipstream.adding') : t('slipstream.add2026Classics')}
               </button>
             )}
           </div>
@@ -263,14 +265,14 @@ export function SlipstreamRaceManager({
           <div className="grid grid-cols-3 gap-3">
             <input
               type="text"
-              placeholder="Race slug (e.g. milano-sanremo)"
+              placeholder={t('slipstream.raceSlugPlaceholder')}
               value={newRace.raceSlug}
               onChange={e => setNewRace({ ...newRace, raceSlug: e.target.value })}
               className="px-3 py-2 border border-gray-300 rounded text-sm"
             />
             <input
               type="text"
-              placeholder="Race name"
+              placeholder={t('slipstream.raceNamePlaceholder')}
               value={newRace.raceName}
               onChange={e => setNewRace({ ...newRace, raceName: e.target.value })}
               className="px-3 py-2 border border-gray-300 rounded text-sm"
@@ -287,7 +289,7 @@ export function SlipstreamRaceManager({
                 disabled={loading}
                 className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50"
               >
-                Add
+                {t('slipstream.add')}
               </button>
             </div>
           </div>
@@ -297,8 +299,8 @@ export function SlipstreamRaceManager({
       <div className="p-4 max-h-[500px] overflow-y-auto">
         {races.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>No races configured yet.</p>
-            <p className="text-sm mt-2">Click "Add 2026 Classics" to add the default calendar.</p>
+            <p>{t('slipstream.noRacesConfigured')}</p>
+            <p className="text-sm mt-2">{t('slipstream.addDefaultCalendarHint')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -335,7 +337,7 @@ export function SlipstreamRaceManager({
                     onClick={() => deleteRace(race.raceSlug)}
                     disabled={loading || race.status !== 'upcoming'}
                     className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30"
-                    title={race.status !== 'upcoming' ? 'Cannot delete non-upcoming races' : 'Delete race'}
+                    title={race.status !== 'upcoming' ? t('slipstream.cannotDeleteNonUpcoming') : t('slipstream.deleteRace')}
                   >
                     <Trash className="w-4 h-4" />
                   </button>
@@ -349,7 +351,7 @@ export function SlipstreamRaceManager({
                       disabled={statusLoading === race.raceSlug}
                       className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
                     >
-                      {statusLoading === race.raceSlug ? 'Bezig...' : 'Picks vergrendelen'}
+                      {statusLoading === race.raceSlug ? t('slipstream.busy') : t('slipstream.lockPicks')}
                     </button>
                   )}
                   {race.status === 'locked' && (
@@ -359,7 +361,7 @@ export function SlipstreamRaceManager({
                         disabled={statusLoading === race.raceSlug}
                         className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
                       >
-                        {statusLoading === race.raceSlug ? 'Bezig...' : 'Ontgrendelen'}
+                        {statusLoading === race.raceSlug ? t('slipstream.busy') : t('slipstream.unlock')}
                       </button>
                       <button
                         onClick={() => calculateResults(race)}
@@ -367,7 +369,7 @@ export function SlipstreamRaceManager({
                         className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
                       >
                         <Refresh className={`w-3 h-3 ${calcLoading === race.raceSlug ? 'animate-spin' : ''}`} />
-                        {calcLoading === race.raceSlug ? 'Berekenen...' : 'Bereken punten'}
+                        {calcLoading === race.raceSlug ? t('slipstream.calculating') : t('slipstream.calculatePoints')}
                       </button>
                     </>
                   )}
@@ -378,7 +380,7 @@ export function SlipstreamRaceManager({
                         disabled={statusLoading === race.raceSlug}
                         className="px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
                       >
-                        {statusLoading === race.raceSlug ? 'Bezig...' : 'Terugzetten naar locked'}
+                        {statusLoading === race.raceSlug ? t('slipstream.busy') : t('slipstream.revertToLocked')}
                       </button>
                       <button
                         onClick={() => calculateResults(race)}
@@ -386,7 +388,7 @@ export function SlipstreamRaceManager({
                         className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1"
                       >
                         <Refresh className={`w-3 h-3 ${calcLoading === race.raceSlug ? 'animate-spin' : ''}`} />
-                        {calcLoading === race.raceSlug ? 'Berekenen...' : 'Herbereken punten'}
+                        {calcLoading === race.raceSlug ? t('slipstream.calculating') : t('slipstream.recalculatePoints')}
                       </button>
                     </>
                   )}
