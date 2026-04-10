@@ -4,6 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { revalidateTag } from 'next/cache';
 import { RANKINGS_CACHE_TAG } from '@/app/api/getRankings/route';
 import { PLAYER_TEAMS_CACHE_TAG } from '@/app/api/getPlayerTeams/route';
+import { GAMES_LIST_CACHE_TAG } from '@/app/api/games/list/route';
 
 export async function POST() {
   try {
@@ -25,6 +26,7 @@ export async function POST() {
     // Bust server-side data cache so the next request reads fresh Firestore data
     revalidateTag(RANKINGS_CACHE_TAG, {});
     revalidateTag(PLAYER_TEAMS_CACHE_TAG, {});
+    revalidateTag(GAMES_LIST_CACHE_TAG, {});
 
     return NextResponse.json({
       success: true,
