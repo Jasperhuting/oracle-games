@@ -200,16 +200,12 @@ export default function SidebarChatWidget() {
   const isOnChatPage = pathname.startsWith('/chat');
   const hasRooms = rooms.length > 0;
 
-  // Auto-open when rooms become available for the first time
+  // Close and reset when rooms disappear
   useEffect(() => {
-    if (hasRooms && !isOpen) {
-      setIsOpen(true);
-    }
     if (!hasRooms) {
       setIsOpen(false);
       setSelectedRoomId(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasRooms]);
 
   // Auto-select when there's exactly one room
