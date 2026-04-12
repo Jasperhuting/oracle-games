@@ -66,17 +66,17 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon avatar niet bijwerken');
+        throw new Error(errorData.error || t('account.avatarUpdateFailed'));
       }
 
-      setSuccess('Avatar succesvol bijgewerkt!');
+      setSuccess(t('account.avatarUpdated'));
       setUserData({
         ...userData,
         avatarUrl,
       });
     } catch (error: unknown) {
       console.error('Avatar upload error:', error);
-      setError(error instanceof Error ? error.message : 'Er is iets misgegaan bij het uploaden');
+      setError(error instanceof Error ? error.message : t('account.uploadError'));
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -141,10 +141,10 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kon gegevens niet bijwerken');
+        throw new Error(errorData.error || t('account.updateFailed'));
       }
 
-      setSuccess('Gegevens succesvol bijgewerkt!');
+      setSuccess(t('account.profileUpdated'));
 
       // Apply language changes without refresh
       if (userData?.preferredLanguage !== data.preferredLanguage) {
@@ -168,7 +168,7 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
       });
     } catch (error: unknown) {
       console.error('Update error:', error);
-      setError(error instanceof Error ? error.message : 'Er is iets misgegaan bij het bijwerken');
+      setError(error instanceof Error ? error.message : t('account.updateError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -187,7 +187,7 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
             size={100}
           />
           {isUploadingAvatar && (
-            <p className="text-sm text-gray-500 mt-2">Avatar wordt opgeslagen...</p>
+            <p className="text-sm text-gray-500 mt-2">{t('account.uploadingAvatar')}</p>
           )}
         </div>
 
@@ -210,7 +210,7 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
                 {...register('firstName', {
                   maxLength: {
                     value: 50,
-                    message: 'First name may not exceed 50 characters'
+                    message: t('validation.firstNameMaxLength')
                   }
                 })}
               />
@@ -226,7 +226,7 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
                 {...register('lastName', {
                   maxLength: {
                     value: 50,
-                    message: 'Last name may not exceed 50 characters'
+                    message: t('validation.lastNameMaxLength')
                   }
                 })}
               />
@@ -241,14 +241,14 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
               label={t('global.playerName')}
               placeholder={t('global.playerName')}
               {...register('playername', {
-                required: 'Player name is required',
+                required: t('validation.playerNameRequired'),
                 minLength: {
                   value: 2,
-                  message: 'Player name must be at least 2 characters long'
+                  message: t('validation.playerNameMinLength')
                 },
                 maxLength: {
                   value: 50,
-                  message: 'Player name may not exceed 50 characters'
+                  message: t('validation.playerNameMaxLength')
                 }
               })}
             />
@@ -270,8 +270,8 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
                   const date = new Date(value);
                   const today = new Date();
                   const age = today.getFullYear() - date.getFullYear();
-                  if (age < 13) return 'You must be at least 13 years old';
-                  if (age > 120) return 'Invalid birthdate';
+                  if (age < 13) return t('validation.minAge');
+                  if (age > 120) return t('validation.invalidBirthdate');
                   return true;
                 }
               }}
@@ -338,7 +338,7 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
 
           {/* Forumnotificaties */}
           <div className="mt-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Forumnotificaties</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('account.forumNotifications')}</h3>
             <div className="space-y-3">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
@@ -348,9 +348,9 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
                   onChange={(e) => handleForumNotifChange('replyOnMyTopic', e.target.checked)}
                 />
                 <div>
-                  <div className="text-sm font-medium text-gray-900">Reacties op mijn topics</div>
+                  <div className="text-sm font-medium text-gray-900">{t('account.forumReplyLabel')}</div>
                   <div className="text-xs text-gray-500">
-                    Ontvang een e-mail als iemand reageert op een topic waar jij in hebt gepost
+                    {t('account.forumReplyDescription')}
                   </div>
                 </div>
               </label>
@@ -362,9 +362,9 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
                   onChange={(e) => handleForumNotifChange('dailyDigest', e.target.checked)}
                 />
                 <div>
-                  <div className="text-sm font-medium text-gray-900">Dagelijkse samenvatting</div>
+                  <div className="text-sm font-medium text-gray-900">{t('account.forumDigestLabel')}</div>
                   <div className="text-xs text-gray-500">
-                    Ontvang elke ochtend een overzicht van nieuwe topics in je spellen
+                    {t('account.forumDigestDescription')}
                   </div>
                 </div>
               </label>

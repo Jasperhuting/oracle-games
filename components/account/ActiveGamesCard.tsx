@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 interface ActiveGame {
   gameId: string;
@@ -22,6 +23,7 @@ interface ActiveGamesCardProps {
 
 
 export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesCardProps) {
+  const { t } = useTranslation();
   const [games, setGames] = useState<ActiveGame[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -103,7 +105,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
     if (ranking === 0) return '-';
     if (total === 0) return `#${ranking}`;
     const percentage = Math.round((ranking / total) * 100);
-    return `#${ranking} van ${total} (je zit bij de beste ${percentage}%)`;
+    return t('activeGames.rankingOf', { ranking, total, percentage });
   };
 
   const getGameLink = (game: ActiveGame): string => {
@@ -117,31 +119,30 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
   };
 
   const formatLastUpdate = (lastUpdate?: string | null): string => {
-    if (!lastUpdate) return 'Geen updates';
+    if (!lastUpdate) return t('activeGames.noUpdates');
     const date = new Date(lastUpdate);
-    if (Number.isNaN(date.getTime())) return 'Onbekend';
+    if (Number.isNaN(date.getTime())) return t('global.unknown');
 
     const diffMs = Date.now() - date.getTime();
     const diffMinutes = Math.round(diffMs / (1000 * 60));
-    if (diffMinutes < 1) return 'Zojuist';
-    if (diffMinutes < 60) return `${diffMinutes} min geleden`;
+    if (diffMinutes < 1) return t('activeGames.justNow');
+    if (diffMinutes < 60) return t('activeGames.minutesAgo', { minutes: diffMinutes });
 
     const diffHours = Math.round(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} uur geleden`;
+    if (diffHours < 24) return t('activeGames.hoursAgo', { hours: diffHours });
 
     const diffDays = Math.round(diffHours / 24);
-    return `${diffDays} dagen geleden`;
+    return t('activeGames.daysAgo', { days: diffDays });
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">
-        Actieve spellen
+        {t('activeGames.title')}
       </h2>
 
       {loading ? (
         <div className="space-y-4">
-          {/* Skeleton loader */}
           <div>
             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-3"></div>
             <div className="space-y-2">
@@ -158,14 +159,14 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
           </div>
         </div>
       ) : games.length === 0 ? (
-        <p className="text-sm text-gray-400">Geen actieve spellen</p>
+        <p className="text-sm text-gray-400">{t('activeGames.noGames')}</p>
       ) : (
         <div className="space-y-6">
           {/* Wielrennen */}
           {cyclingGames.length > 0 && (
             <div className="border-l-4 border-emerald-500 pl-4 bg-emerald-50/50 py-3 pr-3 rounded-r-lg">
               <h3 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
-                <span className="text-lg">🚴</span> Wielrennen
+                <span className="text-lg">🚴</span> {t('preferences.sports.cycling')}
               </h3>
               <table className="w-full text-sm">
                 <thead>
@@ -185,7 +186,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
                           {game.gameName}
                         </Link>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          Laatste update: {formatLastUpdate(game.lastScoreUpdate)}
+                          {t('activeGames.lastUpdate')}: {formatLastUpdate(game.lastScoreUpdate)}
                         </div>
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
@@ -202,7 +203,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
           {f1Games.length > 0 && (
             <div className="border-l-4 border-red-500 pl-4 bg-red-50/50 py-3 pr-3 rounded-r-lg">
               <h3 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-                <span className="text-lg">🏎️</span> Formule 1
+                <span className="text-lg">🏎️</span> {t('preferences.sports.f1')}
               </h3>
               <table className="w-full text-sm">
                 <thead>
@@ -222,7 +223,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
                           {game.gameName}
                         </Link>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          Laatste update: {formatLastUpdate(game.lastScoreUpdate)}
+                          {t('activeGames.lastUpdate')}: {formatLastUpdate(game.lastScoreUpdate)}
                         </div>
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">
@@ -239,7 +240,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
           {otherGames.length > 0 && (
             <div className="border-l-4 border-gray-400 pl-4 bg-gray-50/50 py-3 pr-3 rounded-r-lg">
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="text-lg">🎮</span> Overig
+                <span className="text-lg">🎮</span> {t('preferences.sports.other')}
               </h3>
               <table className="w-full text-sm">
                 <tbody>
@@ -253,7 +254,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
                           {game.gameName}
                         </Link>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          Laatste update: {formatLastUpdate(game.lastScoreUpdate)}
+                          {t('activeGames.lastUpdate')}: {formatLastUpdate(game.lastScoreUpdate)}
                         </div>
                       </td>
                       <td className="py-1.5 text-right pr-4 text-gray-600">

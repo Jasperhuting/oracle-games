@@ -20,7 +20,7 @@ export function InboxPreview() {
     if (diffDays === 0) {
       return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays === 1) {
-      return 'Gisteren';
+      return t('global.yesterday');
     } else if (diffDays < 7) {
       return date.toLocaleDateString('nl-NL', { weekday: 'short' });
     }
@@ -30,21 +30,21 @@ export function InboxPreview() {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
-        <h2 className="text-lg font-bold text-gray-900">Inbox</h2>
+        <h2 className="text-lg font-bold text-gray-900">{t('inbox.title')}</h2>
         <Link
           href="/inbox"
           className="text-sm text-primary hover:underline"
         >
-          Bekijk alles
+          {t('inbox.viewAll')}
         </Link>
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Laden...</p>
+        <p className="text-sm text-gray-400">{t('global.loading')}</p>
       ) : count > 0 && latestMessage ? (
         <>
           <p className="text-sm text-gray-500 mb-3">
-            {count === 1 ? '1 ongelezen bericht:' : `${count} ongelezen berichten:`}
+            {t('inbox.unreadCount', { count })}
           </p>
           <ul className="space-y-2">
             <li key={latestMessage.id}>
@@ -55,7 +55,7 @@ export function InboxPreview() {
                 <Mail className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    &quot;{latestMessage.subject || '(geen onderwerp)'}&quot;
+                    &quot;{latestMessage.subject || t('inbox.noSubject')}&quot;
                   </p>
                   <p className="text-xs text-gray-500">
                     {latestMessage.senderName}
@@ -69,7 +69,7 @@ export function InboxPreview() {
           </ul>
         </>
       ) : (
-        <p className="text-sm text-gray-400">Geen ongelezen berichten</p>
+        <p className="text-sm text-gray-400">{t('inbox.noMessages')}</p>
       )}
     </div>
   );

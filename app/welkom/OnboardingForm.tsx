@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AvatarUpload } from '@/components/account/AvatarUpload';
+import { useTranslation } from 'react-i18next';
 
 interface OnboardingFormProps {
   // no props needed — calls router.push internally
@@ -16,6 +17,7 @@ function convertDateToISO(ddmmyyyy: string): string | undefined {
 
 export function OnboardingForm({}: OnboardingFormProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | undefined>();
   const [firstName, setFirstName] = useState('');
@@ -55,7 +57,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
           setDobError(data.error);
           return;
         }
-        setSaveError('Er is iets misgegaan. Probeer het opnieuw.');
+        setSaveError(t('onboarding.saveError'));
         return;
       }
       router.push('/');
@@ -86,9 +88,9 @@ export function OnboardingForm({}: OnboardingFormProps) {
       {/* Welcome header */}
       <div className="text-center mb-6">
         <div className="text-[32px] mb-2">👋</div>
-        <h1 className="m-0 mb-1.5 text-lg font-bold">Welkom bij Oracle Games!</h1>
+        <h1 className="m-0 mb-1.5 text-lg font-bold">{t('onboarding.welcomeTitle')}</h1>
         <p className="m-0 text-[13px] text-gray-500">
-          Je account is aangemaakt. Maak je profiel even compleet — dit duurt minder dan een minuut.
+          {t('onboarding.welcomeSubtitle')}
         </p>
       </div>
 
@@ -101,15 +103,15 @@ export function OnboardingForm({}: OnboardingFormProps) {
             size={56}
           />
           <div>
-            <div className="font-semibold text-[13px] mb-0.5">Profielfoto</div>
-            <div className="text-xs text-gray-500">Laat anderen zien wie je bent</div>
+            <div className="font-semibold text-[13px] mb-0.5">{t('onboarding.profilePhoto')}</div>
+            <div className="text-xs text-gray-500">{t('onboarding.profilePhotoDescription')}</div>
           </div>
         </div>
 
         {/* First name / last name grid */}
         <div className="grid grid-cols-2 gap-[10px]">
           <div>
-            <label className={labelClass}>Voornaam</label>
+            <label className={labelClass}>{t('global.firstName')}</label>
             <input
               type="text"
               value={firstName}
@@ -119,7 +121,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
             />
           </div>
           <div>
-            <label className={labelClass}>Achternaam</label>
+            <label className={labelClass}>{t('global.lastName')}</label>
             <input
               type="text"
               value={lastName}
@@ -132,7 +134,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
 
         {/* Date of birth */}
         <div>
-          <label className={labelClass}>Geboortedatum</label>
+          <label className={labelClass}>{t('global.dateOfBirth')}</label>
           <input
             type="text"
             value={dateOfBirth}
@@ -147,7 +149,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
 
         {/* Language preference */}
         <div>
-          <label className={labelClass}>Taal</label>
+          <label className={labelClass}>{t('account.preferredLanguage')}</label>
           <div className="grid grid-cols-2 gap-2">
             <div
               onClick={() => setPreferredLanguage('nl')}
@@ -155,7 +157,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
             >
               <div className="text-lg">🇳🇱</div>
               <div className={`text-[13px] font-bold mt-0.5 ${preferredLanguage === 'nl' ? 'text-[#02554d]' : 'text-gray-700'}`}>NL</div>
-              <div className={`text-xs mt-px ${preferredLanguage === 'nl' ? 'text-green-800' : 'text-gray-500'}`}>Nederlands</div>
+              <div className={`text-xs mt-px ${preferredLanguage === 'nl' ? 'text-green-800' : 'text-gray-500'}`}>{t('global.dutch')}</div>
             </div>
             <div
               onClick={() => setPreferredLanguage('en')}
@@ -163,7 +165,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
             >
               <div className="text-lg">🇬🇧</div>
               <div className={`text-[13px] font-bold mt-0.5 ${preferredLanguage === 'en' ? 'text-[#02554d]' : 'text-gray-700'}`}>EN</div>
-              <div className={`text-xs mt-px ${preferredLanguage === 'en' ? 'text-green-800' : 'text-gray-500'}`}>English</div>
+              <div className={`text-xs mt-px ${preferredLanguage === 'en' ? 'text-green-800' : 'text-gray-500'}`}>{t('global.english')}</div>
             </div>
           </div>
         </div>
@@ -176,14 +178,14 @@ export function OnboardingForm({}: OnboardingFormProps) {
             disabled={submitting}
             className={`flex-1 bg-[#02554d] text-white border-none rounded-lg py-3 text-sm font-semibold ${submitting ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
           >
-            Opslaan en verder
+            {t('onboarding.saveAndContinue')}
           </button>
           <button
             type="button"
             onClick={handleLater}
             className="flex-none bg-transparent text-gray-500 border border-gray-200 rounded-lg py-3 px-4 text-sm cursor-pointer"
           >
-            Later
+            {t('onboarding.later')}
           </button>
         </div>
 
@@ -193,7 +195,7 @@ export function OnboardingForm({}: OnboardingFormProps) {
 
         {/* Footer note */}
         <p className="text-center text-[11px] text-gray-400 m-0">
-          Je kunt dit altijd later aanpassen via Instellingen
+          {t('onboarding.settingsNote')}
         </p>
       </div>
     </div>

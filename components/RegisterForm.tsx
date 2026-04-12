@@ -11,11 +11,12 @@ import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
 import { RegisterFormProps } from "@/lib/types/component-props";
 import { createSharedSession } from "@/lib/auth/client-session";
+import { useTranslation } from "react-i18next";
 
 const BLOCKED_EMAIL_DOMAINS = new Set(["esims.nl"]);
 
 export const RegisterForm = () => {
-
+    const { t } = useTranslation();
 
     const { register, handleSubmit } = useForm<RegisterFormProps>();
     const [error, setError] = useState<string | null>(null);
@@ -28,7 +29,7 @@ export const RegisterForm = () => {
 
         const emailDomain = data.email.toLowerCase().split("@")[1] || "";
         if (BLOCKED_EMAIL_DOMAINS.has(emailDomain)) {
-            setError("Registratie met dit e-maildomein is niet toegestaan");
+            setError(t('register.domainBlocked'));
             return;
         }
         
@@ -114,7 +115,7 @@ export const RegisterForm = () => {
             const emailDomain = user.email?.toLowerCase().split("@")[1] || "";
             if (BLOCKED_EMAIL_DOMAINS.has(emailDomain)) {
                 await user.delete();
-                setError("Registratie met dit e-maildomein is niet toegestaan");
+                setError(t('register.domainBlocked'));
                 setIsGoogleLoading(false);
                 return;
             }

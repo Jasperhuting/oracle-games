@@ -12,6 +12,7 @@ import { User } from "firebase/auth";
 import { LoginFormProps } from "@/lib/types/component-props";
 import { createSharedSession } from "@/lib/auth/client-session";
 import { getPlatformConfigFromHost } from "@/lib/platform";
+import { useTranslation } from "react-i18next";
 
 const PasskeyLogin = dynamic(
   () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
@@ -19,6 +20,7 @@ const PasskeyLogin = dynamic(
 );
 
 export const LoginForm = () => {
+    const { t } = useTranslation();
     const { register, handleSubmit } = useForm<LoginFormProps>();
     const [error, setError] = useState<string | null>(null);
     const [showVerifyLink, setShowVerifyLink] = useState(false);
@@ -68,7 +70,7 @@ export const LoginForm = () => {
                 // Sign out the user
                 await auth.signOut();
                 // Show error message with resend button
-                setError('Je email is nog niet geverifieerd. Controleer je inbox (en spam folder) voor de verificatie link.');
+                setError(t('login.emailNotVerified'));
                 setShowVerifyLink(true);
                 setIsSubmitting(false);
                 return;
@@ -230,12 +232,12 @@ export const LoginForm = () => {
             if (error && typeof error === 'object' && 'code' in error) {
                 const firebaseError = error as { code: string };
                 if (firebaseError.code === 'auth/too-many-requests') {
-                    setError('Te veel verzoeken. Wacht even voordat je het opnieuw probeert.');
+                    setError(t('login.tooManyRequests'));
                 } else {
-                    setError('Er ging iets mis bij het versturen van de email. Probeer het later opnieuw.');
+                    setError(t('login.resendError'));
                 }
             } else {
-                setError('Er ging iets mis bij het versturen van de email.');
+                setError(t('login.resendError'));
             }
         } finally {
             setIsResendingVerification(false);
@@ -289,7 +291,7 @@ export const LoginForm = () => {
                 {verificationEmailSent && (
                     <div className="bg-green-50 border border-green-200 rounded-md p-3 my-2" data-testid="verification-success-message">
                         <p className="text-green-800 text-xs">
-                            ✓ Verificatie email verstuurd! Controleer je inbox.
+                            {t('login.verificationSent')}
                         </p>
                     </div>
                 )}
@@ -303,7 +305,7 @@ export const LoginForm = () => {
                                 disabled={isResendingVerification}
                                 className="block mt-2 underline text-primary hover:text-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isResendingVerification ? 'Bezig met versturen...' : 'Verificatie email opnieuw versturen'}
+                                {isResendingVerification ? t('login.sending') : t('login.resendVerification')}
                             </button>
                         )}
                     </div>
