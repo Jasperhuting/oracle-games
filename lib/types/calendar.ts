@@ -17,6 +17,7 @@ export interface CalendarRace {
   endDate: string;
   classification: string;
   country: string;
+  isWomensRace: boolean;
   games: CalendarGame[]; // Games where this specific race counts (via countingRaces)
 }
 

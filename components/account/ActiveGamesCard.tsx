@@ -17,10 +17,11 @@ interface ActiveGame {
 
 interface ActiveGamesCardProps {
   userId: string;
+  excludeSportTypes?: string[];
 }
 
 
-export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
+export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesCardProps) {
   const [games, setGames] = useState<ActiveGame[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -94,9 +95,9 @@ export function ActiveGamesCard({ userId }: ActiveGamesCardProps) {
     }
   }, [userId]);
 
-  const cyclingGames = games.filter(g => g.sportType === 'cycling');
-  const f1Games = games.filter(g => g.sportType === 'f1');
-  const otherGames = games.filter(g => g.sportType === 'other');
+  const cyclingGames = games.filter(g => g.sportType === 'cycling' && !excludeSportTypes.includes(g.sportType));
+  const f1Games = games.filter(g => g.sportType === 'f1' && !excludeSportTypes.includes(g.sportType));
+  const otherGames = games.filter(g => g.sportType === 'other' && !excludeSportTypes.includes(g.sportType));
 
   const formatRanking = (ranking: number, total: number): string => {
     if (ranking === 0) return '-';

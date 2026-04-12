@@ -8,8 +8,9 @@ import { useTranslation } from "react-i18next";
 import { AccountInfoTab } from "@/components/account/AccountInfoTab";
 import { SecurityTab } from "@/components/account/SecurityTab";
 import { ScriptsTab } from "@/components/account/ScriptsTab";
+import { PreferencesTab } from "@/components/account/PreferencesTab";
 
-type TabType = 'account' | 'security' | 'scripts';
+type TabType = 'account' | 'security' | 'scripts' | 'preferences';
 
 export default function AccountSettingsPage() {
     const { user } = useAuth();
@@ -40,6 +41,7 @@ export default function AccountSettingsPage() {
     const tabs: { id: TabType; label: string }[] = [
         { id: 'account', label: t('account.accountInformation') },
         { id: 'security', label: t('account.security') },
+        { id: 'preferences', label: t('account.preferences') },
         { id: 'scripts', label: t('account.scripts') },
     ];
 
@@ -50,11 +52,11 @@ export default function AccountSettingsPage() {
                     {/* Header */}
                     <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
                         <Link href="/account" className="text-sm text-gray-600 hover:text-gray-900 underline">
-                            &larr; Terug naar Account
+                            &larr; {t('account.backToProfile')}
                         </Link>
                     </div>
 
-                    <h1 className="text-3xl font-bold mb-6">Voorkeuren</h1>
+                    <h1 className="text-3xl font-bold mb-6">{t('account.settingsTitle')}</h1>
 
                     {/* Tabs */}
                     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -98,6 +100,13 @@ export default function AccountSettingsPage() {
                                             userId={user.uid}
                                             email={user.email || ''}
                                             displayName={userData?.playername || user.displayName || user.email?.split('@')[0] || 'User'}
+                                        />
+                                    )}
+                                    {activeTab === 'preferences' && (
+                                        <PreferencesTab
+                                            userId={user.uid}
+                                            userData={userData}
+                                            setUserData={setUserData}
                                         />
                                     )}
                                     {activeTab === 'scripts' && (

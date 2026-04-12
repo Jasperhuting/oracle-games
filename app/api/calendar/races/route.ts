@@ -25,6 +25,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CalendarRe
         endDate: data.endDate || '',
         classification: data.classification || '',
         country: data.country || '',
+        isWomensRace: false, // Populated below after isWomenRace() is defined
         games: [], // Will be populated below
       };
     });
@@ -98,12 +99,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<CalendarRe
     //   return YOUTH_KEYWORDS.some(keyword => nameAndSlug.includes(keyword));
     // }
 
-    // Attach games to races
+    // Attach games to races and set gender flag
     races.forEach(race => {
       const gamesForRace = raceToGamesMap.get(race.id) || [];
+      const isWomens = isWomenRace(race);
+      race.isWomensRace = isWomens;
 
       // For women's races, only include race-specific games, not seasonal games
-      if (isWomenRace(race)) {
+      if (isWomens) {
         race.games = gamesForRace; // Only race-specific games
       } else {
         race.games = [...seasonalGames, ...gamesForRace]; // Include seasonal games

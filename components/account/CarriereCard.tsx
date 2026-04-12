@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTranslation } from 'react-i18next';
 import { AvatarUpload } from './AvatarUpload';
 
 interface TopResult {
@@ -37,6 +38,7 @@ interface CarriereCardProps {
 }
 
 export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false }: CarriereCardProps) {
+  const { t } = useTranslation();
   const [topResults, setTopResults] = useState<TopResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
@@ -49,7 +51,6 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [oracleStandingsLoading, setOracleStandingsLoading] = useState(false);
   const currentYear = new Date().getFullYear();
 
-  // Update local state when prop changes
   useEffect(() => {
     setCurrentAvatarUrl(avatarUrl);
   }, [avatarUrl]);
@@ -58,16 +59,9 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
     try {
       const response = await fetch('/api/updateUser', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          playername,
-          avatarUrl: newAvatarUrl,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, playername, avatarUrl: newAvatarUrl }),
       });
-
       if (response.ok) {
         setCurrentAvatarUrl(newAvatarUrl);
         onAvatarUpdate?.(newAvatarUrl);
@@ -77,37 +71,26 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
     }
   };
 
-  // Calculate age from dateOfBirth
   const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
 
   useEffect(() => {
     async function fetchTopResults() {
       try {
-        // Fetch user's game participations
         const response = await fetch(`/api/gameParticipants?userId=${userId}`);
-        if (!response.ok) {
-          setLoading(false);
-          return;
-        }
+        if (!response.ok) { setLoading(false); return; }
 
         const data = await response.json();
         const participants = data.participants || [];
-
-        // Get game details for each participation
         const results: TopResult[] = [];
 
         for (const participant of participants) {
           const gameId = participant.gameId.replace(/-pending$/, '');
           if (!gameId || participant.ranking === 0) continue;
-
           try {
             const gameResponse = await fetch(`/api/games/${gameId}`);
             if (!gameResponse.ok) continue;
-
             const gameData = await gameResponse.json();
             const game = gameData.game;
-
-            // Only include finished games for top results (exclude test games)
             if (game?.status === 'finished' && participant.ranking > 0 &&
                 !game.isTest && !game.name?.toLowerCase().includes('test')) {
               results.push({
@@ -117,12 +100,9 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 division: game.division,
               });
             }
-          } catch {
-            // Skip games that fail to load
-          }
+          } catch { /* skip */ }
         }
 
-        // Sort by ranking (best first) and take top 5
         results.sort((a, b) => a.ranking - b.ranking);
         setTopResults(results.slice(0, 5));
       } catch (error) {
@@ -136,13 +116,8 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
       try {
         const response = await fetch(`/api/oracle-rank?userId=${userId}`);
         if (!response.ok) return;
-
         const data = await response.json();
-        if (data?.success && data?.user) {
-          setOracleStats(data.user);
-        } else {
-          setOracleStats(null);
-        }
+        setOracleStats(data?.success && data?.user ? data.user : null);
       } catch (error) {
         console.error('Error fetching oracle rank:', error);
       } finally {
@@ -154,13 +129,8 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
       try {
         const response = await fetch(`/api/oracle-rank?userId=${userId}&year=${currentYear}`);
         if (!response.ok) return;
-
         const data: OracleRankResponse = await response.json();
-        if (data?.success && data?.user) {
-          setSeasonStats(data.user);
-        } else {
-          setSeasonStats(null);
-        }
+        setSeasonStats(data?.success && data?.user ? data.user : null);
       } catch (error) {
         console.error('Error fetching season rank:', error);
       } finally {
@@ -182,16 +152,12 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
     return `${ranking}e`;
   };
 
-  const formatYear = (year: number): string => {
-    return `'${String(year).slice(-2)}`;
-  };
+  const formatYear = (year: number): string => `'${String(year).slice(-2)}`;
 
-  const formatOracleRating = (rating: number): string => {
-    return new Intl.NumberFormat('nl-NL').format(Math.round(rating * 100000));
-  };
+  const formatOracleRating = (rating: number): string =>
+    new Intl.NumberFormat('nl-NL').format(Math.round(rating * 100000));
 
-  const pointsTooltip =
-    'Punten-berekening: 1) Per spel score = (deelnemers - positie) / (deelnemers - 1). 2) Gemiddelde van je spel-scores. 3) Rating = (spellen/(spellen+5))*gemiddelde + (5/(spellen+5))*0,5. 4) Punten = rating x 100.000.';
+  const pointsTooltip = t('carriere.pointsTooltip');
 
   const openOracleStandings = async () => {
     setOracleStandingsOpen(true);
@@ -210,15 +176,12 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      {/* Header with avatar and basic info */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-primary-light to-white p-6">
         <div className="flex items-center gap-6">
-          {/* Avatar */}
           <div className="flex-shrink-0 relative">
             {readOnly ? (
-              <div
-                className="w-[100px] h-[100px] rounded-full overflow-hidden border-2 border-gray-200 bg-gray-200 flex items-center justify-center"
-              >
+              <div className="w-[100px] h-[100px] rounded-full overflow-hidden border-2 border-gray-200 bg-gray-200 flex items-center justify-center">
                 {currentAvatarUrl ? (
                   <Image
                     src={currentAvatarUrl}
@@ -228,11 +191,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <svg
-                    className="w-1/2 h-1/2 text-gray-400"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="w-1/2 h-1/2 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                   </svg>
                 )}
@@ -246,46 +205,42 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
             )}
           </div>
 
-          {/* Basic Info */}
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{playername}</h2>
             {age && (
               <p className="text-gray-600 mb-1">
-                <span className="font-medium">Leeftijd:</span> {age} jaar
+                <span className="font-medium">{t('carriere.age')}:</span> {t('carriere.ageYears', { age })}
               </p>
             )}
           </div>
         </div>
-
       </div>
 
-      {/* Stats Section */}
+      {/* Stats */}
       <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Prestaties</h3>
-        
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('carriere.performances')}</h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Oracle Rank */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-primary mb-1">
               {oracleLoading ? '...' : oracleStats?.oracleRank ? `#${oracleStats.oracleRank}` : '-'}
             </div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Oracle Rank</div>
+            <div className="text-sm font-medium text-gray-700 mb-1">{t('carriere.oracleRankLabel')}</div>
             <div className="text-xs text-gray-500">
               {oracleLoading
-                ? 'Laden...'
+                ? t('global.loading')
                 : oracleStats
-                  ? `Punten ${formatOracleRating(oracleStats.oracleRating)} (${oracleStats.gamesPlayed} spellen)`
-                  : 'Nog geen resultaten'}
-              <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>
-                ⓘ
-              </span>
+                  ? t('carriere.oraclePoints', { points: formatOracleRating(oracleStats.oracleRating), games: oracleStats.gamesPlayed })
+                  : t('carriere.noResults')}
+              <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>ⓘ</span>
             </div>
             <button
               type="button"
               onClick={openOracleStandings}
               className="mt-2 text-xs text-primary hover:text-primary-hover underline"
             >
-              Bekijk standings
+              {t('carriere.viewStandings')}
             </button>
           </div>
 
@@ -294,37 +249,39 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
             <div className="text-2xl font-bold text-primary mb-1">
               {seasonLoading ? '...' : seasonStats?.oracleRank ? `#${seasonStats.oracleRank}` : '-'}
             </div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Season Rank</div>
+            <div className="text-sm font-medium text-gray-700 mb-1">{t('carriere.seasonRankLabel')}</div>
             <div className="text-xs text-gray-500">
               {seasonLoading
-                ? 'Laden...'
+                ? t('global.loading')
                 : seasonStats
-                  ? `${currentYear}: Punten ${formatOracleRating(seasonStats.oracleRating)} (${seasonStats.gamesPlayed} spellen)`
-                  : `Nog geen resultaten in ${currentYear}`}
-              <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>
-                ⓘ
-              </span>
+                  ? t('carriere.seasonPoints', { year: currentYear, points: formatOracleRating(seasonStats.oracleRating), games: seasonStats.gamesPlayed })
+                  : t('carriere.noResultsInYear', { year: currentYear })}
+              <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>ⓘ</span>
             </div>
           </div>
 
-          {/* Top Results Count */}
+          {/* Top Results count */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-primary mb-1">
               {loading ? '...' : topResults.length}
             </div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Top Resultaten</div>
+            <div className="text-sm font-medium text-gray-700 mb-1">{t('carriere.topResultsLabel')}</div>
             <div className="text-xs text-gray-500">
-              {loading ? 'Laden...' : topResults.length > 0 ? 'Beste prestaties' : 'Nog geen resultaten'}
+              {loading
+                ? t('global.loading')
+                : topResults.length > 0
+                  ? t('carriere.bestPerformances')
+                  : t('carriere.noResults')}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Top Results Details */}
+      {/* Top Results list */}
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Resultaten</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('carriere.topResultsHeading')}</h3>
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Laden...</div>
+          <div className="text-center py-8 text-gray-500">{t('global.loading')}</div>
         ) : topResults.length > 0 ? (
           <div className="space-y-3">
             {topResults.map((result, index) => (
@@ -340,103 +297,83 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                     )}
                   </div>
                 </div>
-                <div className="text-sm text-gray-500 font-medium">
-                  {formatYear(result.year)}
-                </div>
+                <div className="text-sm text-gray-500 font-medium">{formatYear(result.year)}</div>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
             <div className="text-lg mb-2">🏁</div>
-            <div>Nog geen resultaten</div>
-            <div className="text-sm text-gray-400 mt-1">Doe mee aan spellen om je prestaties te zien</div>
+            <div>{t('carriere.noResults')}</div>
+            <div className="text-sm text-gray-400 mt-1">{t('carriere.noResultsDescription')}</div>
           </div>
         )}
       </div>
 
-      {/* Action Links */}
+      {/* Action links */}
       {!readOnly && (
         <div className="p-6 bg-gray-50 border-t border-gray-200">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link
-              href="/account/settings"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
-            >
-              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
-                <span className="text-xl">⚙️</span>
-              </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Voorkeuren</div>
-            </Link>
-            <Link
-              href="/account/stats"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
-            >
-              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
-                <span className="text-xl">📊</span>
-              </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Statistiek</div>
-            </Link>
-            <Link
-              href="/account/history"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
-            >
-              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
-                <span className="text-xl">📜</span>
-              </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Geschiedenis</div>
-            </Link>
-            <Link
-              href="/forum"
-              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
-            >
-              <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
-                <span className="text-xl">💬</span>
-              </div>
-              <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">Forum</div>
-            </Link>
+            {[
+              { href: '/account/settings', emoji: '⚙️', label: t('account.settingsTitle') },
+              { href: '/account/stats',    emoji: '📊', label: t('carriere.statsLink') },
+              { href: '/account/history',  emoji: '📜', label: t('carriere.historyLink') },
+              { href: '/forum',            emoji: '💬', label: t('header.menu.forum') },
+            ].map(({ href, emoji, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
+              >
+                <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
+                  <span className="text-xl">{emoji}</span>
+                </div>
+                <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">{label}</div>
+              </Link>
+            ))}
           </div>
         </div>
       )}
 
+      {/* Oracle Standings modal */}
       {oracleStandingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button
             type="button"
-            aria-label="Close standings popup"
+            aria-label={t('global.close')}
             onClick={() => setOracleStandingsOpen(false)}
             className="absolute inset-0 bg-black/40"
           />
 
           <div className="relative w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-xl bg-white border border-gray-200 shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h4 className="text-lg font-semibold text-gray-900">Oracle Standings</h4>
+              <h4 className="text-lg font-semibold text-gray-900">{t('carriere.standingsTitle')}</h4>
               <button
                 type="button"
                 onClick={() => setOracleStandingsOpen(false)}
                 className="text-sm text-gray-600 hover:text-gray-900"
               >
-                Sluiten
+                {t('global.close')}
               </button>
             </div>
 
             <div className="p-4 overflow-auto max-h-[calc(85vh-65px)]">
               {oracleStandingsLoading ? (
-                <div className="text-sm text-gray-500">Laden...</div>
+                <div className="text-sm text-gray-500">{t('global.loading')}</div>
               ) : oracleStandings.length === 0 ? (
-                <div className="text-sm text-gray-500">Geen standings beschikbaar</div>
+                <div className="text-sm text-gray-500">{t('carriere.noStandings')}</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-gray-500 border-b border-gray-200">
                       <th className="py-2 pr-2">#</th>
-                      <th className="py-2 pr-2">Speler</th>
+                      <th className="py-2 pr-2">{t('carriere.playerColumn')}</th>
                       <th className="py-2 pr-2 text-right">
                         <span title={pointsTooltip} className="cursor-help">
-                          Punten ⓘ
+                          {t('global.points')} ⓘ
                         </span>
                       </th>
-                      <th className="py-2 pr-2 text-right">Spellen</th>
+                      <th className="py-2 pr-2 text-right">{t('global.games')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -447,9 +384,9 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                       >
                         <td className="py-2 pr-2 font-semibold text-gray-900">#{entry.oracleRank}</td>
                         <td className="py-2 pr-2 text-gray-800">
-                          {entry.playername || 'Onbekend'}
+                          {entry.playername || t('global.unknown')}
                           {entry.userId === userId && (
-                            <span className="ml-2 text-xs text-blue-700 font-medium">(jij)</span>
+                            <span className="ml-2 text-xs text-blue-700 font-medium">{t('carriere.you')}</span>
                           )}
                         </td>
                         <td className="py-2 pr-2 text-right text-gray-800">
@@ -477,11 +414,7 @@ function calculateAge(dateOfBirth: string): number | null {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
     return age > 0 && age < 150 ? age : null;
   } catch {
     return null;

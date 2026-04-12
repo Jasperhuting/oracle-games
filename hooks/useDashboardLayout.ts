@@ -20,9 +20,9 @@ export interface BlockConfig {
 }
 
 export const DEFAULT_BLOCKS: BlockConfig[] = [
-  { id: 'carriere',        label: 'Carrière',              column: 'left',  visible: true },
   { id: 'inbox',           label: 'Berichten',             column: 'left',  visible: true },
   { id: 'forum',           label: 'Forumactiviteit',       column: 'left',  visible: true },
+  { id: 'carriere',        label: 'Carrière',              column: 'left',  visible: true },
   { id: 'active-games',    label: 'Actieve spellen',       column: 'right', visible: true },
   { id: 'available-games', label: 'Beschikbare spellen',   column: 'right', visible: true },
   { id: 'rules',           label: 'Spelregels',            column: 'right', visible: true },

@@ -73,8 +73,8 @@ export function CalendarCard({ userId }: CalendarCardProps) {
         const upcomingRaces = allRaces
           .filter((race) => {
             const endDate = parseRaceDate(race.endDate);
-            // Include races happening today or in the future (also covers ongoing multi-day races)
-            return endDate >= todayStart;
+            // Exclude women's races and only show upcoming/ongoing races
+            return endDate >= todayStart && !race.isWomensRace;
           })
           .map((race) => {
             // Get games relevant to this race that user is in (excluding test and F1 games)

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { IconAdjustments, IconX } from "@tabler/icons-react";
 
@@ -149,7 +148,7 @@ export function AccountPageContent() {
                 );
             case 'inbox':        return <InboxPreview />;
             case 'forum':        return <ForumActivityCard />;
-            case 'active-games': return <ActiveGamesCard userId={user!.uid} />;
+            case 'active-games': return <ActiveGamesCard userId={user!.uid} excludeSportTypes={['f1']} />;
             case 'available-games': return <AvailableGamesCard userId={user!.uid} />;
             case 'rules':        return <GameRulesCard />;
             case 'calendar':     return <CalendarCard userId={user!.uid} />;
@@ -180,10 +179,7 @@ export function AccountPageContent() {
             <div className="mx-auto container max-w-7xl">
 
                 {/* Header */}
-                <div className="flex flex-row border border-gray-200 mb-6 items-center justify-between bg-white px-6 py-4 rounded-lg">
-                    <Link href="/home" className="text-sm text-gray-600 hover:text-gray-900 underline">
-                        {t('global.backToHome')}
-                    </Link>
+                <div className="flex flex-row border border-gray-200 mb-6 items-center justify-end bg-white px-6 py-4 rounded-lg">
                     <button
                         onClick={() => setEditMode(v => !v)}
                         className={[
@@ -194,7 +190,7 @@ export function AccountPageContent() {
                         ].join(" ")}
                     >
                         {editMode ? <IconX className="w-4 h-4" /> : <IconAdjustments className="w-4 h-4" />}
-                        {editMode ? "Klaar" : "Aanpassen"}
+                        {editMode ? t('account.done') : t('account.layoutMode')}
                     </button>
                 </div>
 
