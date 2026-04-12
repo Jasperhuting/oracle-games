@@ -273,8 +273,8 @@ export const LoginForm = () => {
             <form onSubmit={handleSubmit(onSubmit)} data-testid="login-form-element">
                 <div className="flex flex-col">
                     <TextInput
-                        label="Email"
-                        placeholder="Email"
+                        label={t('login.email')}
+                        placeholder={t('login.email')}
                         data-testid="login-email-input"
                         {...register('email', { required: true })}
                     />
@@ -282,8 +282,8 @@ export const LoginForm = () => {
                 <div className="flex flex-col">
                     <TextInput
                         type="password"
-                        label="Password"
-                        placeholder="Password"
+                        label={t('login.password')}
+                        placeholder={t('login.password')}
                         data-testid="login-password-input"
                         {...register('password', { required: true })}
                     />
@@ -319,15 +319,15 @@ export const LoginForm = () => {
                             className="mr-2 cursor-pointer"
                             data-testid="stay-logged-in-checkbox"
                         />
-                        Stay logged in
+                        {t('login.stayLoggedIn')}
                     </label>
                     <div className="text-xs">
-                        <Link href="/reset-password" className="underline text-slate-700 hover:text-slate-900">Forgot password?</Link>
+                        <Link href="/reset-password" className="underline text-slate-700 hover:text-slate-900">{t('login.forgotPassword')}</Link>
                     </div>
                 </div>
                 <Button
                     className="w-full justify-center py-1 my-4"
-                    text={isSubmitting ? "Loading..." : "Log in"}
+                    text={isSubmitting ? t('global.loading') : t('login.submit')}
                     type="submit"
                     disabled={isSubmitting}
                     data-testid="login-submit-button"
@@ -339,7 +339,7 @@ export const LoginForm = () => {
                     <div className="w-full border-t border-slate-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white/90 text-slate-500">Or log in with</span>
+                    <span className="px-2 bg-white/90 text-slate-500">{t('login.orLoginWith')}</span>
                 </div>
             </div>
 
@@ -348,7 +348,7 @@ export const LoginForm = () => {
 
                 <Button
                     className="w-full justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
-                    text={isGoogleLoading ? "Loading..." : "Log in with Google"}
+                    text={isGoogleLoading ? t('global.loading') : t('login.loginWithGoogle')}
                     onClick={handleGoogleLogin}
                     disabled={isGoogleLoading || isSubmitting}
                     data-testid="google-login-button"
@@ -364,7 +364,7 @@ export const LoginForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs">Don&apos;t have an account? Go to the <Link className="underline" href="/register">registration page</Link></span>
+                <span className="text-xs">{t('login.noAccount')} <Link className="underline" href="/register">{t('login.registerLink')}</Link></span>
             </div>
         </div>
     );

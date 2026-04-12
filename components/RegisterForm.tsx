@@ -176,19 +176,19 @@ export const RegisterForm = () => {
         <div className="flex flex-col">
             <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col">
-                <TextInput label="Email" placeholder="Email" {...register('email')} />
+                <TextInput label={t('login.email')} placeholder={t('login.email')} {...register('email')} />
             </div>
             <div className="flex flex-col">
-                <TextInput type="password" label="Password" placeholder="Password" {...register('password')} />
+                <TextInput type="password" label={t('login.password')} placeholder={t('login.password')} {...register('password')} />
             </div>
             <div className="flex flex-col">
-                <TextInput type="password" label="Confirm Password" placeholder="Confirm Password" {...register('password_confirmation')} />
+                <TextInput type="password" label={t('register.confirmPassword')} placeholder={t('register.confirmPassword')} {...register('password_confirmation')} />
             </div>
              <div className="flex flex-col">
-                <TextInput label="Player Name" placeholder="Player Name" {...register('playername')} />
+                <TextInput label={t('global.playerName')} placeholder={t('global.playerName')} {...register('playername')} />
                 {error && <span className="text-red-500 max-w-[200px] text-xs my-2">{error}</span>}
             </div>
-            <Button className="w-full justify-center py-1 my-4" text={isSubmitting ? "Registering..." : "Register"} type="submit" disabled={isSubmitting} />
+            <Button className="w-full justify-center py-1 my-4" text={isSubmitting ? t('register.registering') : t('register.submit')} type="submit" disabled={isSubmitting} />
             </form>
 
             <div className="relative my-4">
@@ -196,14 +196,14 @@ export const RegisterForm = () => {
                     <div className="w-full border-t border-slate-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white/90 text-slate-500">Or register with</span>
+                    <span className="px-2 bg-white/90 text-slate-500">{t('register.orRegisterWith')}</span>
                 </div>
             </div>
 
             <div className="space-y-3">
                 <Button
                     className="w-full cursor-pointer justify-center py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900"
-                    text={isGoogleLoading ? "Loading..." : "Register with Google"}
+                    text={isGoogleLoading ? t('global.loading') : t('register.registerWithGoogle')}
                     onClick={handleGoogleSignup}
                     disabled={isGoogleLoading || isSubmitting}
                     startIcon={
@@ -218,7 +218,7 @@ export const RegisterForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs text-slate-700">Already have an account? Go to the <Link className="underline text-slate-800 hover:text-slate-950" href="/login">login page</Link></span>
+                <span className="text-xs text-slate-700">{t('register.alreadyHaveAccount')} <Link className="underline text-slate-800 hover:text-slate-950" href="/login">{t('register.loginLink')}</Link></span>
             </div>
         </div>
     );

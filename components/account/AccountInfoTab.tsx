@@ -309,7 +309,7 @@ export const AccountInfoTab = ({ userId, email, displayName, userData, setUserDa
               {t('account.preferredLanguage')}
             </label>
             <select
-              {...register('preferredLanguage', { required: 'Please select a language' })}
+              {...register('preferredLanguage', { required: t('validation.selectLanguage') })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="nl">{t('global.dutch')}</option>
