@@ -199,7 +199,7 @@ export function AccountPageContent() {
                 {/* Edit mode hint */}
                 {editMode && (
                     <p className="text-sm text-gray-500 mb-4 -mt-3">
-                        Sleep blokken om te herordenen of verplaatsen. Klik op het oog-icoon om een blok te verbergen.
+                        {t('account.layoutHint')}
                     </p>
                 )}
 

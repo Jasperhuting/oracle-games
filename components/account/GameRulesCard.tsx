@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GameRulesModal } from '@/components/GameRulesModal';
 import { GameType, GameRule } from '@/lib/types/games';
 import { Book } from 'tabler-icons-react';
@@ -12,6 +13,7 @@ interface RuleItem {
 }
 
 export function GameRulesCard() {
+  const { t } = useTranslation();
   const [availableRules, setAvailableRules] = useState<RuleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRule, setSelectedRule] = useState<RuleItem | null>(null);
@@ -52,13 +54,13 @@ export function GameRulesCard() {
     <>
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">
-          Spelregels
+          {t('gameRules.title')}
         </h2>
 
         {loading ? (
-          <p className="text-sm text-gray-400">Laden...</p>
+          <p className="text-sm text-gray-400">{t('global.loading')}</p>
         ) : availableRules.length === 0 ? (
-          <p className="text-sm text-gray-400">Geen spelregels beschikbaar</p>
+          <p className="text-sm text-gray-400">{t('gameRules.noRules')}</p>
         ) : (
           <ul className="space-y-2">
             {availableRules.map((rule) => (

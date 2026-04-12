@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProfileCompleteness, FIELD_LABELS, OPTIONAL_FIELDS, TOTAL_PROFILE_FIELDS } from '@/lib/profile/completeness';
+import { useTranslation } from 'react-i18next';
+import { ProfileCompleteness, OPTIONAL_FIELDS, TOTAL_PROFILE_FIELDS, type FieldKey } from '@/lib/profile/completeness';
 
 interface ProfileCompletenessCardProps {
   completeness: ProfileCompleteness;
@@ -14,7 +15,16 @@ export function ProfileCompletenessCard({
   uid,
 }: ProfileCompletenessCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
+
+  const FIELD_LABEL_KEYS: Record<Exclude<FieldKey, 'playername' | 'email'>, string> = {
+    firstName: t('global.firstName'),
+    lastName: t('global.lastName'),
+    avatarUrl: t('profile.avatar'),
+    dateOfBirth: t('global.dateOfBirth'),
+    preferredLanguage: t('account.preferredLanguage'),
+  };
   const storageKey = `profileCardDismissed_${uid}`;
 
   useEffect(() => {
@@ -45,10 +55,10 @@ export function ProfileCompletenessCard({
       <div className="flex justify-between mb-3">
         <div>
           <div className="font-bold text-sm text-green-800">
-            Maak je profiel compleet
+            {t('profile.completeTitle')}
           </div>
           <div className="text-xs text-green-800 mt-px">
-            {filledCount} van {TOTAL_PROFILE_FIELDS} velden ingevuld
+            {t('profile.fieldsFilledIn', { count: filledCount, total: TOTAL_PROFILE_FIELDS })}
           </div>
         </div>
         <div className="text-lg font-extrabold text-green-600">
@@ -68,10 +78,10 @@ export function ProfileCompletenessCard({
       <div className="flex flex-wrap gap-1.5 mb-[14px]">
         {/* Always shown: hardcoded green chips */}
         <div className="bg-green-600 text-white rounded-full px-[10px] py-[3px] text-[11px] font-medium">
-          ✓ Spelersnaam
+          ✓ {t('global.playerName')}
         </div>
         <div className="bg-green-600 text-white rounded-full px-[10px] py-[3px] text-[11px] font-medium">
-          ✓ E-mail
+          ✓ {t('account.emailAddress')}
         </div>
 
         {/* Optional fields */}
@@ -83,7 +93,7 @@ export function ProfileCompletenessCard({
               className={`rounded-full px-[10px] py-[3px] text-[11px] font-medium ${isMissing ? 'bg-yellow-100 text-yellow-800' : 'bg-green-600 text-white'}`}
             >
               {isMissing ? '+ ' : '✓ '}
-              {FIELD_LABELS[field]}
+              {FIELD_LABEL_KEYS[field]}
             </div>
           );
         })}
@@ -95,13 +105,13 @@ export function ProfileCompletenessCard({
           onClick={handleNavigate}
           className="bg-[#02554d] text-white border-none rounded-lg px-4 py-2 text-[13px] font-semibold cursor-pointer"
         >
-          Profiel aanvullen →
+          {t('profile.completeButton')}
         </button>
         <button
           onClick={handleDismiss}
           className="bg-transparent text-gray-500 border-none text-xs cursor-pointer p-2"
         >
-          Later
+          {t('onboarding.later')}
         </button>
       </div>
     </div>
