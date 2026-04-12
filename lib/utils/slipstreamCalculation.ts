@@ -174,6 +174,21 @@ export function calculateTimeLoss(
   // Get finish position
   const finishPosition = riderResult.place || riderResult.rank;
 
+  // place === -1 means scraper couldn't find a valid position (DNF/DNS marker)
+  if (!finishPosition || finishPosition < 0) {
+    const lastFinisher = getLastFinisher(stageResults);
+    const lastFinisherGap = parseTimeGap(lastFinisher?.timeDifference || lastFinisher?.gap);
+    const penaltySeconds = penaltyMinutes * 60;
+    const totalPenalty = lastFinisherGap + penaltySeconds;
+
+    return {
+      timeLostSeconds: totalPenalty,
+      timeLostFormatted: formatTime(totalPenalty),
+      isPenalty: true,
+      penaltyReason: 'dnf'
+    };
+  }
+
   // Winner has 0 time lost
   if (finishPosition === 1) {
     return {
@@ -202,7 +217,10 @@ export function calculateTimeLoss(
 function getLastFinisher(stageResults: StageRider[]): StageRider | undefined {
   // Filter riders with valid finish positions and sort by position (descending)
   const finishers = stageResults
-    .filter(r => (r.place || r.rank) && (r.timeDifference || r.gap))
+    .filter(r => {
+      const pos = r.place || r.rank;
+      return pos && pos > 0 && (r.timeDifference || r.gap);
+    })
     .sort((a, b) => {
       const posA = a.place || a.rank || 0;
       const posB = b.place || b.rank || 0;

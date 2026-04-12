@@ -192,7 +192,7 @@ export function SlipstreamAdminPickOverview({
                               <div className="text-gray-900 font-medium">{pick.riderName}</div>
                               <div className="text-xs text-yellow-700">⏱ {pick.timeLostFormatted || '-'}</div>
                               <div className="text-xs text-green-700">🟢 {pick.greenJerseyPoints ?? 0} pts</div>
-                              {pick.riderFinishPosition ? (
+                              {pick.riderFinishPosition && pick.riderFinishPosition > 0 ? (
                                 <div className="text-xs text-gray-500">P{pick.riderFinishPosition}</div>
                               ) : null}
                             </div>

@@ -125,7 +125,7 @@ export function MyPicksOverview({
                           🟢 {pick.greenJerseyPoints} pts
                         </span>
                       )}
-                      {pick.riderFinishPosition && (
+                      {pick.riderFinishPosition && pick.riderFinishPosition > 0 && (
                         <span className="text-xs text-gray-400">
                           P{pick.riderFinishPosition}
                         </span>
