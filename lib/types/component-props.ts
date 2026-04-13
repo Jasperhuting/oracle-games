@@ -62,6 +62,9 @@ export interface SelectorProps<T> {
   groupHeaderClassName?: string;
   availableItemClassName?: string;
   selectedItemClassName?: string;
+  availableLabel?: string;
+  selectedLabel?: string;
+  sectionHeaderClassName?: string;
 }
 
 export interface RowProps<T> {

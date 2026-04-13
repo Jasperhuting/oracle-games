@@ -77,8 +77,10 @@ export function GoalScorerSelector({
       inputClassName="border-[#ffd7a6] bg-[#fffaf2] text-[#9a4d00] placeholder:text-[#c88a3d] focus:border-[#ff9900] focus:outline-none focus:ring-2 focus:ring-[#ff9900]/20"
       dropdownClassName="border-[#ffd7a6] bg-[#fffdf9] shadow-xl"
       groupHeaderClassName="bg-[#fff0d9] text-[#9a4d00] border-[#ffd7a6]"
+      sectionHeaderClassName="bg-[#fff0d9] text-[#9a4d00] border-[#ffd7a6]"
       availableItemClassName="bg-white hover:bg-[#fff7eb]"
       selectedItemClassName="bg-[#fff0d9] hover:bg-[#ffe3b8]"
+      availableLabel="Spelers"
       getItemLabel={(item) => item.label}
       searchFilter={(item, searchTerm) =>
         item.label.toLowerCase().includes(searchTerm.toLowerCase())

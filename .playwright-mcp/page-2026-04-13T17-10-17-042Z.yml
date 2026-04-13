@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - main [ref=e12]:
+    - generic [ref=e13]:
+      - img "Oracle Games" [ref=e14]
+      - button "Cycling" [ref=e18] [cursor=pointer]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: 🚴
+          - generic [ref=e21]: Cycling
+        - img [ref=e22]
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - img "Oracle Games Logo" [ref=e29]
+          - generic [ref=e30]: Oracle Games
+        - generic [ref=e31]:
+          - generic [ref=e32]: Welkom terug!
+          - generic [ref=e33]: Log in met je gegevens
+        - generic [ref=e34]:
+          - text: Wil je eerst even zien wat de website is?
+          - link "Bekijk dan de previewpagina" [ref=e35] [cursor=pointer]:
+            - /url: /preview
+          - text: .
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e40]:
+              - generic [ref=e41]: E-mail
+              - textbox "E-mail" [ref=e42]: jasper.huting@gmail.com
+            - generic [ref=e44]:
+              - generic [ref=e45]: Wachtwoord
+              - textbox "Wachtwoord" [ref=e46]: Poi09dfg!
+            - generic [ref=e47]:
+              - generic [ref=e48] [cursor=pointer]:
+                - checkbox "Ingelogd blijven" [checked] [ref=e49]
+                - text: Ingelogd blijven
+              - link "Wachtwoord vergeten?" [ref=e51] [cursor=pointer]:
+                - /url: /reset-password
+            - button "Inloggen" [ref=e52] [cursor=pointer]:
+              - generic [ref=e53]: Inloggen
+          - generic [ref=e58]: Of inloggen met
+          - button "Inloggen met Google" [ref=e60] [cursor=pointer]:
+            - img [ref=e62]
+            - generic [ref=e67]: Inloggen met Google
+          - generic [ref=e69]:
+            - text: Nog geen account?
+            - link "Ga naar de registratiepagina" [ref=e70] [cursor=pointer]:
+              - /url: /register

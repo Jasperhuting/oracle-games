@@ -30,7 +30,10 @@ export function Selector<T>({
     dropdownClassName,
     groupHeaderClassName,
     availableItemClassName,
-    selectedItemClassName
+    selectedItemClassName,
+    availableLabel = 'Beschikbaar',
+    selectedLabel = 'Geselecteerd',
+    sectionHeaderClassName
 }: SelectorProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -181,11 +184,12 @@ export function Selector<T>({
                 )}
                 {group.items.map((item) => {
                     const currentIndex = rowIndex++;
+                    const isItemSelected = selectedState || selectedItems.some(selected => isEqual(selected, item));
                     return (
                         <div
                             key={`${sectionPrefix}-${currentIndex}`}
                             className={`flex w-full items-center gap-2 hover:bg-gray-100 p-2 pl-3 cursor-pointer transition-colors duration-100 ${
-                                selectedState
+                                isItemSelected
                                     ? (selectedItemClassName || 'bg-blue-50')
                                     : (availableItemClassName || (currentIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'))
                             }`}
@@ -199,13 +203,13 @@ export function Selector<T>({
                             {multiSelect && showCheckboxes && (
                                 <input
                                     type="checkbox"
-                                    checked={selectedState}
+                                    checked={isItemSelected}
                                     onChange={() => {}}
                                     className="w-4 h-4 ml-2"
                                 />
                             )}
                             <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                                {renderItem(item, currentIndex, selectedState)}
+                                {renderItem(item, currentIndex, isItemSelected)}
                             </div>
                         </div>
                     );
@@ -218,7 +222,7 @@ export function Selector<T>({
         <div className="relative" ref={containerRef}>
             <div className="flex items-center gap-2">
                 <input
-                    className={`h-[40px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'} ${inputClassName || ''}`}
+                    className={`h-[40px] w-full px-3 border rounded ${inputClassName ? '' : selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'} ${inputClassName || ''}`}
                     type="text"
                     placeholder={getPlaceholder()}
                     value={getDisplayValue()}
@@ -255,7 +259,10 @@ export function Selector<T>({
 
             {isFocused && (() => {
                 // Separate available and selected items from results
-                const availableItems = results.filter(item => !selectedItems.some(selected => isEqual(selected, item)));
+                // When showSelected=false, keep selected items in the available list (rendered with selected style)
+                const availableItems = showSelected
+                    ? results.filter(item => !selectedItems.some(selected => isEqual(selected, item)))
+                    : results;
                 const selectedInResults = results.filter(item => selectedItems.some(selected => isEqual(selected, item)));
                 // Add selected items not in results
                 const selectedNotInResults = selectedItems.filter(item => !results.some(r => isEqual(r, item)));
@@ -269,18 +276,18 @@ export function Selector<T>({
                             {/* Available group */}
                             {sortedAvailable.length > 0 && (
                                 <>
-                                    <div className={`sticky top-0 bg-gray-100 px-3 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 z-[60] relative ${groupHeaderClassName || ''}`}>
-                                        Available ({sortedAvailable.length})
+                                    <div className={`sticky top-0 px-3 py-4 text-xs font-semibold uppercase tracking-wide border-b-2 z-[60] relative ${sectionHeaderClassName || groupHeaderClassName || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                        {availableLabel} ({sortedAvailable.length})
                                     </div>
                                     {renderSection(sortedAvailable, 'available', false)}
                                 </>
                             )}
-                            
+
                             {/* Selected group */}
                             {showSelected && sortedSelected.length > 0 && (
                                 <>
-                                    <div className={`sticky top-0 bg-blue-100 px-3 py-4 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b-2 border-blue-200 z-[60] relative ${groupHeaderClassName || ''}`}>
-                                        Selected ({sortedSelected.length})
+                                    <div className={`sticky top-0 px-3 py-4 text-xs font-semibold uppercase tracking-wide border-b-2 z-[60] relative ${sectionHeaderClassName || groupHeaderClassName || 'bg-blue-100 text-blue-700 border-blue-200'}`}>
+                                        {selectedLabel} ({sortedSelected.length})
                                     </div>
                                     {renderSection(sortedSelected, 'selected', true)}
                                 </>

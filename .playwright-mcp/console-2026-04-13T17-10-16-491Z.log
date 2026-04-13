@@ -1,0 +1,127 @@
+[     278ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(5), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.3.1} /_vercel/speed-insights/vitals @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     278ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(1), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.3.1} /_vercel/speed-insights/vitals @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     328ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     341ms] [LOG] [HMR] connected @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     386ms] [LOG] 📡 Using production Firebase @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     517ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3210/login:0
+[     685ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     875ms] [LOG] [Fast Refresh] done in 291ms @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     944ms] [LOG] %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     958ms] [LOG] [PlayerTeamsContext] Using cached player teams data (4755 riders, 2026-04-13) @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     963ms] [LOG] [RankingsContext] Using cached rankings data (2602 riders, 2026-04-13) @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     988ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing translation for key: forum.noRecentActivity in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing key: forum.noRecentActivity, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     989ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     990ms] [WARNING] Missing translation for key: forum.noRecentActivity in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     990ms] [WARNING] Missing key: forum.noRecentActivity, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     996ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     997ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     997ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     997ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1033ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1033ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1033ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1033ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1034ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1034ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1034ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1034ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1054ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1058ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1058ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1058ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1059ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1083ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1083ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1083ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1083ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1084ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1084ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1084ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1084ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1088ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1088ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1088ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1088ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1099ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1099ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1099ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1099ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1099ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1100ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1100ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1100ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1105ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1191ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1191ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1191ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing translation for key: forum.noRecentActivity in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing key: forum.noRecentActivity, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing translation for key: forum.noRecentActivity in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1192ms] [WARNING] Missing key: forum.noRecentActivity, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1222ms] [LOG] [Fast Refresh] done in 222ms @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1336ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1336ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1336ms] [WARNING] Missing translation for key: activeGames.noGames in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1337ms] [WARNING] Missing key: activeGames.noGames, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1337ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1337ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1337ms] [WARNING] Missing translation for key: activeGames.noGames in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1337ms] [WARNING] Missing key: activeGames.noGames, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1376ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1376ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1376ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1376ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1376ms] [WARNING] Missing translation for key: forum.noRecentActivity in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1377ms] [WARNING] Missing key: forum.noRecentActivity, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1377ms] [WARNING] Missing translation for key: forum.activityTitle in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1377ms] [WARNING] Missing key: forum.activityTitle, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1377ms] [WARNING] Missing translation for key: forum.viewForum in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1377ms] [WARNING] Missing key: forum.viewForum, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1377ms] [WARNING] Missing translation for key: forum.noRecentActivity in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1378ms] [WARNING] Missing key: forum.noRecentActivity, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1428ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1475ms] [LOG] [Fast Refresh] done in 149ms @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1530ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1530ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1530ms] [WARNING] Missing translation for key: activeGames.noGames in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1530ms] [WARNING] Missing key: activeGames.noGames, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1530ms] [WARNING] Missing translation for key: activeGames.title in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1531ms] [WARNING] Missing key: activeGames.title, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1531ms] [WARNING] Missing translation for key: activeGames.noGames in language: en @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1531ms] [WARNING] Missing key: activeGames.noGames, falling back to key as value @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   21194ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   21257ms] [LOG] [Fast Refresh] done in 163ms @ http://localhost:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   21597ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   21648ms] [LOG] [HMR] connected @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   21674ms] [LOG] 📡 Using production Firebase @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   21763ms] [LOG] %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   22309ms] [LOG] [PlayerTeamsContext] Using cached player teams data (4755 riders, 2026-04-13) @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   22354ms] [LOG] [RankingsContext] Using cached rankings data (2602 riders, 2026-04-13) @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   22368ms] [LOG] [PlayerTeamsContext] Using cached player teams data (4755 riders, 2026-04-13) @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   22375ms] [LOG] [RankingsContext] Using cached rankings data (2602 riders, 2026-04-13) @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   94052ms] [LOG] [Fast Refresh] rebuilding @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[   94189ms] [LOG] [Fast Refresh] done in 197ms @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  110251ms] [LOG] [Fast Refresh] rebuilding @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  110384ms] [LOG] [Fast Refresh] done in 191ms @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  123704ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(5), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.3.1} /_vercel/speed-insights/vitals @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  123705ms] [LOG] %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {speed: 4g, metrics: Array(1), scriptVersion: 0.1.3, sdkName: @vercel/speed-insights/next, sdkVersion: 1.3.1} /_vercel/speed-insights/vitals @ http://football.oracle-games.local:3210/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
