@@ -1,0 +1,2019 @@
+- generic [active] [ref=e1]:
+  - link "Jump to content" [ref=e2] [cursor=pointer]:
+    - /url: "#bodyContent"
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - navigation "Site" [ref=e6]:
+        - generic "Main menu" [ref=e7]:
+          - button "Main menu" [ref=e8] [cursor=pointer]
+          - generic [ref=e11]: Main menu
+      - link "Wikipedia The Free Encyclopedia" [ref=e12] [cursor=pointer]:
+        - /url: /wiki/Main_Page
+        - generic [ref=e13]:
+          - img "Wikipedia" [ref=e14]
+          - img "The Free Encyclopedia" [ref=e15]
+    - generic [ref=e16]:
+      - search [ref=e17]:
+        - generic [ref=e20]:
+          - searchbox "Search Wikipedia" [ref=e23]
+          - button "Search" [ref=e25]
+      - navigation "Personal tools" [ref=e26]:
+        - list [ref=e30]:
+          - listitem [ref=e31]:
+            - link "Donate" [ref=e32] [cursor=pointer]:
+              - /url: https://donate.wikimedia.org/?wmf_source=donate&wmf_medium=sidebar&wmf_campaign=en.wikipedia.org&uselang=en
+              - generic [ref=e34]: Donate
+          - listitem [ref=e35]:
+            - link "Create account" [ref=e36] [cursor=pointer]:
+              - /url: /w/index.php?title=Special:CreateAccount&returnto=2026+FIFA+World+Cup+squads
+          - listitem [ref=e37]:
+            - link "Log in" [ref=e38] [cursor=pointer]:
+              - /url: /w/index.php?title=Special:UserLogin&returnto=2026+FIFA+World+Cup+squads
+  - generic [ref=e40]:
+    - navigation "Contents" [ref=e44]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - heading "Contents" [level=2] [ref=e48]
+          - button "hide" [ref=e49] [cursor=pointer]
+        - list [ref=e50]:
+          - listitem [ref=e51]:
+            - link "(Top)" [ref=e52] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e53]: (Top)
+          - listitem [ref=e54]:
+            - link "Group A" [ref=e55] [cursor=pointer]:
+              - /url: "#Group_A"
+              - generic [ref=e56]: Group A
+            - button "Toggle Group A subsection" [ref=e57]:
+              - generic [ref=e59]: Toggle Group A subsection
+            - list
+          - listitem [ref=e60]:
+            - link "Group B" [ref=e61] [cursor=pointer]:
+              - /url: "#Group_B"
+              - generic [ref=e62]: Group B
+            - button "Toggle Group B subsection" [ref=e63]:
+              - generic [ref=e65]: Toggle Group B subsection
+            - list
+          - listitem [ref=e66]:
+            - link "Group C" [ref=e67] [cursor=pointer]:
+              - /url: "#Group_C"
+              - generic [ref=e68]: Group C
+            - button "Toggle Group C subsection" [ref=e69]:
+              - generic [ref=e71]: Toggle Group C subsection
+            - list
+          - listitem [ref=e72]:
+            - link "Group D" [ref=e73] [cursor=pointer]:
+              - /url: "#Group_D"
+              - generic [ref=e74]: Group D
+            - button "Toggle Group D subsection" [ref=e75]:
+              - generic [ref=e77]: Toggle Group D subsection
+            - list
+          - listitem [ref=e78]:
+            - link "Group E" [ref=e79] [cursor=pointer]:
+              - /url: "#Group_E"
+              - generic [ref=e80]: Group E
+            - button "Toggle Group E subsection" [ref=e81]:
+              - generic [ref=e83]: Toggle Group E subsection
+            - list
+          - listitem [ref=e84]:
+            - link "Group F" [ref=e85] [cursor=pointer]:
+              - /url: "#Group_F"
+              - generic [ref=e86]: Group F
+            - button "Toggle Group F subsection" [ref=e87]:
+              - generic [ref=e89]: Toggle Group F subsection
+            - list
+          - listitem [ref=e90]:
+            - link "Group G" [ref=e91] [cursor=pointer]:
+              - /url: "#Group_G"
+              - generic [ref=e92]: Group G
+            - button "Toggle Group G subsection" [ref=e93]:
+              - generic [ref=e95]: Toggle Group G subsection
+            - list
+          - listitem [ref=e96]:
+            - link "Group H" [ref=e97] [cursor=pointer]:
+              - /url: "#Group_H"
+              - generic [ref=e98]: Group H
+            - button "Toggle Group H subsection" [ref=e99]:
+              - generic [ref=e101]: Toggle Group H subsection
+            - list
+          - listitem [ref=e102]:
+            - link "Group I" [ref=e103] [cursor=pointer]:
+              - /url: "#Group_I"
+              - generic [ref=e104]: Group I
+            - button "Toggle Group I subsection" [ref=e105]:
+              - generic [ref=e107]: Toggle Group I subsection
+            - list
+          - listitem [ref=e108]:
+            - link "Group J" [ref=e109] [cursor=pointer]:
+              - /url: "#Group_J"
+              - generic [ref=e110]: Group J
+            - button "Toggle Group J subsection" [ref=e111]:
+              - generic [ref=e113]: Toggle Group J subsection
+            - list
+          - listitem [ref=e114]:
+            - link "Group K" [ref=e115] [cursor=pointer]:
+              - /url: "#Group_K"
+              - generic [ref=e116]: Group K
+            - button "Toggle Group K subsection" [ref=e117]:
+              - generic [ref=e119]: Toggle Group K subsection
+            - list
+          - listitem [ref=e120]:
+            - link "Group L" [ref=e121] [cursor=pointer]:
+              - /url: "#Group_L"
+              - generic [ref=e122]: Group L
+            - button "Toggle Group L subsection" [ref=e123]:
+              - generic [ref=e125]: Toggle Group L subsection
+            - list
+          - listitem [ref=e126]:
+            - link "Statistics" [ref=e127] [cursor=pointer]:
+              - /url: "#Statistics"
+              - generic [ref=e128]: Statistics
+            - button "Toggle Statistics subsection" [ref=e129]:
+              - generic [ref=e131]: Toggle Statistics subsection
+            - list
+          - listitem [ref=e132]:
+            - link "Notes" [ref=e133] [cursor=pointer]:
+              - /url: "#Notes"
+              - generic [ref=e134]: Notes
+            - list
+          - listitem [ref=e135]:
+            - link "External links" [ref=e136] [cursor=pointer]:
+              - /url: "#External_links"
+              - generic [ref=e137]: External links
+            - list
+    - main [ref=e139]:
+      - generic [ref=e140]:
+        - heading "2026 FIFA World Cup squads" [level=1] [ref=e141]:
+          - generic [ref=e142]: 2026 FIFA World Cup squads
+        - generic [ref=e143]:
+          - button "Go to an article in another language. Available in 2 languages" [ref=e144] [cursor=pointer]
+          - generic [ref=e147]: 2 languages
+      - generic [ref=e149]:
+        - navigation "Namespaces" [ref=e151]:
+          - generic [ref=e152]:
+            - generic:
+              - list:
+                - listitem [ref=e153]:
+                  - link "Article" [ref=e154] [cursor=pointer]:
+                    - /url: /wiki/2026_FIFA_World_Cup_squads
+                    - generic [ref=e155]: Article
+                - listitem [ref=e156]:
+                  - link "Talk" [ref=e157] [cursor=pointer]:
+                    - /url: /wiki/Talk:2026_FIFA_World_Cup_squads
+                    - generic [ref=e158]: Talk
+        - generic [ref=e159]:
+          - navigation "Views" [ref=e160]:
+            - generic [ref=e161]:
+              - generic:
+                - list:
+                  - listitem [ref=e162]:
+                    - link "Read" [ref=e163] [cursor=pointer]:
+                      - /url: /wiki/2026_FIFA_World_Cup_squads
+                      - generic [ref=e164]: Read
+                  - listitem [ref=e165]:
+                    - link "Edit" [ref=e166] [cursor=pointer]:
+                      - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit
+                      - generic [ref=e167]: Edit
+                  - listitem [ref=e168]:
+                    - link "View history" [ref=e169] [cursor=pointer]:
+                      - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=history
+                      - generic [ref=e170]: View history
+          - navigation "Page tools" [ref=e171]:
+            - generic [ref=e172]:
+              - button "Tools" [ref=e173] [cursor=pointer]
+              - generic [ref=e175] [cursor=pointer]: Tools
+      - navigation "Appearance" [ref=e178]:
+        - generic [ref=e181]:
+          - generic [ref=e182]: Appearance
+          - button "hide" [ref=e183] [cursor=pointer]
+      - generic "2026 FIFA World Cup squads" [ref=e184]:
+        - generic [ref=e186]: From Wikipedia, the free encyclopedia
+        - generic [ref=e188]:
+          - paragraph [ref=e189]:
+            - text: The
+            - link "2026 FIFA World Cup" [ref=e190] [cursor=pointer]:
+              - /url: /wiki/2026_FIFA_World_Cup
+            - text: is an international
+            - link "football" [ref=e191] [cursor=pointer]:
+              - /url: /wiki/Association_football
+            - text: tournament will be held in Canada, Mexico, and United States, from 11 June to 19 July 2026. The 48 national teams involved in the tournament will be required to register a squad of up to 26 players, including three goalkeepers. Only players in these squads will eligible to take part in the tournament.
+            - superscript [ref=e192]:
+              - link "[1]" [ref=e193] [cursor=pointer]:
+                - /url: "#cite_note-regulations-1"
+          - paragraph [ref=e194]:
+            - text: A provisional release list of between 35 and 55 players per national team will be submitted to FIFA by 11 May 2026, one month prior to the opening match of the tournament. The release lists will be not made public by FIFA. From the preliminary squad, the final list of at most 26 and at least 23 players per national team will be submitted to FIFA by 1 June, ten days prior to the opening match of the tournament.
+            - superscript [ref=e195]:
+              - link "[2]" [ref=e196] [cursor=pointer]:
+                - /url: "#cite_note-2"
+            - text: In the event that a player on the submitted squad list suffered from an injury or illness prior to his team's first match of the tournament, that player could be replaced at any time up to 24 hours before their first match. The team doctor and the FIFA General Medical Officer had to both confirm that the injury or illness was severe enough to prevent the player from participating in the tournament. Replacement players did not need to be limited to the preliminary list.
+            - superscript [ref=e197]:
+              - link "[1]" [ref=e198] [cursor=pointer]:
+                - /url: "#cite_note-regulations-1"
+          - paragraph [ref=e199]:
+            - text: The position listed for each player is per the official squad list published by FIFA. The age listed for each player is as of 11 June 2026, the first day of the tournament. The numbers of
+            - link "caps" [ref=e200] [cursor=pointer]:
+              - /url: /wiki/Cap_(sport)
+            - text: and goals listed for each player do not include any matches played after the start of the tournament. The club listed is the club for which the player last played a competitive match prior to the tournament.
+            - superscript [ref=e201]:
+              - link "[note 1]" [ref=e202] [cursor=pointer]:
+                - /url: "#cite_note-3"
+            - text: The nationality for each club reflects the national association (not the league) to which the club is affiliated. A flag is included for coaches who are of a different nationality to their team.
+          - generic [ref=e203]:
+            - heading "Group A" [level=2] [ref=e204]
+            - generic [ref=e205]:
+              - text: "["
+              - link "edit" [ref=e206] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=1
+              - text: "]"
+          - generic [ref=e207]:
+            - heading "Czech Republic" [level=3] [ref=e208]
+            - generic [ref=e209]:
+              - text: "["
+              - link "edit" [ref=e210] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=2
+              - text: "]"
+          - paragraph [ref=e211]:
+            - text: "Coach:"
+            - link "Miroslav Koubek" [ref=e212] [cursor=pointer]:
+              - /url: /wiki/Miroslav_Koubek
+          - table [ref=e213]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e214]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e215]:
+                - columnheader "No." [ref=e216]
+                - columnheader "Pos." [ref=e217]
+                - columnheader "Player" [ref=e218]
+                - columnheader "Date of birth (age)" [ref=e219]
+                - columnheader "Caps" [ref=e220]
+                - columnheader "Club" [ref=e221]:
+                  - text: Club
+                  - paragraph [ref=e222]
+          - generic [ref=e223]:
+            - heading "Mexico" [level=3] [ref=e224]
+            - generic [ref=e225]:
+              - text: "["
+              - link "edit" [ref=e226] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=3
+              - text: "]"
+          - paragraph [ref=e227]:
+            - text: "Coach:"
+            - link "Javier Aguirre" [ref=e228] [cursor=pointer]:
+              - /url: /wiki/Javier_Aguirre
+          - table [ref=e229]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e230]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e231]:
+                - columnheader "No." [ref=e232]
+                - columnheader "Pos." [ref=e233]
+                - columnheader "Player" [ref=e234]
+                - columnheader "Date of birth (age)" [ref=e235]
+                - columnheader "Caps" [ref=e236]
+                - columnheader "Club" [ref=e237]:
+                  - text: Club
+                  - paragraph [ref=e238]
+          - generic [ref=e239]:
+            - heading "South Africa" [level=3] [ref=e240]
+            - generic [ref=e241]:
+              - text: "["
+              - link "edit" [ref=e242] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=4
+              - text: "]"
+          - paragraph [ref=e243]:
+            - text: "Coach:"
+            - link "Belgium" [ref=e246] [cursor=pointer]:
+              - /url: /wiki/Belgium
+              - img "Belgium" [ref=e247]
+            - link "Hugo Broos" [ref=e248] [cursor=pointer]:
+              - /url: /wiki/Hugo_Broos
+          - table [ref=e249]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e250]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e251]:
+                - columnheader "No." [ref=e252]
+                - columnheader "Pos." [ref=e253]
+                - columnheader "Player" [ref=e254]
+                - columnheader "Date of birth (age)" [ref=e255]
+                - columnheader "Caps" [ref=e256]
+                - columnheader "Club" [ref=e257]:
+                  - text: Club
+                  - paragraph [ref=e258]
+          - generic [ref=e259]:
+            - heading "South Korea" [level=3] [ref=e260]
+            - generic [ref=e261]:
+              - text: "["
+              - link "edit" [ref=e262] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=5
+              - text: "]"
+          - paragraph [ref=e263]:
+            - text: "Coach:"
+            - link "Hong Myung-bo" [ref=e264] [cursor=pointer]:
+              - /url: /wiki/Hong_Myung-bo
+          - table [ref=e265]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e266]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e267]:
+                - columnheader "No." [ref=e268]
+                - columnheader "Pos." [ref=e269]
+                - columnheader "Player" [ref=e270]
+                - columnheader "Date of birth (age)" [ref=e271]
+                - columnheader "Caps" [ref=e272]
+                - columnheader "Club" [ref=e273]:
+                  - text: Club
+                  - paragraph [ref=e274]
+          - generic [ref=e275]:
+            - heading "Group B" [level=2] [ref=e276]
+            - generic [ref=e277]:
+              - text: "["
+              - link "edit" [ref=e278] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=6
+              - text: "]"
+          - generic [ref=e279]:
+            - heading "Bosnia and Herzegovina" [level=3] [ref=e280]
+            - generic [ref=e281]:
+              - text: "["
+              - link "edit" [ref=e282] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=7
+              - text: "]"
+          - paragraph [ref=e283]:
+            - text: "Coach:"
+            - link "Sergej Barbarez" [ref=e284] [cursor=pointer]:
+              - /url: /wiki/Sergej_Barbarez
+          - table [ref=e285]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e286]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e287]:
+                - columnheader "No." [ref=e288]
+                - columnheader "Pos." [ref=e289]
+                - columnheader "Player" [ref=e290]
+                - columnheader "Date of birth (age)" [ref=e291]
+                - columnheader "Caps" [ref=e292]
+                - columnheader "Club" [ref=e293]:
+                  - text: Club
+                  - paragraph [ref=e294]
+          - generic [ref=e295]:
+            - heading "Canada" [level=3] [ref=e296]
+            - generic [ref=e297]:
+              - text: "["
+              - link "edit" [ref=e298] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=8
+              - text: "]"
+          - paragraph [ref=e299]:
+            - text: "Coach:"
+            - link "United States" [ref=e302] [cursor=pointer]:
+              - /url: /wiki/United_States
+              - img "United States" [ref=e303]
+            - link "Jesse Marsch" [ref=e304] [cursor=pointer]:
+              - /url: /wiki/Jesse_Marsch
+          - table [ref=e305]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e306]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e307]:
+                - columnheader "No." [ref=e308]
+                - columnheader "Pos." [ref=e309]
+                - columnheader "Player" [ref=e310]
+                - columnheader "Date of birth (age)" [ref=e311]
+                - columnheader "Caps" [ref=e312]
+                - columnheader "Club" [ref=e313]:
+                  - text: Club
+                  - paragraph [ref=e314]
+          - generic [ref=e315]:
+            - heading "Qatar" [level=3] [ref=e316]
+            - generic [ref=e317]:
+              - text: "["
+              - link "edit" [ref=e318] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=9
+              - text: "]"
+          - paragraph [ref=e319]:
+            - text: "Coach:"
+            - link "Spain" [ref=e322] [cursor=pointer]:
+              - /url: /wiki/Spain
+              - img "Spain" [ref=e323]
+            - link "Julen Lopetegui" [ref=e324] [cursor=pointer]:
+              - /url: /wiki/Julen_Lopetegui
+          - table [ref=e325]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e326]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e327]:
+                - columnheader "No." [ref=e328]
+                - columnheader "Pos." [ref=e329]
+                - columnheader "Player" [ref=e330]
+                - columnheader "Date of birth (age)" [ref=e331]
+                - columnheader "Caps" [ref=e332]
+                - columnheader "Club" [ref=e333]:
+                  - text: Club
+                  - paragraph [ref=e334]
+          - generic [ref=e335]:
+            - heading "Switzerland" [level=3] [ref=e336]
+            - generic [ref=e337]:
+              - text: "["
+              - link "edit" [ref=e338] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=10
+              - text: "]"
+          - paragraph [ref=e339]:
+            - text: "Coach:"
+            - link "Murat Yakin" [ref=e340] [cursor=pointer]:
+              - /url: /wiki/Murat_Yakin
+          - table [ref=e341]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e342]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e343]:
+                - columnheader "No." [ref=e344]
+                - columnheader "Pos." [ref=e345]
+                - columnheader "Player" [ref=e346]
+                - columnheader "Date of birth (age)" [ref=e347]
+                - columnheader "Caps" [ref=e348]
+                - columnheader "Club" [ref=e349]:
+                  - text: Club
+                  - paragraph [ref=e350]
+          - generic [ref=e351]:
+            - heading "Group C" [level=2] [ref=e352]
+            - generic [ref=e353]:
+              - text: "["
+              - link "edit" [ref=e354] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=11
+              - text: "]"
+          - generic [ref=e355]:
+            - heading "Brazil" [level=3] [ref=e356]
+            - generic [ref=e357]:
+              - text: "["
+              - link "edit" [ref=e358] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=12
+              - text: "]"
+          - paragraph [ref=e359]:
+            - text: "Coach:"
+            - link "Italy" [ref=e362] [cursor=pointer]:
+              - /url: /wiki/Italy
+              - img "Italy" [ref=e363]
+            - link "Carlo Ancelotti" [ref=e364] [cursor=pointer]:
+              - /url: /wiki/Carlo_Ancelotti
+          - table [ref=e365]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e366]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e367]:
+                - columnheader "No." [ref=e368]
+                - columnheader "Pos." [ref=e369]
+                - columnheader "Player" [ref=e370]
+                - columnheader "Date of birth (age)" [ref=e371]
+                - columnheader "Caps" [ref=e372]
+                - columnheader "Club" [ref=e373]:
+                  - text: Club
+                  - paragraph [ref=e374]
+          - generic [ref=e375]:
+            - heading "Haiti" [level=3] [ref=e376]
+            - generic [ref=e377]:
+              - text: "["
+              - link "edit" [ref=e378] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=13
+              - text: "]"
+          - paragraph [ref=e379]:
+            - text: "Coach:"
+            - link "France" [ref=e382] [cursor=pointer]:
+              - /url: /wiki/France
+              - img "France" [ref=e383]
+            - link "Sébastien Migné" [ref=e384] [cursor=pointer]:
+              - /url: /wiki/S%C3%A9bastien_Mign%C3%A9
+          - table [ref=e385]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e386]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e387]:
+                - columnheader "No." [ref=e388]
+                - columnheader "Pos." [ref=e389]
+                - columnheader "Player" [ref=e390]
+                - columnheader "Date of birth (age)" [ref=e391]
+                - columnheader "Caps" [ref=e392]
+                - columnheader "Club" [ref=e393]:
+                  - text: Club
+                  - paragraph [ref=e394]
+          - generic [ref=e395]:
+            - heading "Morocco" [level=3] [ref=e396]
+            - generic [ref=e397]:
+              - text: "["
+              - link "edit" [ref=e398] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=14
+              - text: "]"
+          - paragraph [ref=e399]:
+            - text: "Coach:"
+            - link "Mohamed Ouahbi" [ref=e400] [cursor=pointer]:
+              - /url: /wiki/Mohamed_Ouahbi
+          - table [ref=e401]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e402]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e403]:
+                - columnheader "No." [ref=e404]
+                - columnheader "Pos." [ref=e405]
+                - columnheader "Player" [ref=e406]
+                - columnheader "Date of birth (age)" [ref=e407]
+                - columnheader "Caps" [ref=e408]
+                - columnheader "Club" [ref=e409]:
+                  - text: Club
+                  - paragraph [ref=e410]
+          - generic [ref=e411]:
+            - heading "Scotland" [level=3] [ref=e412]
+            - generic [ref=e413]:
+              - text: "["
+              - link "edit" [ref=e414] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=15
+              - text: "]"
+          - paragraph [ref=e415]:
+            - text: "Coach:"
+            - link "Steve Clarke" [ref=e416] [cursor=pointer]:
+              - /url: /wiki/Steve_Clarke
+          - table [ref=e417]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e418]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e419]:
+                - columnheader "No." [ref=e420]
+                - columnheader "Pos." [ref=e421]
+                - columnheader "Player" [ref=e422]
+                - columnheader "Date of birth (age)" [ref=e423]
+                - columnheader "Caps" [ref=e424]
+                - columnheader "Club" [ref=e425]:
+                  - text: Club
+                  - paragraph [ref=e426]
+          - generic [ref=e427]:
+            - heading "Group D" [level=2] [ref=e428]
+            - generic [ref=e429]:
+              - text: "["
+              - link "edit" [ref=e430] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=16
+              - text: "]"
+          - generic [ref=e431]:
+            - heading "Australia" [level=3] [ref=e432]
+            - generic [ref=e433]:
+              - text: "["
+              - link "edit" [ref=e434] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=17
+              - text: "]"
+          - paragraph [ref=e435]:
+            - text: "Coach:"
+            - link "Tony Popovic" [ref=e436] [cursor=pointer]:
+              - /url: /wiki/Tony_Popovic
+          - table [ref=e437]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e438]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e439]:
+                - columnheader "No." [ref=e440]
+                - columnheader "Pos." [ref=e441]
+                - columnheader "Player" [ref=e442]
+                - columnheader "Date of birth (age)" [ref=e443]
+                - columnheader "Caps" [ref=e444]
+                - columnheader "Club" [ref=e445]:
+                  - text: Club
+                  - paragraph [ref=e446]
+          - generic [ref=e447]:
+            - heading "Paraguay" [level=3] [ref=e448]
+            - generic [ref=e449]:
+              - text: "["
+              - link "edit" [ref=e450] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=18
+              - text: "]"
+          - paragraph [ref=e451]:
+            - text: "Coach:"
+            - link "Argentina" [ref=e454] [cursor=pointer]:
+              - /url: /wiki/Argentina
+              - img "Argentina" [ref=e455]
+            - link "Gustavo Alfaro" [ref=e456] [cursor=pointer]:
+              - /url: /wiki/Gustavo_Alfaro
+          - table [ref=e457]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e458]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e459]:
+                - columnheader "No." [ref=e460]
+                - columnheader "Pos." [ref=e461]
+                - columnheader "Player" [ref=e462]
+                - columnheader "Date of birth (age)" [ref=e463]
+                - columnheader "Caps" [ref=e464]
+                - columnheader "Club" [ref=e465]:
+                  - text: Club
+                  - paragraph [ref=e466]
+          - generic [ref=e467]:
+            - heading "Turkey" [level=3] [ref=e468]
+            - generic [ref=e469]:
+              - text: "["
+              - link "edit" [ref=e470] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=19
+              - text: "]"
+          - paragraph [ref=e471]:
+            - text: "Coach:"
+            - link "Italy" [ref=e474] [cursor=pointer]:
+              - /url: /wiki/Italy
+              - img "Italy" [ref=e475]
+            - link "Vincenzo Montella" [ref=e476] [cursor=pointer]:
+              - /url: /wiki/Vincenzo_Montella
+          - table [ref=e477]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e478]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e479]:
+                - columnheader "No." [ref=e480]
+                - columnheader "Pos." [ref=e481]
+                - columnheader "Player" [ref=e482]
+                - columnheader "Date of birth (age)" [ref=e483]
+                - columnheader "Caps" [ref=e484]
+                - columnheader "Club" [ref=e485]:
+                  - text: Club
+                  - paragraph [ref=e486]
+          - generic [ref=e487]:
+            - heading "United States" [level=3] [ref=e488]
+            - generic [ref=e489]:
+              - text: "["
+              - link "edit" [ref=e490] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=20
+              - text: "]"
+          - paragraph [ref=e491]:
+            - text: "Coach:"
+            - link "Argentina" [ref=e494] [cursor=pointer]:
+              - /url: /wiki/Argentina
+              - img "Argentina" [ref=e495]
+            - link "Mauricio Pochettino" [ref=e496] [cursor=pointer]:
+              - /url: /wiki/Mauricio_Pochettino
+          - table [ref=e497]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e498]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e499]:
+                - columnheader "No." [ref=e500]
+                - columnheader "Pos." [ref=e501]
+                - columnheader "Player" [ref=e502]
+                - columnheader "Date of birth (age)" [ref=e503]
+                - columnheader "Caps" [ref=e504]
+                - columnheader "Club" [ref=e505]:
+                  - text: Club
+                  - paragraph [ref=e506]
+          - generic [ref=e507]:
+            - heading "Group E" [level=2] [ref=e508]
+            - generic [ref=e509]:
+              - text: "["
+              - link "edit" [ref=e510] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=21
+              - text: "]"
+          - generic [ref=e511]:
+            - heading "Curaçao" [level=3] [ref=e512]: Curaçao
+            - generic [ref=e513]:
+              - text: "["
+              - link "edit" [ref=e514] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=22
+              - text: "]"
+          - paragraph [ref=e515]:
+            - text: "Coach:"
+            - link "Netherlands" [ref=e518] [cursor=pointer]:
+              - /url: /wiki/Netherlands
+              - img "Netherlands" [ref=e519]
+            - link "Fred Rutten" [ref=e520] [cursor=pointer]:
+              - /url: /wiki/Fred_Rutten
+          - table [ref=e521]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e522]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e523]:
+                - columnheader "No." [ref=e524]
+                - columnheader "Pos." [ref=e525]
+                - columnheader "Player" [ref=e526]
+                - columnheader "Date of birth (age)" [ref=e527]
+                - columnheader "Caps" [ref=e528]
+                - columnheader "Club" [ref=e529]:
+                  - text: Club
+                  - paragraph [ref=e530]
+          - generic [ref=e531]:
+            - heading "Ecuador" [level=3] [ref=e532]
+            - generic [ref=e533]:
+              - text: "["
+              - link "edit" [ref=e534] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=23
+              - text: "]"
+          - paragraph [ref=e535]:
+            - text: "Coach:"
+            - link "Argentina" [ref=e538] [cursor=pointer]:
+              - /url: /wiki/Argentina
+              - img "Argentina" [ref=e539]
+            - link "Sebastián Beccacece" [ref=e540] [cursor=pointer]:
+              - /url: /wiki/Sebasti%C3%A1n_Beccacece
+          - table [ref=e541]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e542]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e543]:
+                - columnheader "No." [ref=e544]
+                - columnheader "Pos." [ref=e545]
+                - columnheader "Player" [ref=e546]
+                - columnheader "Date of birth (age)" [ref=e547]
+                - columnheader "Caps" [ref=e548]
+                - columnheader "Club" [ref=e549]:
+                  - text: Club
+                  - paragraph [ref=e550]
+          - generic [ref=e551]:
+            - heading "Germany" [level=3] [ref=e552]
+            - generic [ref=e553]:
+              - text: "["
+              - link "edit" [ref=e554] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=24
+              - text: "]"
+          - paragraph [ref=e555]:
+            - text: "Coach:"
+            - link "Julian Nagelsmann" [ref=e556] [cursor=pointer]:
+              - /url: /wiki/Julian_Nagelsmann
+          - table [ref=e557]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e558]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e559]:
+                - columnheader "No." [ref=e560]
+                - columnheader "Pos." [ref=e561]
+                - columnheader "Player" [ref=e562]
+                - columnheader "Date of birth (age)" [ref=e563]
+                - columnheader "Caps" [ref=e564]
+                - columnheader "Club" [ref=e565]:
+                  - text: Club
+                  - paragraph [ref=e566]
+          - generic [ref=e567]:
+            - heading "Ivory Coast" [level=3] [ref=e568]
+            - generic [ref=e569]:
+              - text: "["
+              - link "edit" [ref=e570] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=25
+              - text: "]"
+          - paragraph [ref=e571]:
+            - text: "Coach:"
+            - link "Emerse Faé" [ref=e572] [cursor=pointer]:
+              - /url: /wiki/Emerse_Fa%C3%A9
+          - table [ref=e573]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e574]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e575]:
+                - columnheader "No." [ref=e576]
+                - columnheader "Pos." [ref=e577]
+                - columnheader "Player" [ref=e578]
+                - columnheader "Date of birth (age)" [ref=e579]
+                - columnheader "Caps" [ref=e580]
+                - columnheader "Club" [ref=e581]:
+                  - text: Club
+                  - paragraph [ref=e582]
+          - generic [ref=e583]:
+            - heading "Group F" [level=2] [ref=e584]
+            - generic [ref=e585]:
+              - text: "["
+              - link "edit" [ref=e586] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=26
+              - text: "]"
+          - generic [ref=e587]:
+            - heading "Japan" [level=3] [ref=e588]
+            - generic [ref=e589]:
+              - text: "["
+              - link "edit" [ref=e590] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=27
+              - text: "]"
+          - paragraph [ref=e591]:
+            - text: "Coach:"
+            - link "Hajime Moriyasu" [ref=e592] [cursor=pointer]:
+              - /url: /wiki/Hajime_Moriyasu
+          - table [ref=e593]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e594]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e595]:
+                - columnheader "No." [ref=e596]
+                - columnheader "Pos." [ref=e597]
+                - columnheader "Player" [ref=e598]
+                - columnheader "Date of birth (age)" [ref=e599]
+                - columnheader "Caps" [ref=e600]
+                - columnheader "Club" [ref=e601]:
+                  - text: Club
+                  - paragraph [ref=e602]
+          - generic [ref=e603]:
+            - heading "Netherlands" [level=3] [ref=e604]
+            - generic [ref=e605]:
+              - text: "["
+              - link "edit" [ref=e606] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=28
+              - text: "]"
+          - paragraph [ref=e607]:
+            - text: "Coach:"
+            - link "Ronald Koeman" [ref=e608] [cursor=pointer]:
+              - /url: /wiki/Ronald_Koeman
+          - table [ref=e609]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e610]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e611]:
+                - columnheader "No." [ref=e612]
+                - columnheader "Pos." [ref=e613]
+                - columnheader "Player" [ref=e614]
+                - columnheader "Date of birth (age)" [ref=e615]
+                - columnheader "Caps" [ref=e616]
+                - columnheader "Club" [ref=e617]:
+                  - text: Club
+                  - paragraph [ref=e618]
+          - generic [ref=e619]:
+            - heading "Sweden" [level=3] [ref=e620]
+            - generic [ref=e621]:
+              - text: "["
+              - link "edit" [ref=e622] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=29
+              - text: "]"
+          - paragraph [ref=e623]:
+            - text: "Coach:"
+            - link "England" [ref=e626] [cursor=pointer]:
+              - /url: /wiki/England
+              - img "England" [ref=e627]
+            - link "Graham Potter" [ref=e628] [cursor=pointer]:
+              - /url: /wiki/Graham_Potter
+          - table [ref=e629]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e630]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e631]:
+                - columnheader "No." [ref=e632]
+                - columnheader "Pos." [ref=e633]
+                - columnheader "Player" [ref=e634]
+                - columnheader "Date of birth (age)" [ref=e635]
+                - columnheader "Caps" [ref=e636]
+                - columnheader "Club" [ref=e637]:
+                  - text: Club
+                  - paragraph [ref=e638]
+          - generic [ref=e639]:
+            - heading "Tunisia" [level=3] [ref=e640]
+            - generic [ref=e641]:
+              - text: "["
+              - link "edit" [ref=e642] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=30
+              - text: "]"
+          - paragraph [ref=e643]:
+            - text: "Coach:"
+            - link "France" [ref=e646] [cursor=pointer]:
+              - /url: /wiki/France
+              - img "France" [ref=e647]
+            - link "Sabri Lamouchi" [ref=e648] [cursor=pointer]:
+              - /url: /wiki/Sabri_Lamouchi
+          - table [ref=e649]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e650]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e651]:
+                - columnheader "No." [ref=e652]
+                - columnheader "Pos." [ref=e653]
+                - columnheader "Player" [ref=e654]
+                - columnheader "Date of birth (age)" [ref=e655]
+                - columnheader "Caps" [ref=e656]
+                - columnheader "Club" [ref=e657]:
+                  - text: Club
+                  - paragraph [ref=e658]
+          - generic [ref=e659]:
+            - heading "Group G" [level=2] [ref=e660]
+            - generic [ref=e661]:
+              - text: "["
+              - link "edit" [ref=e662] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=31
+              - text: "]"
+          - generic [ref=e663]:
+            - heading "Belgium" [level=3] [ref=e664]
+            - generic [ref=e665]:
+              - text: "["
+              - link "edit" [ref=e666] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=32
+              - text: "]"
+          - paragraph [ref=e667]:
+            - text: "Coach:"
+            - link "France" [ref=e670] [cursor=pointer]:
+              - /url: /wiki/France
+              - img "France" [ref=e671]
+            - link "Rudi Garcia" [ref=e672] [cursor=pointer]:
+              - /url: /wiki/Rudi_Garcia
+          - table [ref=e673]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e674]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e675]:
+                - columnheader "No." [ref=e676]
+                - columnheader "Pos." [ref=e677]
+                - columnheader "Player" [ref=e678]
+                - columnheader "Date of birth (age)" [ref=e679]
+                - columnheader "Caps" [ref=e680]
+                - columnheader "Club" [ref=e681]:
+                  - text: Club
+                  - paragraph [ref=e682]
+          - generic [ref=e683]:
+            - heading "Egypt" [level=3] [ref=e684]
+            - generic [ref=e685]:
+              - text: "["
+              - link "edit" [ref=e686] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=33
+              - text: "]"
+          - paragraph [ref=e687]:
+            - text: "Coach:"
+            - link "Hossam Hassan" [ref=e688] [cursor=pointer]:
+              - /url: /wiki/Hossam_Hassan
+          - table [ref=e689]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e690]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e691]:
+                - columnheader "No." [ref=e692]
+                - columnheader "Pos." [ref=e693]
+                - columnheader "Player" [ref=e694]
+                - columnheader "Date of birth (age)" [ref=e695]
+                - columnheader "Caps" [ref=e696]
+                - columnheader "Club" [ref=e697]:
+                  - text: Club
+                  - paragraph [ref=e698]
+          - generic [ref=e699]:
+            - heading "Iran" [level=3] [ref=e700]
+            - generic [ref=e701]:
+              - text: "["
+              - link "edit" [ref=e702] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=34
+              - text: "]"
+          - paragraph [ref=e703]:
+            - text: "Coach:"
+            - link "Amir Ghalenoei" [ref=e704] [cursor=pointer]:
+              - /url: /wiki/Amir_Ghalenoei
+          - table [ref=e705]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e706]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e707]:
+                - columnheader "No." [ref=e708]
+                - columnheader "Pos." [ref=e709]
+                - columnheader "Player" [ref=e710]
+                - columnheader "Date of birth (age)" [ref=e711]
+                - columnheader "Caps" [ref=e712]
+                - columnheader "Club" [ref=e713]:
+                  - text: Club
+                  - paragraph [ref=e714]
+          - generic [ref=e715]:
+            - heading "New Zealand" [level=3] [ref=e716]
+            - generic [ref=e717]:
+              - text: "["
+              - link "edit" [ref=e718] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=35
+              - text: "]"
+          - paragraph [ref=e719]:
+            - text: "Coach:"
+            - link "Darren Bazeley" [ref=e720] [cursor=pointer]:
+              - /url: /wiki/Darren_Bazeley
+          - table [ref=e721]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e722]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e723]:
+                - columnheader "No." [ref=e724]
+                - columnheader "Pos." [ref=e725]
+                - columnheader "Player" [ref=e726]
+                - columnheader "Date of birth (age)" [ref=e727]
+                - columnheader "Caps" [ref=e728]
+                - columnheader "Club" [ref=e729]:
+                  - text: Club
+                  - paragraph [ref=e730]
+          - generic [ref=e731]:
+            - heading "Group H" [level=2] [ref=e732]
+            - generic [ref=e733]:
+              - text: "["
+              - link "edit" [ref=e734] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=36
+              - text: "]"
+          - generic [ref=e735]:
+            - heading "Cape Verde" [level=3] [ref=e736]
+            - generic [ref=e737]:
+              - text: "["
+              - link "edit" [ref=e738] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=37
+              - text: "]"
+          - paragraph [ref=e739]:
+            - text: "Coach:"
+            - link "Bubista" [ref=e740] [cursor=pointer]:
+              - /url: /wiki/Bubista
+          - table [ref=e741]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e742]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e743]:
+                - columnheader "No." [ref=e744]
+                - columnheader "Pos." [ref=e745]
+                - columnheader "Player" [ref=e746]
+                - columnheader "Date of birth (age)" [ref=e747]
+                - columnheader "Caps" [ref=e748]
+                - columnheader "Club" [ref=e749]:
+                  - text: Club
+                  - paragraph [ref=e750]
+          - generic [ref=e751]:
+            - heading "Saudi Arabia" [level=3] [ref=e752]
+            - generic [ref=e753]:
+              - text: "["
+              - link "edit" [ref=e754] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=38
+              - text: "]"
+          - paragraph [ref=e755]:
+            - text: "Coach:"
+            - link "France" [ref=e758] [cursor=pointer]:
+              - /url: /wiki/France
+              - img "France" [ref=e759]
+            - link "Hervé Renard" [ref=e760] [cursor=pointer]:
+              - /url: /wiki/Herv%C3%A9_Renard
+          - table [ref=e761]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e762]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e763]:
+                - columnheader "No." [ref=e764]
+                - columnheader "Pos." [ref=e765]
+                - columnheader "Player" [ref=e766]
+                - columnheader "Date of birth (age)" [ref=e767]
+                - columnheader "Caps" [ref=e768]
+                - columnheader "Club" [ref=e769]:
+                  - text: Club
+                  - paragraph [ref=e770]
+          - generic [ref=e771]:
+            - heading "Spain" [level=3] [ref=e772]
+            - generic [ref=e773]:
+              - text: "["
+              - link "edit" [ref=e774] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=39
+              - text: "]"
+          - paragraph [ref=e775]:
+            - text: "Coach:"
+            - link "Luis de la Fuente" [ref=e776] [cursor=pointer]:
+              - /url: /wiki/Luis_de_la_Fuente_(footballer,_born_1961)
+          - table [ref=e777]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e778]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e779]:
+                - columnheader "No." [ref=e780]
+                - columnheader "Pos." [ref=e781]
+                - columnheader "Player" [ref=e782]
+                - columnheader "Date of birth (age)" [ref=e783]
+                - columnheader "Caps" [ref=e784]
+                - columnheader "Club" [ref=e785]:
+                  - text: Club
+                  - paragraph [ref=e786]
+          - generic [ref=e787]:
+            - heading "Uruguay" [level=3] [ref=e788]
+            - generic [ref=e789]:
+              - text: "["
+              - link "edit" [ref=e790] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=40
+              - text: "]"
+          - paragraph [ref=e791]:
+            - text: "Coach:"
+            - link "Argentina" [ref=e794] [cursor=pointer]:
+              - /url: /wiki/Argentina
+              - img "Argentina" [ref=e795]
+            - link "Marcelo Bielsa" [ref=e796] [cursor=pointer]:
+              - /url: /wiki/Marcelo_Bielsa
+          - table [ref=e797]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e798]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e799]:
+                - columnheader "No." [ref=e800]
+                - columnheader "Pos." [ref=e801]
+                - columnheader "Player" [ref=e802]
+                - columnheader "Date of birth (age)" [ref=e803]
+                - columnheader "Caps" [ref=e804]
+                - columnheader "Club" [ref=e805]:
+                  - text: Club
+                  - paragraph [ref=e806]
+          - generic [ref=e807]:
+            - heading "Group I" [level=2] [ref=e808]
+            - generic [ref=e809]:
+              - text: "["
+              - link "edit" [ref=e810] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=41
+              - text: "]"
+          - generic [ref=e811]:
+            - heading "France" [level=3] [ref=e812]
+            - generic [ref=e813]:
+              - text: "["
+              - link "edit" [ref=e814] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=42
+              - text: "]"
+          - paragraph [ref=e815]:
+            - text: "Coach:"
+            - link "Didier Deschamps" [ref=e816] [cursor=pointer]:
+              - /url: /wiki/Didier_Deschamps
+          - table [ref=e817]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e818]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e819]:
+                - columnheader "No." [ref=e820]
+                - columnheader "Pos." [ref=e821]
+                - columnheader "Player" [ref=e822]
+                - columnheader "Date of birth (age)" [ref=e823]
+                - columnheader "Caps" [ref=e824]
+                - columnheader "Club" [ref=e825]:
+                  - text: Club
+                  - paragraph [ref=e826]
+          - generic [ref=e827]:
+            - heading "Iraq" [level=3] [ref=e828]
+            - generic [ref=e829]:
+              - text: "["
+              - link "edit" [ref=e830] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=43
+              - text: "]"
+          - paragraph [ref=e831]:
+            - text: "Coach:"
+            - link "Australia" [ref=e834] [cursor=pointer]:
+              - /url: /wiki/Australia
+              - img "Australia" [ref=e835]
+            - link "Graham Arnold" [ref=e836] [cursor=pointer]:
+              - /url: /wiki/Graham_Arnold
+          - table [ref=e837]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e838]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e839]:
+                - columnheader "No." [ref=e840]
+                - columnheader "Pos." [ref=e841]
+                - columnheader "Player" [ref=e842]
+                - columnheader "Date of birth (age)" [ref=e843]
+                - columnheader "Caps" [ref=e844]
+                - columnheader "Club" [ref=e845]:
+                  - text: Club
+                  - paragraph [ref=e846]
+          - generic [ref=e847]:
+            - heading "Norway" [level=3] [ref=e848]
+            - generic [ref=e849]:
+              - text: "["
+              - link "edit" [ref=e850] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=44
+              - text: "]"
+          - paragraph [ref=e851]:
+            - text: "Coach:"
+            - link "Ståle Solbakken" [ref=e852] [cursor=pointer]:
+              - /url: /wiki/St%C3%A5le_Solbakken
+          - table [ref=e853]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e854]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e855]:
+                - columnheader "No." [ref=e856]
+                - columnheader "Pos." [ref=e857]
+                - columnheader "Player" [ref=e858]
+                - columnheader "Date of birth (age)" [ref=e859]
+                - columnheader "Caps" [ref=e860]
+                - columnheader "Club" [ref=e861]:
+                  - text: Club
+                  - paragraph [ref=e862]
+          - generic [ref=e863]:
+            - heading "Senegal" [level=3] [ref=e864]
+            - generic [ref=e865]:
+              - text: "["
+              - link "edit" [ref=e866] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=45
+              - text: "]"
+          - paragraph [ref=e867]:
+            - text: "Coach:"
+            - link "Pape Thiaw" [ref=e868] [cursor=pointer]:
+              - /url: /wiki/Pape_Thiaw
+          - table [ref=e869]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e870]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e871]:
+                - columnheader "No." [ref=e872]
+                - columnheader "Pos." [ref=e873]
+                - columnheader "Player" [ref=e874]
+                - columnheader "Date of birth (age)" [ref=e875]
+                - columnheader "Caps" [ref=e876]
+                - columnheader "Club" [ref=e877]:
+                  - text: Club
+                  - paragraph [ref=e878]
+          - generic [ref=e879]:
+            - heading "Group J" [level=2] [ref=e880]
+            - generic [ref=e881]:
+              - text: "["
+              - link "edit" [ref=e882] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=46
+              - text: "]"
+          - generic [ref=e883]:
+            - heading "Algeria" [level=3] [ref=e884]
+            - generic [ref=e885]:
+              - text: "["
+              - link "edit" [ref=e886] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=47
+              - text: "]"
+          - paragraph [ref=e887]:
+            - text: "Coach:"
+            - link "Bosnia and Herzegovina" [ref=e890] [cursor=pointer]:
+              - /url: /wiki/Bosnia_and_Herzegovina
+              - img "Bosnia and Herzegovina" [ref=e891]
+            - link "Vladimir Petković" [ref=e892] [cursor=pointer]:
+              - /url: /wiki/Vladimir_Petkovi%C4%87
+          - table [ref=e893]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e894]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e895]:
+                - columnheader "No." [ref=e896]
+                - columnheader "Pos." [ref=e897]
+                - columnheader "Player" [ref=e898]
+                - columnheader "Date of birth (age)" [ref=e899]
+                - columnheader "Caps" [ref=e900]
+                - columnheader "Club" [ref=e901]:
+                  - text: Club
+                  - paragraph [ref=e902]
+          - generic [ref=e903]:
+            - heading "Argentina" [level=3] [ref=e904]
+            - generic [ref=e905]:
+              - text: "["
+              - link "edit" [ref=e906] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=48
+              - text: "]"
+          - paragraph [ref=e907]:
+            - text: "Coach:"
+            - link "Lionel Scaloni" [ref=e908] [cursor=pointer]:
+              - /url: /wiki/Lionel_Scaloni
+          - table [ref=e909]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e910]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e911]:
+                - columnheader "No." [ref=e912]
+                - columnheader "Pos." [ref=e913]
+                - columnheader "Player" [ref=e914]
+                - columnheader "Date of birth (age)" [ref=e915]
+                - columnheader "Caps" [ref=e916]
+                - columnheader "Club" [ref=e917]:
+                  - text: Club
+                  - paragraph [ref=e918]
+          - generic [ref=e919]:
+            - heading "Austria" [level=3] [ref=e920]
+            - generic [ref=e921]:
+              - text: "["
+              - link "edit" [ref=e922] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=49
+              - text: "]"
+          - paragraph [ref=e923]:
+            - text: "Coach:"
+            - link "Germany" [ref=e926] [cursor=pointer]:
+              - /url: /wiki/Germany
+              - img "Germany" [ref=e927]
+            - link "Ralf Rangnick" [ref=e928] [cursor=pointer]:
+              - /url: /wiki/Ralf_Rangnick
+          - table [ref=e929]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e930]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e931]:
+                - columnheader "No." [ref=e932]
+                - columnheader "Pos." [ref=e933]
+                - columnheader "Player" [ref=e934]
+                - columnheader "Date of birth (age)" [ref=e935]
+                - columnheader "Caps" [ref=e936]
+                - columnheader "Club" [ref=e937]:
+                  - text: Club
+                  - paragraph [ref=e938]
+          - generic [ref=e939]:
+            - heading "Jordan" [level=3] [ref=e940]
+            - generic [ref=e941]:
+              - text: "["
+              - link "edit" [ref=e942] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=50
+              - text: "]"
+          - paragraph [ref=e943]:
+            - text: "Coach:"
+            - link "Morocco" [ref=e946] [cursor=pointer]:
+              - /url: /wiki/Morocco
+              - img "Morocco" [ref=e947]
+            - link "Jamal Sellami" [ref=e948] [cursor=pointer]:
+              - /url: /wiki/Jamal_Sellami
+          - table [ref=e949]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e950]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e951]:
+                - columnheader "No." [ref=e952]
+                - columnheader "Pos." [ref=e953]
+                - columnheader "Player" [ref=e954]
+                - columnheader "Date of birth (age)" [ref=e955]
+                - columnheader "Caps" [ref=e956]
+                - columnheader "Club" [ref=e957]:
+                  - text: Club
+                  - paragraph [ref=e958]
+          - generic [ref=e959]:
+            - heading "Group K" [level=2] [ref=e960]
+            - generic [ref=e961]:
+              - text: "["
+              - link "edit" [ref=e962] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=51
+              - text: "]"
+          - generic [ref=e963]:
+            - heading "Colombia" [level=3] [ref=e964]
+            - generic [ref=e965]:
+              - text: "["
+              - link "edit" [ref=e966] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=52
+              - text: "]"
+          - paragraph [ref=e967]:
+            - text: "Coach:"
+            - link "Argentina" [ref=e970] [cursor=pointer]:
+              - /url: /wiki/Argentina
+              - img "Argentina" [ref=e971]
+            - link "Néstor Lorenzo" [ref=e972] [cursor=pointer]:
+              - /url: /wiki/N%C3%A9stor_Lorenzo
+          - table [ref=e973]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e974]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e975]:
+                - columnheader "No." [ref=e976]
+                - columnheader "Pos." [ref=e977]
+                - columnheader "Player" [ref=e978]
+                - columnheader "Date of birth (age)" [ref=e979]
+                - columnheader "Caps" [ref=e980]
+                - columnheader "Club" [ref=e981]:
+                  - text: Club
+                  - paragraph [ref=e982]
+          - generic [ref=e983]:
+            - heading "Democratic Republic of the Congo" [level=3] [ref=e984]
+            - generic [ref=e985]:
+              - text: "["
+              - link "edit" [ref=e986] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=53
+              - text: "]"
+          - paragraph [ref=e987]:
+            - text: "Coach:"
+            - link "France" [ref=e990] [cursor=pointer]:
+              - /url: /wiki/France
+              - img "France" [ref=e991]
+            - link "Sébastien Desabre" [ref=e992] [cursor=pointer]:
+              - /url: /wiki/S%C3%A9bastien_Desabre
+          - table [ref=e993]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e994]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e995]:
+                - columnheader "No." [ref=e996]
+                - columnheader "Pos." [ref=e997]
+                - columnheader "Player" [ref=e998]
+                - columnheader "Date of birth (age)" [ref=e999]
+                - columnheader "Caps" [ref=e1000]
+                - columnheader "Club" [ref=e1001]:
+                  - text: Club
+                  - paragraph [ref=e1002]
+          - generic [ref=e1003]:
+            - heading "Portugal" [level=3] [ref=e1004]
+            - generic [ref=e1005]:
+              - text: "["
+              - link "edit" [ref=e1006] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=54
+              - text: "]"
+          - paragraph [ref=e1007]:
+            - text: "Coach:"
+            - link "Spain" [ref=e1010] [cursor=pointer]:
+              - /url: /wiki/Spain
+              - img "Spain" [ref=e1011]
+            - link "Roberto Martínez" [ref=e1012] [cursor=pointer]:
+              - /url: /wiki/Roberto_Mart%C3%ADnez
+          - table [ref=e1013]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e1014]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e1015]:
+                - columnheader "No." [ref=e1016]
+                - columnheader "Pos." [ref=e1017]
+                - columnheader "Player" [ref=e1018]
+                - columnheader "Date of birth (age)" [ref=e1019]
+                - columnheader "Caps" [ref=e1020]
+                - columnheader "Club" [ref=e1021]:
+                  - text: Club
+                  - paragraph [ref=e1022]
+          - generic [ref=e1023]:
+            - heading "Uzbekistan" [level=3] [ref=e1024]
+            - generic [ref=e1025]:
+              - text: "["
+              - link "edit" [ref=e1026] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=55
+              - text: "]"
+          - paragraph [ref=e1027]:
+            - text: "Coach:"
+            - link "Italy" [ref=e1030] [cursor=pointer]:
+              - /url: /wiki/Italy
+              - img "Italy" [ref=e1031]
+            - link "Fabio Cannavaro" [ref=e1032] [cursor=pointer]:
+              - /url: /wiki/Fabio_Cannavaro
+          - table [ref=e1033]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e1034]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e1035]:
+                - columnheader "No." [ref=e1036]
+                - columnheader "Pos." [ref=e1037]
+                - columnheader "Player" [ref=e1038]
+                - columnheader "Date of birth (age)" [ref=e1039]
+                - columnheader "Caps" [ref=e1040]
+                - columnheader "Club" [ref=e1041]:
+                  - text: Club
+                  - paragraph [ref=e1042]
+          - generic [ref=e1043]:
+            - heading "Group L" [level=2] [ref=e1044]
+            - generic [ref=e1045]:
+              - text: "["
+              - link "edit" [ref=e1046] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=56
+              - text: "]"
+          - generic [ref=e1047]:
+            - heading "Croatia" [level=3] [ref=e1048]
+            - generic [ref=e1049]:
+              - text: "["
+              - link "edit" [ref=e1050] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=57
+              - text: "]"
+          - paragraph [ref=e1051]:
+            - text: "Coach:"
+            - link "Zlatko Dalić" [ref=e1052] [cursor=pointer]:
+              - /url: /wiki/Zlatko_Dali%C4%87
+          - table [ref=e1053]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e1054]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e1055]:
+                - columnheader "No." [ref=e1056]
+                - columnheader "Pos." [ref=e1057]
+                - columnheader "Player" [ref=e1058]
+                - columnheader "Date of birth (age)" [ref=e1059]
+                - columnheader "Caps" [ref=e1060]
+                - columnheader "Club" [ref=e1061]:
+                  - text: Club
+                  - paragraph [ref=e1062]
+          - generic [ref=e1063]:
+            - heading "England" [level=3] [ref=e1064]
+            - generic [ref=e1065]:
+              - text: "["
+              - link "edit" [ref=e1066] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=58
+              - text: "]"
+          - paragraph [ref=e1067]:
+            - text: "Coach:"
+            - link "Germany" [ref=e1070] [cursor=pointer]:
+              - /url: /wiki/Germany
+              - img "Germany" [ref=e1071]
+            - link "Thomas Tuchel" [ref=e1072] [cursor=pointer]:
+              - /url: /wiki/Thomas_Tuchel
+          - table [ref=e1073]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e1074]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e1075]:
+                - columnheader "No." [ref=e1076]
+                - columnheader "Pos." [ref=e1077]
+                - columnheader "Player" [ref=e1078]
+                - columnheader "Date of birth (age)" [ref=e1079]
+                - columnheader "Caps" [ref=e1080]
+                - columnheader "Club" [ref=e1081]:
+                  - text: Club
+                  - paragraph [ref=e1082]
+          - generic [ref=e1083]:
+            - heading "Ghana" [level=3] [ref=e1084]
+            - generic [ref=e1085]:
+              - text: "["
+              - link "edit" [ref=e1086] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=59
+              - text: "]"
+          - paragraph [ref=e1087]: "Coach: Vacant"
+          - table [ref=e1088]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e1089]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e1090]:
+                - columnheader "No." [ref=e1091]
+                - columnheader "Pos." [ref=e1092]
+                - columnheader "Player" [ref=e1093]
+                - columnheader "Date of birth (age)" [ref=e1094]
+                - columnheader "Caps" [ref=e1095]
+                - columnheader "Club" [ref=e1096]:
+                  - text: Club
+                  - paragraph [ref=e1097]
+          - generic [ref=e1098]:
+            - heading "Panama" [level=3] [ref=e1099]
+            - generic [ref=e1100]:
+              - text: "["
+              - link "edit" [ref=e1101] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=60
+              - text: "]"
+          - paragraph [ref=e1102]:
+            - text: "Coach:"
+            - link "Spain" [ref=e1105] [cursor=pointer]:
+              - /url: /wiki/Spain
+              - img "Spain" [ref=e1106]
+            - link "Thomas Christiansen" [ref=e1107] [cursor=pointer]:
+              - /url: /wiki/Thomas_Christiansen
+          - table [ref=e1108]:
+            - rowgroup
+            - rowgroup
+            - rowgroup [ref=e1109]:
+              - row "No. Pos. Player Date of birth (age) Caps Club" [ref=e1110]:
+                - columnheader "No." [ref=e1111]
+                - columnheader "Pos." [ref=e1112]
+                - columnheader "Player" [ref=e1113]
+                - columnheader "Date of birth (age)" [ref=e1114]
+                - columnheader "Caps" [ref=e1115]
+                - columnheader "Club" [ref=e1116]:
+                  - text: Club
+                  - paragraph [ref=e1117]
+          - generic [ref=e1118]:
+            - heading "Statistics" [level=2] [ref=e1119]
+            - generic [ref=e1120]:
+              - text: "["
+              - link "edit" [ref=e1121] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=61
+              - text: "]"
+          - link "icon" [ref=e1124] [cursor=pointer]:
+            - /url: /wiki/File:Question_book-new.svg
+            - img "icon" [ref=e1125]
+          - generic [ref=e1126]:
+            - text: This section
+            - generic [ref=e1127]:
+              - text: does not
+              - link "cite" [ref=e1128] [cursor=pointer]:
+                - /url: /wiki/Wikipedia:Citing_sources
+              - text: any
+              - link "sources" [ref=e1129] [cursor=pointer]:
+                - /url: /wiki/Wikipedia:Verifiability
+            - text: .
+            - generic [ref=e1130]:
+              - text: Please help
+              - link "improve this section" [ref=e1131] [cursor=pointer]:
+                - /url: /wiki/Special:EditPage/2026_FIFA_World_Cup_squads
+              - text: by
+              - link "adding citations to reliable sources" [ref=e1132] [cursor=pointer]:
+                - /url: /wiki/Help:Referencing_for_beginners
+              - text: . Unsourced material may be challenged and
+              - link "removed" [ref=e1133] [cursor=pointer]:
+                - /url: /wiki/Wikipedia:Verifiability#Burden_of_evidence
+              - text: .
+            - generic [ref=e1135]: (November 2022)
+            - generic [ref=e1137]:
+              - text: (
+              - link "Learn how and when to remove this message" [ref=e1139] [cursor=pointer]:
+                - /url: /wiki/Help:Maintenance_template_removal
+              - text: )
+          - paragraph [ref=e1140]: "Note: Only the final squad list of each national team is taken into consideration."
+          - generic [ref=e1141]:
+            - heading "Age" [level=3] [ref=e1142]
+            - generic [ref=e1143]:
+              - text: "["
+              - link "edit" [ref=e1144] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=62
+              - text: "]"
+          - generic [ref=e1145]:
+            - heading "Coaches" [level=4] [ref=e1146]
+            - generic [ref=e1147]:
+              - text: "["
+              - link "edit" [ref=e1148] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=63
+              - text: "]"
+          - list [ref=e1149]:
+            - listitem [ref=e1150]:
+              - text: "Oldest:"
+              - link "Czech Republic" [ref=e1153] [cursor=pointer]:
+                - /url: /wiki/Czech_Republic_national_football_team
+                - img "Czech Republic" [ref=e1154]
+              - link "Miroslav Koubek" [ref=e1155] [cursor=pointer]:
+                - /url: /wiki/Miroslav_Koubek
+              - text: (74 years, 224 days)
+            - listitem [ref=e1156]:
+              - text: "Youngest:"
+              - link "Germany" [ref=e1159] [cursor=pointer]:
+                - /url: /wiki/Germany_national_football_team
+                - img "Germany" [ref=e1160]
+              - link "Julian Nagelsmann" [ref=e1161] [cursor=pointer]:
+                - /url: /wiki/Julian_Nagelsmann
+              - text: (38 years, 264 days)
+          - generic [ref=e1162]:
+            - heading "Coaches representation by country" [level=3] [ref=e1163]
+            - generic [ref=e1164]:
+              - text: "["
+              - link "edit" [ref=e1165] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=64
+              - text: "]"
+          - paragraph [ref=e1166]: Coaches in bold represented their own country.
+          - table [ref=e1167]:
+            - rowgroup [ref=e1168]:
+              - row "Number Country Coaches" [ref=e1169]:
+                - columnheader "Number" [ref=e1170] [cursor=pointer]
+                - columnheader "Country" [ref=e1171] [cursor=pointer]
+                - columnheader "Coaches" [ref=e1172] [cursor=pointer]
+            - rowgroup [ref=e1173]:
+              - row "6 Argentina Lionel Scaloni, Gustavo Alfaro (Paraguay), Mauricio Pochettino (United States), Sebastián Beccacece (Ecuador), Marcelo Bielsa (Uruguay), Néstor Lorenzo (Colombia)" [ref=e1174]:
+                - cell "6" [ref=e1175]
+                - cell "Argentina" [ref=e1176]: Argentina
+                - cell "Lionel Scaloni, Gustavo Alfaro (Paraguay), Mauricio Pochettino (United States), Sebastián Beccacece (Ecuador), Marcelo Bielsa (Uruguay), Néstor Lorenzo (Colombia)" [ref=e1180]:
+                  - link "Lionel Scaloni" [ref=e1182] [cursor=pointer]:
+                    - /url: /wiki/Lionel_Scaloni
+                  - text: ","
+                  - link "Gustavo Alfaro" [ref=e1183] [cursor=pointer]:
+                    - /url: /wiki/Gustavo_Alfaro
+                  - text: (Paraguay),
+                  - link "Mauricio Pochettino" [ref=e1184] [cursor=pointer]:
+                    - /url: /wiki/Mauricio_Pochettino
+                  - text: (United States),
+                  - link "Sebastián Beccacece" [ref=e1185] [cursor=pointer]:
+                    - /url: /wiki/Sebasti%C3%A1n_Beccacece
+                  - text: (Ecuador),
+                  - link "Marcelo Bielsa" [ref=e1186] [cursor=pointer]:
+                    - /url: /wiki/Marcelo_Bielsa
+                  - text: (Uruguay),
+                  - link "Néstor Lorenzo" [ref=e1187] [cursor=pointer]:
+                    - /url: /wiki/N%C3%A9stor_Lorenzo
+                  - text: (Colombia)
+              - row "France Didier Deschamps, Sébastien Migné (Haiti), Sabri Lamouchi (Tunisia), Rudi Garcia (Belgium), Hervé Renard (Saudi Arabia), Sébastien Desabre (Democratic Republic of the Congo)" [ref=e1188]:
+                - cell "France" [ref=e1189]: France
+                - cell "Didier Deschamps, Sébastien Migné (Haiti), Sabri Lamouchi (Tunisia), Rudi Garcia (Belgium), Hervé Renard (Saudi Arabia), Sébastien Desabre (Democratic Republic of the Congo)" [ref=e1193]:
+                  - link "Didier Deschamps" [ref=e1195] [cursor=pointer]:
+                    - /url: /wiki/Didier_Deschamps
+                  - text: ","
+                  - link "Sébastien Migné" [ref=e1196] [cursor=pointer]:
+                    - /url: /wiki/S%C3%A9bastien_Mign%C3%A9
+                  - text: (Haiti),
+                  - link "Sabri Lamouchi" [ref=e1197] [cursor=pointer]:
+                    - /url: /wiki/Sabri_Lamouchi
+                  - text: (Tunisia),
+                  - link "Rudi Garcia" [ref=e1198] [cursor=pointer]:
+                    - /url: /wiki/Rudi_Garcia
+                  - text: (Belgium),
+                  - link "Hervé Renard" [ref=e1199] [cursor=pointer]:
+                    - /url: /wiki/Herv%C3%A9_Renard
+                  - text: (Saudi Arabia),
+                  - link "Sébastien Desabre" [ref=e1200] [cursor=pointer]:
+                    - /url: /wiki/S%C3%A9bastien_Desabre
+                  - text: (Democratic Republic of the Congo)
+              - row "4 Spain Luis de la Fuente, Julen Lopetegui (Qatar), Roberto Martínez (Portugal), Thomas Christiansen (Panama)" [ref=e1201]:
+                - cell "4" [ref=e1202]
+                - cell "Spain" [ref=e1203]: Spain
+                - cell "Luis de la Fuente, Julen Lopetegui (Qatar), Roberto Martínez (Portugal), Thomas Christiansen (Panama)" [ref=e1207]:
+                  - link "Luis de la Fuente" [ref=e1209] [cursor=pointer]:
+                    - /url: /wiki/Luis_de_la_Fuente_(footballer,_born_1961)
+                  - text: ","
+                  - link "Julen Lopetegui" [ref=e1210] [cursor=pointer]:
+                    - /url: /wiki/Julen_Lopetegui
+                  - text: (Qatar),
+                  - link "Roberto Martínez" [ref=e1211] [cursor=pointer]:
+                    - /url: /wiki/Roberto_Mart%C3%ADnez
+                  - text: (Portugal),
+                  - link "Thomas Christiansen" [ref=e1212] [cursor=pointer]:
+                    - /url: /wiki/Thomas_Christiansen
+                  - text: (Panama)
+              - row "3 Italy Carlo Ancelotti (Brazil), Vincenzo Montella (Turkey), Fabio Cannavaro (Uzbekistan)" [ref=e1213]:
+                - cell "3" [ref=e1214]
+                - cell "Italy" [ref=e1215]: Italy
+                - cell "Carlo Ancelotti (Brazil), Vincenzo Montella (Turkey), Fabio Cannavaro (Uzbekistan)" [ref=e1219]:
+                  - link "Carlo Ancelotti" [ref=e1220] [cursor=pointer]:
+                    - /url: /wiki/Carlo_Ancelotti
+                  - text: (Brazil),
+                  - link "Vincenzo Montella" [ref=e1221] [cursor=pointer]:
+                    - /url: /wiki/Vincenzo_Montella
+                  - text: (Turkey),
+                  - link "Fabio Cannavaro" [ref=e1222] [cursor=pointer]:
+                    - /url: /wiki/Fabio_Cannavaro
+                  - text: (Uzbekistan)
+              - row "Germany Julian Nagelsmann, Ralf Rangnick (Austria), Thomas Tuchel (England)" [ref=e1223]:
+                - cell "Germany" [ref=e1224]: Germany
+                - cell "Julian Nagelsmann, Ralf Rangnick (Austria), Thomas Tuchel (England)" [ref=e1228]:
+                  - link "Julian Nagelsmann" [ref=e1230] [cursor=pointer]:
+                    - /url: /wiki/Julian_Nagelsmann
+                  - text: ","
+                  - link "Ralf Rangnick" [ref=e1231] [cursor=pointer]:
+                    - /url: /wiki/Ralf_Rangnick
+                  - text: (Austria),
+                  - link "Thomas Tuchel" [ref=e1232] [cursor=pointer]:
+                    - /url: /wiki/Thomas_Tuchel
+                  - text: (England)
+              - row "2 Netherlands Ronald Koeman, Fred Rutten (Curaçao)" [ref=e1233]:
+                - cell "2" [ref=e1234]
+                - cell "Netherlands" [ref=e1235]: Netherlands
+                - cell "Ronald Koeman, Fred Rutten (Curaçao)" [ref=e1239]:
+                  - link "Ronald Koeman" [ref=e1241] [cursor=pointer]:
+                    - /url: /wiki/Ronald_Koeman
+                  - text: ","
+                  - link "Fred Rutten" [ref=e1242] [cursor=pointer]:
+                    - /url: /wiki/Fred_Rutten
+                  - text: (Curaçao)
+              - row "Australia Tony Popovic, Graham Arnold (Iraq)" [ref=e1243]:
+                - cell "Australia" [ref=e1244]: Australia
+                - cell "Tony Popovic, Graham Arnold (Iraq)" [ref=e1248]:
+                  - link "Tony Popovic" [ref=e1250] [cursor=pointer]:
+                    - /url: /wiki/Tony_Popovic
+                  - text: ","
+                  - link "Graham Arnold" [ref=e1251] [cursor=pointer]:
+                    - /url: /wiki/Graham_Arnold
+                  - text: (Iraq)
+              - row "Bosnia and Herzegovina Sergej Barbarez, Vladimir Petković (Algeria)" [ref=e1252]:
+                - cell "Bosnia and Herzegovina" [ref=e1253]: Bosnia and Herzegovina
+                - cell "Sergej Barbarez, Vladimir Petković (Algeria)" [ref=e1257]:
+                  - link "Sergej Barbarez" [ref=e1259] [cursor=pointer]:
+                    - /url: /wiki/Sergej_Barbarez
+                  - text: ","
+                  - link "Vladimir Petković" [ref=e1260] [cursor=pointer]:
+                    - /url: /wiki/Vladimir_Petkovi%C4%87
+                  - text: (Algeria)
+              - row "Morocco Mohamed Ouahbi, Jamal Sellami (Jordan)" [ref=e1261]:
+                - cell "Morocco" [ref=e1262]: Morocco
+                - cell "Mohamed Ouahbi, Jamal Sellami (Jordan)" [ref=e1266]:
+                  - link "Mohamed Ouahbi" [ref=e1268] [cursor=pointer]:
+                    - /url: /wiki/Mohamed_Ouahbi
+                  - text: ","
+                  - link "Jamal Sellami" [ref=e1269] [cursor=pointer]:
+                    - /url: /wiki/Jamal_Sellami
+                  - text: (Jordan)
+              - row "1 Czech Republic Miroslav Koubek" [ref=e1270]:
+                - cell "1" [ref=e1271]
+                - cell "Czech Republic" [ref=e1272]: Czech Republic
+                - cell "Miroslav Koubek" [ref=e1276]:
+                  - link "Miroslav Koubek" [ref=e1278] [cursor=pointer]:
+                    - /url: /wiki/Miroslav_Koubek
+              - row "Mexico Javier Aguirre" [ref=e1279]:
+                - cell "Mexico" [ref=e1280]: Mexico
+                - cell "Javier Aguirre" [ref=e1284]:
+                  - link "Javier Aguirre" [ref=e1286] [cursor=pointer]:
+                    - /url: /wiki/Javier_Aguirre
+              - row "Belgium Hugo Broos (South Africa)" [ref=e1287]:
+                - cell "Belgium" [ref=e1288]: Belgium
+                - cell "Hugo Broos (South Africa)" [ref=e1292]:
+                  - link "Hugo Broos" [ref=e1293] [cursor=pointer]:
+                    - /url: /wiki/Hugo_Broos
+                  - text: (South Africa)
+              - row "South Korea Hong Myung-bo" [ref=e1294]:
+                - cell "South Korea" [ref=e1295]: South Korea
+                - cell "Hong Myung-bo" [ref=e1299]:
+                  - link "Hong Myung-bo" [ref=e1301] [cursor=pointer]:
+                    - /url: /wiki/Hong_Myung-bo
+              - row "United States Jesse Marsch (Canada)" [ref=e1302]:
+                - cell "United States" [ref=e1303]: United States
+                - cell "Jesse Marsch (Canada)" [ref=e1307]:
+                  - link "Jesse Marsch" [ref=e1308] [cursor=pointer]:
+                    - /url: /wiki/Jesse_Marsch
+                  - text: (Canada)
+              - row "Switzerland Murat Yakin" [ref=e1309]:
+                - cell "Switzerland" [ref=e1310]: Switzerland
+                - cell "Murat Yakin" [ref=e1314]:
+                  - link "Murat Yakin" [ref=e1316] [cursor=pointer]:
+                    - /url: /wiki/Murat_Yakin
+              - row "Scotland Steve Clarke" [ref=e1317]:
+                - cell "Scotland" [ref=e1318]: Scotland
+                - cell "Steve Clarke" [ref=e1322]:
+                  - link "Steve Clarke" [ref=e1324] [cursor=pointer]:
+                    - /url: /wiki/Steve_Clarke
+              - row "Ivory Coast Emerse Faé" [ref=e1325]:
+                - cell "Ivory Coast" [ref=e1326]: Ivory Coast
+                - cell "Emerse Faé" [ref=e1330]:
+                  - link "Emerse Faé" [ref=e1332] [cursor=pointer]:
+                    - /url: /wiki/Emerse_Fa%C3%A9
+              - row "Japan Hajime Moriyasu" [ref=e1333]:
+                - cell "Japan" [ref=e1334]: Japan
+                - cell "Hajime Moriyasu" [ref=e1338]:
+                  - link "Hajime Moriyasu" [ref=e1340] [cursor=pointer]:
+                    - /url: /wiki/Hajime_Moriyasu
+              - row "England Graham Potter (Sweden)" [ref=e1341]:
+                - cell "England" [ref=e1342]: England
+                - cell "Graham Potter (Sweden)" [ref=e1346]:
+                  - link "Graham Potter" [ref=e1347] [cursor=pointer]:
+                    - /url: /wiki/Graham_Potter
+                  - text: (Sweden)
+              - row "Egypt Hossam Hassan" [ref=e1348]:
+                - cell "Egypt" [ref=e1349]: Egypt
+                - cell "Hossam Hassan" [ref=e1353]:
+                  - link "Hossam Hassan" [ref=e1355] [cursor=pointer]:
+                    - /url: /wiki/Hossam_Hassan
+              - row "Iran Amir Ghalenoei" [ref=e1356]:
+                - cell "Iran" [ref=e1357]: Iran
+                - cell "Amir Ghalenoei" [ref=e1361]:
+                  - link "Amir Ghalenoei" [ref=e1363] [cursor=pointer]:
+                    - /url: /wiki/Amir_Ghalenoei
+              - row "New Zealand Darren Bazeley" [ref=e1364]:
+                - cell "New Zealand" [ref=e1365]: New Zealand
+                - cell "Darren Bazeley" [ref=e1369]:
+                  - link "Darren Bazeley" [ref=e1371] [cursor=pointer]:
+                    - /url: /wiki/Darren_Bazeley
+              - row "Cape Verde Bubista" [ref=e1372]:
+                - cell "Cape Verde" [ref=e1373]: Cape Verde
+                - cell "Bubista" [ref=e1377]:
+                  - link "Bubista" [ref=e1379] [cursor=pointer]:
+                    - /url: /wiki/Bubista
+              - row "Norway Ståle Solbakken" [ref=e1380]:
+                - cell "Norway" [ref=e1381]: Norway
+                - cell "Ståle Solbakken" [ref=e1385]:
+                  - link "Ståle Solbakken" [ref=e1387] [cursor=pointer]:
+                    - /url: /wiki/St%C3%A5le_Solbakken
+              - row "Senegal Pape Thiaw" [ref=e1388]:
+                - cell "Senegal" [ref=e1389]: Senegal
+                - cell "Pape Thiaw" [ref=e1393]:
+                  - link "Pape Thiaw" [ref=e1395] [cursor=pointer]:
+                    - /url: /wiki/Pape_Thiaw
+              - row "Croatia Zlatko Dalić" [ref=e1396]:
+                - cell "Croatia" [ref=e1397]: Croatia
+                - cell "Zlatko Dalić" [ref=e1401]:
+                  - link "Zlatko Dalić" [ref=e1403] [cursor=pointer]:
+                    - /url: /wiki/Zlatko_Dali%C4%87
+            - rowgroup
+          - generic [ref=e1404]:
+            - heading "Notes" [level=2] [ref=e1405]
+            - generic [ref=e1406]:
+              - text: "["
+              - link "edit" [ref=e1407] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=65
+              - text: "]"
+          - list [ref=e1410]:
+            - listitem [ref=e1411]:
+              - link "Jump up" [ref=e1414] [cursor=pointer]:
+                - /url: "#cite_ref-3"
+                - text: ^
+              - text: This is the club a player was last able to play for during the previous season in the event a player did not play a competitive match.
+          - generic [ref=e1415]:
+            - heading "External links" [level=2] [ref=e1416]
+            - generic [ref=e1417]:
+              - text: "["
+              - link "edit" [ref=e1418] [cursor=pointer]:
+                - /url: /w/index.php?title=2026_FIFA_World_Cup_squads&action=edit&section=66
+              - text: "]"
+          - list [ref=e1419]:
+            - listitem [ref=e1420]:
+              - link "Official website" [ref=e1423] [cursor=pointer]:
+                - /url: https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/world-cup-2026-who-has-qualified
+          - navigation "2026 FIFA World Cup" [ref=e1424]:
+            - table [ref=e1425]:
+              - rowgroup [ref=e1426]:
+                - row "[show] v · t · e 2026 FIFA World Cup" [ref=e1427]:
+                  - columnheader "[show] v · t · e 2026 FIFA World Cup" [ref=e1428]:
+                    - button "[show]" [ref=e1429] [cursor=pointer]
+                    - list [ref=e1431]:
+                      - listitem [ref=e1432]:
+                        - link "v" [ref=e1433] [cursor=pointer]:
+                          - /url: /wiki/Template:2026_FIFA_World_Cup
+                        - text: ·
+                      - listitem [ref=e1434]:
+                        - link "t" [ref=e1435] [cursor=pointer]:
+                          - /url: /wiki/Template_talk:2026_FIFA_World_Cup
+                        - text: ·
+                      - listitem [ref=e1436]:
+                        - link "e" [ref=e1437] [cursor=pointer]:
+                          - /url: /wiki/Special:EditPage/Template:2026_FIFA_World_Cup
+                    - link "2026 FIFA World Cup" [ref=e1439] [cursor=pointer]:
+                      - /url: /wiki/2026_FIFA_World_Cup
+                - row: ( · · · · · · · · · · · ) · ·
+                - row: · ( · ) · · · · ·
+                - row: · · ()
+          - navigation "FIFA World Cup" [ref=e1440]:
+            - table [ref=e1441]:
+              - rowgroup [ref=e1442]:
+                - row "[show] v · t · e FIFA World Cup" [ref=e1443]:
+                  - columnheader "[show] v · t · e FIFA World Cup" [ref=e1444]:
+                    - button "[show]" [ref=e1445] [cursor=pointer]
+                    - list [ref=e1447]:
+                      - listitem [ref=e1448]:
+                        - link "v" [ref=e1449] [cursor=pointer]:
+                          - /url: /wiki/Template:FIFA_World_Cup
+                        - text: ·
+                      - listitem [ref=e1450]:
+                        - link "t" [ref=e1451] [cursor=pointer]:
+                          - /url: /wiki/Template_talk:FIFA_World_Cup
+                        - text: ·
+                      - listitem [ref=e1452]:
+                        - link "e" [ref=e1453] [cursor=pointer]:
+                          - /url: /wiki/Special:EditPage/Template:FIFA_World_Cup
+                    - link "FIFA World Cup" [ref=e1455] [cursor=pointer]:
+                      - /url: /wiki/FIFA_World_Cup
+                - row
+                - row: · · · · · · · · · · · · · · · · · · · · · · · ·
+                - row: · · · · · · · · · · · · · · · · · · · · · ·
+                - row: · · · · · · · · · · · · · · · · · · · · · ·
+                - row: · · · · · · · · · · · · · · · · · · · · ·
+                - row: · · · · · · ·
+                - row: · · · · · · ·
+                - row: · · · · ·
+                - row: · · ·
+                - row: · · · · ·
+                - row: · ( · · ) · ( · · · ) · ( · ) · ( · )
+                - row: · · · · · · · · · ( · ) · · () · · ·
+                - row: · · ·
+          - list [ref=e1457]:
+            - listitem [ref=e1458]:
+              - generic [ref=e1459]:
+                - text: ^
+                - 'link "Jump up to: a" [ref=e1460] [cursor=pointer]':
+                  - /url: "#cite_ref-regulations_1-0"
+                  - generic [ref=e1461]: "Jump up to:"
+                  - superscript [ref=e1462]:
+                    - generic [ref=e1463]: a
+                - link "b" [ref=e1464] [cursor=pointer]:
+                  - /url: "#cite_ref-regulations_1-1"
+                  - superscript [ref=e1465]:
+                    - generic [ref=e1466]: b
+              - generic [ref=e1467]:
+                - generic [ref=e1468]:
+                  - link "\"Regulations – FIFA World Cup 26\"" [ref=e1469] [cursor=pointer]:
+                    - /url: https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf
+                  - text: (PDF).
+                  - link "FIFA" [ref=e1471] [cursor=pointer]:
+                    - /url: /wiki/FIFA
+                  - text: . 19 March 2026.
+                  - link "Archived" [ref=e1472] [cursor=pointer]:
+                    - /url: https://web.archive.org/web/20260406043226/https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf
+                  - text: (PDF) from the original on 6 April 2026
+                  - generic [ref=e1473]: . Retrieved 19 March 2026
+                  - text: .
+                - generic "ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=FIFA&rft.atitle=Regulations+%E2%80%93+FIFA+World+Cup+26&rft.date=2026-03-19&rft_id=https%3A%2F%2Fdigitalhub.fifa.com%2Fm%2F636f5c9c6f29771f%2Foriginal%2FFWC2026_regulations_EN.pdf&rfr_id=info%3Asid%2Fen.wikipedia.org%3A2026+FIFA+World+Cup+squads"
+            - listitem [ref=e1474]:
+              - link "Jump up" [ref=e1477] [cursor=pointer]:
+                - /url: "#cite_ref-2"
+                - text: ^
+              - generic [ref=e1478]:
+                - generic [ref=e1479]:
+                  - text: Calixto, Miguel (3 April 2026).
+                  - 'link "\"World Cup 2026 squad deadlines: key dates, rules and final roster submission\"" [ref=e1480] [cursor=pointer]':
+                    - /url: https://www.beinsports.com/en-us/soccer/fifa-world-cup-2026/articles/world-cup-2026-when-are-final-squad-lists-submitted-2026-04-02
+                  - text: .
+                  - link "BeIN Sports" [ref=e1482] [cursor=pointer]:
+                    - /url: /wiki/BeIN_Sports
+                  - text: .
+                  - link "Archived" [ref=e1483] [cursor=pointer]:
+                    - /url: https://web.archive.org/web/20260406053601/https://www.beinsports.com/en-us/soccer/fifa-world-cup-2026/articles/world-cup-2026-when-are-final-squad-lists-submitted-2026-04-02
+                  - text: from the original on 6 April 2026
+                  - generic [ref=e1484]: . Retrieved 3 April 2026
+                  - text: .
+                - generic "ctx_ver=Z39.88-2004&rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&rft.genre=unknown&rft.jtitle=BeIN+Sports&rft.atitle=World+Cup+2026+squad+deadlines%3A+key+dates%2C+rules+and+final+roster+submission&rft.date=2026-04-03&rft.aulast=Calixto&rft.aufirst=Miguel&rft_id=https%3A%2F%2Fwww.beinsports.com%2Fen-us%2Fsoccer%2Ffifa-world-cup-2026%2Farticles%2Fworld-cup-2026-when-are-final-squad-lists-submitted-2026-04-02&rfr_id=info%3Asid%2Fen.wikipedia.org%3A2026+FIFA+World+Cup+squads"
+        - generic [ref=e1486]:
+          - link "Categories" [ref=e1487] [cursor=pointer]:
+            - /url: /wiki/Help:Category
+          - text: ":"
+          - list [ref=e1488]:
+            - listitem [ref=e1489]:
+              - link "2026 FIFA World Cup" [ref=e1490] [cursor=pointer]:
+                - /url: /wiki/Category:2026_FIFA_World_Cup
+            - listitem [ref=e1491]:
+              - link "FIFA World Cup squads" [ref=e1492] [cursor=pointer]:
+                - /url: /wiki/Category:FIFA_World_Cup_squads
+    - contentinfo [ref=e1494]:
+      - list [ref=e1495]:
+        - listitem [ref=e1496]: This page was last edited on 11 April 2026, at 09:38 (UTC).
+        - listitem [ref=e1497]:
+          - text: Text is available under the
+          - link "Creative Commons Attribution-ShareAlike 4.0 License" [ref=e1498] [cursor=pointer]:
+            - /url: /wiki/Wikipedia:Text_of_the_Creative_Commons_Attribution-ShareAlike_4.0_International_License
+          - text: ; additional terms may apply. By using this site, you agree to the
+          - link "Terms of Use" [ref=e1499] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Terms_of_Use
+          - text: and
+          - link "Privacy Policy" [ref=e1500] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Privacy_policy
+          - text: . Wikipedia® is a registered trademark of the
+          - link "Wikimedia Foundation, Inc." [ref=e1501] [cursor=pointer]:
+            - /url: https://wikimediafoundation.org/
+          - text: ", a non-profit organization."
+      - list:
+        - listitem [ref=e1502]:
+          - link "Privacy policy" [ref=e1503] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Privacy_policy
+        - listitem [ref=e1504]:
+          - link "About Wikipedia" [ref=e1505] [cursor=pointer]:
+            - /url: /wiki/Wikipedia:About
+        - listitem [ref=e1506]:
+          - link "Disclaimers" [ref=e1507] [cursor=pointer]:
+            - /url: /wiki/Wikipedia:General_disclaimer
+        - listitem [ref=e1508]:
+          - link "Contact Wikipedia" [ref=e1509] [cursor=pointer]:
+            - /url: //en.wikipedia.org/wiki/Wikipedia:Contact_us
+        - listitem [ref=e1510]:
+          - link "Legal & safety contacts" [ref=e1511] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Legal:Wikimedia_Foundation_Legal_and_Safety_Contact_Information
+        - listitem [ref=e1512]:
+          - link "Code of Conduct" [ref=e1513] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Universal_Code_of_Conduct
+        - listitem [ref=e1514]:
+          - link "Developers" [ref=e1515] [cursor=pointer]:
+            - /url: https://developer.wikimedia.org
+        - listitem [ref=e1516]:
+          - link "Statistics" [ref=e1517] [cursor=pointer]:
+            - /url: https://stats.wikimedia.org/#/en.wikipedia.org
+        - listitem [ref=e1518]:
+          - link "Cookie statement" [ref=e1519] [cursor=pointer]:
+            - /url: https://foundation.wikimedia.org/wiki/Special:MyLanguage/Policy:Cookie_statement
+        - listitem [ref=e1520]:
+          - link "Mobile view" [ref=e1521] [cursor=pointer]:
+            - /url: //en.wikipedia.org/w/index.php?title=2026_FIFA_World_Cup_squads&mobileaction=toggle_view_mobile
+      - list [ref=e1522]:
+        - listitem [ref=e1523]:
+          - link "Wikimedia Foundation" [ref=e1524] [cursor=pointer]:
+            - /url: https://www.wikimedia.org/
+            - img "Wikimedia Foundation" [ref=e1526]
+        - listitem [ref=e1527]:
+          - link "Powered by MediaWiki" [ref=e1528] [cursor=pointer]:
+            - /url: https://www.mediawiki.org/
+            - img "Powered by MediaWiki" [ref=e1530]
+  - generic [ref=e1531]:
+    - list

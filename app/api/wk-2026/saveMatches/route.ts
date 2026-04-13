@@ -9,6 +9,8 @@ interface Match {
     team2Id: string;
     team1Score: number | null;
     team2Score: number | null;
+    team1GoalScorer: string | null;
+    team2GoalScorer: string | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +38,9 @@ export async function POST(request: NextRequest) {
                     team1Id: match.team1Id,
                     team2Id: match.team2Id,
                     team1Score: match.team1Score,
-                    team2Score: match.team2Score
+                    team2Score: match.team2Score,
+                    team1GoalScorer: match.team1GoalScorer ?? null,
+                    team2GoalScorer: match.team2GoalScorer ?? null,
                 };
                 return acc;
             }, {} as any); // eslint-disable-line @typescript-eslint/no-explicit-any

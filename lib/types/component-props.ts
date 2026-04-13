@@ -53,6 +53,15 @@ export interface SelectorProps<T> {
   sortKey?: (item: T) => string;
   showClearButton?: boolean;
   clearButtonLabel?: string;
+  groupBy?: (item: T) => string;
+  getGroupLabel?: (groupKey: string) => string;
+  groupOrder?: string[];
+  displaySelectedInInput?: boolean;
+  inputClassName?: string;
+  dropdownClassName?: string;
+  groupHeaderClassName?: string;
+  availableItemClassName?: string;
+  selectedItemClassName?: string;
 }
 
 export interface RowProps<T> {

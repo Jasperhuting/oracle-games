@@ -14,6 +14,7 @@ import {
     type StoredTeamHistoryMap,
     type TeamHistoryResponse,
 } from "@/lib/wk-2026/team-history-types";
+import type { GoalScorerPlayer } from "@/app/wk-2026/components/GoalScorerSelector";
 import { PoulePredictor } from "@/app/wk-2026/components/PoulePredictor";
 import type { FixtureEntry } from "@/app/api/wk-2026/all-fixtures/route";
 
@@ -24,8 +25,17 @@ interface Match {
     team2Id: string;
     team1Score: number | null;
     team2Score: number | null;
+    team1GoalScorer: string | null;
+    team2GoalScorer: string | null;
     date?: string;
     time?: string;
+}
+
+interface ContenderWithSquad {
+    id: string;
+    name: string;
+    pot?: number;
+    squad?: GoalScorerPlayer[];
 }
 
 interface PouleRanking {
@@ -137,14 +147,19 @@ export default function PlayerPredictionsPage() {
     const fetchPoulesAndPredictions = useCallback(async () => {
         try {
             // Fetch admin's poules (official team assignments) + fixtures for dates
-            const [poulesResponse, fixturesResponse] = await Promise.all([
+            const [poulesResponse, fixturesResponse, teamsResponse] = await Promise.all([
                 fetch('/api/wk-2026/getPoules'),
                 fetch('/api/wk-2026/all-fixtures'),
+                fetch('/api/wk-2026/getTeams'),
             ]);
             const poulesData = await poulesResponse.json();
             const fixturesData = await fixturesResponse.json();
+            const teamsData = await teamsResponse.json();
             const groupFixtures: FixtureEntry[] = (fixturesData.fixtures ?? []).filter(
                 (f: FixtureEntry) => f.type === 'group'
+            );
+            const teamsById = new Map<string, ContenderWithSquad>(
+                (teamsData.teams ?? []).map((team: ContenderWithSquad) => [team.id, team])
             );
 
             // Transform poules data into rankings
@@ -156,12 +171,14 @@ export default function PlayerPredictionsPage() {
 
                     Object.entries(pouleData.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         if (teamData.position !== null && teamData.position !== undefined) {
+                            const contender = teamsById.get(teamId);
                             rankings[teamData.position] = {
                                 id: teamId,
-                                name: teamData.name,
-                                pot: teamData.pot,
+                                name: contender?.name || teamData.name,
+                                pot: contender?.pot ?? teamData.pot,
                                 poule: pouleId,
-                                position: teamData.position
+                                position: teamData.position,
+                                squad: contender?.squad ?? [],
                             };
                         }
                     });
@@ -216,6 +233,8 @@ export default function PlayerPredictionsPage() {
                             team2Id: teams[j].id,
                             team1Score: predictedMatch?.team1Score ?? null,
                             team2Score: predictedMatch?.team2Score ?? null,
+                            team1GoalScorer: predictedMatch?.team1GoalScorer ?? null,
+                            team2GoalScorer: predictedMatch?.team2GoalScorer ?? null,
                             date: fixture?.date,
                             time: fixture?.time,
                         });
@@ -323,16 +342,19 @@ export default function PlayerPredictionsPage() {
         }));
     };
 
+    const handleGoalScorerChange = (matchId: string, team: 'team1' | 'team2', scorer: string | null) => {
+        setMatches(matches.map(match => (
+            match.id === matchId
+                ? {
+                    ...match,
+                    [team === 'team1' ? 'team1GoalScorer' : 'team2GoalScorer']: scorer,
+                }
+                : match
+        )));
+    };
+
     const selectedManualRanking = manualRankings.find(p => p.pouleId === selectedPoule);
     const selectedPouleMatches = matches.filter(m => m.pouleId === selectedPoule);
-
-    const getTeamById = (teamId: string): TeamInPoule | null => {
-        for (const poule of poules) {
-            const team = poule.rankings.find(t => t?.id === teamId);
-            if (team) return team;
-        }
-        return null;
-    };
 
     const handleSelectPoule = useCallback((pouleId: string) => {
         setSelectedPoule(pouleId);
@@ -465,6 +487,7 @@ export default function PlayerPredictionsPage() {
                     ));
                 }}
                 onScoreChange={handleScoreChange}
+                onGoalScorerChange={handleGoalScorerChange}
                 teamHistory={teamHistory}
                 historyLoading={historyLoading}
             />

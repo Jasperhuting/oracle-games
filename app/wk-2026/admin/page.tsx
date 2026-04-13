@@ -1,13 +1,14 @@
 'use client';
 
 import { Flag } from "@/components/Flag";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import countriesList from '@/lib/country.json';
 import { getCountryDisplayNameNL } from '@/lib/country-nl';
 import { POULES, TeamInPoule } from "../page";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { WkAdminNav } from "@/components/WkAdminNav";
+import { GoalScorerSelector, type GoalScorerPlayer } from "@/app/wk-2026/components/GoalScorerSelector";
 
 interface Match {
     id: string;
@@ -16,6 +17,15 @@ interface Match {
     team2Id: string;
     team1Score: number | null;
     team2Score: number | null;
+    team1GoalScorer: string | null;
+    team2GoalScorer: string | null;
+}
+
+interface ContenderWithSquad {
+    id: string;
+    name: string;
+    pot?: number;
+    squad?: GoalScorerPlayer[];
 }
 
 interface PouleRanking {
@@ -46,44 +56,18 @@ export default function GroupsPage() {
     const [draggedTeam, setDraggedTeam] = useState<TeamInPoule | null>(null);
     const [draggedFromPosition, setDraggedFromPosition] = useState<number | null>(null);
 
-    useEffect(() => {
-        if (loading) return;
-
-        if (!user) {
-            router.push('/wk-2026/predictions');
-            return;
-        }
-
-        const checkAdminAndLoad = async () => {
-            try {
-                const response = await fetch(`/api/getUser?userId=${user.uid}`);
-                if (!response.ok) {
-                    router.push('/wk-2026/predictions');
-                    return;
-                }
-
-                const userData = await response.json();
-                if (userData.userType !== 'admin') {
-                    router.push('/wk-2026/predictions');
-                    return;
-                }
-
-                // User is admin; safe to load data
-                fetchPoulesAndMatches();
-            } catch (error) {
-                console.error('Error checking admin status:', error);
-                router.push('/wk-2026/predictions');
-            }
-        };
-
-        checkAdminAndLoad();
-    }, [user, loading, router]);
-
-    const fetchPoulesAndMatches = async () => {
+    const fetchPoulesAndMatches = useCallback(async () => {
         try {
             // Fetch saved poules
-            const poulesResponse = await fetch('/api/wk-2026/getPoules');
+            const [poulesResponse, teamsResponse] = await Promise.all([
+                fetch('/api/wk-2026/getPoules'),
+                fetch('/api/wk-2026/getTeams'),
+            ]);
             const poulesData = await poulesResponse.json();
+            const teamsData = await teamsResponse.json();
+            const teamsById = new Map<string, ContenderWithSquad>(
+                (teamsData.teams ?? []).map((team: ContenderWithSquad) => [team.id, team])
+            );
 
             // Transform poules data into rankings
             const poulesRankings: PouleRanking[] = POULES.map(pouleId => {
@@ -95,12 +79,14 @@ export default function GroupsPage() {
 
                     Object.entries(pouleData.teams).forEach(([teamId, teamData]: [string, any]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                         if (teamData.position !== null && teamData.position !== undefined) {
+                            const contender = teamsById.get(teamId);
                             rankings[teamData.position] = {
                                 id: teamId,
-                                name: teamData.name,
-                                pot: teamData.pot,
+                                name: contender?.name || teamData.name,
+                                pot: contender?.pot ?? teamData.pot,
                                 poule: pouleId,
-                                position: teamData.position
+                                position: teamData.position,
+                                squad: contender?.squad ?? [],
                             };
                         }
                     });
@@ -138,7 +124,9 @@ export default function GroupsPage() {
                             team1Id: teams[i].id,
                             team2Id: teams[j].id,
                             team1Score: savedMatch?.team1Score ?? null,
-                            team2Score: savedMatch?.team2Score ?? null
+                            team2Score: savedMatch?.team2Score ?? null,
+                            team1GoalScorer: savedMatch?.team1GoalScorer ?? null,
+                            team2GoalScorer: savedMatch?.team2GoalScorer ?? null,
                         });
                     }
                 }
@@ -149,7 +137,40 @@ export default function GroupsPage() {
         } catch (error) {
             console.error('Error fetching poules:', error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (loading) return;
+
+        if (!user) {
+            router.push('/wk-2026/predictions');
+            return;
+        }
+
+        const checkAdminAndLoad = async () => {
+            try {
+                const response = await fetch(`/api/getUser?userId=${user.uid}`);
+                if (!response.ok) {
+                    router.push('/wk-2026/predictions');
+                    return;
+                }
+
+                const userData = await response.json();
+                if (userData.userType !== 'admin') {
+                    router.push('/wk-2026/predictions');
+                    return;
+                }
+
+                // User is admin; safe to load data
+                fetchPoulesAndMatches();
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                router.push('/wk-2026/predictions');
+            }
+        };
+
+        checkAdminAndLoad();
+    }, [user, loading, router, fetchPoulesAndMatches]);
 
 
     const handleScoreChange = (matchId: string, team: 'team1' | 'team2', score: string) => {
@@ -175,7 +196,17 @@ export default function GroupsPage() {
         }));
     };
 
-    const _selectedPouleData = poules.find(p => p.pouleId === selectedPoule);
+    const handleGoalScorerChange = (matchId: string, team: 'team1' | 'team2', scorer: string | null) => {
+        setMatches(matches.map(match => (
+            match.id === matchId
+                ? {
+                    ...match,
+                    [team === 'team1' ? 'team1GoalScorer' : 'team2GoalScorer']: scorer,
+                }
+                : match
+        )));
+    };
+
     const selectedManualRanking = manualRankings.find(p => p.pouleId === selectedPoule);
     const selectedPouleMatches = matches.filter(m => m.pouleId === selectedPoule);
 
@@ -474,6 +505,16 @@ export default function GroupsPage() {
                                     />
                                 </div>
 
+                                <div className="mb-3 ml-8">
+                                    <GoalScorerSelector
+                                        players={team1.squad ?? []}
+                                        selectedPlayerName={match.team1GoalScorer}
+                                        onChange={(scorer) => handleGoalScorerChange(match.id, 'team1', scorer)}
+                                        teamLabel={getCountryDisplayNameNL(team1.name)}
+                                        firstGoalLabel
+                                    />
+                                </div>
+
                                 {/* Team 2 */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center flex-1">
@@ -487,6 +528,16 @@ export default function GroupsPage() {
                                         onChange={(e) => handleScoreChange(match.id, 'team2', e.target.value)}
                                         className="w-16 px-2 py-1 border-2 border-gray-300 rounded text-center font-bold text-lg"
                                         placeholder="0"
+                                    />
+                                </div>
+
+                                <div className="mt-3 ml-8">
+                                    <GoalScorerSelector
+                                        players={team2.squad ?? []}
+                                        selectedPlayerName={match.team2GoalScorer}
+                                        onChange={(scorer) => handleGoalScorerChange(match.id, 'team2', scorer)}
+                                        teamLabel={getCountryDisplayNameNL(team2.name)}
+                                        firstGoalLabel
                                     />
                                 </div>
                             </div>

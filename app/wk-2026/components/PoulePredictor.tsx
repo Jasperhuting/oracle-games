@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Flag } from '@/components/Flag';
+import { GoalScorerSelector, type GoalScorerPlayer } from '@/app/wk-2026/components/GoalScorerSelector';
 import countriesList from '@/lib/country.json';
 import { getCountryDisplayNameNL } from '@/lib/country-nl';
 import {
@@ -16,6 +17,7 @@ import {
 export interface PoulePredictorTeam {
   id: string;
   name: string;
+  squad?: GoalScorerPlayer[];
   [key: string]: unknown;
 }
 
@@ -25,6 +27,8 @@ export interface PoulePredictorMatch {
   team2Id: string;
   team1Score: number | null;
   team2Score: number | null;
+  team1GoalScorer: string | null;
+  team2GoalScorer: string | null;
   date?: string;
   time?: string;
 }
@@ -49,6 +53,7 @@ export interface PoulePredictorProps {
   matches: PoulePredictorMatch[];
   onRankingsChange: (rankings: (PoulePredictorTeam | null)[]) => void;
   onScoreChange: (matchId: string, team: 'team1' | 'team2', score: string) => void;
+  onGoalScorerChange: (matchId: string, team: 'team1' | 'team2', scorer: string | null) => void;
   teamHistory?: StoredTeamHistoryMap;
   historyLoading?: boolean;
 }
@@ -152,6 +157,7 @@ function H2HRow({ match, team1Name, team2Name }: { match: HeadToHeadMatch; team1
 
 export function PoulePredictor({
   pouleLabel, teams, rankings, matches, onRankingsChange, onScoreChange,
+  onGoalScorerChange,
   teamHistory, historyLoading,
 }: PoulePredictorProps) {
   const [draggedTeam, setDraggedTeam] = useState<PoulePredictorTeam | null>(null);
@@ -273,6 +279,16 @@ export function PoulePredictor({
                   </div>
                 )}
 
+                <div className="mb-2 pl-7">
+                  <GoalScorerSelector
+                    players={t1.squad ?? []}
+                    selectedPlayerName={match.team1GoalScorer}
+                    onChange={(scorer) => onGoalScorerChange(match.id, 'team1', scorer)}
+                    teamLabel={getCountryDisplayNameNL(t1.name)}
+                    firstGoalLabel
+                  />
+                </div>
+
                 <div className="flex items-center justify-between gap-2 mt-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Flag countryCode={getFlagCode(t2.name, t2.id)} width={22} />
@@ -293,6 +309,16 @@ export function PoulePredictor({
                     {t2Form.map((m, fi) => <FormDot key={fi} match={m} />)}
                   </div>
                 )}
+
+                <div className="pl-7">
+                  <GoalScorerSelector
+                    players={t2.squad ?? []}
+                    selectedPlayerName={match.team2GoalScorer}
+                    onChange={(scorer) => onGoalScorerChange(match.id, 'team2', scorer)}
+                    teamLabel={getCountryDisplayNameNL(t2.name)}
+                    firstGoalLabel
+                  />
+                </div>
 
                 {historyLoading && (
                   <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 animate-pulse">

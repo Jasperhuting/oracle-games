@@ -21,7 +21,16 @@ export function Selector<T>({
     getItemLabel,
     sortKey,
     showClearButton = true,
-    clearButtonLabel
+    clearButtonLabel,
+    groupBy,
+    getGroupLabel,
+    groupOrder,
+    displaySelectedInInput = true,
+    inputClassName,
+    dropdownClassName,
+    groupHeaderClassName,
+    availableItemClassName,
+    selectedItemClassName
 }: SelectorProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -78,7 +87,7 @@ export function Selector<T>({
         if (isFocused) {
             return searchTerm;
         }
-        if (!showSelected) {
+        if (!showSelected && !displaySelectedInInput) {
             return searchTerm;
         }
         if (selectedItems.length > 0 && getItemLabel) {
@@ -115,11 +124,101 @@ export function Selector<T>({
         };
     }, [isFocused]);
 
+    const sortItems = (itemsToSort: T[]) => {
+        if (sortKey) {
+            return [...itemsToSort].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+        }
+        return itemsToSort;
+    };
+
+    const groupItems = (itemsToGroup: T[]) => {
+        if (!groupBy) {
+            return [{ key: '__ungrouped__', label: null, items: sortItems(itemsToGroup) }];
+        }
+
+        const grouped = new Map<string, T[]>();
+
+        for (const item of itemsToGroup) {
+            const key = groupBy(item);
+            const current = grouped.get(key) || [];
+            current.push(item);
+            grouped.set(key, current);
+        }
+
+        const preferredOrder = groupOrder || [];
+        const orderedKeys = Array.from(grouped.keys()).sort((a, b) => {
+            const aIndex = preferredOrder.indexOf(a);
+            const bIndex = preferredOrder.indexOf(b);
+
+            if (aIndex !== -1 || bIndex !== -1) {
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+            }
+
+            const aLabel = getGroupLabel ? getGroupLabel(a) : a;
+            const bLabel = getGroupLabel ? getGroupLabel(b) : b;
+            return aLabel.localeCompare(bLabel);
+        });
+
+        return orderedKeys.map((key) => ({
+            key,
+            label: getGroupLabel ? getGroupLabel(key) : key,
+            items: sortItems(grouped.get(key) || []),
+        }));
+    };
+
+    const renderSection = (sectionItems: T[], sectionPrefix: string, selectedState: boolean) => {
+        const groupedSections = groupItems(sectionItems);
+        let rowIndex = 0;
+
+        return groupedSections.map((group) => (
+            <div key={`${sectionPrefix}-group-${group.key}`}>
+                {group.label && group.key !== '__ungrouped__' && (
+                    <div className={`sticky top-0 bg-gray-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-200 z-[55] ${groupHeaderClassName || ''}`}>
+                        {group.label}
+                    </div>
+                )}
+                {group.items.map((item) => {
+                    const currentIndex = rowIndex++;
+                    return (
+                        <div
+                            key={`${sectionPrefix}-${currentIndex}`}
+                            className={`flex w-full items-center gap-2 hover:bg-gray-100 p-2 pl-3 cursor-pointer transition-colors duration-100 ${
+                                selectedState
+                                    ? (selectedItemClassName || 'bg-blue-50')
+                                    : (availableItemClassName || (currentIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'))
+                            }`}
+                            onMouseDown={(e) => {
+                                if (multiSelect) {
+                                    e.preventDefault();
+                                }
+                                toggleItem(item);
+                            }}
+                        >
+                            {multiSelect && showCheckboxes && (
+                                <input
+                                    type="checkbox"
+                                    checked={selectedState}
+                                    onChange={() => {}}
+                                    className="w-4 h-4 ml-2"
+                                />
+                            )}
+                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                {renderItem(item, currentIndex, selectedState)}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        ));
+    };
+
     return (
         <div className="relative" ref={containerRef}>
             <div className="flex items-center gap-2">
                 <input
-                    className={`h-[40px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'}`}
+                    className={`h-[40px] w-full px-3 border rounded ${selectedItems.length > 0 ? 'border-primary bg-blue-50' : 'border-gray-300'} ${inputClassName || ''}`}
                     type="text"
                     placeholder={getPlaceholder()}
                     value={getDisplayValue()}
@@ -161,84 +260,29 @@ export function Selector<T>({
                 // Add selected items not in results
                 const selectedNotInResults = selectedItems.filter(item => !results.some(r => isEqual(r, item)));
                 const allSelectedItems = [...selectedInResults, ...selectedNotInResults];
-                
-                // Sort by sortKey if provided
-                const sortItems = (items: T[]) => {
-                    if (sortKey) {
-                        return [...items].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
-                    }
-                    return items;
-                };
-                
                 const sortedAvailable = sortItems(availableItems);
                 const sortedSelected = sortItems(allSelectedItems);
                 
                 return (
-                    <div className={`absolute ${openUpward ? 'bottom-[44px]' : 'top-[44px]'} left-0 right-0 bg-white border border-solid border-gray-200 rounded-md shadow-lg z-50`}>
+                    <div className={`absolute ${openUpward ? 'bottom-[44px]' : 'top-[44px]'} left-0 right-0 bg-white border border-solid border-gray-200 rounded-md shadow-lg z-50 ${dropdownClassName || ''}`}>
                         <div className="max-h-[60vh] overflow-x-hidden overflow-y-auto">
                             {/* Available group */}
                             {sortedAvailable.length > 0 && (
                                 <>
-                                    <div className="sticky top-0 bg-gray-100 px-3 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 z-[60] relative">
+                                    <div className={`sticky top-0 bg-gray-100 px-3 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 z-[60] relative ${groupHeaderClassName || ''}`}>
                                         Available ({sortedAvailable.length})
                                     </div>
-                                    {sortedAvailable.map((item, index) => (
-                                        <div
-                                            key={`available-${index}`}
-                                            className={`flex w-full items-center gap-2 hover:bg-gray-100 p-2 pl-3 cursor-pointer transition-colors duration-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                                            onMouseDown={(e) => {
-                                                if (multiSelect) {
-                                                    e.preventDefault();
-                                                }
-                                                toggleItem(item);
-                                            }}
-                                        >
-                                            {multiSelect && showCheckboxes && (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={false}
-                                                    onChange={() => {}}
-                                                    className="w-4 h-4 ml-2"
-                                                />
-                                            )}
-                                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                                                {renderItem(item, index, false)}
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {renderSection(sortedAvailable, 'available', false)}
                                 </>
                             )}
                             
                             {/* Selected group */}
                             {showSelected && sortedSelected.length > 0 && (
                                 <>
-                                    <div className="sticky top-0 bg-blue-100 px-3 py-4 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b-2 border-blue-200 z-[60] relative">
+                                    <div className={`sticky top-0 bg-blue-100 px-3 py-4 text-xs font-semibold text-blue-700 uppercase tracking-wide border-b-2 border-blue-200 z-[60] relative ${groupHeaderClassName || ''}`}>
                                         Selected ({sortedSelected.length})
                                     </div>
-                                    {sortedSelected.map((item, index) => (
-                                        <div
-                                            key={`selected-${index}`}
-                                            className={`flex w-full items-center gap-2 hover:bg-blue-100 p-2 pl-3 bg-blue-50 cursor-pointer transition-colors duration-100`}
-                                            onMouseDown={(e) => {
-                                                if (multiSelect) {
-                                                    e.preventDefault();
-                                                }
-                                                toggleItem(item);
-                                            }}
-                                        >
-                                            {multiSelect && showCheckboxes && (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={true}
-                                                    onChange={() => {}}
-                                                    className="w-4 h-4 ml-2"
-                                                />
-                                            )}
-                                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                                                {renderItem(item, index, true)}
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {renderSection(sortedSelected, 'selected', true)}
                                 </>
                             )}
                         </div>
