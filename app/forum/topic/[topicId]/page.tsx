@@ -23,6 +23,7 @@ export default function ForumTopicPage() {
   const hasContent = Boolean(contentPlain) || /<img[\s>]/i.test(content);
   const [saving, setSaving] = useState(false);
   const [mutatingTopic, setMutatingTopic] = useState(false);
+  const [deletingReplyId, setDeletingReplyId] = useState<string | null>(null);
   const [deletingTopic, setDeletingTopic] = useState(false);
   const [editingTopic, setEditingTopic] = useState(false);
   const [editTitle, setEditTitle] = useState('');
@@ -209,6 +210,30 @@ export default function ForumTopicPage() {
     }
   };
 
+  const handleDeleteReply = async (reply: ForumReply) => {
+    if (!user || !topic || deletingReplyId) return;
+
+    const confirmed = window.confirm('Weet je zeker dat je deze reactie wilt verwijderen?');
+    if (!confirmed) return;
+
+    setDeletingReplyId(reply.id);
+    try {
+      const res = await fetch(`/api/forum/topics/${topic.id}/replies/${reply.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: hasAdminPrivileges ? actingAdminUserId : user.uid,
+        }),
+      });
+
+      if (res.ok) {
+        await loadTopic();
+      }
+    } finally {
+      setDeletingReplyId(null);
+    }
+  };
+
   const replyTree = useMemo(() => {
     const map = new Map<string | null, ForumReply[]>();
     replies.forEach((reply) => {
@@ -231,15 +256,27 @@ export default function ForumTopicPage() {
               {reply.createdByName || 'Onbekend'} • {new Date(reply.createdAt).toLocaleString('nl-NL')}
             </p>
           </div>
-          {!isLocked && (
-            <button
-              type="button"
-              onClick={() => setReplyTo(reply)}
-              className="text-xs text-primary hover:underline"
-            >
-              Reageer
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {!isLocked && (
+              <button
+                type="button"
+                onClick={() => setReplyTo(reply)}
+                className="text-xs text-primary hover:underline"
+              >
+                Reageer
+              </button>
+            )}
+            {user && (user.uid === reply.createdBy || hasAdminPrivileges) && (
+              <button
+                type="button"
+                disabled={deletingReplyId === reply.id}
+                onClick={() => handleDeleteReply(reply)}
+                className="text-xs text-red-500 hover:underline disabled:opacity-50"
+              >
+                {deletingReplyId === reply.id ? 'Verwijderen...' : 'Verwijder'}
+              </button>
+            )}
+          </div>
         </div>
         <div className="forum-rich-content overflow-x-auto text-gray-800" dangerouslySetInnerHTML={{ __html: reply.body }} />
         {renderReplies(reply.id, depth + 1)}

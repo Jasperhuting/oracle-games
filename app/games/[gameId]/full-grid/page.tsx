@@ -53,6 +53,11 @@ export default function FullGridPage() {
 
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [isParticipant, setIsParticipant] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminParticipants, setAdminParticipants] = useState<{ userId: string; playername: string; bidCount: number }[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [disqualifying, setDisqualifying] = useState<string | null>(null);
+  const [closingSelection, setClosingSelection] = useState(false);
 
   const isProTourTeamClass = useCallback((teamClass?: string) => {
     if (!teamClass) return false;
@@ -179,6 +184,14 @@ export default function FullGridPage() {
 
       if (participantRes.ok) {
         const participantData = await participantRes.json();
+
+        // Check admin status
+        const userRes = await fetch(`/api/getUser?userId=${user.uid}`);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setIsAdmin(userData.userType === 'admin');
+        }
+
         const participant = participantData.participants?.[0];
 
         if (participant) {
@@ -226,11 +239,110 @@ export default function FullGridPage() {
     }
   }, [gameId, user]);
 
+  const handleCloseSelection = async () => {
+    if (!user || closingSelection) return;
+    const incomplete = adminParticipants.filter((p) => p.bidCount < gameConfig.maxRiders);
+    const warning = incomplete.length > 0
+      ? `Let op: ${incomplete.length} deelnemer(s) met onvolledig team worden automatisch gediskwalificeerd:\n${incomplete.map((p) => `- ${p.playername} (${p.bidCount}/${gameConfig.maxRiders})`).join('\n')}\n\nWeet je zeker dat je de selectie wilt sluiten?`
+      : 'Weet je zeker dat je de selectie wilt sluiten? Dit kan niet ongedaan worden gemaakt.';
+    if (!window.confirm(warning)) return;
+    setClosingSelection(true);
+    try {
+      const res = await fetch(`/api/games/${gameId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUserId: user.uid,
+          config: { ...gameConfig, selectionStatus: 'closed' },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sluiten mislukt');
+      setGameConfig((prev) => ({ ...prev, selectionStatus: 'closed' }));
+      setSuccessMessage(
+        incomplete.length > 0
+          ? `Selectie gesloten. ${incomplete.length} deelnemer(s) automatisch gediskwalificeerd.`
+          : 'Selectie gesloten.'
+      );
+      await fetchAdminData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sluiten mislukt');
+    } finally {
+      setClosingSelection(false);
+    }
+  };
+
+  const fetchAdminData = useCallback(async () => {
+    if (!gameId || !user) return;
+    setAdminLoading(true);
+    try {
+      const [participantsRes, bidsRes] = await Promise.all([
+        fetch(`/api/gameParticipants?gameId=${gameId}`),
+        fetch(`/api/games/${gameId}/bids/list?limit=10000&skipOrder=true`),
+      ]);
+      if (!participantsRes.ok || !bidsRes.ok) return;
+      const [participantsData, bidsData] = await Promise.all([
+        participantsRes.json(),
+        bidsRes.json(),
+      ]);
+
+      const activeBidCounts = new Map<string, number>();
+      (bidsData.bids || []).forEach((bid: { userId: string; status: string }) => {
+        if (bid.status === 'active' || bid.status === 'won') {
+          activeBidCounts.set(bid.userId, (activeBidCounts.get(bid.userId) || 0) + 1);
+        }
+      });
+
+      const rows = (participantsData.participants || [])
+        .filter((p: { status?: string }) => p.status === 'active')
+        .map((p: { userId: string; playername: string }) => ({
+          userId: p.userId,
+          playername: p.playername,
+          bidCount: activeBidCounts.get(p.userId) || 0,
+        }))
+        .sort((a: { bidCount: number }, b: { bidCount: number }) => a.bidCount - b.bidCount);
+
+      setAdminParticipants(rows);
+    } finally {
+      setAdminLoading(false);
+    }
+  }, [gameId, user]);
+
+  const handleDisqualify = async (targetUserId: string, playername: string) => {
+    if (!user || disqualifying) return;
+    const confirmed = window.confirm(
+      `Weet je zeker dat je ${playername} wilt diskwalificeren? Alle selecties worden geannuleerd en de speler wordt uit het spel gezet.`
+    );
+    if (!confirmed) return;
+    setDisqualifying(targetUserId);
+    try {
+      const res = await fetch(`/api/games/${gameId}/full-grid/admin/disqualify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminUserId: user.uid, targetUserId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Diskwalificatie mislukt');
+      setSuccessMessage(`${playername} gediskwalificeerd (${data.cancelledBids} selecties geannuleerd).`);
+      await fetchAdminData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Diskwalificatie mislukt');
+    } finally {
+      setDisqualifying(null);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && user) {
       fetchData();
     }
   }, [authLoading, user, fetchData]);
+
+  useEffect(() => {
+    if (!authLoading && user && isAdmin) {
+      fetchAdminData();
+    }
+  }, [authLoading, user, isAdmin, fetchAdminData]);
 
   // Select a rider
   const selectRider = async (rider: RiderData) => {
@@ -386,7 +498,7 @@ export default function FullGridPage() {
     );
   }
 
-  if (!isParticipant) {
+  if (!isParticipant && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -515,6 +627,98 @@ export default function FullGridPage() {
           </div>
         </div>
       </main>
+
+      {/* Admin section */}
+      {isAdmin && (
+        <section className="max-w-7xl mx-auto px-4 pb-10">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="font-semibold text-gray-900">Admin: deelnemers overzicht</h2>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={fetchAdminData}
+                    disabled={adminLoading}
+                    className="text-xs text-gray-500 hover:text-gray-800 underline"
+                  >
+                    {adminLoading ? 'Laden...' : 'Vernieuwen'}
+                  </button>
+                  {gameConfig.selectionStatus === 'open' && (
+                    <button
+                      type="button"
+                      onClick={handleCloseSelection}
+                      disabled={closingSelection || adminLoading}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    >
+                      {closingSelection ? 'Bezig...' : 'Sluit selectie'}
+                    </button>
+                  )}
+                  {gameConfig.selectionStatus === 'closed' && (
+                    <span className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-500">
+                      Selectie gesloten
+                    </span>
+                  )}
+                </div>
+              </div>
+              {gameConfig.selectionStatus === 'open' && adminParticipants.some((p) => p.bidCount < gameConfig.maxRiders) && (
+                <p className="mt-2 text-xs text-red-600">
+                  {adminParticipants.filter((p) => p.bidCount < gameConfig.maxRiders).length} deelnemer(s) met onvolledig team worden automatisch gediskwalificeerd bij sluiting.
+                </p>
+              )}
+            </div>
+            {adminLoading ? (
+              <div className="p-4 text-sm text-gray-500">Laden...</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500 text-xs">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-medium">Speler</th>
+                    <th className="text-center px-4 py-2 font-medium">Selecties</th>
+                    <th className="text-center px-4 py-2 font-medium">Status</th>
+                    <th className="px-4 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminParticipants.map((p) => {
+                    const isIncomplete = p.bidCount < gameConfig.maxRiders;
+                    return (
+                      <tr key={p.userId} className={`border-t border-gray-100 ${isIncomplete ? 'bg-red-50' : ''}`}>
+                        <td className="px-4 py-2 font-medium text-gray-900">{p.playername}</td>
+                        <td className={`px-4 py-2 text-center font-mono ${isIncomplete ? 'text-red-700 font-bold' : 'text-gray-700'}`}>
+                          {p.bidCount} / {gameConfig.maxRiders}
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          {isIncomplete ? (
+                            <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Onvolledig</span>
+                          ) : (
+                            <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Volledig</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDisqualify(p.userId, p.playername)}
+                            disabled={disqualifying === p.userId}
+                            className="text-xs text-red-600 hover:text-red-800 underline disabled:opacity-50"
+                          >
+                            {disqualifying === p.userId ? 'Bezig...' : 'Diskwalificeer'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {adminParticipants.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-4 text-sm text-gray-400 text-center">Geen actieve deelnemers gevonden</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -180,6 +180,77 @@ export async function PATCH(
     });
     await db.collection('activityLogs').add(activityLogData);
 
+    // Auto-disqualify incomplete full-grid teams when selection is closed
+    if (
+      currentGameData?.gameType === 'full-grid' &&
+      currentGameData?.config?.selectionStatus !== 'closed' &&
+      (updates as any)?.config?.selectionStatus === 'closed'
+    ) {
+      const maxRiders: number = currentGameData?.config?.maxRiders || 22;
+      const now = Timestamp.now();
+
+      const [participantsSnap, bidsSnap] = await Promise.all([
+        db.collection('gameParticipants')
+          .where('gameId', '==', gameId)
+          .where('status', '==', 'active')
+          .get(),
+        db.collection('bids')
+          .where('gameId', '==', gameId)
+          .where('status', 'in', ['active', 'won'])
+          .get(),
+      ]);
+
+      // Count bids per user
+      const userBidCounts = new Map<string, number>();
+      bidsSnap.docs.forEach((doc) => {
+        const uid = doc.data().userId as string;
+        userBidCounts.set(uid, (userBidCounts.get(uid) || 0) + 1);
+      });
+
+      const disqualified: string[] = [];
+
+      for (const participantDoc of participantsSnap.docs) {
+        const pd = participantDoc.data();
+        const bidCount = userBidCounts.get(pd.userId as string) || 0;
+
+        if (bidCount < maxRiders) {
+          const batch = db.batch();
+
+          batch.update(participantDoc.ref, {
+            status: 'withdrawn',
+            withdrawnAt: now,
+            withdrawnReason: 'incomplete_team_at_close',
+            withdrawnBidCount: bidCount,
+            withdrawnMaxRiders: maxRiders,
+          });
+
+          // Cancel their bids
+          bidsSnap.docs
+            .filter((d) => d.data().userId === pd.userId)
+            .forEach((bidDoc) => batch.update(bidDoc.ref, { status: 'cancelled', cancelledAt: now }));
+
+          await batch.commit();
+          disqualified.push(pd.playername || pd.userId);
+        }
+      }
+
+      if (disqualified.length > 0) {
+        await db.collection('activityLogs').add({
+          action: 'FULL_GRID_AUTO_DISQUALIFIED_ON_CLOSE',
+          userId: adminUserId,
+          userEmail: adminDoc.data()?.email,
+          userName: adminDoc.data()?.playername || adminDoc.data()?.email,
+          details: {
+            gameId,
+            gameName: currentGameData?.name,
+            disqualifiedPlayers: disqualified,
+            maxRidersRequired: maxRiders,
+          },
+          timestamp: now,
+        });
+      }
+    }
+
     // Convert Timestamp objects in auctionPeriods to ISO strings
     let config = data?.config;
     if (config?.auctionPeriods) {

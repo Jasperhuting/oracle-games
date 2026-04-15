@@ -16,6 +16,7 @@ export async function GET(
     const riderNameId = searchParams.get('riderNameId');
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '100');
+    const skipOrder = searchParams.get('skipOrder') === 'true';
 
     const db = getServerFirebase();
 
@@ -26,7 +27,10 @@ export async function GET(
     if (riderNameId) query = query.where('riderNameId', '==', riderNameId);
     if (status) query = query.where('status', '==', status);
 
-    query = query.orderBy('bidAt', 'desc').limit(limit);
+    if (!skipOrder) {
+      query = query.orderBy('bidAt', 'desc');
+    }
+    query = query.limit(limit);
 
     const snapshot = await query.get();
 
