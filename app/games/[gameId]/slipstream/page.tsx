@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-import Link from 'next/link';
 import { SlipstreamRacePicker, RaceFilter } from '@/components/slipstream/SlipstreamRacePicker';
 import { SlipstreamRiderSelector } from '@/components/slipstream/SlipstreamRiderSelector';
 import { SlipstreamStandings } from '@/components/slipstream/SlipstreamStandings';
@@ -496,22 +495,12 @@ export default function SlipstreamPage() {
     <div className="min-h-screen mt-9">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Slipstream
-              </h1>
-              {gameName && (
-                <p className="text-gray-600">{gameName}</p>
-              )}
-            </div>
-            <Link
-              href="/games"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-            >
-              {t('slipstream.back')}
-            </Link>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Slipstream
+          </h1>
+          {gameName && (
+            <p className="text-gray-600">{gameName}</p>
+          )}
         </div>
 
         {error && (
@@ -541,36 +530,7 @@ export default function SlipstreamPage() {
         }
       `}</style>
 
-        {/* Your Stats - horizontal bar above layout */}
-        {participantData && (
-          <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-semibold mb-3">{t('slipstream.yourStats')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {participantData.totalTimeLostSeconds > 0
-                    ? `+${Math.floor(participantData.totalTimeLostSeconds / 60)}:${(participantData.totalTimeLostSeconds % 60).toString().padStart(2, '0')}`
-                    : '0:00'}
-                </div>
-                <div className="text-xs text-gray-500">{t('slipstream.timeLost')}</div>
-              </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {participantData.totalGreenJerseyPoints}
-                </div>
-                <div className="text-xs text-gray-500">{t('slipstream.greenPoints')}</div>
-              </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {participantData.picksCount}
-                </div>
-                <div className="text-xs text-gray-500">{t('slipstream.picksMade')}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <h2 className="text-lg font-semibold mb-4">{t('slipstream.selectRace')}</h2>
@@ -688,6 +648,8 @@ export default function SlipstreamPage() {
               participants={adminParticipants}
               loading={adminOverviewLoading}
               error={adminOverviewError}
+              currentUserId={user?.uid}
+              standingsOrder={standings?.yellowJersey.map(e => e.userId)}
             />
           </div>
         )}

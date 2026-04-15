@@ -113,6 +113,9 @@ const slipstreamEn = {
   noParticipantsFound: 'No participants found for this game.',
   noRacesWithDeadlinePassed: 'No races with passed pick deadline yet.',
   sortByRace: 'Sort by this race',
+  sortAlphabetical: 'A-Z',
+  sortByStandings: 'Standings',
+  riderUsage: 'Rider Usage',
 };
 
 const slipstreamNl = {
@@ -197,6 +200,9 @@ const slipstreamNl = {
   noParticipantsFound: 'Geen deelnemers gevonden voor dit spel.',
   noRacesWithDeadlinePassed: 'Nog geen races met verstreken pickdeadline.',
   sortByRace: 'Sorteer op deze race',
+  sortAlphabetical: 'A-Z',
+  sortByStandings: 'Stand',
+  riderUsage: 'Renner gebruik',
 };
 
 async function seedTranslations() {
