@@ -1,6 +1,5 @@
 'use client'
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "firebase/auth";
 import type { PlatformKey } from "@/lib/platform";
@@ -12,19 +11,11 @@ interface NavItem {
     display: boolean;
 }
 
-interface ProfileItem {
-    name: string;
-    href?: string;
-    icon: React.ReactNode;
-    display: boolean;
-    onClick?: () => void;
-}
-
 interface MobileMenuProps {
     isOpen: boolean;
     onClose: () => void;
     menuItems: NavItem[];
-    profileItems: ProfileItem[];
+    profileHref: string;
     user: User | null;
     pathname: string;
     topOffset: number;
@@ -37,7 +28,7 @@ export const MobileMenu = ({
     isOpen,
     onClose,
     menuItems,
-    profileItems,
+    profileHref,
     user,
     pathname,
     topOffset,
@@ -45,7 +36,6 @@ export const MobileMenu = ({
     platformOptions,
     onPlatformChange,
 }: MobileMenuProps) => {
-    const router = useRouter();
     const headerHeight = 86;
     // Use the same CSS variable as the header so mobile (16px) and desktop (32px) stay in sync
     const menuTopStyle = `calc(${topOffset}px + var(--header-top) + ${headerHeight}px)`;
@@ -114,27 +104,15 @@ export const MobileMenu = ({
                             {/* Divider */}
                             {user && <div className="border-t border-[var(--platform-header-border)]" />}
 
-                            {/* Profile Items */}
+                            {/* Profile link */}
                             {user && (
-                                <div className="flex flex-col gap-2">
-                                    {profileItems.filter(item => item.display).map((item) => (
-                                        <button
-                                            key={item.name}
-                                            onClick={() => {
-                                                if (item.onClick) {
-                                                    item.onClick();
-                                                } else if (item.href) {
-                                                    router.push(item.href);
-                                                }
-                                                onClose();
-                                            }}
-                                            className={`flex items-center gap-3 text-lg py-3 px-4 rounded-lg transition-all duration-150 text-left w-full ${item.href === pathname ? 'text-[var(--platform-header-link-active)] bg-[var(--platform-header-accent-soft)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
-                                        >
-                                            {item.icon}
-                                            {item.name}
-                                        </button>
-                                    ))}
-                                </div>
+                                <Link
+                                    href={profileHref}
+                                    onClick={onClose}
+                                    className={`text-lg py-3 px-4 rounded-lg transition-all duration-150 ${profileHref === pathname ? 'text-[var(--platform-header-link-active)] bg-[var(--platform-header-accent-soft)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
+                                >
+                                    Mijn profiel
+                                </Link>
                             )}
 
                             {/* Login link for non-authenticated users */}

@@ -12,7 +12,14 @@ export interface User {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
+  preferredLanguage?: 'en' | 'nl';
+  emailNotifications?: boolean;
+  forumNotifications?: {
+    replyOnMyTopic: boolean;
+    dailyDigest: boolean;
+  };
   avatarUrl?: string;
+  showOnlineStatus?: boolean;
   userType: string;
   authMethod?: string;
   lastLoginMethod?: string;

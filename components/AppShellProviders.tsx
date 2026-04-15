@@ -8,6 +8,7 @@ import { AuthGuard } from '@/components/AuthGuard';
 import MessageNotification from '@/components/MessageNotification';
 import { LastActiveTracker } from '@/components/LastActiveTracker';
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext';
+import { CurrentUserProvider } from '@/contexts/CurrentUserContext';
 import { RankingsProvider } from '@/contexts/RankingsContext';
 import LanguageWrapper from '@/components/LanguageWrapper';
 import { PlayerTeamsProvider } from '@/contexts/PlayerTeamsContext';
@@ -34,29 +35,31 @@ export default function AppShellProviders({
   }, []);
 
   return (
-    <LanguageWrapper>
-      <ImpersonationProvider>
-        <RankingsProvider autoLoad={!isPublic}>
-          <PlayerTeamsProvider autoLoad={!isPublic}>
-            <Toaster position="top-center" />
-            <TabFocusRefresher />
-            {!isPublic && <LastActiveTracker />}
-            {!isPublic && <MessageNotification />}
-            {!isPublic && <SurveyModal />}
-            <AuthGuard>
-              {isPublic ? (
-                <main>{children}</main>
-              ) : (
-                <LayoutShell initialIsAdmin={initialIsAdmin}>
+    <CurrentUserProvider>
+      <LanguageWrapper>
+        <ImpersonationProvider>
+          <RankingsProvider autoLoad={!isPublic}>
+            <PlayerTeamsProvider autoLoad={!isPublic}>
+              <Toaster position="top-center" />
+              <TabFocusRefresher />
+              {!isPublic && <LastActiveTracker />}
+              {!isPublic && <MessageNotification />}
+              {!isPublic && <SurveyModal />}
+              <AuthGuard>
+                {isPublic ? (
                   <main>{children}</main>
-                </LayoutShell>
-              )}
-              {!isPublic && <ChatFloatingButton />}
-              {!isPublic && <SidebarChatWidget />}
-            </AuthGuard>
-          </PlayerTeamsProvider>
-        </RankingsProvider>
-      </ImpersonationProvider>
-    </LanguageWrapper>
+                ) : (
+                  <LayoutShell initialIsAdmin={initialIsAdmin}>
+                    <main>{children}</main>
+                  </LayoutShell>
+                )}
+                {!isPublic && <ChatFloatingButton />}
+                {!isPublic && <SidebarChatWidget />}
+              </AuthGuard>
+            </PlayerTeamsProvider>
+          </RankingsProvider>
+        </ImpersonationProvider>
+      </LanguageWrapper>
+    </CurrentUserProvider>
   );
 }

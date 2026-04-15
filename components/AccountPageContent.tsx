@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { IconAdjustments, IconX } from "@tabler/icons-react";
+import { useCurrentUser } from "@/contexts/CurrentUserContext";
+import type { User } from "@/lib/types/user";
 
 // dnd-kit
 import {
@@ -29,6 +31,7 @@ import { CalendarCard } from "./account/CalendarCard";
 import { getProfileCompleteness } from "@/lib/profile/completeness";
 import { ProfileCompletenessCard } from "./account/ProfileCompletenessCard";
 import { ForumActivityCard } from "./account/ForumActivityCard";
+import { ActiveUsersCard } from "./account/ActiveUsersCard";
 import { SortableBlock } from "./account/SortableBlock";
 
 // Layout hook
@@ -53,15 +56,13 @@ function DroppableColumn({ id, children, editMode }: { id: string; children: Rea
 // ─── Main component ───────────────────────────────────────────────────────────
 export function AccountPageContent() {
     const { user } = useAuth();
+    const { userData, loading: userDataLoading, refreshUserData, setUserData } = useCurrentUser();
     const { t } = useTranslation();
-    const [userData, setUserData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(false);
     const [activeId, setActiveId] = useState<BlockId | null>(null);
 
     const {
         blocks,
-        setBlocks,
         toggleVisibility,
         moveToColumn,
         reorderAndPersist,
@@ -70,23 +71,6 @@ export function AccountPageContent() {
     // Keep a ref to blocks for use inside drag handlers (avoids stale closures)
     const blocksRef = useRef(blocks);
     useEffect(() => { blocksRef.current = blocks; }, [blocks]);
-
-    const fetchUserData = useCallback(async () => {
-        if (!user) return;
-        try {
-            const userResponse = await fetch(`/api/getUser?userId=${user.uid}`);
-            if (userResponse.ok) {
-                const data = await userResponse.json();
-                setUserData(data);
-            }
-        } catch (error) {
-            console.error('Error fetching user data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [user]);
-
-    useEffect(() => { fetchUserData(); }, [fetchUserData]);
 
     // ── dnd-kit sensors ───────────────────────────────────────────────────────
     const sensors = useSensors(
@@ -141,8 +125,8 @@ export function AccountPageContent() {
                         dateOfBirth={userData?.dateOfBirth}
                         avatarUrl={userData?.avatarUrl}
                         onAvatarUpdate={(newUrl) => {
-                            setUserData((prev: any) => ({ ...prev, avatarUrl: newUrl }));
-                            fetchUserData();
+                            setUserData((prev: User | null) => prev ? { ...prev, avatarUrl: newUrl } : prev);
+                            void refreshUserData();
                         }}
                     />
                 );
@@ -152,12 +136,13 @@ export function AccountPageContent() {
             case 'available-games': return <AvailableGamesCard userId={user!.uid} />;
             case 'rules':        return <GameRulesCard />;
             case 'calendar':     return <CalendarCard userId={user!.uid} />;
+            case 'active-users': return <ActiveUsersCard />;
         }
     };
 
     if (!user) return null;
 
-    if (loading) {
+    if (userDataLoading) {
         return (
             <div className="flex flex-col min-h-screen p-4 sm:p-8 sm:mt-[36px]">
                 <div className="mx-auto container">

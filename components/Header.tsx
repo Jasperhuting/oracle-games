@@ -1,21 +1,15 @@
 'use client'
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
-import { auth } from "@/lib/firebase/client";
-import { clearSharedSession } from "@/lib/auth/client-session";
-import { signOut } from "firebase/auth";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Logout, UserCircle, Mail } from "tabler-icons-react";
-import { MenuItem, MenuProvider, Menu } from "./ProfileMenu";
-import { Menubar } from "@ariakit/react";
+import { usePathname } from "next/navigation";
+import { useSyncExternalStore, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ProfileMenuButton } from "./header/ProfileMenuButton";
 import { PlatformSelector } from "./header/PlatformSelector";
 import { buildPlatformUrl, getAllPlatformConfigs, getPlatformConfig, getPlatformConfigFromHost, type HeaderMenuKey, type PlatformKey } from "@/lib/platform";
+import { useCurrentUser } from "@/contexts/CurrentUserContext";
 
 const MobileMenu = dynamic(() => import("./header/MobileMenu").then((mod) => mod.MobileMenu), {
     ssr: false,
@@ -29,91 +23,27 @@ export const Header = ({
     initialIsAdmin: boolean;
 }) => {
     const pathname = usePathname();
-    const router = useRouter();
     const { t } = useTranslation();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const { user, loading, impersonationStatus } = useAuth();
+    const { userData, loading: currentUserLoading } = useCurrentUser();
     const { unreadCount } = useUnreadMessages(user?.uid);
-    const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
-    const [mounted, setMounted] = useState(false);
-    // Track which uid the SSR initialIsAdmin value belongs to. If a *different* user
-    // logs in client-side (without a page reload), re-fetch admin status rather than
-    // using a stale SSR prop from a previous user's session.
-    const lastCheckedUidRef = useRef<string | null>(null);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [currentPlatform, setCurrentPlatform] = useState<PlatformKey>("cycling");
-
-    useEffect(() => { setMounted(true); }, []);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        setCurrentPlatform(getPlatformConfigFromHost(window.location.host).key);
-    }, []);
-
-    useEffect(() => {
-        if (!user) {
-            lastCheckedUidRef.current = null;
-            setIsAdmin(false);
-            return;
-        }
-
-        if (lastCheckedUidRef.current === null || lastCheckedUidRef.current === user.uid) {
-            // First load or same user — use the SSR-derived value (avoids a round-trip)
-            lastCheckedUidRef.current = user.uid;
-            setIsAdmin(initialIsAdmin);
-            return;
-        }
-
-        // A *different* user logged in client-side — the SSR prop belongs to the previous
-        // user's session, so we must re-check.
-        lastCheckedUidRef.current = user.uid;
-        fetch(`/api/getUser?userId=${user.uid}`)
-            .then((r) => (r.ok ? r.json() : null))
-            .then((data: { userType?: string } | null) => {
-                setIsAdmin(data?.userType === "admin");
-            })
-            .catch(() => setIsAdmin(false));
-    }, [initialIsAdmin, user]);
-
-    const handleLogout = async () => {
-        try {
-            await clearSharedSession();
-            await signOut(auth);
-            router.push('/login');
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-    };
-
-    const profileItems = [
-        {
-            name: t('header.menu.profile'),
-            href: getPlatformConfig(currentPlatform).accountPath,
-            icon: <UserCircle className="w-6 h-6" />,
-            display: true
-        },
-        {
-            name: t('header.menu.inbox'),
-            href: "/inbox",
-            icon: (
-                <div className="relative">
-                    <Mail className="w-6 h-6" />
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
-                </div>
-            ),
-            display: false
-        },
-        {
-            name: t('header.menu.logout'),
-            onClick: handleLogout,
-            icon: <Logout className="w-6 h-6" />,
-            display: true
-        }
-    ];
+    const currentPlatform = useSyncExternalStore(
+        () => () => {},
+        () => getPlatformConfigFromHost(window.location.host).key,
+        () => "cycling"
+    );
+    const mounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
+    const isAdmin = !user
+        ? false
+        : currentUserLoading
+            ? initialIsAdmin
+            : userData?.userType === "admin";
 
     const adminHref = currentPlatform === "football"
         ? "/wk-2026/admin"
@@ -224,31 +154,19 @@ export const Header = ({
                             buttonClassName="rounded-full py-2 pl-4 pr-3"
                         />
 
-                        <Menubar>
-                            <MenuProvider>
-                                {user && (
-                                    <ProfileMenuButton
-                                        user={user}
-                                        loading={loading}
-                                        pathname={pathname}
-                                        unreadCount={unreadCount}
-                                        label={profileLabel}
-                                    />
+                        {user && (
+                            <Link
+                                href={getPlatformConfig(currentPlatform).accountPath}
+                                className="relative whitespace-nowrap cursor-pointer text-[var(--platform-header-link)] hover:[text-shadow:0_0_0.4px_currentColor] transition-colors duration-150"
+                            >
+                                {loading ? '...' : profileLabel}
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </span>
                                 )}
-                                <Menu>
-                                    {profileItems.filter(item => item.display).map((item) => (
-                                        <MenuItem
-                                            key={item.name}
-                                            onClick={() => item.onClick ? item.onClick() : router.push(item.href!)}
-                                            className={`whitespace-nowrap py-2.5 px-4 transition-colors duration-100 rounded cursor-pointer ${item.href && isMenuItemActive(item.href) ? 'text-[var(--platform-header-link-active)] font-semibold' : 'text-[var(--platform-header-link)]'}`}
-                                        >
-                                            <span className="mr-2">{item.icon}</span>
-                                            {item.name}
-                                        </MenuItem>
-                                    ))}
-                                </Menu>
-                            </MenuProvider>
-                        </Menubar>
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
@@ -295,7 +213,7 @@ export const Header = ({
                     isOpen={isMenuOpen}
                     onClose={() => setIsMenuOpen(false)}
                     menuItems={visibleMenuItems}
-                    profileItems={profileItems}
+                    profileHref={getPlatformConfig(currentPlatform).accountPath}
                     user={user}
                     pathname={pathname}
                     topOffset={bannerOffset}

@@ -23,15 +23,18 @@ declare global {
 export function AvatarUpload({ currentAvatarUrl, onUploadSuccess, size = 80 }: AvatarUploadProps) {
   const [isLoading, setIsLoading] = useState(false);
   const widgetRef = useRef<{ open: () => void } | null>(null);
+  const onUploadSuccessRef = useRef(onUploadSuccess);
 
   useEffect(() => {
-    // Load Cloudinary upload widget script
-    const script = document.createElement('script');
-    script.src = 'https://upload-widget.cloudinary.com/global/all.js';
-    script.async = true;
-    document.body.appendChild(script);
+    onUploadSuccessRef.current = onUploadSuccess;
+  }, [onUploadSuccess]);
 
-    script.onload = () => {
+  useEffect(() => {
+    const initWidget = () => {
+      if (widgetRef.current || !window.cloudinary) {
+        return;
+      }
+
       if (window.cloudinary) {
         widgetRef.current = window.cloudinary.createUploadWidget(
           {
@@ -74,7 +77,12 @@ export function AvatarUpload({ currentAvatarUrl, onUploadSuccess, size = 80 }: A
             }
 
             if (result.event === 'success') {
-              onUploadSuccess(result.info.secure_url);
+              onUploadSuccessRef.current(result.info.secure_url);
+              setIsLoading(false);
+              return;
+            }
+
+            if (result.event === 'close') {
               setIsLoading(false);
             }
           }
@@ -82,10 +90,29 @@ export function AvatarUpload({ currentAvatarUrl, onUploadSuccess, size = 80 }: A
       }
     };
 
+    if (window.cloudinary) {
+      initWidget();
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src="https://upload-widget.cloudinary.com/global/all.js"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', initWidget, { once: true });
+      return () => {
+        existingScript.removeEventListener('load', initWidget);
+      };
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://upload-widget.cloudinary.com/global/all.js';
+    script.async = true;
+    script.addEventListener('load', initWidget, { once: true });
+    document.body.appendChild(script);
+
     return () => {
-      document.body.removeChild(script);
+      script.removeEventListener('load', initWidget);
     };
-  }, [onUploadSuccess]);
+  }, []);
 
   const handleClick = () => {
     if (widgetRef.current) {

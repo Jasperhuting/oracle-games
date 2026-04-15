@@ -2,19 +2,35 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/lib/firebase/client";
+import { clearSharedSession } from "@/lib/auth/client-session";
+import { signOut } from "firebase/auth";
 import { AuthGuard } from "@/components/AuthGuard";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { AccountInfoTab } from "@/components/account/AccountInfoTab";
 import { SecurityTab } from "@/components/account/SecurityTab";
 import { ScriptsTab } from "@/components/account/ScriptsTab";
 import { PreferencesTab } from "@/components/account/PreferencesTab";
+import { Logout } from "tabler-icons-react";
 
 type TabType = 'account' | 'security' | 'scripts' | 'preferences';
 
 export default function AccountSettingsPage() {
     const { user } = useAuth();
     const { t } = useTranslation();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        try {
+            await clearSharedSession();
+            await signOut(auth);
+            router.push('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    };
     const [activeTab, setActiveTab] = useState<TabType>('account');
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -50,10 +66,17 @@ export default function AccountSettingsPage() {
             <div className="flex flex-col min-h-screen p-4 md:p-8 mt-[36px]">
                 <div className="mx-auto container max-w-3xl">
                     {/* Header */}
-                    <div className="flex flex-row border border-gray-200 mb-6 items-center bg-white px-6 py-4 rounded-lg">
+                    <div className="flex flex-row border border-gray-200 mb-6 items-center justify-between bg-white px-6 py-4 rounded-lg">
                         <Link href="/account" className="text-sm text-gray-600 hover:text-gray-900 underline">
                             &larr; {t('account.backToProfile')}
                         </Link>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+                        >
+                            <Logout className="w-4 h-4" />
+                            Uitloggen
+                        </button>
                     </div>
 
                     <h1 className="text-3xl font-bold mb-6">{t('account.settingsTitle')}</h1>

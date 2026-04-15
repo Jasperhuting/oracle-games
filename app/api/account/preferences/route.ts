@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export const POST = userHandler('account-preferences', async ({ request, uid }) => {
   const body = await request.json();
-  const { userId, sportInterests, gameReminders, emailMarketing } = body;
+  const { userId, sportInterests, gameReminders, emailMarketing, showOnlineStatus } = body;
 
   if (uid !== userId) {
     throw new ApiError('Forbidden', 403);
@@ -24,6 +24,7 @@ export const POST = userHandler('account-preferences', async ({ request, uid }) 
   if (sportInterests !== undefined) updateData.sportInterests = sportInterests;
   if (gameReminders !== undefined) updateData.gameReminders = Boolean(gameReminders);
   if (emailMarketing !== undefined) updateData.emailMarketing = Boolean(emailMarketing);
+  if (showOnlineStatus !== undefined) updateData.showOnlineStatus = Boolean(showOnlineStatus);
 
   await db.collection('users').doc(userId).update(updateData);
 

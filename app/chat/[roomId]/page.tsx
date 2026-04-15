@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { markRoomAsSeen } from '@/hooks/useChatRooms';
 import ChatMessageList from '@/components/chat/ChatMessageList';
 import ChatInput from '@/components/chat/ChatInput';
+import { useCurrentUser } from '@/contexts/CurrentUserContext';
 
 interface ReplyTo {
   messageId: string;
@@ -60,8 +61,9 @@ export default function ChatRoomPage() {
   const roomId = params.roomId as string;
   const { room, loading: roomLoading, error: roomError } = useChatRoom(roomId);
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { userData } = useCurrentUser();
   const [replyingTo, setReplyingTo] = useState<ReplyTo | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   // Mark room as seen whenever messageCount updates (so FAB badge stays at 0 while viewing)
   useEffect(() => {
@@ -71,15 +73,17 @@ export default function ChatRoomPage() {
   }, [roomId, room?.messageCount]);
 
   useEffect(() => {
-    if (user) {
-      fetch(`/api/getUser?userId=${user.uid}`)
-        .then(res => res.json())
-        .then(data => setIsAdmin(data.userType === 'admin'))
-        .catch(() => setIsAdmin(false));
-    }
-  }, [user]);
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
 
   const loading = roomLoading || authLoading;
+  const isAdmin = userData?.userType === 'admin';
 
   if (loading) {
     return (
@@ -141,7 +145,7 @@ export default function ChatRoomPage() {
   }
 
   const closesAtDate = getClosesAtDate(room.closesAt);
-  const isExpired = closesAtDate.getTime() <= Date.now();
+  const isExpired = closesAtDate.getTime() <= now;
   const isClosed = room.status === 'closed' || isExpired;
 
   return (

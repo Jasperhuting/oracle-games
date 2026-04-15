@@ -10,7 +10,8 @@ export type BlockId =
   | 'active-games'
   | 'available-games'
   | 'rules'
-  | 'calendar';
+  | 'calendar'
+  | 'active-users';
 
 export interface BlockConfig {
   id: BlockId;
@@ -27,6 +28,7 @@ export const DEFAULT_BLOCKS: BlockConfig[] = [
   { id: 'available-games', label: 'Beschikbare spellen',   column: 'right', visible: true },
   { id: 'rules',           label: 'Spelregels',            column: 'right', visible: true },
   { id: 'calendar',        label: 'Kalender',              column: 'right', visible: true },
+  { id: 'active-users',   label: 'Nu online',             column: 'right', visible: true },
 ];
 
 const STORAGE_KEY = 'oracle-dashboard-layout';
