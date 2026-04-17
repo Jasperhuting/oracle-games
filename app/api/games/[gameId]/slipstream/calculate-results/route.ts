@@ -211,8 +211,8 @@ export async function POST(
           // Valid pick - rider finished the race
           const riderFinishPosition = timeLossResult.riderFinishPosition || null;
 
-          // Apply bonification seconds for top 3 finishers
-          const bonificationSeconds = riderFinishPosition ? getStageBonificationSeconds(riderFinishPosition) : 0;
+          // Apply bonification seconds for top 3 finishers (only if game has hasBonification enabled)
+          const bonificationSeconds = (config.hasBonification && riderFinishPosition) ? getStageBonificationSeconds(riderFinishPosition) : 0;
           const timeLostSeconds = timeLossResult.timeLostSeconds - bonificationSeconds;
           const timeLostFormatted = formatTime(Math.abs(timeLostSeconds)) + (timeLostSeconds < 0 ? ' (bonus)' : '');
 
