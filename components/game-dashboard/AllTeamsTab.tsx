@@ -558,7 +558,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                           {team.playername}
                         </h3>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
-                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
+                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && !isMarginalGainsGame && (
                             <span>{team.totalRiders} renners</span>
                           )}
                           {!isFullGrid && !isWorldTourManager && (

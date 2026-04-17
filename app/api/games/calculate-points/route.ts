@@ -10,6 +10,7 @@ import {
   getFullGridStagePoints,
   getFullGridGCPoints,
   TEAM_CLASSIFICATION_POINTS,
+  GIRO_AM_TEAM_CLASSIFICATION_POINTS,
 } from '@/lib/utils/pointsCalculation';
 import { AuctioneerConfig } from '@/lib/types/games';
 import type { ClassificationRider, StageResult as ScrapedStageResult } from '@/lib/scraper/types';
@@ -245,11 +246,11 @@ export async function POST(request: NextRequest) {
       ? stageData.teamClassification
       : [];
 
-    // Build normalized team name → rank map for top 5 teams
+    // Build normalized team name → rank map for top 10 teams
     const normalizeTeamKey = (name: string) => name.toLowerCase().replace(/[\s\-_.]/g, '');
     const teamClassificationMap = new Map<string, number>();
-    for (const tc of teamClassification.slice(0, 5)) {
-      if (tc.place <= 5) {
+    for (const tc of teamClassification.slice(0, 10)) {
+      if (tc.place <= 10) {
         teamClassificationMap.set(normalizeTeamKey(tc.team), tc.place);
         if (tc.shortName) teamClassificationMap.set(normalizeTeamKey(tc.shortName), tc.place);
       }
@@ -606,7 +607,8 @@ export async function POST(request: NextRequest) {
               const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
               const teamRank = teamClassificationMap.get(riderTeamKey);
               if (teamRank !== undefined) {
-                const teamPoints = TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
+                const teamClassPts = gameConfig.gameType === 'auctioneer' ? GIRO_AM_TEAM_CLASSIFICATION_POINTS : TEAM_CLASSIFICATION_POINTS;
+                const teamPoints = teamClassPts[teamRank] || 0;
                 if (teamPoints > 0) {
                   riderTotalPoints += teamPoints;
                   stagePointsBreakdown.teamPoints = teamPoints;
@@ -676,10 +678,10 @@ export async function POST(request: NextRequest) {
     }
 
     // TEAM CLASSIFICATION SECOND PASS: Award team points to riders NOT in stage results
-    // (riders outside top 20 who ride for a top-5 team still earn team classification points)
+    // (riders outside top 20 who ride for a top-10 team still earn team classification points)
     if (teamClassificationMap.size > 0 && stage !== 'tour-gc') {
       const uniqueTeamNames = [...new Set(
-        teamClassification.slice(0, 5).flatMap(tc => [tc.team, tc.shortName]).filter(Boolean)
+        teamClassification.slice(0, 10).flatMap(tc => [tc.team, tc.shortName]).filter(Boolean)
       )];
 
       for (const teamName of uniqueTeamNames) {
@@ -698,7 +700,8 @@ export async function POST(request: NextRequest) {
 
             const teamRank = teamClassificationMap.get(normalizeTeamKey(teamName));
             if (teamRank === undefined) continue;
-            const teamPoints = TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
+            const teamClassPts2 = gameConfig.gameType === 'auctioneer' ? GIRO_AM_TEAM_CLASSIFICATION_POINTS : TEAM_CLASSIFICATION_POINTS;
+            const teamPoints = teamClassPts2[teamRank] || 0;
             if (teamPoints === 0) continue;
 
             gamesAffected.add(gameId);

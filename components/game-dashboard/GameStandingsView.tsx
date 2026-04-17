@@ -116,7 +116,7 @@ export function GameStandingsView({
               >
                 {info.getValue()}
               </Link>
-              {showPrize ? (
+              {showPrize && gameType !== 'worldtour-manager' && gameType !== 'auctioneer' ? (
                 <span
                   className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 text-amber-900 shadow-sm ring-1 ring-amber-200"
                   title="Speelt mee voor prijzen"

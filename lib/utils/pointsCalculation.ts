@@ -57,10 +57,15 @@ export function getFullGridGCPoints(scale: 1 | 2 | 3 | 4, rank: number): number 
   return 0;
 }
 
-// Team classification points (top 10 teams)
+// Team classification points (top 5 teams) - default
 export const TEAM_CLASSIFICATION_POINTS: Record<number, number> = {
-  1: 15, 2: 12, 3: 10, 4: 8, 5: 7,
-  6: 6, 7: 5, 8: 4, 9: 2, 10: 1,
+  1: 5, 2: 4, 3: 3, 4: 2, 5: 1,
+};
+
+// Team classification points for Giro Auction Master (top 10 teams)
+export const GIRO_AM_TEAM_CLASSIFICATION_POINTS: Record<number, number> = {
+  1: 15, 2: 12, 3: 10, 4: 8, 5: 6,
+  6: 5, 7: 4, 8: 3, 9: 2, 10: 1,
 };
 
 // Strijdlust bonus (combativity award)
