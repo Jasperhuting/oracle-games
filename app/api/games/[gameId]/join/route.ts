@@ -56,9 +56,14 @@ export async function POST(
 
     // Check if game is accepting registrations
     // For worldtour-manager, marginal-gains, and full-grid, also allow joining during 'bidding' status
-    const allowedStatuses = ['registration', 'draft', 'active'];
-    if (gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains' || gameData?.gameType === 'full-grid') {
-      allowedStatuses.push('bidding');
+    // For auctioneer (Auction Master), only allow joining during registration/draft (not when active/bidding)
+    let allowedStatuses: string[];
+    if (gameData?.gameType === 'auctioneer') {
+      allowedStatuses = ['registration', 'draft'];
+    } else if (gameData?.gameType === 'worldtour-manager' || gameData?.gameType === 'marginal-gains' || gameData?.gameType === 'full-grid') {
+      allowedStatuses = ['registration', 'draft', 'active', 'bidding'];
+    } else {
+      allowedStatuses = ['registration', 'draft', 'active'];
     }
 
     if (!allowedStatuses.includes(gameData?.status)) {

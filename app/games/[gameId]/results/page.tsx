@@ -182,16 +182,10 @@ export default function TeamResultsPage() {
                 </p>
               )}
             </div>
-            <Link
-              href="/games"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-            >
-              Terug naar Games
-            </Link>
           </div>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="text-sm text-gray-600">Totaal Punten</div>
               <div className="text-2xl font-bold text-primary">
@@ -202,12 +196,6 @@ export default function TeamResultsPage() {
               <div className="text-sm text-gray-600">Ranking</div>
               <div className="text-2xl font-bold text-gray-900">
                 #{participant?.ranking || '-'}
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <div className="text-sm text-gray-600">Aantal Renners</div>
-              <div className="text-2xl font-bold text-gray-900">
-                {riders.length}
               </div>
             </div>
           </div>

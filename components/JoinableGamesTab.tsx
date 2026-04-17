@@ -344,6 +344,11 @@ export const JoinableGamesTab = () => {
       return game.status === 'registration' || game.status === 'draft' || game.status === 'bidding' || game.status === 'active';
     }
 
+    // Auction Master (auctioneer) can only be joined during registration/draft
+    if (game.gameType === 'auctioneer') {
+      return game.status === 'registration' || game.status === 'draft';
+    }
+
     return game.status === 'registration' || game.status === 'draft' || game.status === 'active';
   };
 

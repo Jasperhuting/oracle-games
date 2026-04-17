@@ -223,6 +223,10 @@ export function GameStandingsView({
       return allColumns.filter((column) => column.id !== 'percentage' && column.id !== 'totalPoints');
     }
 
+    if (gameType === 'worldtour-manager') {
+      return allColumns.filter((column) => column.id !== 'achievedPoints' && column.id !== 'percentage');
+    }
+
     return allColumns;
   }, [currentUserId, gameType, isFullGrid]);
 
@@ -356,6 +360,7 @@ export function GameStandingsView({
 
       <div className="mb-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
+          {gameType !== 'worldtour-manager' && gameType !== 'auctioneer' && (
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -380,6 +385,7 @@ export function GameStandingsView({
               </span>
             </button>
           </div>
+          )}
           <span className="text-sm text-gray-600">
             {showPrizeEligibleOnly
               ? `${prizeEligibleCount} deelnemers voor prijzen`

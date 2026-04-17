@@ -77,8 +77,10 @@ export function MyTeamTab({
 
   const isMarginalGains = game?.gameType === 'marginal-gains';
   const isAuctionMaster = game?.gameType === 'auctioneer';
+  const isWorldTourManager = game?.gameType === 'worldtour-manager';
   const isSingleOwnerGame = game?.gameType === 'auctioneer' || game?.gameType === 'full-grid';
-  const isSelectionGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
+  const isSelectionGame = isWorldTourManager || isMarginalGains;
+  const hideSortBetaaldNaam = isMarginalGains || isWorldTourManager || isAuctionMaster;
   const hasAnyRacePoints = useMemo(
     () =>
       riders.some(
@@ -129,12 +131,22 @@ export function MyTeamTab({
     };
   }, [isAuctionMaster, riders]);
 
+  const isFullGrid = game?.gameType === 'full-grid';
+
   // Calculate ROI for a rider
+  // Full Grid: points / pricePaid (multiplier, e.g. 40x)
+  // Auction Master: (points - pricePaid) / pricePaid * 100
+  // Others: (points - baseValue) / baseValue * 100
   const getRiderRoi = useCallback((rider: TeamRider) => {
+    if (isFullGrid) {
+      const pricePaid = rider.pricePaid || 0;
+      if (pricePaid === 0) return 0;
+      return rider.points / pricePaid;
+    }
     const roiBasis = isAuctionMaster ? (rider.pricePaid || 0) : (rider.baseValue || 0);
     if (roiBasis === 0) return 0;
     return ((rider.points - roiBasis) / roiBasis) * 100;
-  }, [isAuctionMaster]);
+  }, [isAuctionMaster, isFullGrid]);
 
   // Sort riders
   const sortedRiders = useMemo(() => {
@@ -189,7 +201,7 @@ export function MyTeamTab({
   return (
     <div>
       {/* Summary Stats */}
-      <div className={`grid grid-cols-1 gap-4 mb-6 ${isMarginalGains ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
+      <div className={`grid grid-cols-1 gap-4 mb-6 ${isMarginalGains ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <div className="text-sm text-gray-600">Totaal Punten</div>
           <div className="text-2xl font-bold text-primary">
@@ -202,18 +214,14 @@ export function MyTeamTab({
             #{displayRanking || participant?.ranking || '-'}
           </div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Aantal Renners</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {riders.length}
+        {isMarginalGains && (
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div className="text-sm text-gray-600">Totaal Betaald</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {formatCurrencyWhole(teamStats.totalPricePaid)}
+            </div>
           </div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Totaal Betaald</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {formatCurrencyWhole(teamStats.totalPricePaid)}
-          </div>
-        </div>
+        )}
         {isMarginalGains && (
           <div className={`p-4 rounded-lg border ${teamStats.marginalGains >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
             <div className={`text-sm ${teamStats.marginalGains >= 0 ? 'text-green-600' : 'text-red-600'}`}>Marginal Gains</div>
@@ -235,9 +243,9 @@ export function MyTeamTab({
             { key: 'points' as SortOption, label: 'Punten' },
             { key: 'value' as SortOption, label: 'Waarde' },
             { key: 'roi' as SortOption, label: 'ROI' },
-            { key: 'pricePaid' as SortOption, label: 'Betaald' },
-            { key: 'name' as SortOption, label: 'Naam' },
-          ].map(({ key, label }) => (
+            { key: 'pricePaid' as SortOption, label: 'Betaald', hidden: hideSortBetaaldNaam },
+            { key: 'name' as SortOption, label: 'Naam', hidden: hideSortBetaaldNaam },
+          ].filter(item => !item.hidden).map(({ key, label }) => (
             <button
               key={key}
               onClick={() => handleSort(key)}
@@ -310,7 +318,7 @@ export function MyTeamTab({
                           {rider.baseValue !== undefined && rider.baseValue > 0 && (
                             <span>Waarde: {rider.baseValue}</span>
                           )}
-                          {rider.pricePaid !== undefined && rider.pricePaid > 0 && !isSelectionGame && (
+                          {rider.pricePaid !== undefined && rider.pricePaid > 0 && !isSelectionGame && !isAuctionMaster && (
                             <span>Betaald: {formatCurrencyWhole(rider.pricePaid)}</span>
                           )}
                           {rider.acquisitionType && rider.acquisitionType !== 'auction' && (
@@ -330,10 +338,12 @@ export function MyTeamTab({
                     </div>
                     <div className="flex items-center gap-4">
                       {/* ROI Badge */}
-                      {rider.baseValue !== undefined && rider.baseValue > 0 && (
+                      {(isFullGrid ? (rider.pricePaid || 0) > 0 : (rider.baseValue !== undefined && rider.baseValue > 0)) && (
                         <div className={`text-right hidden sm:block`}>
                           <div className={`text-lg font-semibold ${roiColorClass}`}>
-                            {riderRoi >= 0 ? '+' : ''}{Math.round(riderRoi)}%
+                            {isFullGrid
+                              ? `${Math.round(riderRoi)}x`
+                              : `${riderRoi >= 0 ? '+' : ''}${Math.round(riderRoi)}%`}
                           </div>
                           <div className="text-xs text-gray-400">ROI</div>
                         </div>

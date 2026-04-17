@@ -66,6 +66,7 @@ interface AllTeamsRider {
   percentageDiff: number;
   bidAt?: string;
   acquiredAt?: string;
+  pointsBreakdown?: unknown[];
 }
 
 interface AllTeamsTeam {
@@ -393,7 +394,7 @@ export default function GameDashboardPage() {
       content: (
         <AllTeamsTab
           game={game}
-          teams={allTeams}
+          teams={allTeams as Parameters<typeof AllTeamsTab>[0]['teams']}
           currentUserId={user?.uid}
           loading={allTeamsLoading}
           error={allTeamsError}
@@ -425,14 +426,6 @@ export default function GameDashboardPage() {
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
                 >
                   Auction
-                </Link>
-              )}
-              {game?.gameType !== 'worldtour-manager' && game?.gameType !== 'marginal-gains' && (
-                <Link
-                  href="/games"
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-                >
-                  Terug naar Games
                 </Link>
               )}
             </div>

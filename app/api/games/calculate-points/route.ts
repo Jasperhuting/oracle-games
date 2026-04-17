@@ -8,7 +8,8 @@ import {
   getClassificationMultiplier,
   shouldCountForPoints,
   getFullGridStagePoints,
-  getFullGridGCPoints
+  getFullGridGCPoints,
+  TEAM_CLASSIFICATION_POINTS,
 } from '@/lib/utils/pointsCalculation';
 import { AuctioneerConfig } from '@/lib/types/games';
 import type { ClassificationRider, StageResult as ScrapedStageResult } from '@/lib/scraper/types';
@@ -26,6 +27,7 @@ interface StageResult {
   time?: string;
   gap?: string;
   name?: string; // Full name from scraper
+  breakAway?: boolean; // Whether rider was in a breakaway (combativity bonus)
 }
 
 function parsePcsPoints(value: number | string | undefined): number {
@@ -225,8 +227,8 @@ export async function POST(request: NextRequest) {
         })() : 
         stageData.stageResults
       ) : [];
-    const generalClassification: ClassificationRider[] = stageData.generalClassification ? 
-      (typeof stageData.generalClassification === 'string' ? 
+    const generalClassification: ClassificationRider[] = stageData.generalClassification ?
+      (typeof stageData.generalClassification === 'string' ?
         (() => {
           try {
             return JSON.parse(stageData.generalClassification);
@@ -234,9 +236,24 @@ export async function POST(request: NextRequest) {
             console.error(`[CALCULATE_POINTS] Error parsing generalClassification: ${e instanceof Error ? e.message : String(e)}`);
             return [];
           }
-        })() : 
+        })() :
         stageData.generalClassification
       ) : [];
+
+    interface TeamClassificationEntry { place: number; team: string; shortName: string; }
+    const teamClassification: TeamClassificationEntry[] = Array.isArray(stageData.teamClassification)
+      ? stageData.teamClassification
+      : [];
+
+    // Build normalized team name → rank map for top 5 teams
+    const normalizeTeamKey = (name: string) => name.toLowerCase().replace(/[\s\-_.]/g, '');
+    const teamClassificationMap = new Map<string, number>();
+    for (const tc of teamClassification.slice(0, 5)) {
+      if (tc.place <= 5) {
+        teamClassificationMap.set(normalizeTeamKey(tc.team), tc.place);
+        if (tc.shortName) teamClassificationMap.set(normalizeTeamKey(tc.shortName), tc.place);
+      }
+    }
 
     console.log(`[CALCULATE_POINTS] Found ${stageResults.length} riders in stage results`);
     console.log(`[CALCULATE_POINTS] Found 55 riders in general classification`);
@@ -304,7 +321,7 @@ export async function POST(request: NextRequest) {
     };
 
     const getFullGridScale = (gameConfig: GameConfig): 1 | 2 | 3 | 4 => {
-      const entry = gameConfig.countingRaces.find(cr => {
+      const entry = (gameConfig.countingRaces || []).find(cr => {
         if (typeof cr === 'string') {
           return raceSlug === cr || raceSlug.includes(cr.replace(/_\d{4}$/, '')) || cr.includes(raceSlug.replace(/_\d{4}$/, ''));
         }
@@ -334,6 +351,8 @@ export async function POST(request: NextRequest) {
         pointsClassMultiplier: isTourGC ? 0 : getClassificationMultiplier('points', stageNum, totalStages),
         mountainsClassMultiplier: isTourGC ? 0 : getClassificationMultiplier('mountains', stageNum, totalStages),
         youthClassMultiplier: isTourGC ? 0 : getClassificationMultiplier('youth', stageNum, totalStages),
+        mountainClassMultiplierConfig: raceConfigObj?.mountainPointsMultiplier || 1,
+        sprintClassMultiplierConfig: raceConfigObj?.sprintPointsMultiplier || 1,
         isTourGC,
         stageNum,
         totalStages,
@@ -389,6 +408,9 @@ export async function POST(request: NextRequest) {
 
     // Track which games were affected
     const gamesAffected = new Set<string>();
+
+    // Track which riders were already processed (to avoid double-counting in team classification pass)
+    const processedRiderTeamDocIds = new Set<string>();
 
     // For each rider in the results, find their playerTeams
     for (const riderNameId of riderNameIds) {
@@ -526,14 +548,14 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 3. POINTS CLASSIFICATION (only at final stage)
+            // 3. POINTS CLASSIFICATION / SPRINT (only at final stage, with configurable multiplier)
             if (!isFullGrid && multipliers.pointsClassMultiplier > 0 && stageData.pointsClassification) {
               const pointsResult = stageData.pointsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId ||
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
               if (pointsResult && pointsResult.place) {
-                const pointsClassPoints = calculateStagePoints(pointsResult.place);
+                const pointsClassPoints = calculateStagePoints(pointsResult.place) * multipliers.sprintClassMultiplierConfig;
                 if (pointsClassPoints > 0) {
                   riderTotalPoints += pointsClassPoints;
                   stagePointsBreakdown.pointsClass = pointsClassPoints;
@@ -541,14 +563,14 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 4. MOUNTAINS CLASSIFICATION (only at final stage)
+            // 4. MOUNTAINS CLASSIFICATION (only at final stage, with configurable multiplier)
             if (multipliers.mountainsClassMultiplier > 0 && stageData.mountainsClassification) {
               const mountainsResult = stageData.mountainsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId ||
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
               if (mountainsResult && mountainsResult.place) {
-                const mountainsClassPoints = calculateStagePoints(mountainsResult.place);
+                const mountainsClassPoints = calculateStagePoints(mountainsResult.place) * multipliers.mountainClassMultiplierConfig;
                 if (mountainsClassPoints > 0) {
                   riderTotalPoints += mountainsClassPoints;
                   stagePointsBreakdown.mountainsClass = mountainsClassPoints;
@@ -567,6 +589,28 @@ export async function POST(request: NextRequest) {
                 if (youthClassPoints > 0) {
                   riderTotalPoints += youthClassPoints;
                   stagePointsBreakdown.youthClass = youthClassPoints;
+                }
+              }
+            }
+
+            // 5b. COMBATIVITY BONUS (breakaway riders get 25 pts bonus)
+            if (riderResult?.breakAway) {
+              const combativityBonus = 25;
+              riderTotalPoints += combativityBonus;
+              stagePointsBreakdown.combativityBonus = combativityBonus;
+              console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Combativity bonus: ${combativityBonus} pts`);
+            }
+
+            // 6. TEAM CLASSIFICATION POINTS
+            if (teamClassificationMap.size > 0 && teamData.riderTeam) {
+              const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
+              const teamRank = teamClassificationMap.get(riderTeamKey);
+              if (teamRank !== undefined) {
+                const teamPoints = TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
+                if (teamPoints > 0) {
+                  riderTotalPoints += teamPoints;
+                  stagePointsBreakdown.teamPoints = teamPoints;
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Team classification rank ${teamRank}: ${teamPoints} pts`);
                 }
               }
             }
@@ -599,6 +643,8 @@ export async function POST(request: NextRequest) {
               if (stagePointsBreakdown.pointsClass) newPointsEvent.pointsClass = stagePointsBreakdown.pointsClass;
               if (stagePointsBreakdown.mountainsClass) newPointsEvent.mountainsClass = stagePointsBreakdown.mountainsClass;
               if (stagePointsBreakdown.youthClass) newPointsEvent.youthClass = stagePointsBreakdown.youthClass;
+              if (stagePointsBreakdown.teamPoints) newPointsEvent.teamPoints = stagePointsBreakdown.teamPoints;
+              if (stagePointsBreakdown.combativityBonus) newPointsEvent.combativityBonus = stagePointsBreakdown.combativityBonus;
 
               updatedBreakdown.push(newPointsEvent);
             }
@@ -613,6 +659,7 @@ export async function POST(request: NextRequest) {
               pointsBreakdown: updatedBreakdown,
             });
 
+            processedRiderTeamDocIds.add(teamDoc.id);
             results.playerTeamsUpdated++;
             results.pointsAwarded += riderTotalPoints;
 
@@ -625,6 +672,62 @@ export async function POST(request: NextRequest) {
         const errorMsg = `Error processing rider ${riderNameId}: ${error instanceof Error ? error.message : 'Unknown error'}`;
         console.error(errorMsg);
         results.errors.push(errorMsg);
+      }
+    }
+
+    // TEAM CLASSIFICATION SECOND PASS: Award team points to riders NOT in stage results
+    // (riders outside top 20 who ride for a top-5 team still earn team classification points)
+    if (teamClassificationMap.size > 0 && stage !== 'tour-gc') {
+      const uniqueTeamNames = [...new Set(
+        teamClassification.slice(0, 5).flatMap(tc => [tc.team, tc.shortName]).filter(Boolean)
+      )];
+
+      for (const teamName of uniqueTeamNames) {
+        try {
+          const ptSnapshot = await db.collection('playerTeams')
+            .where('riderTeam', '==', teamName)
+            .get();
+
+          for (const teamDoc of ptSnapshot.docs) {
+            if (processedRiderTeamDocIds.has(teamDoc.id)) continue;
+
+            const teamData = teamDoc.data();
+            const gameId = teamData.gameId;
+            const gameConfig = await getGameConfig(gameId);
+            if (!gameConfig || !doesRaceCount(gameConfig)) continue;
+
+            const teamRank = teamClassificationMap.get(normalizeTeamKey(teamName));
+            if (teamRank === undefined) continue;
+            const teamPoints = TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
+            if (teamPoints === 0) continue;
+
+            gamesAffected.add(gameId);
+
+            const existingBreakdown = Array.isArray(teamData.pointsBreakdown) ? teamData.pointsBreakdown : [];
+            const updatedBreakdown = existingBreakdown.filter(
+              (event: PointsEvent) => !(event.raceSlug === raceName && event.stage === stage.toString())
+            );
+
+            const newPointsEvent: PointsEvent = {
+              raceSlug: raceName,
+              stage: stage.toString(),
+              total: teamPoints,
+              teamPoints,
+              calculatedAt: new Date().toISOString(),
+            };
+            updatedBreakdown.push(newPointsEvent);
+
+            const calculatedPoints = updatedBreakdown.reduce((sum: number, e: PointsEvent) => sum + (e.total || 0), 0);
+            await teamDoc.ref.update({ pointsScored: calculatedPoints, pointsBreakdown: updatedBreakdown });
+
+            processedRiderTeamDocIds.add(teamDoc.id);
+            results.playerTeamsUpdated++;
+            results.pointsAwarded += teamPoints;
+            console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Team class (2nd pass) rank ${teamRank}: ${teamPoints} pts`);
+          }
+        } catch (error) {
+          results.errors.push(`Team classification pass error for team ${teamName}: ${error instanceof Error ? error.message : 'Unknown'}`);
+        }
       }
     }
 
@@ -706,7 +809,7 @@ export async function POST(request: NextRequest) {
           for (let i = 0; i < ranked.length; i++) {
             if (i > 0 && ranked[i].points < ranked[i - 1].points) rank = i + 1;
             const entry = ranked[i];
-            if (entry.ranking !== rank || entry.currentTotalPoints !== entry.points) {
+            if (entry.currentRanking !== rank || entry.currentTotalPoints !== entry.points) {
               writes.push(entry.ref.update({ totalPoints: entry.points, ranking: rank }));
             }
           }

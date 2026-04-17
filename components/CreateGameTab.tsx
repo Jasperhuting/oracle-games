@@ -218,7 +218,7 @@ export const CreateGameTab = () => {
         }
 
         config = {
-          budget: Number(data.budget) || 100,
+          budget: Number(data.budget) || 5000,
           maxRiders: Number(data.maxRiders) || 8,
           maxMinimumBid: data.maxMinimumBid ? Number(data.maxMinimumBid) : undefined,
           allowSharedRiders: data.allowSharedRiders || false,
@@ -611,8 +611,8 @@ export const CreateGameTab = () => {
                   <TextInput
                     type="number"
                     label="Budget per Player"
-                    placeholder="E.g. 100"
-                    defaultValue="100"
+                    placeholder="E.g. 5000"
+                    defaultValue="5000"
                     {...register('budget', {
                       min: {
                         value: 1,

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Flag } from '@/components/Flag';
 import { Tooltip } from 'react-tooltip';
 import { useTranslation } from 'react-i18next';
-import { Game } from '@/lib/types/games';
+import { Game, PointsEvent } from '@/lib/types/games';
 import { Selector } from '@/components/Selector';
 
 interface Rider {
@@ -19,6 +19,7 @@ interface Rider {
   percentageDiff: number;
   bidAt?: string;
   acquiredAt?: string;
+  pointsBreakdown?: PointsEvent[];
   owners?: Array<{ playername: string; userId: string; pricePaid: number; bidAt?: string }>;
 }
 
@@ -91,24 +92,39 @@ function PlayerSelector({
 export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllTeamsTabProps) {
   const { t } = useTranslation();
   const isAuctionMaster = game?.gameType === 'auctioneer';
+  const isFullGrid = game?.gameType === 'full-grid';
+  const isWorldTourManager = game?.gameType === 'worldtour-manager';
+  const isMarginalGainsGame = game?.gameType === 'marginal-gains';
 
   const getRiderRoi = (rider: Rider) => {
+    if (isFullGrid) {
+      const pricePaid = rider.pricePaid || 0;
+      if (pricePaid <= 0) return null;
+      return rider.pointsScored / pricePaid;
+    }
     const roiBasis = isAuctionMaster ? (rider.pricePaid || 0) : (rider.baseValue || 0);
     if (roiBasis <= 0) {
       return null;
     }
-
     return ((rider.pointsScored - roiBasis) / roiBasis) * 100;
+  };
+
+  const formatRoi = (roi: number | null) => {
+    if (roi === null) return null;
+    if (isFullGrid) return `${Math.round(roi)}x`;
+    return `${roi > 0 ? '+' : ''}${Math.round(roi)}%`;
   };
   
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ranking' | 'points' | 'value' | 'percentage'>('ranking');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [viewMode, setViewMode] = useState<'players' | 'all' | 'compare'>('players');
+  const [viewMode, setViewMode] = useState<'players' | 'all' | 'compare' | 'stageWins' | 'daguitslag'>('players');
+  const [selectedDagStage, setSelectedDagStage] = useState<string | null>(null);
   const [groupByCyclingTeam, setGroupByCyclingTeam] = useState(false);
   const [allViewSortBy, setAllViewSortBy] = useState<'points' | 'value' | 'roi' | 'owners' | 'team'>('points');
   const [allViewSortDirection, setAllViewSortDirection] = useState<'asc' | 'desc'>('desc');
   const [compareUserId, setCompareUserId] = useState<string | null>(null);
+  const [compareUserIdLeft, setCompareUserIdLeft] = useState<string | null>(null);
   const [allViewSearch, setAllViewSearch] = useState('');
 
   const toggleTeam = (participantId: string) => {
@@ -218,6 +234,55 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
       return primaryResult;
     });
 
+  // Stage wins ranking: riders with stagePosition === 1 in pointsBreakdown
+  const stageWinsData = useMemo(() => {
+    return cyclingTeams
+      .flatMap(team => team.riders)
+      .map((rider: any) => {
+        const wins = (rider.pointsBreakdown as PointsEvent[] | undefined)?.filter(e => e.stagePosition === 1) || [];
+        return { ...rider, stageWins: wins };
+      })
+      .filter((rider: any) => rider.stageWins.length > 0)
+      .sort((a: any, b: any) => b.stageWins.length - a.stageWins.length || b.pointsScored - a.pointsScored);
+  }, [cyclingTeams]);
+
+  // Available stages for daguitslag selector
+  const availableDagStages = useMemo(() => {
+    const stages = new Map<string, { raceSlug: string; stage: string }>();
+    cyclingTeams.flatMap(team => team.riders).forEach((rider: any) => {
+      (rider.pointsBreakdown as PointsEvent[] | undefined)?.forEach(e => {
+        const key = `${e.raceSlug}::${e.stage}`;
+        if (!stages.has(key)) stages.set(key, { raceSlug: e.raceSlug, stage: e.stage });
+      });
+    });
+    return Array.from(stages.values()).sort((a, b) => {
+      if (a.raceSlug !== b.raceSlug) return a.raceSlug.localeCompare(b.raceSlug);
+      return (parseInt(b.stage) || 0) - (parseInt(a.stage) || 0);
+    });
+  }, [cyclingTeams]);
+
+  const effectiveDagStage = selectedDagStage || (availableDagStages[0] ? `${availableDagStages[0].raceSlug}::${availableDagStages[0].stage}` : null);
+
+  const dagUitslagData = useMemo(() => {
+    if (!effectiveDagStage) return [];
+    const [raceSlug, stage] = effectiveDagStage.split('::');
+    return cyclingTeams
+      .flatMap(team => team.riders)
+      .map((rider: any) => {
+        const event = (rider.pointsBreakdown as PointsEvent[] | undefined)?.find(
+          e => e.raceSlug === raceSlug && e.stage === stage
+        );
+        return event ? { ...rider, stageEvent: event as PointsEvent } : null;
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => {
+        const aPos = a.stageEvent.stagePosition ?? 9999;
+        const bPos = b.stageEvent.stagePosition ?? 9999;
+        if (aPos !== bPos) return aPos - bPos;
+        return b.stageEvent.total - a.stageEvent.total;
+      });
+  }, [effectiveDagStage, cyclingTeams]);
+
   const sortedTeams = [...(teams || [])].sort((a, b) => {
     let comparison = 0;
 
@@ -315,6 +380,26 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
           >
             Head-to-head
           </button>
+          <button
+            onClick={() => setViewMode('stageWins')}
+            className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              viewMode === 'stageWins'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 border border-blue-200'
+            }`}
+          >
+            Etappezeges
+          </button>
+          <button
+            onClick={() => setViewMode('daguitslag')}
+            className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+              viewMode === 'daguitslag'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white text-gray-700 border border-blue-200'
+            }`}
+          >
+            Daguitslag
+          </button>
         </div>
       </div>
 
@@ -336,6 +421,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             >
               Ranking
             </button>
+            {!isWorldTourManager && !isMarginalGainsGame && !isAuctionMaster && (
             <button
               onClick={() => setSortBy('points')}
               className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
@@ -346,6 +432,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             >
               Punten
             </button>
+            )}
+            {!isFullGrid && !isWorldTourManager && (
             <button
               onClick={() => setSortBy('value')}
               className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
@@ -356,6 +444,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             >
               Totale Waarde
             </button>
+            )}
+            {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
             <button
               onClick={() => setSortBy('percentage')}
               className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
@@ -366,6 +456,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             >
               Verschil %
             </button>
+            )}
 
             <button
               onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
@@ -406,27 +497,6 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
         </div>
       )}
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Totaal Teams</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {teams?.length || 0}
-          </div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Totaal Renners</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {teams?.reduce((sum, t) => sum + (t?.totalRiders || 0), 0) || 0}
-          </div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Totaal Uitgegeven</div>
-          <div className="text-2xl font-bold text-gray-900">
-            €{(teams?.reduce((sum, t) => sum + (t?.totalSpent || 0), 0) || 0).toLocaleString()}
-          </div>
-        </div>
-      </div>
 
       {/* Teams List - Per Speler */}
       {viewMode === 'players' && (
@@ -465,18 +535,26 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                           {team.playername}
                         </h3>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mt-1">
-                          <span>{team.totalRiders} renners</span>
-                          <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
-                          <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
-                          <span className={`font-medium ${game?.gameType === 'marginal-gains' ? marginalGainsPercentageClass : team.totalPercentageDiff > 0
+                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
+                            <span>{team.totalRiders} renners</span>
+                          )}
+                          {!isFullGrid && !isWorldTourManager && (
+                            <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
+                          )}
+                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
+                            <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
+                          )}
+                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
+                          <span className={`font-medium ${isMarginalGainsGame ? marginalGainsPercentageClass : team.totalPercentageDiff > 0
                               ? 'text-red-600'
                               : team.totalPercentageDiff < 0
                               ? 'text-green-600'
                               : 'text-gray-600'
                           }`}>
-                            Verschil: 
-                            {game?.gameType === 'marginal-gains' ? `${Math.round(marginalGainsPercentage || 0)}%` : `${team.totalPercentageDiff > 0 ? '+' : ''}${team.totalPercentageDiff}%`}
+                            Verschil:
+                            {isMarginalGainsGame ? `${Math.round(marginalGainsPercentage || 0)}%` : `${team.totalPercentageDiff > 0 ? '+' : ''}${team.totalPercentageDiff}%`}
                           </span>
+                          )}
                           <span className="font-medium text-blue-600">
                             {team.totalPoints} punten
                           </span>
@@ -512,10 +590,11 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Bieddatum</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Verschil</th>
+                            {!isFullGrid && !isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>}
+                            {!isFullGrid && !isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs</th>}
+                            {isFullGrid && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Betaald</th>}
+                            {isFullGrid && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rendement</th>}
+                            {!isFullGrid && !isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Verschil</th>}
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                           </tr>
                         </thead>
@@ -525,22 +604,26 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                               <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rider.riderName}</td>
                               <td className="px-4 py-3 text-sm text-gray-600">{rider.riderTeam}</td>
                               <td className="px-4 py-3 text-sm text-gray-600"><Flag countryCode={rider.riderCountry} /></td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>
-                              <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{rider.pricePaid}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
-                                {rider.bidAt ? new Date(rider.bidAt).toLocaleDateString('nl-NL', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                }) : '-'}
-                              </td>
+                              {!isFullGrid && !isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>}
+                              {!isFullGrid && !isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{rider.pricePaid}</td>}
+                              {isFullGrid && <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{rider.pricePaid}</td>}
+                              {isFullGrid && (
+                                <td className="px-4 py-3 text-sm text-right">
+                                  {(() => {
+                                    const roi = getRiderRoi(rider);
+                                    if (roi === null) return <span className="text-gray-400">-</span>;
+                                    const roiClass = roi > 1 ? 'text-green-600' : roi < 1 ? 'text-red-600' : 'text-gray-600';
+                                    return <span className={`font-medium ${roiClass}`}>{Math.round(roi)}x</span>;
+                                  })()}
+                                </td>
+                              )}
+                              {!isFullGrid && !isWorldTourManager && (
                               <td className="px-4 py-3 text-sm text-right">
                                 {(() => {
-                                  const isMarginalGains = game?.gameType === 'marginal-gains';
-                                  const displayPercentage = isMarginalGains
+                                  const displayPercentage = isMarginalGainsGame
                                     ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
                                     : rider.percentageDiff;
-                                  const colorClass = isMarginalGains
+                                  const colorClass = isMarginalGainsGame
                                     ? (displayPercentage > 0 ? 'text-green-600' : displayPercentage < 0 ? 'text-red-600' : 'text-gray-600')
                                     : (displayPercentage > 0 ? 'text-red-600' : displayPercentage < 0 ? 'text-green-600' : 'text-gray-600');
                                   return (
@@ -550,6 +633,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                                   );
                                 })()}
                               </td>
+                              )}
                               <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>
                             </tr>
                           ))}
@@ -741,10 +825,10 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eigenaar(s)</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gekozen door</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROI</th>
+                  {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isFullGrid ? 'Betaald' : 'Waarde'}</th>}
+                  {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROI</th>}
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                 </tr>
               </thead>
@@ -758,7 +842,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                   });
                   const firstOwner = sortedOwners[0] || { playername: 'Unknown', userId: '' };
                   const currentUserIsOwner = sortedOwners.some((o: any) => o.userId === currentUserId);
-                  const allOwnersData = sortedOwners.slice(1).map((o: any) => `${o.playername}::${o.userId}`).join('|||') || '';
+                  const allOwnersData = sortedOwners.map((o: any) => `${o.playername}::${o.userId}`).join('|||') || '';
 
                   return (
                     <tr key={rider.riderId || rider.riderNameId} className="hover:bg-gray-50">
@@ -768,39 +852,31 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{rider.riderTeam}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          {ownerCount === 1 ? (
-                            <span>{firstOwner.playername}</span>
-                          ) : (
-                            <span
-                              className="cursor-help border-b border-dashed border-gray-400"
-                              data-tooltip-id="owner-tooltip-all"
-                              data-tooltip-content={allOwnersData}
-                            >
-                              {firstOwner.playername} <span className="text-blue-600 font-medium">+{ownerCount - 1}</span>
-                            </span>
-                          )}
-                          <span className="text-xs text-green-600">
-                            ({teams.length > 0 ? Math.round((ownerCount / teams.length) * 100) : 0}%)
-                          </span>
-                        </div>
+                        <span
+                          className="cursor-help border-b border-dashed border-gray-400"
+                          data-tooltip-id="owner-tooltip-all"
+                          data-tooltip-content={allOwnersData}
+                        >
+                          {ownerCount}x
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600"><Flag countryCode={rider.riderCountry} /></td>
-                      <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        {(() => {
-                          const roi = getRiderRoi(rider);
-                          if (roi === null) {
-                            return <span className="text-gray-400">-</span>;
-                          }
-                          const roiClass = roi > 0 ? 'text-green-600' : roi < 0 ? 'text-red-600' : 'text-gray-600';
-                          return (
-                            <span className={`font-medium ${roiClass}`}>
-                              {roi > 0 ? '+' : ''}{Math.round(roi)}%
-                            </span>
-                          );
-                        })()}
-                      </td>
+                      {!isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-600 text-right">{isFullGrid ? rider.pricePaid : rider.baseValue}</td>}
+                      {!isWorldTourManager && (
+                        <td className="px-4 py-3 text-sm text-right">
+                          {(() => {
+                            const roi = getRiderRoi(rider);
+                            if (roi === null) {
+                              return <span className="text-gray-400">-</span>;
+                            }
+                            const roiFormatted = formatRoi(roi);
+                            const roiClass = isFullGrid
+                              ? (roi > 1 ? 'text-green-600' : roi < 1 ? 'text-red-600' : 'text-gray-600')
+                              : (roi > 0 ? 'text-green-600' : roi < 0 ? 'text-red-600' : 'text-gray-600');
+                            return <span className={`font-medium ${roiClass}`}>{roiFormatted}</span>;
+                          })()}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>
                     </tr>
                   );
@@ -811,22 +887,177 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
         </>
       )}
 
+      {/* Daguitslag View */}
+      {viewMode === 'daguitslag' && (
+        <div>
+          {availableDagStages.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">
+              Nog geen etapperesultaten beschikbaar
+            </div>
+          ) : (
+            <>
+              {/* Stage selector */}
+              <div className="overflow-x-auto mb-4">
+                <div className="flex w-max min-w-full gap-2 pb-1">
+                  {availableDagStages.map(s => {
+                    const key = `${s.raceSlug}::${s.stage}`;
+                    const isActive = effectiveDagStage === key;
+                    const label = s.stage === 'result' ? 'Einduitslag' : `Etappe ${s.stage}`;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setSelectedDagStage(key)}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
+                          isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                {dagUitslagData.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">Geen resultaten voor deze etappe</div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pos</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Team</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Etappe</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">KM/Sprint</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Ploeg</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {(dagUitslagData as any[]).map((rider, index) => {
+                        const e: PointsEvent = rider.stageEvent;
+                        const isCurrentUserRider = rider.owners?.some((o: any) => o.userId === currentUserId);
+                        const pos = e.stagePosition;
+                        return (
+                          <tr key={rider.riderId || rider.riderNameId || index} className={`hover:bg-gray-50 ${isCurrentUserRider ? 'bg-yellow-50/40' : ''}`}>
+                            <td className="px-4 py-3 text-sm text-gray-500 font-medium">
+                              {pos ? `#${pos}` : '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                              {isCurrentUserRider && <span className="text-yellow-500 mr-1">★</span>}
+                              {rider.riderName}
+                              <span className="ml-2"><Flag countryCode={rider.riderCountry} /></span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{rider.riderTeam}</td>
+                            <td className="px-4 py-3 text-sm text-right">
+                              {(e.stageResult ?? 0) > 0
+                                ? <span className="font-medium text-blue-700">+{e.stageResult}</span>
+                                : <span className="text-gray-400">-</span>}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right hidden md:table-cell">
+                              {((e.mountainsClass ?? 0) + (e.pointsClass ?? 0) + (e.mountainPoints ?? 0) + (e.sprintPoints ?? 0)) > 0
+                                ? <span className="text-green-700">+{(e.mountainsClass ?? 0) + (e.pointsClass ?? 0) + (e.mountainPoints ?? 0) + (e.sprintPoints ?? 0)}</span>
+                                : <span className="text-gray-400">-</span>}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right hidden md:table-cell">
+                              {(e.teamPoints ?? 0) > 0
+                                ? <span className="text-purple-700">+{e.teamPoints}</span>
+                                : <span className="text-gray-400">-</span>}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right font-bold text-primary">{e.total}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Stage Wins View */}
+      {viewMode === 'stageWins' && (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {stageWinsData.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              Nog geen etappezeges geregistreerd
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Zeges</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Etappes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {stageWinsData.map((rider: any, index: number) => {
+                  const isCurrentUserRider = rider.owners?.some((o: any) => o.userId === currentUserId);
+                  const stageLabels = rider.stageWins.map((e: PointsEvent) => {
+                    const stageNum = e.stage === 'result' ? 'Einduitslag' : `Etappe ${e.stage}`;
+                    return stageNum;
+                  });
+                  return (
+                    <tr key={rider.riderId || rider.riderNameId} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-500 font-medium">{index + 1}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                        {isCurrentUserRider && <span className="text-yellow-500 mr-1">★</span>}
+                        {rider.riderName}
+                        <span className="ml-2"><Flag countryCode={rider.riderCountry} /></span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{rider.riderTeam}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-700 font-bold text-sm">
+                          {rider.stageWins.length}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {stageLabels.join(', ')}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Compare View */}
       {viewMode === 'compare' && (
         <>
-          <div className="flex gap-4 items-center mb-4">
-            <span className="text-sm text-gray-600">Vergelijk met:</span>
-            <PlayerSelector
-              teams={teams}
-              selectedUserId={compareUserId}
-              onSelect={setCompareUserId}
-              excludeUserId={currentUserId}
-              placeholder="Selecteer een speler..."
-            />
+          <div className="flex flex-wrap gap-4 items-center mb-4">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-medium text-blue-600">Links:</span>
+              <PlayerSelector
+                teams={teams}
+                selectedUserId={compareUserIdLeft}
+                onSelect={setCompareUserIdLeft}
+                excludeUserId={compareUserId || undefined}
+                placeholder="Jij (standaard)..."
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <span className="text-sm font-medium text-purple-600">Rechts:</span>
+              <PlayerSelector
+                teams={teams}
+                selectedUserId={compareUserId}
+                onSelect={setCompareUserId}
+                excludeUserId={compareUserIdLeft || currentUserId}
+                placeholder="Selecteer een speler..."
+              />
+            </div>
           </div>
 
           {compareUserId ? (() => {
-            const myTeam = teams.find(t => t.userId === currentUserId);
+            const leftUserId = compareUserIdLeft || currentUserId;
+            const myTeam = teams.find(t => t.userId === leftUserId);
             const theirTeam = teams.find(t => t.userId === compareUserId);
 
             if (!myTeam || !theirTeam) {
@@ -878,7 +1109,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
               <>
                 <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <div className="text-sm text-blue-600">Jij <span className="font-medium">#{myTeam.ranking}</span></div>
+                    <div className="text-sm text-blue-600">{myTeam.playername} <span className="font-medium">#{myTeam.ranking}</span></div>
                     <div className={`text-2xl font-bold ${myTotalClass}`}>
                       {isMarginalGains && myDisplayTotal > 0 ? '+' : ''}{myDisplayTotal} punten
                     </div>
@@ -905,10 +1136,10 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider">Jij</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider">{myTeam.playername}</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-purple-500 uppercase tracking-wider">{theirTeam.playername}</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Verschil</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isFullGrid ? 'Betaald' : 'Waarde'}</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isFullGrid ? 'Rendement' : 'Verschil'}</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                       </tr>
                     </thead>
@@ -940,9 +1171,15 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                               <span className="text-gray-300">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 text-right">{isFullGrid ? rider.pricePaid : rider.baseValue}</td>
                           <td className="px-4 py-3 text-sm text-right">
                             {(() => {
+                              if (isFullGrid) {
+                                const roi = getRiderRoi(rider);
+                                if (roi === null) return <span className="text-gray-400">-</span>;
+                                const roiClass = roi > 1 ? 'text-green-600' : roi < 1 ? 'text-red-600' : 'text-gray-600';
+                                return <span className={`font-medium ${roiClass}`}>{Math.round(roi)}x</span>;
+                              }
                               const displayPercentage = isMarginalGains
                                 ? (rider.baseValue > 0 ? Math.round(((rider.pointsScored - rider.baseValue) / rider.baseValue) * 100) : 0)
                                 : rider.percentageDiff;
@@ -966,7 +1203,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             );
           })() : (
             <div className="text-center py-12 text-gray-500">
-              Selecteer een speler om mee te vergelijken
+              Selecteer een speler rechts om te vergelijken
             </div>
           )}
         </>
