@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Flag } from '@/components/Flag';
 import { Tooltip } from 'react-tooltip';
 import { useTranslation } from 'react-i18next';
 import { Game, PointsEvent } from '@/lib/types/games';
 import { Selector } from '@/components/Selector';
+import { getRaceNamesClient } from '@/lib/race-names';
 
 interface Rider {
   riderId: string;
@@ -95,6 +96,20 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
   const isFullGrid = game?.gameType === 'full-grid';
   const isWorldTourManager = game?.gameType === 'worldtour-manager';
   const isMarginalGainsGame = game?.gameType === 'marginal-gains';
+  const isSingleOwnerGame = isFullGrid || isAuctionMaster;
+
+  const [raceNames, setRaceNames] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (!game) return;
+    getRaceNamesClient(game.year || new Date().getFullYear()).then(setRaceNames).catch(() => {});
+  }, [game]);
+
+  const getStageLabel = (raceSlug: string, stage: string, includeRace = true) => {
+    const stageLabel = stage === 'result' ? 'Einduitslag' : `Etappe ${stage}`;
+    if (!includeRace) return stageLabel;
+    const raceName = raceNames.get(raceSlug) || raceSlug.replace(/_\d{4}$/, '').replace(/-/g, ' ');
+    return `${raceName} - ${stageLabel}`;
+  };
 
   const getRiderRoi = (rider: Rider) => {
     if (isFullGrid) {
@@ -139,7 +154,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
 
   // Group riders by cycling team
   const cyclingTeamsMap = new Map<string, Map<string, any>>();
-  teams?.forEach(team => {
+  const teamsForStats = isWorldTourManager ? (teams || []).filter(t => t.riders && t.riders.length > 0) : (teams || []);
+  teamsForStats.forEach(team => {
     if (!team) return;
     team.riders?.forEach(rider => {
       if (!rider) return;
@@ -283,7 +299,12 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
       });
   }, [effectiveDagStage, cyclingTeams]);
 
-  const sortedTeams = [...(teams || [])].sort((a, b) => {
+  // For WorldTour Manager, hide participants with no riders (incomplete/empty teams)
+  const filteredTeams = isWorldTourManager
+    ? (teams || []).filter(t => t.riders && t.riders.length > 0)
+    : (teams || []);
+
+  const sortedTeams = [...filteredTeams].sort((a, b) => {
     let comparison = 0;
 
     switch (sortBy) {
@@ -482,18 +503,20 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="groupByCyclingTeam"
-              checked={groupByCyclingTeam}
-              onChange={(e) => setGroupByCyclingTeam(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            />
-            <label htmlFor="groupByCyclingTeam" className="text-sm text-gray-700 cursor-pointer">
-              Groepeer renners per wielerteam
-            </label>
-          </div>
+          {!isWorldTourManager && !isSingleOwnerGame && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="groupByCyclingTeam"
+                checked={groupByCyclingTeam}
+                onChange={(e) => setGroupByCyclingTeam(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="groupByCyclingTeam" className="text-sm text-gray-700 cursor-pointer">
+                Groepeer renners per wielerteam
+              </label>
+            </div>
+          )}
         </div>
       )}
 
@@ -825,9 +848,9 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gekozen door</th>
+                  {!isSingleOwnerGame && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gekozen door</th>}
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
-                  {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isFullGrid ? 'Betaald' : 'Waarde'}</th>}
+                  {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}</th>}
                   {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROI</th>}
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                 </tr>
@@ -851,17 +874,19 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                         {rider.riderName}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{rider.riderTeam}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        <span
-                          className="cursor-help border-b border-dashed border-gray-400"
-                          data-tooltip-id="owner-tooltip-all"
-                          data-tooltip-content={allOwnersData}
-                        >
-                          {ownerCount}x
-                        </span>
-                      </td>
+                      {!isSingleOwnerGame && (
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          <span
+                            className="cursor-help border-b border-dashed border-gray-400"
+                            data-tooltip-id="owner-tooltip-all"
+                            data-tooltip-content={allOwnersData}
+                          >
+                            {ownerCount}x
+                          </span>
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm text-gray-600"><Flag countryCode={rider.riderCountry} /></td>
-                      {!isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-600 text-right">{isFullGrid ? rider.pricePaid : rider.baseValue}</td>}
+                      {!isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-600 text-right">{(isFullGrid || isAuctionMaster) ? rider.pricePaid : rider.baseValue}</td>}
                       {!isWorldTourManager && (
                         <td className="px-4 py-3 text-sm text-right">
                           {(() => {
@@ -902,7 +927,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                   {availableDagStages.map(s => {
                     const key = `${s.raceSlug}::${s.stage}`;
                     const isActive = effectiveDagStage === key;
-                    const label = s.stage === 'result' ? 'Einduitslag' : `Etappe ${s.stage}`;
+                    const label = getStageLabel(s.raceSlug, s.stage);
                     return (
                       <button
                         key={key}
@@ -918,6 +943,11 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                 </div>
               </div>
 
+              {effectiveDagStage && (
+                <div className="mb-2 text-sm font-medium text-gray-700">
+                  {getStageLabel(effectiveDagStage.split('::')[0], effectiveDagStage.split('::')[1])}
+                </div>
+              )}
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 {dagUitslagData.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">Geen resultaten voor deze etappe</div>
@@ -999,10 +1029,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
               <tbody className="divide-y divide-gray-200">
                 {stageWinsData.map((rider: any, index: number) => {
                   const isCurrentUserRider = rider.owners?.some((o: any) => o.userId === currentUserId);
-                  const stageLabels = rider.stageWins.map((e: PointsEvent) => {
-                    const stageNum = e.stage === 'result' ? 'Einduitslag' : `Etappe ${e.stage}`;
-                    return stageNum;
-                  });
+                  const stageLabels = rider.stageWins.map((e: PointsEvent) => getStageLabel(e.raceSlug, e.stage));
                   return (
                     <tr key={rider.riderId || rider.riderNameId} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-500 font-medium">{index + 1}</td>
@@ -1138,7 +1165,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider">{myTeam.playername}</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-purple-500 uppercase tracking-wider">{theirTeam.playername}</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isFullGrid ? 'Betaald' : 'Waarde'}</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isFullGrid ? 'Rendement' : 'Verschil'}</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                       </tr>
@@ -1171,7 +1198,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                               <span className="text-gray-300">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 text-right">{isFullGrid ? rider.pricePaid : rider.baseValue}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 text-right">{(isFullGrid || isAuctionMaster) ? rider.pricePaid : rider.baseValue}</td>
                           <td className="px-4 py-3 text-sm text-right">
                             {(() => {
                               if (isFullGrid) {
