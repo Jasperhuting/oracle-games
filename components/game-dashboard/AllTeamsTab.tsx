@@ -228,7 +228,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
           comparison = a.pointsScored - b.pointsScored;
           break;
         case 'value':
-          comparison = a.baseValue - b.baseValue;
+          comparison = (isFullGrid || isAuctionMaster) ? a.pricePaid - b.pricePaid : a.baseValue - b.baseValue;
           break;
         case 'roi': {
           const aRoi = getRiderRoi(a) ?? -Infinity;
@@ -401,6 +401,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
           >
             Head-to-head
           </button>
+          {isSingleOwnerGame && (
           <button
             onClick={() => setViewMode('stageWins')}
             className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
@@ -411,6 +412,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
           >
             Etappezeges
           </button>
+          )}
+          {isSingleOwnerGame && (
           <button
             onClick={() => setViewMode('daguitslag')}
             className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
@@ -421,6 +424,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
           >
             Daguitslag
           </button>
+          )}
         </div>
       </div>
 
@@ -749,14 +753,17 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             >
               Punten
             </button>
+            {!isWorldTourManager && (
             <button
               onClick={() => setAllViewSortBy('value')}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'value' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
-              Waarde
+              {(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}
             </button>
+            )}
+            {!isWorldTourManager && (
             <button
               onClick={() => setAllViewSortBy('roi')}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
@@ -765,14 +772,17 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
             >
               ROI
             </button>
+            )}
+            {!isSingleOwnerGame && (
             <button
               onClick={() => setAllViewSortBy('owners')}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                 allViewSortBy === 'owners' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
               }`}
             >
-              Eigenaar(s)
+              Keren gekozen
             </button>
+            )}
             <button
               onClick={() => setAllViewSortBy('team')}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
@@ -848,7 +858,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-                  {!isSingleOwnerGame && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gekozen door</th>}
+                  {!isSingleOwnerGame && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal keer gekozen</th>}
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
                   {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}</th>}
                   {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROI</th>}
