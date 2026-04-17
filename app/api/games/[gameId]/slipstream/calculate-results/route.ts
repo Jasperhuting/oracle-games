@@ -7,6 +7,7 @@ import {
   calculateGreenJerseyPoints,
   applyMissedPickPenalty,
   formatTime,
+  getStageBonificationSeconds,
   StageRider
 } from '@/lib/utils/slipstreamCalculation';
 
@@ -208,9 +209,12 @@ export async function POST(
 
         if (!timeLossResult.isPenalty) {
           // Valid pick - rider finished the race
-          const timeLostSeconds = timeLossResult.timeLostSeconds;
-          const timeLostFormatted = timeLossResult.timeLostFormatted;
           const riderFinishPosition = timeLossResult.riderFinishPosition || null;
+
+          // Apply bonification seconds for top 3 finishers
+          const bonificationSeconds = riderFinishPosition ? getStageBonificationSeconds(riderFinishPosition) : 0;
+          const timeLostSeconds = timeLossResult.timeLostSeconds - bonificationSeconds;
+          const timeLostFormatted = formatTime(Math.abs(timeLostSeconds)) + (timeLostSeconds < 0 ? ' (bonus)' : '');
 
           // Calculate green jersey points
           let greenJerseyPoints = 0;
@@ -229,6 +233,7 @@ export async function POST(
             timeLostSeconds,
             timeLostFormatted,
             greenJerseyPoints,
+            bonificationSeconds: bonificationSeconds > 0 ? bonificationSeconds : undefined,
             riderFinishPosition,
             isPenalty: false,
             penaltyReason: null,
@@ -254,7 +259,7 @@ export async function POST(
             }
           } else {
             const updates: Record<string, unknown> = {};
-            if (timeLostSeconds > 0 && !isNaN(timeLostSeconds) && isFinite(timeLostSeconds)) {
+            if (timeLostSeconds !== 0 && !isNaN(timeLostSeconds) && isFinite(timeLostSeconds)) {
               updates['slipstreamData.totalTimeLostSeconds'] = FieldValue.increment(timeLostSeconds);
             }
             if (greenJerseyPoints > 0 && !isNaN(greenJerseyPoints) && isFinite(greenJerseyPoints)) {

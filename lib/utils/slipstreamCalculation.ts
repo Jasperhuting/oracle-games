@@ -11,6 +11,17 @@ import { DEFAULT_GREEN_JERSEY_POINTS } from '@/lib/types/games';
 // TYPES
 // ============================================================================
 
+// Stage bonification seconds awarded to top 3 finishers
+export const STAGE_BONIFICATION_SECONDS: Record<number, number> = {
+  1: 10,
+  2: 6,
+  3: 4,
+};
+
+export function getStageBonificationSeconds(position: number): number {
+  return STAGE_BONIFICATION_SECONDS[position] || 0;
+}
+
 export interface StageRider {
   nameID?: string;
   shortName?: string;
