@@ -155,7 +155,17 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   useEffect(() => {
     const loadAllBids = async () => {
-      if (!gameId) return;
+      if (!gameId || !game) return;
+
+      const isSelectionBasedGame =
+        game.gameType === 'worldtour-manager' ||
+        game.gameType === 'marginal-gains' ||
+        game.gameType === 'full-grid';
+
+      if (isSelectionBasedGame) {
+        setAlleBiedingen([]);
+        return;
+      }
 
       try {
         const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=1000&offset=0&notActive=true`);
@@ -171,7 +181,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     };
 
     loadAllBids();
-  }, [gameId])
+  }, [gameId, game]);
 
 
   useEffect(() => {
@@ -342,21 +352,30 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         riders = riders.filter((r: Rider) => eligibleSet.has(r.nameID || r.id || ''));
       }
 
-      // Load bids - for admins load all, for users load only their bids
+      // Load bids - admins need the full game context, regular users only need
+      // their own bids to render this page.
       let allBidsData: Bid[] = [];
       let userBids: Bid[] = [];
 
-      // API doesn't support offset-based pagination, so we just load with a high limit
-      const bidsLimit = 10000;
-      const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${bidsLimit}`);
-      if (bidsResponse.ok) {
-        const bidsData = await bidsResponse.json();
-        allBidsData = bidsData.bids || [];
-      }
+      if (userIsAdmin) {
+        // API doesn't support offset-based pagination, so admins still need a
+        // relatively high limit here for the overview.
+        const bidsLimit = 10000;
+        const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?limit=${bidsLimit}`);
+        if (bidsResponse.ok) {
+          const bidsData = await bidsResponse.json();
+          allBidsData = bidsData.bids || [];
+        }
 
-      userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
-      if (!userIsAdmin) {
-        allBidsData = userBids.filter((b: Bid) => b.status !== 'active'); // For non-admins, allBids is just their bids
+        userBids = allBidsData.filter((b: Bid) => b.userId === user.uid);
+      } else {
+        const bidsResponse = await fetch(`/api/games/${gameId}/bids/list?userId=${user.uid}&limit=1000`);
+        if (bidsResponse.ok) {
+          const bidsData = await bidsResponse.json();
+          userBids = bidsData.bids || [];
+        }
+
+        allBidsData = userBids.filter((b: Bid) => b.status !== 'active');
       }
 
       const filteredUserBidsFromAPI = userBids.filter((b: Bid) => b.status === 'won' || b.status === 'active' || b.status === 'outbid' || b.status === 'lost');

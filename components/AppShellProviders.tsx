@@ -29,6 +29,8 @@ export default function AppShellProviders({
 }) {
   const pathname = usePathname();
   const isPublic = isPublicRoute(pathname);
+  const disablePlayerTeamsAutoLoad =
+    typeof pathname === 'string' && /^\/games\/[^/]+\/auction$/.test(pathname);
 
   useEffect(() => {
     registerTokenService(new FirebaseTokenAdapter());
@@ -39,7 +41,7 @@ export default function AppShellProviders({
       <LanguageWrapper>
         <ImpersonationProvider>
           <RankingsProvider autoLoad={!isPublic}>
-            <PlayerTeamsProvider autoLoad={!isPublic}>
+            <PlayerTeamsProvider autoLoad={!isPublic && !disablePlayerTeamsAutoLoad}>
               <Toaster position="top-center" />
               <TabFocusRefresher />
               {!isPublic && <LastActiveTracker />}
