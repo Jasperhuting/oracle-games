@@ -168,6 +168,25 @@ export async function POST(request: NextRequest) {
             rosterComplete: false, // Reset roster complete status
           });
 
+          // 3. Mark the 'won' bid for this rider as 'refunded' so the participant
+          //    can place a new bid (bids/place counts 'won' bids for budget + max-riders checks)
+          const wonBidSnapshot = await db.collection('bids')
+            .where('gameId', '==', gameId)
+            .where('userId', '==', userId)
+            .where('riderNameId', '==', riderNameId)
+            .where('status', '==', 'won')
+            .limit(1)
+            .get();
+
+          if (!wonBidSnapshot.empty) {
+            await wonBidSnapshot.docs[0].ref.update({
+              status: 'refunded',
+              refundedAt: Timestamp.now(),
+              refundReason: 'rider_retired',
+            });
+            console.log(`[RETIRE_WITH_REFUND] Marked bid as refunded for ${participantData.playername}`);
+          }
+
           console.log(`[RETIRE_WITH_REFUND] Refunded ${pricePaid} to ${participantData.playername} in game ${gamesMap.get(gameId)}`);
           console.log(`[RETIRE_WITH_REFUND]   spentBudget: ${currentSpentBudget} -> ${newSpentBudget}`);
           console.log(`[RETIRE_WITH_REFUND]   rosterSize: ${currentRosterSize} -> ${newRosterSize}`);

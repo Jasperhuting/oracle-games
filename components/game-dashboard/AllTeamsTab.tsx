@@ -458,7 +458,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
               Punten
             </button>
             )}
-            {!isFullGrid && !isWorldTourManager && (
+            {!isFullGrid && !isWorldTourManager && !isMarginalGainsGame && (
             <button
               onClick={() => setSortBy('value')}
               className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
@@ -565,7 +565,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                           {!isFullGrid && !isWorldTourManager && !isAuctionMaster && !isMarginalGainsGame && (
                             <span>{team.totalRiders} renners</span>
                           )}
-                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
+                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && !isMarginalGainsGame && (
                             <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
                           )}
                           {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
@@ -620,7 +620,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Land</th>
-                            {!isFullGrid && !isWorldTourManager && !isAuctionMaster && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>}
+                            {!isFullGrid && !isWorldTourManager && !isAuctionMaster && !isMarginalGainsGame && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Waarde</th>}
                             {!isFullGrid && !isWorldTourManager && !isAuctionMaster && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs</th>}
                             {(isFullGrid || isAuctionMaster) && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Betaald</th>}
                             {(isFullGrid || isAuctionMaster) && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rendement</th>}
@@ -634,7 +634,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                               <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rider.riderName}</td>
                               <td className="px-4 py-3 text-sm text-gray-600">{rider.riderTeam}</td>
                               <td className="px-4 py-3 text-sm text-gray-600"><Flag countryCode={rider.riderCountry} /></td>
-                              {!isFullGrid && !isWorldTourManager && !isAuctionMaster && <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>}
+                              {!isFullGrid && !isWorldTourManager && !isAuctionMaster && !isMarginalGainsGame && <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.baseValue}</td>}
                               {!isFullGrid && !isWorldTourManager && !isAuctionMaster && <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{rider.pricePaid}</td>}
                               {(isFullGrid || isAuctionMaster) && <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">{rider.pricePaid}</td>}
                               {(isFullGrid || isAuctionMaster) && (
@@ -1180,11 +1180,12 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renner</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider">{myTeam.playername}</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-purple-500 uppercase tracking-wider">{theirTeam.playername}</th>
-                        {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}</th>}
-                        {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Rendement' : 'Verschil'}</th>}
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-blue-500 uppercase tracking-wider">{myTeam.playername}</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-purple-500 uppercase tracking-wider">{theirTeam.playername}</th>
+                        {!isWorldTourManager && !isFullGrid && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isAuctionMaster ? 'Betaald' : 'Waarde'}</th>}
+                        {!isWorldTourManager && !isFullGrid && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{isAuctionMaster ? 'Rendement' : 'Verschil'}</th>}
+                        {!isFullGrid && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>}
+                        {isFullGrid && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Voordeel</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -1201,30 +1202,30 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                         >
                           <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rider.riderName}</td>
                           <td className="px-4 py-3 text-sm text-gray-600">{rider.riderTeam}</td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-right">
                             {rider.inMyTeam ? (
-                              <span className="text-blue-600 text-lg">✓</span>
+                              isFullGrid
+                                ? <span className="text-blue-700 font-medium text-sm">{rider.pointsScored}</span>
+                                : <span className="text-blue-600 text-lg">✓</span>
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-300 text-sm">{isFullGrid ? '-' : '-'}</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-right">
                             {rider.inTheirTeam ? (
-                              <span className="text-purple-600 text-lg">✓</span>
+                              isFullGrid
+                                ? <span className="text-purple-700 font-medium text-sm">{rider.pointsScored}</span>
+                                : <span className="text-purple-600 text-lg">✓</span>
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-300 text-sm">{isFullGrid ? '-' : '-'}</span>
                             )}
                           </td>
-                          {!isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-600 text-right">{(isFullGrid || isAuctionMaster) ? rider.pricePaid : rider.baseValue}</td>}
-                          {!isWorldTourManager && <td className="px-4 py-3 text-sm text-right">
+                          {!isWorldTourManager && !isFullGrid && <td className="px-4 py-3 text-sm text-gray-600 text-right">{isAuctionMaster ? rider.pricePaid : rider.baseValue}</td>}
+                          {!isWorldTourManager && !isFullGrid && <td className="px-4 py-3 text-sm text-right">
                             {(() => {
-                              if (isFullGrid || isAuctionMaster) {
+                              if (isAuctionMaster) {
                                 const roi = getRiderRoi(rider);
                                 if (roi === null) return <span className="text-gray-400">-</span>;
-                                if (isFullGrid) {
-                                  const roiClass = roi > 1 ? 'text-green-600' : roi < 1 ? 'text-red-600' : 'text-gray-600';
-                                  return <span className={`font-medium ${roiClass}`}>{Math.round(roi)}x</span>;
-                                }
                                 const roiClass = roi > 0 ? 'text-green-600' : roi < 0 ? 'text-red-600' : 'text-gray-600';
                                 return <span className={`font-medium ${roiClass}`}>{roi > 0 ? '+' : ''}{Math.round(roi)}%</span>;
                               }
@@ -1241,7 +1242,15 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                               );
                             })()}
                           </td>}
-                          <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>
+                          {!isFullGrid && <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>}
+                          {isFullGrid && (() => {
+                            const myPts = rider.inMyTeam ? rider.pointsScored : 0;
+                            const theirPts = rider.inTheirTeam ? rider.pointsScored : 0;
+                            const diff = myPts - theirPts;
+                            if (diff === 0) return <td className="px-4 py-3 text-sm text-gray-400 text-right">-</td>;
+                            const cls = diff > 0 ? 'text-blue-600' : 'text-purple-600';
+                            return <td className={`px-4 py-3 text-sm font-medium text-right ${cls}`}>{diff > 0 ? '+' : ''}{diff}</td>;
+                          })()}
                         </tr>
                       ))}
                     </tbody>

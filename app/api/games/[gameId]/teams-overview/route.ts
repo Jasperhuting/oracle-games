@@ -94,6 +94,9 @@ export async function GET(
       const userId = team.userId;
       const riderNameId = team.riderNameId;
 
+      // Skip deactivated entries (e.g., riders removed via retire-with-refund)
+      if (team.active === false) return;
+
       // Initialize user's rider tracker if not exists
       if (!userRiderTracker.has(userId)) {
         userRiderTracker.set(userId, new Set());

@@ -33,7 +33,7 @@ export type AuctionStatus = typeof AUCTION_STATUSES[number];
 export const PARTICIPANT_STATUSES = ['active', 'eliminated', 'withdrawn'] as const;
 export type ParticipantStatus = typeof PARTICIPANT_STATUSES[number];
 
-export const BID_STATUSES = ['active', 'outbid', 'won', 'lost'] as const;
+export const BID_STATUSES = ['active', 'outbid', 'won', 'lost', 'refunded'] as const;
 export type BidStatus = typeof BID_STATUSES[number];
 
 export const LEAGUE_VISIBILITIES = ['public', 'private', 'invite-only'] as const;
