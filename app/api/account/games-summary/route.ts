@@ -142,8 +142,20 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
           // Rank = number of participants with strictly less time lost + 1 (handles ties correctly)
           ranking = timeLostValues.filter(t => t < userTimeLost).length + 1;
         } else {
-          ranking = participantData?.ranking ?? 0;
           totalPoints = participantData?.totalPoints ?? 0;
+
+          // Dynamically calculate ranking from all participants' totalPoints
+          // to stay in sync with the game standings page
+          const allParticipantsSnap = await db
+            .collection('gameParticipants')
+            .where('gameId', '==', gameId)
+            .where('status', '==', 'active')
+            .get();
+          const allPoints = allParticipantsSnap.docs.map(
+            d => (d.data().totalPoints as number) ?? 0
+          );
+          // Rank = number of participants with strictly more points + 1 (handles ties correctly)
+          ranking = allPoints.filter(p => p > totalPoints).length + 1;
         }
 
         const lastScoreUpdate: string | null = scoreUpdateSnap.empty
