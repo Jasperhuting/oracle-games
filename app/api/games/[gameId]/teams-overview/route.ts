@@ -254,19 +254,32 @@ export async function GET(
         ? Math.round((totalDifference / totalBaseValue) * 100)
         : 0;
 
-      // Calculate totalPoints from riders' pointsScored
-      let calculatedTotalPoints = riders.reduce((sum, r) => sum + (r.pointsScored ?? 0), 0);
+      // Calculate totalPoints from riders' pointsScored as a fallback.
+      // For Auction Master-style standings, gameParticipants.totalPoints is the
+      // authoritative source and is what other views (like the account page)
+      // already use.
+      const summedRiderPoints = riders.reduce((sum, r) => sum + (r.pointsScored ?? 0), 0);
+      let calculatedTotalPoints = summedRiderPoints;
 
       if (gameData?.gameType === 'marginal-gains') {
         calculatedTotalPoints = (-participant.spentBudget) + calculatedTotalPoints;
       }
 
+      const participantTotalPoints = Number(participant.totalPoints);
+      if (
+        gameData?.gameType !== 'marginal-gains' &&
+        gameData?.gameType !== 'slipstream' &&
+        Number.isFinite(participantTotalPoints)
+      ) {
+        calculatedTotalPoints = participantTotalPoints;
+      }
+
       // For full-grid, prefer participant totalPoints when populated.
       // Fallback to summed rider points when participant totalPoints is not synced yet.
       if (gameData?.gameType === 'full-grid') {
-        const participantTotalPoints = Number(participant.totalPoints) || 0;
-        if (participantTotalPoints > 0 || riders.length === 0) {
-          calculatedTotalPoints = participantTotalPoints;
+        const fullGridParticipantTotalPoints = Number(participant.totalPoints) || 0;
+        if (fullGridParticipantTotalPoints > 0 || riders.length === 0) {
+          calculatedTotalPoints = fullGridParticipantTotalPoints;
         }
       }
 

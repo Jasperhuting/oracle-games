@@ -68,7 +68,12 @@ export default function SeasonLeaderboardPage() {
   const [selectedTooltipGame, setSelectedTooltipGame] = useState<string>('');
 
   const { user } = useAuth();
-  const { riders: allPlayerTeams, uniqueRiders: rankingsRiders, loading: rankingsLoading } = usePlayerTeams(user?.uid);
+  const {
+    riders: allPlayerTeams,
+    uniqueRiders: rankingsRiders,
+    loading: rankingsLoading,
+    refetch: refetchPlayerTeams,
+  } = usePlayerTeams(user?.uid);
 
   const filteredPlayerTeams = useMemo(
     () => allPlayerTeams.filter((team) => !EXCLUDED_SEASON_RANKING_GAME_IDS.has(team.gameId)),
@@ -189,6 +194,10 @@ export default function SeasonLeaderboardPage() {
       isCancelled = true;
     };
   }, [filteredPlayerTeams, year]);
+
+  useEffect(() => {
+    void refetchPlayerTeams(true);
+  }, [refetchPlayerTeams, year]);
 
   const allPlayerTeamsByRiderNameId = useMemo(() => {
     const map = new Map<string, Array<{userId: string, gameId: string, userName?: string}>>();

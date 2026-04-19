@@ -1,6 +1,7 @@
 import { getServerFirebase } from '@/lib/firebase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
+import { revalidateTag } from 'next/cache';
 import type { PointsEvent } from '@/lib/types';
 import {
   calculateStagePoints,
@@ -17,6 +18,9 @@ import type { ClassificationRider, StageResult as ScrapedStageResult } from '@/l
 import { scrapeRidersWithPoints } from '@/lib/firebase/rider-points-service';
 import { validateStageResult, generateDataHash } from '@/lib/validation/scraper-validation';
 import { sendAdminNotification, isNotificationsEnabled } from '@/lib/email/admin-notifications';
+import { PLAYER_TEAMS_CACHE_TAG } from '@/app/api/getPlayerTeams/route';
+import { RANKINGS_CACHE_TAG } from '@/app/api/getRankings/route';
+import { GAMES_LIST_CACHE_TAG } from '@/app/api/games/list/route';
 
 interface StageResult {
   nameID?: string;
@@ -51,6 +55,21 @@ interface GameConfig {
   countingRaces: AuctioneerConfig['countingRaces'];
   status: string;
   config?: AuctioneerConfig;
+}
+
+async function bumpCacheVersion(db: FirebaseFirestore.Firestore) {
+  const configRef = db.collection('config').doc('cache');
+  const configDoc = await configRef.get();
+  const currentVersion = configDoc.exists ? (configDoc.data()?.version || 1) : 1;
+
+  await configRef.set({
+    version: currentVersion + 1,
+    updatedAt: Timestamp.now(),
+  }, { merge: true });
+
+  revalidateTag(RANKINGS_CACHE_TAG, {});
+  revalidateTag(PLAYER_TEAMS_CACHE_TAG, {});
+  revalidateTag(GAMES_LIST_CACHE_TAG, {});
 }
 
 /**
@@ -767,6 +786,8 @@ export async function POST(request: NextRequest) {
       totalPointsAwarded: results.pointsAwarded,
       gamesAffected: gamesAffectedIds,
     });
+
+    await bumpCacheVersion(db);
 
 
 
