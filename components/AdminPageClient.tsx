@@ -77,6 +77,18 @@ export default function AdminPageClient() {
                             </Link>
                         </div>
                     )
+                },
+                {
+                    id: 'survey',
+                    label: 'Survey',
+                    content: (
+                        <div className="p-4">
+                            <p className="text-gray-600 mb-4">Bekijk de ingevulde feedback surveys van gebruikers.</p>
+                            <Link href="/admin/survey" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                                Naar Survey Resultaten <ArrowRight size={16} />
+                            </Link>
+                        </div>
+                    )
                 }
             ]
         },
