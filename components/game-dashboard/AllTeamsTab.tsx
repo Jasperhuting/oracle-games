@@ -565,10 +565,13 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                           {!isFullGrid && !isWorldTourManager && !isAuctionMaster && !isMarginalGainsGame && (
                             <span>{team.totalRiders} renners</span>
                           )}
-                          {!isFullGrid && !isWorldTourManager && (
+                          {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
                             <span>Waarde: {team.totalBaseValue.toLocaleString()}</span>
                           )}
                           {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
+                            <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
+                          )}
+                          {isAuctionMaster && (
                             <span>Betaald: €{team.totalSpent.toLocaleString()}</span>
                           )}
                           {!isFullGrid && !isWorldTourManager && !isAuctionMaster && (
@@ -1179,8 +1182,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider">{myTeam.playername}</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-purple-500 uppercase tracking-wider">{theirTeam.playername}</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Rendement' : 'Verschil'}</th>
+                        {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Betaald' : 'Waarde'}</th>}
+                        {!isWorldTourManager && <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{(isFullGrid || isAuctionMaster) ? 'Rendement' : 'Verschil'}</th>}
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Punten</th>
                       </tr>
                     </thead>
@@ -1212,8 +1215,8 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                               <span className="text-gray-300">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 text-right">{(isFullGrid || isAuctionMaster) ? rider.pricePaid : rider.baseValue}</td>
-                          <td className="px-4 py-3 text-sm text-right">
+                          {!isWorldTourManager && <td className="px-4 py-3 text-sm text-gray-600 text-right">{(isFullGrid || isAuctionMaster) ? rider.pricePaid : rider.baseValue}</td>}
+                          {!isWorldTourManager && <td className="px-4 py-3 text-sm text-right">
                             {(() => {
                               if (isFullGrid || isAuctionMaster) {
                                 const roi = getRiderRoi(rider);
@@ -1237,7 +1240,7 @@ export function AllTeamsTab({ game, teams, currentUserId, loading, error }: AllT
                                 </span>
                               );
                             })()}
-                          </td>
+                          </td>}
                           <td className="px-4 py-3 text-sm text-gray-600 text-right">{rider.pointsScored}</td>
                         </tr>
                       ))}
