@@ -4,6 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { IconAdjustments, IconX } from "@tabler/icons-react";
+import { auth } from "@/lib/firebase/client";
+import { clearSharedSession } from "@/lib/auth/client-session";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { Logout } from "tabler-icons-react";
 import { useCurrentUser } from "@/contexts/CurrentUserContext";
 import type { User } from "@/lib/types/user";
 
@@ -58,7 +63,18 @@ export function AccountPageContent() {
     const { user } = useAuth();
     const { userData, loading: userDataLoading, refreshUserData, setUserData } = useCurrentUser();
     const { t } = useTranslation();
+    const router = useRouter();
     const [editMode, setEditMode] = useState(false);
+
+    const handleLogout = async () => {
+        try {
+            await clearSharedSession();
+            await signOut(auth);
+            router.push('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    };
     const [activeId, setActiveId] = useState<BlockId | null>(null);
 
     const {
@@ -164,7 +180,14 @@ export function AccountPageContent() {
             <div className="mx-auto container max-w-7xl">
 
                 {/* Header */}
-                <div className="flex flex-row border border-gray-200 mb-6 items-center justify-end bg-white px-6 py-4 rounded-lg">
+                <div className="flex flex-row border border-gray-200 mb-6 items-center justify-between bg-white px-6 py-4 rounded-lg">
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 transition-colors"
+                    >
+                        <Logout className="w-4 h-4" />
+                        Uitloggen
+                    </button>
                     <button
                         onClick={() => setEditMode(v => !v)}
                         className={[
