@@ -93,6 +93,7 @@ export interface SlipstreamRace {
   raceName: string;                 // e.g., "Milano-Sanremo"
   raceDate: Timestamp;              // Race start date/time
   pickDeadline: Timestamp;          // Calculated: raceDate - pickDeadlineMinutes
+  hasBonification?: boolean;        // Optional per-race override for stage bonification seconds
   status: SlipstreamRaceStatus;
   order: number;                    // Order in calendar (1-25)
 }
@@ -112,7 +113,7 @@ export interface SlipstreamConfig {
   countingRaces: SlipstreamRace[];                // Races that count for this game
   penaltyMinutes: number;                         // Penalty for DNF/DNS/missed pick (default: 1)
   pickDeadlineMinutes: number;                    // Minutes before race start for deadline (default: 60)
-  hasBonification?: boolean;                      // Award stage bonification seconds (top 3: -10s/-6s/-4s)
+  hasBonification?: boolean;                      // Legacy default for stage bonification seconds (prefer per-race flag)
   greenJerseyPoints: Record<number, number>;      // Position -> points (default: 1st=10...10th=1)
 }
 

@@ -211,8 +211,14 @@ export async function POST(
           // Valid pick - rider finished the race
           const riderFinishPosition = timeLossResult.riderFinishPosition || null;
 
-          // Apply bonification seconds for top 3 finishers (only if game has hasBonification enabled)
-          const bonificationSeconds = (config.hasBonification && riderFinishPosition) ? getStageBonificationSeconds(riderFinishPosition) : 0;
+          // Prefer per-race bonification so specific races can opt in without
+          // hardcoding slugs. Keep the game-level flag as a legacy fallback.
+          const shouldApplyBonification =
+            (race.hasBonification ?? config.hasBonification) === true &&
+            Boolean(riderFinishPosition);
+          const bonificationSeconds = shouldApplyBonification && riderFinishPosition
+            ? getStageBonificationSeconds(riderFinishPosition)
+            : 0;
           const timeLostSeconds = timeLossResult.timeLostSeconds - bonificationSeconds;
           const timeLostFormatted = formatTime(Math.abs(timeLostSeconds)) + (timeLostSeconds < 0 ? ' (bonus)' : '');
 
@@ -228,18 +234,24 @@ export async function POST(
           // Track this as a valid pick for penalty calculation
           validPickResults.push({ userId, timeLostSeconds });
 
-          // Update the existing pick
-          batch.update(existingPick.ref, {
+          // Firestore rejects `undefined`, so only include optional bonus time
+          // when a stage bonification actually applies.
+          const pickUpdate: Record<string, unknown> = {
             timeLostSeconds,
             timeLostFormatted,
             greenJerseyPoints,
-            bonificationSeconds: bonificationSeconds > 0 ? bonificationSeconds : undefined,
             riderFinishPosition,
             isPenalty: false,
             penaltyReason: null,
             processedAt: Timestamp.now(),
             locked: true
-          });
+          };
+
+          if (bonificationSeconds > 0) {
+            pickUpdate.bonificationSeconds = bonificationSeconds;
+          }
+
+          batch.update(existingPick.ref, pickUpdate);
 
           // Update participant totals
           if (existingPick.alreadyProcessed) {

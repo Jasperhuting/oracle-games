@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
-import { Game, SlipstreamConfig, SlipstreamRace, isSlipstream } from '@/lib/types/games';
+import { Game, SlipstreamConfig, isSlipstream } from '@/lib/types/games';
 
 interface AddRaceRequest {
   raceId: string;
@@ -9,6 +9,7 @@ interface AddRaceRequest {
   raceName: string;
   raceDate: string;  // ISO date string
   order?: number;
+  hasBonification?: boolean;
 }
 
 interface AddRacesRequest {
@@ -116,6 +117,7 @@ export async function POST(
         raceName: race.raceName,
         raceDate: Timestamp.fromDate(raceDate),
         pickDeadline: Timestamp.fromDate(pickDeadline),
+        hasBonification: race.hasBonification ?? false,
         status: 'upcoming' as const,
         order: race.order ?? existingRaces.length + index + 1
       };

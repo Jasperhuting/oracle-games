@@ -41,6 +41,7 @@ export const slipstreamRaceSchema = z.object({
   raceName: z.string(),
   raceDate: timestampSchema,
   pickDeadline: timestampSchema,
+  hasBonification: z.boolean().optional(),
   status: z.enum(SLIPSTREAM_RACE_STATUSES),
   order: z.number().int().nonnegative(),
 });
