@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
       totalStages: number;
       isSingleDay: boolean;
       hasPrologue: boolean;
+      abStages: number[];
       startDate: string | null;
       endDate: string | null;
       classification: string | null;
@@ -105,6 +106,7 @@ export async function GET(request: NextRequest) {
         totalStages: data.totalStages ?? data.stages ?? totalStagesFromRange ?? 1,
         isSingleDay,
         hasPrologue,
+        abStages: Array.isArray(data.abStages) ? data.abStages.filter((n: unknown) => typeof n === 'number') : [],
         startDate,
         endDate,
         classification,
@@ -445,6 +447,9 @@ export async function GET(request: NextRequest) {
         if (typeof s.stageNumber === 'number') return s.stageNumber;
         if (s.stageNumber === 'gc') return 1000;
         if (s.stageNumber === 'result') return 1001;
+        // a/b stages: '2a' → 2.0, '2b' → 2.1, '2c' → 2.2, …
+        const abMatch = String(s.stageNumber).match(/^(\d+)([a-z])$/);
+        if (abMatch) return parseInt(abMatch[1]) + (abMatch[2].charCodeAt(0) - 'a'.charCodeAt(0)) * 0.1;
         return 999;
       };
 
@@ -500,11 +505,33 @@ export async function GET(request: NextRequest) {
         }
 
         // Add pending numbered stages (1 to numberedStages, not including prologue)
+        const abStagesSet = new Set<number>(raceConfig?.abStages ?? []);
+        const scrapedAbStages = new Set(
+          stages
+            .filter(s => typeof s.stageNumber === 'string' && /^\d+[a-z]$/.test(s.stageNumber))
+            .map(s => s.stageNumber as string)
+        );
         for (let i = 1; i <= numberedStages; i++) {
-          if (!scrapedStageNumbers.has(i)) {
-            // Get stage date from stage dates map
+          if (abStagesSet.has(i)) {
+            // This stage has a/b variants — add 2a and 2b instead of 2
+            for (const suffix of ['a', 'b'] as const) {
+              const abStageNumber = `${i}${suffix}`;
+              if (!scrapedAbStages.has(abStageNumber)) {
+                const stageDate = getStageDate(raceSlug, i);
+                stages.push({
+                  stageNumber: abStageNumber,
+                  status: 'pending',
+                  scrapedAt: null,
+                  riderCount: 0,
+                  hasValidationErrors: false,
+                  validationWarnings: 0,
+                  docId: '',
+                  stageDate,
+                });
+              }
+            }
+          } else if (!scrapedStageNumbers.has(i)) {
             const stageDate = getStageDate(raceSlug, i);
-
             stages.push({
               stageNumber: i,
               status: 'pending',
@@ -579,6 +606,7 @@ export async function GET(request: NextRequest) {
         classification: raceConfig?.classification || null,
         excludeFromScraping: raceConfig?.excludeFromScraping ?? false,
         restDays: raceConfig?.restDays ?? 0,
+        abStages: raceConfig?.abStages ?? [],
       });
     });
 
@@ -644,21 +672,36 @@ export async function GET(request: NextRequest) {
           });
         }
 
-        // Add numbered stages
+        // Add numbered stages (with a/b variants where configured)
+        const abStagesSet2 = new Set<number>(config.abStages ?? []);
         for (let i = 1; i <= numberedStages; i++) {
-          // Get stage date from stage dates map
-          const stageDate = getStageDate(raceSlug, i);
-
-          stages.push({
-            stageNumber: i,
-            status: 'pending',
-            scrapedAt: null,
-            riderCount: 0,
-            hasValidationErrors: false,
-            validationWarnings: 0,
-            docId: '',
-            stageDate,
-          });
+          if (abStagesSet2.has(i)) {
+            for (const suffix of ['a', 'b'] as const) {
+              const stageDate = getStageDate(raceSlug, i);
+              stages.push({
+                stageNumber: `${i}${suffix}`,
+                status: 'pending',
+                scrapedAt: null,
+                riderCount: 0,
+                hasValidationErrors: false,
+                validationWarnings: 0,
+                docId: '',
+                stageDate,
+              });
+            }
+          } else {
+            const stageDate = getStageDate(raceSlug, i);
+            stages.push({
+              stageNumber: i,
+              status: 'pending',
+              scrapedAt: null,
+              riderCount: 0,
+              hasValidationErrors: false,
+              validationWarnings: 0,
+              docId: '',
+              stageDate,
+            });
+          }
         }
 
         // Add pending General Classification for multi-stage races
@@ -698,6 +741,7 @@ export async function GET(request: NextRequest) {
         classification: config.classification,
         excludeFromScraping: config.excludeFromScraping,
         restDays: config.restDays,
+        abStages: config.abStages ?? [],
       });
     });
 

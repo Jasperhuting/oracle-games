@@ -10,7 +10,7 @@ import { getServerFirebase } from '@/lib/firebase/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping, restDays } = body;
+    const { userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping, restDays, abStages } = body;
 
     if (!userId || !raceId) {
       return NextResponse.json({ error: 'userId and raceId are required' }, { status: 400 });
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     if (typeof isSingleDay === 'boolean') update.isSingleDay = isSingleDay;
     if (typeof excludeFromScraping === 'boolean') update.excludeFromScraping = excludeFromScraping;
     if (typeof restDays === 'number') update.restDays = restDays;
+    if (Array.isArray(abStages)) update.abStages = abStages.filter((n: unknown) => typeof n === 'number');
 
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });

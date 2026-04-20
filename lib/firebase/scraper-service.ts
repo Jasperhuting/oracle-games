@@ -12,7 +12,7 @@ export interface ScraperDataKey {
   race: string;
   year: number;
   type: 'startlist' | 'stage' | 'result' | 'tour-gc';
-  stage?: number;
+  stage?: number | string; // string for a/b stages like '2a', '2b'
 }
 
 export interface SaveOptions {

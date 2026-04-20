@@ -34,6 +34,7 @@ export interface RaceStatus {
   classification: string | null;
   excludeFromScraping: boolean;
   restDays: number;
+  abStages: number[];
 }
 
 export interface RaceStatusResponse {

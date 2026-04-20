@@ -267,7 +267,7 @@ export async function POST(
         const { race, year, stage, type } = job.data as {
           race: string;
           year: number;
-          stage?: number;
+          stage?: number | string;
           type: 'startlist' | 'stage-result' | 'stage' | 'result' | 'tour-gc';
         };
         const markerType = type === 'stage-result' ? 'stage' : type;
@@ -449,7 +449,7 @@ type ScrapeResult = {
   success: boolean;
   message: string;
   riderCount: number;
-  stage?: number;
+  stage?: number | string;
   resultPreview?: string[];
   retryable?: boolean;
   failureReason?: 'validation' | 'unsupported' | 'resource' | 'navigation' | 'timeout' | 'availability' | 'provider' | 'unknown';
@@ -487,7 +487,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     type: 'startlist' | 'stage-result' | 'stage' | 'result' | 'tour-gc';
     race: string;
     year: number;
-    stage?: number;
+    stage?: number | string;
   };
 
   await updateJobProgress(jobId, 0, 1, `Scraping ${type}...`);

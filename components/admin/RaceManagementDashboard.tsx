@@ -488,6 +488,7 @@ function RaceConfigForm({
   const [isSingleDay, setIsSingleDay] = useState(race.isSingleDay);
   const [excludeFromScraping, setExcludeFromScraping] = useState(race.excludeFromScraping);
   const [restDays, setRestDays] = useState(race.restDays ?? 0);
+  const [abStagesInput, setAbStagesInput] = useState((race.abStages ?? []).join(', '));
   const [saving, setSaving] = useState(false);
 
   // Derive the Firestore document ID: {slug}_{year}
@@ -496,10 +497,14 @@ function RaceConfigForm({
   const handleSave = async () => {
     setSaving(true);
     try {
+      const abStages = abStagesInput
+        .split(',')
+        .map(s => parseInt(s.trim(), 10))
+        .filter(n => Number.isFinite(n) && n > 0);
       const response = await fetch('/api/admin/race-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping, restDays }),
+        body: JSON.stringify({ userId, raceId, totalStages, hasPrologue, isSingleDay, excludeFromScraping, restDays, abStages }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
@@ -537,6 +542,17 @@ function RaceConfigForm({
             value={restDays}
             onChange={e => setRestDays(parseInt(e.target.value, 10))}
             className="border rounded px-2 py-1 w-20 text-sm"
+            disabled={isSingleDay}
+          />
+        </label>
+        <label className="flex flex-col text-sm gap-1">
+          <span className="text-gray-600">A/B etappes <span className="text-gray-400 font-normal">(bijv. 2, 5)</span></span>
+          <input
+            type="text"
+            value={abStagesInput}
+            onChange={e => setAbStagesInput(e.target.value)}
+            placeholder="2, 5"
+            className="border rounded px-2 py-1 w-28 text-sm"
             disabled={isSingleDay}
           />
         </label>

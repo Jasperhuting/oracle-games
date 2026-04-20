@@ -13,7 +13,7 @@ type ScrapeOutcome = {
   raceSlug: string;
   raceName: string;
   type: 'stage' | 'result' | 'tour-gc';
-  stage?: number;
+  stage?: number | string;
   success: boolean;
   riderCount: number;
   message: string;
@@ -94,7 +94,7 @@ async function hasPendingJob(
   race: string,
   year: number,
   type: string,
-  stage?: number,
+  stage?: number | string,
 ): Promise<boolean> {
   let query = db.collection('jobs')
     .where('type', '==', 'scraper')
@@ -128,7 +128,7 @@ async function hasRecentFatalFailedJob(
   race: string,
   year: number,
   type: string,
-  stage?: number,
+  stage?: number | string,
 ): Promise<boolean> {
   let query = db.collection('jobs')
     .where('type', '==', 'scraper')
@@ -343,6 +343,45 @@ export async function GET(request: NextRequest) {
           const stageNumber = stageNumberOrNull !== null
             ? stageNumberOrNull
             : (hasPrologue ? diffDays(startStr, targetDate) : diffDays(startStr, targetDate) + 1);
+
+          // Check if this stage number has a/b variants
+          const abStages: number[] = Array.isArray(raceData.abStages) ? raceData.abStages : [];
+          const isAbStage = abStages.includes(stageNumber);
+
+          if (isAbStage) {
+            // Queue both a and b variants
+            for (const suffix of ['a', 'b'] as const) {
+              const abStageNumber = `${stageNumber}${suffix}`;
+              const abAlreadyScraped = await hasExistingScrape(db, { race: raceSlug, year, type: 'stage', stage: abStageNumber });
+              if (abAlreadyScraped) {
+                skipped.push(`${raceSlug} (stage ${abStageNumber} already scraped)`);
+                continue;
+              }
+              if (!dryRun && !notifyOnly && await hasPendingJob(db, raceSlug, year, 'stage', abStageNumber)) {
+                skipped.push(`${raceSlug} (stage ${abStageNumber} job already queued)`);
+                continue;
+              }
+              if (!dryRun && !notifyOnly && await hasRecentFatalFailedJob(db, raceSlug, year, 'stage', abStageNumber)) {
+                skipped.push(`${raceSlug} (stage ${abStageNumber} recent fatal failure, not re-queuing)`);
+                continue;
+              }
+              if (dryRun || notifyOnly) {
+                outcomes.push({
+                  raceSlug, raceName, type: 'stage', stage: abStageNumber, success: true, riderCount: 0,
+                  message: notifyOnly ? `NOTIFY-ONLY: skipped scrape (stage ${abStageNumber})` : `DRY-RUN: would queue stage ${abStageNumber}`,
+                });
+                continue;
+              }
+              await createJob({
+                type: 'scraper', status: 'pending', priority: 1,
+                progress: { current: 0, total: 1, percentage: 0 },
+                data: { type: 'stage', race: raceSlug, year, stage: abStageNumber, batchId, raceName },
+              });
+              queuedJobs++;
+              outcomes.push({ raceSlug, raceName, type: 'stage', stage: abStageNumber, success: true, riderCount: 0, message: `Queued stage ${abStageNumber} scrape` });
+            }
+            continue;
+          }
 
           const alreadyScraped = await hasExistingScrape(db, {
             race: raceSlug,
