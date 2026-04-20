@@ -196,20 +196,32 @@ export default function SidebarChatWidget() {
   const { rooms, unreadByRoom, totalUnread, loading } = useChatRooms();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [headerBottom, setHeaderBottom] = useState(120);
 
   const isOnChatPage = pathname.startsWith('/chat');
   const hasRooms = rooms.length > 0;
 
-  // Auto-open when rooms become available for the first time
+  // Track the bottom edge of the sticky header so the panel starts exactly below it
   useEffect(() => {
-    if (hasRooms && !isOpen) {
-      setIsOpen(true);
-    }
+    const update = () => {
+      const header = document.querySelector('header');
+      if (header) setHeaderBottom(header.getBoundingClientRect().bottom);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  // Close and reset when rooms disappear
+  useEffect(() => {
     if (!hasRooms) {
       setIsOpen(false);
       setSelectedRoomId(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasRooms]);
 
   // Auto-select when there's exactly one room
@@ -251,7 +263,7 @@ export default function SidebarChatWidget() {
 
   // Expanded: full sidebar panel
   return (
-    <div className="fixed left-0 top-[86px] bottom-0 z-30 w-[272px] bg-white border-r border-gray-200 shadow-xl hidden sm:flex sm:flex-col">
+    <div className="fixed left-0 bottom-0 z-[39] w-[272px] bg-white border-r border-t border-gray-200 shadow-xl rounded-tr-lg overflow-hidden hidden sm:flex sm:flex-col" style={{ top: headerBottom }}>
       {selectedRoom ? (
         <ChatPanel
           room={selectedRoom}
