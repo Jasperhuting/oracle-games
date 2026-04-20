@@ -8,10 +8,21 @@ import type { StageStatus, RaceStatus, RaceStatusResponse } from '@/lib/types/ra
  * Infer stage count from start/end date range.
  * Returns null when dates are missing, equal (single-day), or invalid.
  */
-function stagesFromDateRange(start: string | null, end: string | null): number | null {
-  if (!start || !end) return null;
-  const [sy, sm, sd] = start.substring(0, 10).split('-').map(Number);
-  const [ey, em, ed] = end.substring(0, 10).split('-').map(Number);
+function toDateStr(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && typeof (value as any).toDate === 'function') {
+    try { return (value as any).toDate().toISOString(); } catch { return null; }
+  }
+  return null;
+}
+
+function stagesFromDateRange(start: unknown, end: unknown): number | null {
+  const startStr = toDateStr(start);
+  const endStr = toDateStr(end);
+  if (!startStr || !endStr) return null;
+  const [sy, sm, sd] = startStr.substring(0, 10).split('-').map(Number);
+  const [ey, em, ed] = endStr.substring(0, 10).split('-').map(Number);
   const diff = Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86400000);
   return diff > 0 ? diff + 1 : null;
 }
@@ -77,8 +88,11 @@ export async function GET(request: NextRequest) {
         return;
       }
 
+      // Normalise startDate / endDate — could be a string or a Firestore Timestamp
+      const startDate = toDateStr(data.startDate);
+      const endDate = toDateStr(data.endDate);
+
       // Skip races that start after the date cutoff (today + 7 days)
-      const startDate = data.startDate || null;
       if (startDate) {
         const raceStart = new Date(startDate);
         if (raceStart > maxDate) {
@@ -90,9 +104,8 @@ export async function GET(request: NextRequest) {
       const restDays: number = data.restDays ?? 0;
       // Dates are authoritative: if there is no end date or start === end, it is always
       // a single-day race regardless of any stored isSingleDay value.
-      const datesConfirmSingleDay = !data.endDate || data.startDate === data.endDate;
+      const datesConfirmSingleDay = !endDate || startDate === endDate;
       const isSingleDay = datesConfirmSingleDay || (data.isSingleDay ?? false);
-      const endDate: string | null = data.endDate || null;
 
       // Infer totalStages from date range if not set in Firestore:
       // subtract rest days and prologue day so only numbered stages remain
@@ -302,7 +315,9 @@ export async function GET(request: NextRequest) {
           const base = new Date(startDate);
           if (!Number.isNaN(base.getTime())) {
             base.setDate(base.getDate() + Math.max(0, stageNumber - 1));
-            stageDate = base.toISOString();
+            if (!Number.isNaN(base.getTime())) {
+              stageDate = base.toISOString();
+            }
           }
         }
       }
