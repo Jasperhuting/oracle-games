@@ -375,6 +375,9 @@ export async function GET(request: NextRequest) {
       let lastScrapedAt: string | null = null;
       let hasValidationErrors = false;
 
+      // Stages configured as a/b splits — the plain numeric entry should be hidden
+      const abStagesSet = new Set<number>(raceConfig?.abStages ?? []);
+
       // Process existing stage documents
       stageDocs.forEach(doc => {
         const validation = validationMap.get(doc.id);
@@ -385,6 +388,24 @@ export async function GET(request: NextRequest) {
 
         // GC (tour-gc) is supplementary data, not a race stage - don't count it
         const isSupplementary = doc.key.type === 'tour-gc';
+
+        // Determine stage number/label first so we can filter a/b stages
+        // Stage 0 = Prologue, result = single-day result, tour-gc = GC
+        let stageNumber: number | string;
+        if (doc.key.type === 'result') {
+          stageNumber = 'result';
+        } else if (doc.key.type === 'tour-gc') {
+          stageNumber = 'gc';
+        } else if (doc.key.stage === 0) {
+          stageNumber = 'prologue';
+        } else {
+          stageNumber = doc.key.stage ?? 0;
+        }
+
+        // Skip the plain numeric stage when it is configured as an a/b split
+        if (typeof stageNumber === 'number' && abStagesSet.has(stageNumber)) {
+          return;
+        }
 
         if (!isSupplementary) {
           if (isFailed) {
@@ -405,19 +426,6 @@ export async function GET(request: NextRequest) {
 
         if (!lastScrapedAt || doc.updatedAt > lastScrapedAt) {
           lastScrapedAt = doc.updatedAt;
-        }
-
-        // Determine stage number/label
-        // Stage 0 = Prologue, result = single-day result, tour-gc = GC
-        let stageNumber: number | string;
-        if (doc.key.type === 'result') {
-          stageNumber = 'result';
-        } else if (doc.key.type === 'tour-gc') {
-          stageNumber = 'gc';
-        } else if (doc.key.stage === 0) {
-          stageNumber = 'prologue';
-        } else {
-          stageNumber = doc.key.stage ?? 0;
         }
 
         // Get stage date from the stage dates map
@@ -505,7 +513,6 @@ export async function GET(request: NextRequest) {
         }
 
         // Add pending numbered stages (1 to numberedStages, not including prologue)
-        const abStagesSet = new Set<number>(raceConfig?.abStages ?? []);
         const scrapedAbStages = new Set(
           stages
             .filter(s => typeof s.stageNumber === 'string' && /^\d+[a-z]$/.test(s.stageNumber))
