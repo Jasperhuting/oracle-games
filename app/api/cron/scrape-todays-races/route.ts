@@ -85,7 +85,16 @@ async function hasExistingScrape(db: ReturnType<typeof getServerFirebase>, key: 
   const generalClassification = parseMaybeJsonArray(data.generalClassification);
   const count = typeof data.count === 'number' ? data.count : 0;
 
-  return stageResults.length > 0 || generalClassification.length > 0 || count > 0;
+  if (stageResults.length > 0 || generalClassification.length > 0 || count > 0) return true;
+
+  // Empty marker saved when race had no results yet — skip re-queuing for 6 hours
+  // to avoid hammering PCS every hour. After 6 hours, allow one retry.
+  if (data._empty === true && data.updatedAt) {
+    const updatedAt = new Date(data.updatedAt as string).getTime();
+    return Date.now() - updatedAt < 6 * 60 * 60 * 1000;
+  }
+
+  return false;
 }
 
 /** Returns true if there's already a pending or running scraper job for this race/type/stage. */

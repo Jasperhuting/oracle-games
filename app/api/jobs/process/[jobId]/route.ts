@@ -509,6 +509,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
     if (isEmptyScrapeValidationFailure(save)) {
+      await saveEmptyScraperDataMarker(key, 'No startlist available yet');
       return {
         success: true,
         message: 'No startlist available yet',
@@ -543,6 +544,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
     if (isEmptyScrapeValidationFailure(save)) {
+      await saveEmptyScraperDataMarker(key, `No stage data available yet for stage ${stage}`);
       return {
         success: true,
         message: `No stage data available yet for stage ${stage}`,
@@ -551,6 +553,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         resultPreview: [],
       };
     }
+    let noDbRidersFound = false;
     if (save.success) {
       try {
         const calculatePointsModule = await import('@/app/api/games/calculate-points/route');
@@ -581,6 +584,10 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         });
 
         if (calculatePointsResponse.status === 200) {
+          const gamesProcessed = pointsResult?.results?.gamesProcessed ?? pointsResult?.results?.gamesAffected ?? 0;
+          if (gamesProcessed === 0 && !pointsResult?.skipped) {
+            noDbRidersFound = true;
+          }
           console.log(`[jobs/process] Points calculation completed for ${race} stage ${stage}:`, pointsResult);
         } else {
           console.error(`[jobs/process] Failed to calculate points for ${race} stage ${stage}:`, pointsResult);
@@ -607,7 +614,9 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     }
     const stageResult: ScrapeResult = {
       success: save.success,
-      message: save.success ? `Stage ${stage} scraped` : (save.error || 'Validation failed'),
+      message: save.success
+        ? (noDbRidersFound ? `Stage ${stage} gescraped — geen renners uit database gevonden` : `Stage ${stage} scraped`)
+        : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       stage,
       resultPreview: save.success ? getTopResultsPreview(result) : [],
@@ -633,6 +642,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
     if (isEmptyScrapeValidationFailure(save)) {
+      await saveEmptyScraperDataMarker(key, 'No race result available yet');
       return {
         success: true,
         message: 'No race result available yet',
@@ -640,6 +650,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         resultPreview: [],
       };
     }
+    let noDbRidersFoundResult = false;
     if (save.success) {
       await triggerSlipstreamCalculations({
         race,
@@ -676,6 +687,10 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
         });
 
         if (calculatePointsResponse.status === 200) {
+          const gamesProcessed = pointsResult?.results?.gamesProcessed ?? pointsResult?.results?.gamesAffected ?? 0;
+          if (gamesProcessed === 0 && !pointsResult?.skipped) {
+            noDbRidersFoundResult = true;
+          }
           console.log(`[jobs/process] Points calculation completed for ${race} result:`, pointsResult);
         } else {
           console.error(`[jobs/process] Failed to calculate points for ${race} result:`, pointsResult);
@@ -696,7 +711,9 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     }
     const resultResult: ScrapeResult = {
       success: save.success,
-      message: save.success ? 'Result scraped' : (save.error || 'Validation failed'),
+      message: save.success
+        ? (noDbRidersFoundResult ? 'Result gescraped — geen renners uit database gevonden' : 'Result scraped')
+        : (save.error || 'Validation failed'),
       riderCount: 'stageResults' in result ? result.stageResults.length : 0,
       resultPreview: save.success ? getTopResultsPreview(result) : [],
       retryable: !save.success,
@@ -721,6 +738,7 @@ async function processSingleScrape(jobId: string, job: any): Promise<ScrapeResul
     const save = await saveScraperDataValidated(key, result);
     await updateJobProgress(jobId, 1, 1, 'Completed');
     if (isEmptyScrapeValidationFailure(save)) {
+      await saveEmptyScraperDataMarker(key, 'No tour GC available yet');
       return {
         success: true,
         message: 'No tour GC available yet',
