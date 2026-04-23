@@ -83,6 +83,15 @@ interface AllTeamsTeam {
   riders: AllTeamsRider[];
 }
 
+function getConfiguredGameType(game: Game | null): string | null {
+  if (!game) return null;
+  if (game.gameType) return game.gameType;
+  if (game.config && 'gameType' in game.config) {
+    return String(game.config.gameType);
+  }
+  return null;
+}
+
 export default function GameDashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -134,6 +143,7 @@ export default function GameDashboardPage() {
 
     return stats;
   }, [allTeams]);
+  const configuredGameType = getConfiguredGameType(game);
 
   const myStandingRanking = useMemo(() => {
     if (!participant) return undefined;
@@ -368,7 +378,7 @@ export default function GameDashboardPage() {
           gameId={gameId}
           gameName={game?.name}
           gameYear={gameYear}
-          gameType={game?.gameType ?? null}
+          gameType={configuredGameType}
           loading={standingsLoading}
           error={standingsError}
           currentUserId={user?.uid}

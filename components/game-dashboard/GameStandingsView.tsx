@@ -43,6 +43,22 @@ interface GameStandingsViewProps {
 
 const columnHelper = createColumnHelper<GameStandingRow>();
 
+function getAchievedPoints(row: GameStandingRow): number {
+  return (row.riders ?? []).reduce((sum, rider) => sum + (Number(rider?.pointsScored) || 0), 0);
+}
+
+function getRankingScore(row: GameStandingRow, gameType: string | null, isFullGrid: boolean): number {
+  if (gameType === 'auctioneer') {
+    return getAchievedPoints(row);
+  }
+
+  if (isFullGrid || gameType === 'worldtour-manager') {
+    return Number(row.totalPoints) || 0;
+  }
+
+  return Number(row.totalPoints) || getAchievedPoints(row);
+}
+
 export function GameStandingsView({
   standings,
   gameId,
@@ -59,26 +75,63 @@ export function GameStandingsView({
   const [showPrizeEligibleOnly, setShowPrizeEligibleOnly] = useState(false);
   const [prizesExpanded, setPrizesExpanded] = useState(false);
   const [showPrizesModal, setShowPrizesModal] = useState(false);
+  const isFullGrid = (gameType || '').toLowerCase() === 'full-grid';
 
   const prizeEligibleCount = useMemo(
     () => standings.filter((standing) => standing.eligibleForPrizes).length,
     [standings]
   );
-  const filteredStandings = useMemo(
-    () =>
-      showPrizeEligibleOnly
-        ? standings
-            .filter((standing) => standing.eligibleForPrizes)
-            .map((standing, index) => ({
-              ...standing,
-              ranking: index + 1,
-            }))
-        : standings,
-    [showPrizeEligibleOnly, standings]
-  );
-  const isFullGrid = (gameType || '').toLowerCase() === 'full-grid';
+
+  const rankedStandings = useMemo(() => {
+    let currentRank = 1;
+    let previousScore: number | null = null;
+
+    return [...standings]
+      .sort((a, b) => {
+        const scoreDiff = getRankingScore(b, gameType, isFullGrid) - getRankingScore(a, gameType, isFullGrid);
+        if (scoreDiff !== 0) return scoreDiff;
+        return (a.playername || '').localeCompare(b.playername || '');
+      })
+      .map((standing, index) => {
+        const score = getRankingScore(standing, gameType, isFullGrid);
+        if (previousScore === null || score !== previousScore) {
+          currentRank = index + 1;
+          previousScore = score;
+        }
+
+        return {
+          ...standing,
+          totalPoints: Number(standing.totalPoints) || score,
+          ranking: currentRank,
+        };
+      });
+  }, [gameType, isFullGrid, standings]);
+
+  const filteredStandings = useMemo(() => {
+    if (!showPrizeEligibleOnly) return rankedStandings;
+
+    let currentRank = 1;
+    let previousScore: number | null = null;
+
+    return rankedStandings
+      .filter((standing) => standing.eligibleForPrizes)
+      .map((standing, index) => {
+        const score = getRankingScore(standing, gameType, isFullGrid);
+        if (previousScore === null || score !== previousScore) {
+          currentRank = index + 1;
+          previousScore = score;
+        }
+
+        return {
+          ...standing,
+          ranking: currentRank,
+        };
+      });
+  }, [gameType, isFullGrid, rankedStandings, showPrizeEligibleOnly]);
 
   const columns = useMemo(() => {
+    // TanStack Table column definitions are intentionally heterogeneous by value type.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allColumns: ColumnDef<GameStandingRow, any>[] = [
       columnHelper.accessor('ranking', {
         header: '#',
@@ -134,7 +187,7 @@ export function GameStandingsView({
         },
       }),
       columnHelper.accessor(
-        (row) => (row.riders ?? []).reduce((sum, rider) => sum + (rider?.pointsScored || 0), 0),
+        (row) => getAchievedPoints(row),
         {
           id: 'achievedPoints',
           header: 'Punten',

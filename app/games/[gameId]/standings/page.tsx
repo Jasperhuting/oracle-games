@@ -58,7 +58,7 @@ export default function StandingsPage() {
         const data = await response.json();
         const teams: TeamOverview[] = data.teams || [];
 
-        const mappedStandings: Standing[] = teams.map((team) => ({
+        const mappedStandings: GameStandingRow[] = teams.map((team) => ({
           ranking: team.ranking,
           playername: team.playername,
           userId: team.userId,
