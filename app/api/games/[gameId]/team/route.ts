@@ -17,6 +17,17 @@ function toIsoDate(value: unknown): string | null {
   return null;
 }
 
+function getPointsFromBreakdown(pointsBreakdown: unknown): number {
+  if (!Array.isArray(pointsBreakdown)) return 0;
+
+  return pointsBreakdown.reduce((sum, event) => {
+    const total = typeof event === 'object' && event !== null && 'total' in event
+      ? Number((event as { total?: unknown }).total)
+      : 0;
+    return sum + (Number.isFinite(total) ? total : 0);
+  }, 0);
+}
+
 // GET player's team for a game
 export async function GET(
   request: NextRequest,
@@ -53,6 +64,7 @@ export async function GET(
       const riderInfo = ridersById.get(data.riderNameId);
       const baseValue = riderInfo?.points || 0;
       const teamJerseyImage = riderInfo?.jerseyImageTeam || null;
+      const calculatedPointsScored = getPointsFromBreakdown(data.pointsBreakdown);
       return {
         id: doc.id,
         nameId: data.riderNameId,
@@ -61,8 +73,10 @@ export async function GET(
         country: riderInfo?.country || data.riderCountry,
         rank: data.riderRank || riderInfo?.rank || 0,
         points: gameType === 'auctioneer'
-          ? Number(data.pointsScored ?? data.totalPoints ?? 0)
-          : Number(data.pointsScored ?? 0),
+          ? Number(data.pointsScored ?? data.totalPoints ?? calculatedPointsScored ?? 0)
+          : data.pointsScored !== null && data.pointsScored !== undefined
+            ? Number(data.pointsScored)
+            : calculatedPointsScored,
         // Prefer team jersey image over rider image for dashboard cards.
         jerseyImage: teamJerseyImage || data.jerseyImage || null,
         pricePaid: data.pricePaid,

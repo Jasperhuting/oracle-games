@@ -32,6 +32,17 @@ async function getCurrentUserId(request: NextRequest): Promise<string | null> {
   }
 }
 
+function getPointsFromBreakdown(pointsBreakdown: unknown): number {
+  if (!Array.isArray(pointsBreakdown)) return 0;
+
+  return pointsBreakdown.reduce((sum, event) => {
+    const total = typeof event === 'object' && event !== null && 'total' in event
+      ? Number((event as { total?: unknown }).total)
+      : 0;
+    return sum + (Number.isFinite(total) ? total : 0);
+  }, 0);
+}
+
 // GET team details with rider points for a participant
 export async function GET(
   request: NextRequest,
@@ -115,8 +126,11 @@ export async function GET(
       const pointsByRiderId = new Map<string, { pointsScored: number; pointsBreakdown?: unknown[]; jerseyImage?: string; pricePaid?: number }>();
       for (const doc of teamSnapshot.docs) {
         const data = doc.data();
+        const calculatedPointsScored = getPointsFromBreakdown(data.pointsBreakdown);
         pointsByRiderId.set(data.riderNameId, {
-          pointsScored: Number(data.pointsScored ?? data.totalPoints ?? 0),
+          pointsScored: data.pointsScored !== null && data.pointsScored !== undefined
+            ? Number(data.pointsScored)
+            : calculatedPointsScored,
           pointsBreakdown: data.pointsBreakdown || [],
           jerseyImage: data.jerseyImage,
           pricePaid: data.pricePaid,
@@ -152,11 +166,14 @@ export async function GET(
 
       for (const doc of teamSnapshot.docs) {
         const data = doc.data();
+        const calculatedPointsScored = getPointsFromBreakdown(data.pointsBreakdown);
 
         // Auction Master needs a fallback for older team docs; other game types don't.
         const riderPoints = gameType === 'auctioneer'
-          ? Number(data.pointsScored ?? data.totalPoints ?? 0)
-          : Number(data.pointsScored ?? 0);
+          ? Number(data.pointsScored ?? data.totalPoints ?? calculatedPointsScored ?? 0)
+          : data.pointsScored !== null && data.pointsScored !== undefined
+            ? Number(data.pointsScored)
+            : calculatedPointsScored;
 
         riders.push({
           id: doc.id,

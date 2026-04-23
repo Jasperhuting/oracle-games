@@ -44,7 +44,8 @@ interface GameStandingsViewProps {
 const columnHelper = createColumnHelper<GameStandingRow>();
 
 function getAchievedPoints(row: GameStandingRow): number {
-  return (row.riders ?? []).reduce((sum, rider) => sum + (Number(rider?.pointsScored) || 0), 0);
+  const achievedPoints = (row.riders ?? []).reduce((sum, rider) => sum + (Number(rider?.pointsScored) || 0), 0);
+  return achievedPoints || Number(row.totalPoints) || 0;
 }
 
 function getRankingScore(row: GameStandingRow): number {

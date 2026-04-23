@@ -23,6 +23,17 @@ function getConfiguredGameType(gameData: DocumentData | undefined): string | nul
   return typeof gameType === 'string' ? gameType : null;
 }
 
+function getPointsFromBreakdown(pointsBreakdown: unknown): number {
+  if (!Array.isArray(pointsBreakdown)) return 0;
+
+  return pointsBreakdown.reduce((sum, event) => {
+    const total = typeof event === 'object' && event !== null && 'total' in event
+      ? Number((event as { total?: unknown }).total)
+      : 0;
+    return sum + (Number.isFinite(total) ? total : 0);
+  }, 0);
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
@@ -147,16 +158,17 @@ export async function GET(
         });
       }
 
+      const calculatedPointsScored = getPointsFromBreakdown(team.pointsBreakdown);
+      const hasStoredPointsScored = team.pointsScored !== null && team.pointsScored !== undefined;
+      const fallbackPoints = hasStoredPointsScored
+        ? Number(team.pointsScored)
+        : calculatedPointsScored;
+
       // Auction Master still has older team docs where rider points can live in totalPoints.
-      // Other game types use pointsScored with different semantics, so don't apply that fallback there.
-      let riderPoints = gameType === 'auctioneer'
-        ? Number(team.pointsScored ?? team.totalPoints ?? 0)
-        : Number(team.pointsScored ?? 0);
-
-      if (gameType === 'marginal-gains') {
-        riderPoints = (-team.spentBudget) + riderPoints
-      }
-
+      // Other game types should derive from pointsScored/pointsBreakdown only.
+      const riderPoints = gameType === 'auctioneer'
+        ? Number(team.pointsScored ?? team.totalPoints ?? calculatedPointsScored ?? 0)
+        : fallbackPoints;
 
       teamsMap.get(userId)?.push({
         riderId: doc.id,
