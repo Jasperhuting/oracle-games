@@ -18,6 +18,11 @@ function toIsoDate(value: unknown): string | null {
   return null;
 }
 
+function getConfiguredGameType(gameData: DocumentData | undefined): string | null {
+  const gameType = gameData?.gameType ?? gameData?.config?.gameType;
+  return typeof gameType === 'string' ? gameType : null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ gameId: string }> }
@@ -36,6 +41,7 @@ export async function GET(
     }
 
     const gameData: DocumentData | undefined = gameDoc.data();
+    const gameType = getConfiguredGameType(gameData);
     const riderValues = gameData?.config?.riderValues || {};
     const maxRiders = gameData?.config?.maxRiders || gameData?.config?.teamSize || 32; // Default to 32 if not specified
 
@@ -144,7 +150,7 @@ export async function GET(
       // Use pointsScored as the source of truth
       let riderPoints = team.pointsScored ?? 0;
 
-      if (gameData?.config?.gameType === 'marginal-gains') {
+      if (gameType === 'marginal-gains') {
         riderPoints = (-team.spentBudget) + riderPoints
       }
 
@@ -177,7 +183,7 @@ export async function GET(
     });
 
     // Fallback: if no playerTeams for (some) participants, derive temporary roster from bids.
-    const activeParticipants = participantsSnapshot.docs.map((doc) => ({
+    const activeParticipants: Array<DocumentData & { participantId: string }> = participantsSnapshot.docs.map((doc) => ({
       participantId: doc.id,
       ...(doc.data() as DocumentData),
     }));
@@ -257,13 +263,13 @@ export async function GET(
       const summedRiderPoints = riders.reduce((sum, r) => sum + (r.pointsScored ?? 0), 0);
       let calculatedTotalPoints = summedRiderPoints;
 
-      if (gameData?.gameType === 'marginal-gains') {
+      if (gameType === 'marginal-gains') {
         calculatedTotalPoints = (-participant.spentBudget) + calculatedTotalPoints;
       }
 
       // For full-grid, prefer participant totalPoints when populated.
       // Fallback to summed rider points when participant totalPoints is not synced yet.
-      if (gameData?.gameType === 'full-grid') {
+      if (gameType === 'full-grid') {
         const fullGridParticipantTotalPoints = Number(participant.totalPoints) || 0;
         if (fullGridParticipantTotalPoints > 0 || riders.length === 0) {
           calculatedTotalPoints = fullGridParticipantTotalPoints;
@@ -271,13 +277,13 @@ export async function GET(
       }
 
       // For auctioneer: prefer participant.totalPoints (authoritative, synced by score job).
-      // Fall back to summedRiderPoints only when participant.totalPoints is 0/absent.
-      if (gameData?.gameType === 'auctioneer' || gameData?.gameType === 'worldtour-manager') {
+      // Fall back to summed rider points when participant.totalPoints is 0/absent but riders have points.
+      if (gameType === 'auctioneer' || gameType === 'worldtour-manager') {
         const participantTotalPoints = Number(participant.totalPoints) || 0;
         if (participantTotalPoints > 0 || riders.length === 0) {
           calculatedTotalPoints = participantTotalPoints;
         }
-      } else if (gameData?.gameType !== 'full-grid' && gameData?.gameType !== 'marginal-gains' && gameData?.gameType !== 'slipstream') {
+      } else if (gameType !== 'full-grid' && gameType !== 'marginal-gains' && gameType !== 'slipstream') {
         // Other game types: fall back to participant.totalPoints only when summedRiderPoints is 0.
         if (summedRiderPoints === 0) {
           const participantTotalPoints = Number(participant.totalPoints) || 0;
