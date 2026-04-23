@@ -86,7 +86,7 @@ export function SurveyModal() {
       <div className="bg-[var(--platform-card-bg,#1a1a2e)] rounded-xl max-w-lg w-full p-6 shadow-2xl">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-xl font-bold">Help ons de website verbeteren</h2>
+            <h2 className="text-xl font-bold text-white">Help ons de website verbeteren</h2>
             <p className="text-sm text-gray-400 mt-1">Duurt maar 2 minuten. Je kunt ook overslaan.</p>
           </div>
           <button
@@ -106,7 +106,7 @@ export function SurveyModal() {
             <p className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">
               Vraag {page * QUESTIONS_PER_PAGE + i + 1} van {SURVEY_QUESTIONS.length}
             </p>
-            <p className="font-medium mb-2">{q.text}</p>
+            <p className="font-medium mb-2 text-white">{q.text}</p>
             <textarea
               value={answers[q.id]}
               onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}

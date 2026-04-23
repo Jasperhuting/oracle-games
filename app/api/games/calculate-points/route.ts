@@ -621,20 +621,19 @@ export async function POST(request: NextRequest) {
               console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Combativity bonus: ${combativityBonus} pts`);
             }
 
-            // 6. TEAM CLASSIFICATION POINTS
-            if (teamClassificationMap.size > 0 && teamData.riderTeam) {
-              const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
-              const teamRank = teamClassificationMap.get(riderTeamKey);
-              if (teamRank !== undefined) {
-                const teamClassPts = gameConfig.gameType === 'auctioneer' ? GIRO_AM_TEAM_CLASSIFICATION_POINTS : TEAM_CLASSIFICATION_POINTS;
-                const teamPoints = teamClassPts[teamRank] || 0;
-                if (teamPoints > 0) {
-                  riderTotalPoints += teamPoints;
-                  stagePointsBreakdown.teamPoints = teamPoints;
-                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Team classification rank ${teamRank}: ${teamPoints} pts`);
-                }
-              }
-            }
+            // 6. TEAM CLASSIFICATION POINTS - tijdelijk uitgeschakeld, wordt via aparte URL afgehandeld
+            // if (raceName === 'giro-d-italia' && teamClassificationMap.size > 0 && teamData.riderTeam) {
+            //   const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
+            //   const teamRank = teamClassificationMap.get(riderTeamKey);
+            //   if (teamRank !== undefined) {
+            //     const teamClassPts = gameConfig.gameType === 'auctioneer' ? GIRO_AM_TEAM_CLASSIFICATION_POINTS : TEAM_CLASSIFICATION_POINTS;
+            //     const teamPoints = teamClassPts[teamRank] || 0;
+            //     if (teamPoints > 0) {
+            //       riderTotalPoints += teamPoints;
+            //       stagePointsBreakdown.teamPoints = teamPoints;
+            //     }
+            //   }
+            // }
           }
 
           const existingBreakdown: PointsEvent[] = Array.isArray(teamData.pointsBreakdown)
@@ -696,9 +695,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // TEAM CLASSIFICATION SECOND PASS: Award team points to riders NOT in stage results
-    // (riders outside top 20 who ride for a top-10 team still earn team classification points)
-    if (teamClassificationMap.size > 0 && stage !== 'tour-gc') {
+    // TEAM CLASSIFICATION SECOND PASS - tijdelijk uitgeschakeld, wordt via aparte URL afgehandeld
+    if (false && raceName === 'giro-d-italia' && teamClassificationMap.size > 0 && stage !== 'tour-gc') {
       const uniqueTeamNames = [...new Set(
         teamClassification.slice(0, 10).flatMap(tc => [tc.team, tc.shortName]).filter(Boolean)
       )];

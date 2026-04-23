@@ -189,7 +189,7 @@ export default function EmojiReactions({
         createPortal(
           <div
             ref={pickerRef}
-            className="fixed z-9999 shadow-xl rounded-xl overflow-hidden"
+            className="fixed z-[9999] shadow-xl rounded-xl overflow-hidden"
             style={{ top: pickerPos.top, left: pickerPos.left }}
           >
             <EmojiPicker

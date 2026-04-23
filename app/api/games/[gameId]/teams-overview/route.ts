@@ -254,24 +254,16 @@ export async function GET(
         ? Math.round((totalDifference / totalBaseValue) * 100)
         : 0;
 
-      // Calculate totalPoints from riders' pointsScored as a fallback.
-      // For Auction Master-style standings, gameParticipants.totalPoints is the
-      // authoritative source and is what other views (like the account page)
-      // already use.
+      // Use summedRiderPoints as the primary source for totalPoints.
+      // This ensures the ranking always matches the PUNTEN column (which also
+      // sums rider.pointsScored). gameParticipants.totalPoints is NOT used here
+      // because it can be stale (0 for everyone) while playerTeams.pointsScored
+      // is always up to date after a points calculation run.
       const summedRiderPoints = riders.reduce((sum, r) => sum + (r.pointsScored ?? 0), 0);
       let calculatedTotalPoints = summedRiderPoints;
 
       if (gameData?.gameType === 'marginal-gains') {
         calculatedTotalPoints = (-participant.spentBudget) + calculatedTotalPoints;
-      }
-
-      const participantTotalPoints = Number(participant.totalPoints);
-      if (
-        gameData?.gameType !== 'marginal-gains' &&
-        gameData?.gameType !== 'slipstream' &&
-        Number.isFinite(participantTotalPoints)
-      ) {
-        calculatedTotalPoints = participantTotalPoints;
       }
 
       // For full-grid, prefer participant totalPoints when populated.

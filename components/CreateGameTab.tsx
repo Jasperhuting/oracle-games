@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { GameType } from "@/lib/types/games";
 import { useTranslation } from "react-i18next";
 import { Selector } from "./Selector";
+import { shouldExcludeRace } from "@/lib/utils/race-filters";
 
 interface AuctionPeriodInput {
   name: string;
@@ -64,6 +65,8 @@ interface Race {
   name: string;
   year: number;
   slug: string;
+  classification?: string | null;
+  excludeFromScraping?: boolean;
 }
 
 export const CreateGameTab = () => {
@@ -77,6 +80,7 @@ export const CreateGameTab = () => {
   const [auctionPeriods, setAuctionPeriods] = useState<AuctionPeriodInput[]>([]);
   const [countingRaces, setCountingRaces] = useState<CountingRaceInput[]>([]);
   const [allowSharedRiders, setAllowSharedRiders] = useState(false);
+  const [selectedRaceArr, setSelectedRaceArr] = useState<Race[]>([]);
   const { t } = useTranslation();
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<GameFormData>({
@@ -113,7 +117,7 @@ export const CreateGameTab = () => {
       : '';
 
     // Get the race info if selected
-    const selectedRace = watchRaceSlug ? races.find(r => r.slug === watchRaceSlug) : null;
+    const selectedRace = watchRaceSlug ? races.find(r => r.id === watchRaceSlug) : null;
     const racePart = selectedRace ? `${selectedRace.name} ${selectedRace.year}` : '';
 
     // For season games without a specific race, use the race type
@@ -147,7 +151,10 @@ export const CreateGameTab = () => {
         const response = await fetch(`/api/getRaces?userId=${user.uid}`);
         if (response.ok) {
           const data = await response.json();
-          setRaces(data.races || []);
+          const filtered = (data.races || []).filter((race: Race) =>
+            !shouldExcludeRace(race.name, race.classification ?? null, race.slug, race.excludeFromScraping)
+          );
+          setRaces(filtered);
         }
       } catch (error) {
         console.error('Error loading races:', error);
@@ -171,6 +178,11 @@ export const CreateGameTab = () => {
     const updated = [...auctionPeriods];
     updated[index][field] = value;
     setAuctionPeriods(updated);
+  };
+
+  const handleRaceSelect = (selected: Race[]) => {
+    setSelectedRaceArr(selected);
+    setValue('raceSlug', selected[0]?.id || '', { shouldValidate: true });
   };
 
   const handleCountingRaceSelect = (selected: Race[]) => {
@@ -399,6 +411,7 @@ export const CreateGameTab = () => {
       setSelectedGameType('');
       setAuctionPeriods([]);
       setCountingRaces([]);
+      setSelectedRaceArr([]);
       setAllowSharedRiders(false);
     } catch (error: unknown) {
       console.error('Error creating game:', error);
@@ -485,28 +498,38 @@ export const CreateGameTab = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Race *
               </label>
-              <select
-                {...register('raceSlug', {
-                  validate: (value) => {
-                    const raceType = watch('raceType');
-                    if (raceType !== 'season' && !value) {
-                      return 'Race is required';
-                    }
-                    return true;
-                  }
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                disabled={loadingRaces}
-              >
-                <option value="">
-                  {loadingRaces ? 'Loading races...' : 'Select a race'}
-                </option>
-                {races.map((race) => (
-                  <option key={race.id} value={race.id}>
-                    {race.name} {race.year}
-                  </option>
-                ))}
-              </select>
+              <input type="hidden" {...register('raceSlug', {
+                validate: (value) => {
+                  const raceType = watch('raceType');
+                  if (raceType !== 'season' && !value) return 'Race is required';
+                  return true;
+                }
+              })} />
+              <Selector<Race>
+                items={races}
+                selectedItems={selectedRaceArr}
+                setSelectedItems={handleRaceSelect}
+                multiSelect={false}
+                multiSelectShowSelected={false}
+                showSelected={true}
+                placeholder={loadingRaces ? 'Races laden...' : 'Zoek een race...'}
+                initialResultsLimit={races.length}
+                getItemLabel={(race) => `${race.name} ${race.year}`}
+                searchFilter={(race, searchTerm) => {
+                  const q = searchTerm.toLowerCase();
+                  return race.name.toLowerCase().includes(q) || race.slug.toLowerCase().includes(q);
+                }}
+                isEqual={(a, b) => a.id === b.id}
+                renderItem={(race) => (
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-900">{race.name}</span>
+                    <span className="text-xs text-gray-500">{race.year} • {race.slug}</span>
+                  </div>
+                )}
+                renderSelectedItem={(race) => (
+                  <div className="text-xs text-gray-700">{race.name} ({race.year})</div>
+                )}
+              />
               {errors.raceSlug && (
                 <span className="text-red-500 text-xs mt-1 block">{errors.raceSlug.message}</span>
               )}

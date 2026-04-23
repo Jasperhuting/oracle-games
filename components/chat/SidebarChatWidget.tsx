@@ -201,16 +201,27 @@ export default function SidebarChatWidget() {
   const isOnChatPage = pathname.startsWith('/chat');
   const hasRooms = rooms.length > 0;
 
-  // Track the bottom edge of the sticky header so the panel starts exactly below it
+  // Track the bottom edge of the sticky header so the panel starts exactly below it.
+  // Double-RAF ensures the browser has applied sticky positioning before measuring.
+  // The 350ms timeout catches the 300ms banner-show/hide CSS transition.
   useEffect(() => {
     const update = () => {
       const header = document.querySelector('header');
       if (header) setHeaderBottom(header.getBoundingClientRect().bottom);
     };
-    update();
+
+    let t: ReturnType<typeof setTimeout>;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        update();
+        t = setTimeout(update, 350);
+      });
+    });
+
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
     return () => {
+      clearTimeout(t);
       window.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
     };

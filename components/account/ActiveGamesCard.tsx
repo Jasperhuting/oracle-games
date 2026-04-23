@@ -58,7 +58,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
 
     async function fetchActiveGames() {
       try {
-        const cacheKey = `active-games-summary:v10:${userId}`;
+        const cacheKey = `active-games-summary:v12:${userId}`;
         const cached = readDailyCache(cacheKey);
         if (cached) {
           setGames(cached);

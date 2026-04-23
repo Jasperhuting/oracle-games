@@ -141,21 +141,66 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
           );
           // Rank = number of participants with strictly less time lost + 1 (handles ties correctly)
           ranking = timeLostValues.filter(t => t < userTimeLost).length + 1;
-        } else {
-          totalPoints = participantData?.totalPoints ?? 0;
-
-          // Dynamically calculate ranking from all participants' totalPoints
-          // to stay in sync with the game standings page
-          const allParticipantsSnap = await db
-            .collection('gameParticipants')
+        } else if (game.gameType === 'marginal-gains') {
+          // Use playerTeams.pointsScored directly, same as the standings page (teams-overview),
+          // because gameParticipants.totalPoints may be stale between calculate-marginal-gains runs.
+          // Do NOT filter by active==true in Firestore — teams-overview uses active!==false (JS filter),
+          // which also includes docs without the active field set.
+          const allPlayerTeamsSnap = await db
+            .collection('playerTeams')
             .where('gameId', '==', gameId)
-            .where('status', '==', 'active')
             .get();
-          const allPoints = allParticipantsSnap.docs.map(
-            d => (d.data().totalPoints as number) ?? 0
-          );
-          // Rank = number of participants with strictly more points + 1 (handles ties correctly)
-          ranking = allPoints.filter(p => p > totalPoints).length + 1;
+
+          const pointsByUser = new Map<string, number>();
+          allPlayerTeamsSnap.docs.forEach(doc => {
+            const d = doc.data();
+            if (d.active === false) return; // mirror teams-overview filter
+            const userId = d.userId as string;
+            if (!userId) return;
+            pointsByUser.set(userId, (pointsByUser.get(userId) ?? 0) + (Number(d.pointsScored) || 0));
+          });
+
+          totalPoints = pointsByUser.get(uid) ?? 0;
+          const allMgPoints = [...pointsByUser.values()];
+          ranking = allMgPoints.filter(p => p > totalPoints).length + 1;
+        } else {
+          // Use playerTeams.pointsScored (same as teams-overview) to avoid stale gameParticipants.totalPoints.
+          // full-grid prefers participant.totalPoints when populated; all others sum playerTeams directly.
+          const allPlayerTeamsSnap = await db
+            .collection('playerTeams')
+            .where('gameId', '==', gameId)
+            .get();
+
+          const pointsByUser = new Map<string, number>();
+          allPlayerTeamsSnap.docs.forEach(doc => {
+            const d = doc.data();
+            if (d.active === false) return;
+            const docUserId = d.userId as string;
+            if (!docUserId) return;
+            pointsByUser.set(docUserId, (pointsByUser.get(docUserId) ?? 0) + (Number(d.pointsScored) || 0));
+          });
+
+          if (game.gameType === 'full-grid') {
+            const fullGridParticipantTotalPoints = Number(participantData?.totalPoints) || 0;
+            const summedPoints = pointsByUser.get(uid) ?? 0;
+            totalPoints = fullGridParticipantTotalPoints > 0 ? fullGridParticipantTotalPoints : summedPoints;
+
+            // Rebuild per-user totals using participant.totalPoints for full-grid when available
+            const allParticipantsSnap = await db
+              .collection('gameParticipants')
+              .where('gameId', '==', gameId)
+              .where('status', '==', 'active')
+              .get();
+            const allPoints = allParticipantsSnap.docs.map(d => {
+              const pts = Number(d.data().totalPoints) || 0;
+              return pts > 0 ? pts : (pointsByUser.get(d.data().userId as string) ?? 0);
+            });
+            ranking = allPoints.filter(p => p > totalPoints).length + 1;
+          } else {
+            totalPoints = pointsByUser.get(uid) ?? 0;
+            const allPoints = [...pointsByUser.values()];
+            ranking = allPoints.filter(p => p > totalPoints).length + 1;
+          }
         }
 
         const lastScoreUpdate: string | null = scoreUpdateSnap.empty
