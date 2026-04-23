@@ -1,19 +1,19 @@
 # Oracle Games - Cycling Data Scraper
 
-Next.js app for scraping + managing pro cycling race data with Firebase.
+A Next.js application for scraping and managing professional cycling race data with Firebase integration.
 
 ## Overview
 
-Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore. Supports startlist data (riders + teams) and stage results for pro cycling races.
+This application scrapes cycling race data from ProCyclingStats.com and stores it in Firebase Firestore. It supports both startlist data (riders and teams) and stage results for various professional cycling races.
 
 ## Features
 
-- **Web-based Scraper Interface**: Form to select + scrape cycling data
-- **Firebase Integration**: Auto storage + retrieval from Firestore
-- **Real-time Updates**: Live feedback during scraping
-- **Data Overwriting**: New scrapes overwrite existing data
-- **Multiple Race Support**: 17 major races
-- **TypeScript**: Fully typed
+- **Web-based Scraper Interface**: User-friendly form to select and scrape cycling data
+- **Firebase Integration**: Automatic storage and retrieval from Firestore
+- **Real-time Updates**: Live feedback during scraping operations
+- **Data Overwriting**: New scrapes automatically overwrite existing data
+- **Multiple Race Support**: Supports 17 major cycling races
+- **TypeScript**: Fully typed for better development experience
 
 ## Supported Races
 
@@ -40,12 +40,12 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ### Web Pages
 
 #### `/` - Home Page
-- **Purpose**: Landing page
-- **Features**: App overview
-- **Components**: Basic nav + info
+- **Purpose**: Main landing page
+- **Features**: Overview of the application
+- **Components**: Basic navigation and information
 
 #### `/scraper` - Scraper Interface
-- **Purpose**: Form for scraping cycling data
+- **Purpose**: Interactive form for scraping cycling data
 - **Features**:
   - Race selection dropdown
   - Year input (2000-current)
@@ -53,11 +53,11 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
   - Stage number input (for stage results)
   - Real-time scraping feedback
   - Success/error messaging
-- **Usage**:
-  1. Select race from dropdown
-  2. Choose year
+- **Usage**: 
+  1. Select a race from the dropdown
+  2. Choose the year
   3. Pick data type (Startlist or Stage Result)
-  4. For stages, specify stage number
+  4. For stages, specify the stage number
   5. Click "Start Scraping"
 
 ## API Routes
@@ -65,7 +65,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ### `/api/scraper` - Main Scraper API
 
 #### POST `/api/scraper`
-**Purpose**: Scrape cycling data, save to Firebase
+**Purpose**: Scrape cycling data and save to Firebase
 
 **Request Body**:
 ```json
@@ -101,9 +101,9 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ```
 
 #### GET `/api/scraper`
-**Purpose**: List all scraped data or retrieve specific data
+**Purpose**: List all available scraped data or retrieve specific data
 
-**Query Parameters** (optional):
+**Query Parameters** (all optional):
 - `race`: Race slug (e.g., "tour-de-france")
 - `year`: Year (e.g., "2025")
 - `type`: Data type ("startlist" or "stage")
@@ -151,7 +151,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ### `/api/scrape` - Legacy Scraper API
 
 #### POST `/api/scrape`
-**Purpose**: Legacy endpoint, returns data without saving to Firebase
+**Purpose**: Legacy scraper endpoint (returns data without saving to Firebase)
 
 **Request Body**:
 ```json
@@ -171,7 +171,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 - `stage-vuelta`: Vuelta a España stage result
 
 #### GET `/api/scrape`
-**Purpose**: List legacy commands
+**Purpose**: List available legacy commands
 
 ### `/api/run-scraper` - Job-based Scraper API
 
@@ -199,7 +199,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ```
 
 #### GET `/api/run-scraper`
-**Purpose**: List jobs or get specific job status
+**Purpose**: List all jobs or get specific job status
 
 **Query Parameters**:
 - `jobId`: Specific job ID to check
@@ -207,7 +207,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ### `/api/run-scraper/[jobId]` - Job Status API
 
 #### GET `/api/run-scraper/[jobId]`
-**Purpose**: Check status of scraping job
+**Purpose**: Check status of specific scraping job
 
 ### `/api/stage` - Stage Data API
 
@@ -222,7 +222,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ### `/api/metadata` - Metadata API
 
 #### GET `/api/metadata`
-**Purpose**: Metadata about available race data
+**Purpose**: Get metadata about available race data
 
 **Query Parameters**:
 - `race`: Specific race to check (optional)
@@ -230,7 +230,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 ### `/api/stage-metadata` - Stage Metadata API
 
 #### GET `/api/stage-metadata`
-**Purpose**: Metadata about stage data availability
+**Purpose**: Get metadata about stage data availability
 
 ## Data Structures
 
@@ -312,7 +312,7 @@ Scrapes cycling race data from ProCyclingStats.com, stores in Firebase Firestore
 
 ### Environment Variables
 
-Create `.env.local` with Firebase credentials:
+Create a `.env.local` file with your Firebase credentials:
 
 ```env
 # Firebase Configuration (Client-side)
@@ -375,22 +375,22 @@ curl "http://localhost:3210/api/scraper?race=tour-de-france&year=2025&type=start
 
 ## Error Handling
 
-Comprehensive error handling:
+The application includes comprehensive error handling:
 
 - **Validation Errors**: Missing or invalid parameters
 - **Scraping Errors**: Network issues or page structure changes
 - **Firebase Errors**: Database connection or permission issues
 - **Type Errors**: Invalid data formats or undefined values
 
-All errors logged, returned with appropriate HTTP status codes.
+All errors are logged and returned with appropriate HTTP status codes.
 
 ## Contributing
 
 1. Follow TypeScript best practices
 2. Maintain existing code structure
-3. Update README when adding routes or features
-4. Test all API endpoints before commit
+3. Update this README when adding new routes or features
+4. Test all API endpoints before committing
 
 ## License
 
-Educational + personal use only. Respect ProCyclingStats.com terms of service when scraping.
+This project is for educational and personal use only. Please respect ProCyclingStats.com's terms of service when scraping data.

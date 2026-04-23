@@ -270,10 +270,15 @@ export async function GET(
         }
       }
 
-      // For auctioneer (and other types): if playerTeams.pointsScored sums to 0 but
-      // gameParticipants.totalPoints is populated, use the participant total as fallback.
-      // This handles games where pointsScored isn't written to playerTeams yet.
-      if (gameData?.gameType !== 'full-grid' && gameData?.gameType !== 'marginal-gains' && gameData?.gameType !== 'slipstream') {
+      // For auctioneer: prefer participant.totalPoints (authoritative, synced by score job).
+      // Fall back to summedRiderPoints only when participant.totalPoints is 0/absent.
+      if (gameData?.gameType === 'auctioneer' || gameData?.gameType === 'worldtour-manager') {
+        const participantTotalPoints = Number(participant.totalPoints) || 0;
+        if (participantTotalPoints > 0 || riders.length === 0) {
+          calculatedTotalPoints = participantTotalPoints;
+        }
+      } else if (gameData?.gameType !== 'full-grid' && gameData?.gameType !== 'marginal-gains' && gameData?.gameType !== 'slipstream') {
+        // Other game types: fall back to participant.totalPoints only when summedRiderPoints is 0.
         if (summedRiderPoints === 0) {
           const participantTotalPoints = Number(participant.totalPoints) || 0;
           if (participantTotalPoints > 0) {
