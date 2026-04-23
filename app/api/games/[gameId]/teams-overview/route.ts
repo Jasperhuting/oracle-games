@@ -147,8 +147,11 @@ export async function GET(
         });
       }
 
-      // Use pointsScored as the source of truth, with totalPoints as fallback for older team docs.
-      let riderPoints = Number(team.pointsScored ?? team.totalPoints ?? 0);
+      // Auction Master still has older team docs where rider points can live in totalPoints.
+      // Other game types use pointsScored with different semantics, so don't apply that fallback there.
+      let riderPoints = gameType === 'auctioneer'
+        ? Number(team.pointsScored ?? team.totalPoints ?? 0)
+        : Number(team.pointsScored ?? 0);
 
       if (gameType === 'marginal-gains') {
         riderPoints = (-team.spentBudget) + riderPoints

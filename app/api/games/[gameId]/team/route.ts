@@ -35,6 +35,9 @@ export async function GET(
     }
 
     const db = getServerFirebase();
+    const gameDoc = await db.collection('games').doc(gameId).get();
+    const gameData = gameDoc.data();
+    const gameType = gameData?.gameType ?? gameData?.config?.gameType;
 
     // Get user's team for this game
     const teamSnapshot = await db.collection('playerTeams')
@@ -57,7 +60,9 @@ export async function GET(
         team: riderInfo?.teamName || data.riderTeam,
         country: riderInfo?.country || data.riderCountry,
         rank: data.riderRank || riderInfo?.rank || 0,
-        points: Number(data.pointsScored ?? data.totalPoints ?? 0),
+        points: gameType === 'auctioneer'
+          ? Number(data.pointsScored ?? data.totalPoints ?? 0)
+          : Number(data.pointsScored ?? 0),
         // Prefer team jersey image over rider image for dashboard cards.
         jerseyImage: teamJerseyImage || data.jerseyImage || null,
         pricePaid: data.pricePaid,

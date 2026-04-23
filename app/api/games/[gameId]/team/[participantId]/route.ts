@@ -153,8 +153,10 @@ export async function GET(
       for (const doc of teamSnapshot.docs) {
         const data = doc.data();
 
-        // Use pointsScored as the source of truth, with totalPoints as fallback for older team docs.
-        const riderPoints = Number(data.pointsScored ?? data.totalPoints ?? 0);
+        // Auction Master needs a fallback for older team docs; other game types don't.
+        const riderPoints = gameType === 'auctioneer'
+          ? Number(data.pointsScored ?? data.totalPoints ?? 0)
+          : Number(data.pointsScored ?? 0);
 
         riders.push({
           id: doc.id,
