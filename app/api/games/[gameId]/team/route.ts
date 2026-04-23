@@ -57,7 +57,7 @@ export async function GET(
         team: riderInfo?.teamName || data.riderTeam,
         country: riderInfo?.country || data.riderCountry,
         rank: data.riderRank || riderInfo?.rank || 0,
-        points: data.pointsScored || 0,
+        points: Number(data.pointsScored ?? data.totalPoints ?? 0),
         // Prefer team jersey image over rider image for dashboard cards.
         jerseyImage: teamJerseyImage || data.jerseyImage || null,
         pricePaid: data.pricePaid,

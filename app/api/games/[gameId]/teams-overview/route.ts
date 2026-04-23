@@ -147,8 +147,8 @@ export async function GET(
         });
       }
 
-      // Use pointsScored as the source of truth
-      let riderPoints = team.pointsScored ?? 0;
+      // Use pointsScored as the source of truth, with totalPoints as fallback for older team docs.
+      let riderPoints = Number(team.pointsScored ?? team.totalPoints ?? 0);
 
       if (gameType === 'marginal-gains') {
         riderPoints = (-team.spentBudget) + riderPoints

@@ -112,11 +112,11 @@ export async function GET(
         .where('userId', '==', participantData.userId)
         .get();
 
-      const pointsByRiderId = new Map<string, { pointsScored: number; pointsBreakdown?: any[]; jerseyImage?: string; pricePaid?: number }>();
+      const pointsByRiderId = new Map<string, { pointsScored: number; pointsBreakdown?: unknown[]; jerseyImage?: string; pricePaid?: number }>();
       for (const doc of teamSnapshot.docs) {
         const data = doc.data();
         pointsByRiderId.set(data.riderNameId, {
-          pointsScored: data.pointsScored ?? 0,
+          pointsScored: Number(data.pointsScored ?? data.totalPoints ?? 0),
           pointsBreakdown: data.pointsBreakdown || [],
           jerseyImage: data.jerseyImage,
           pricePaid: data.pricePaid,
@@ -153,8 +153,8 @@ export async function GET(
       for (const doc of teamSnapshot.docs) {
         const data = doc.data();
 
-        // Use pointsScored as the source of truth
-        const riderPoints = data.pointsScored ?? 0;
+        // Use pointsScored as the source of truth, with totalPoints as fallback for older team docs.
+        const riderPoints = Number(data.pointsScored ?? data.totalPoints ?? 0);
 
         riders.push({
           id: doc.id,

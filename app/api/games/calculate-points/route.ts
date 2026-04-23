@@ -804,7 +804,7 @@ export async function POST(request: NextRequest) {
             const d = riderDoc.data();
             const uid = d.userId as string;
             if (!uid) continue;
-            pointsByUser.set(uid, (pointsByUser.get(uid) ?? 0) + (Number(d.pointsScored) || 0));
+            pointsByUser.set(uid, (pointsByUser.get(uid) ?? 0) + (Number(d.pointsScored ?? d.totalPoints) || 0));
           }
 
           if (pointsByUser.size === 0) continue;

@@ -47,15 +47,7 @@ function getAchievedPoints(row: GameStandingRow): number {
   return (row.riders ?? []).reduce((sum, rider) => sum + (Number(rider?.pointsScored) || 0), 0);
 }
 
-function getRankingScore(row: GameStandingRow, gameType: string | null, isFullGrid: boolean): number {
-  if (gameType === 'auctioneer') {
-    return getAchievedPoints(row);
-  }
-
-  if (isFullGrid || gameType === 'worldtour-manager') {
-    return Number(row.totalPoints) || 0;
-  }
-
+function getRankingScore(row: GameStandingRow): number {
   return Number(row.totalPoints) || getAchievedPoints(row);
 }
 
@@ -88,12 +80,12 @@ export function GameStandingsView({
 
     return [...standings]
       .sort((a, b) => {
-        const scoreDiff = getRankingScore(b, gameType, isFullGrid) - getRankingScore(a, gameType, isFullGrid);
+        const scoreDiff = getRankingScore(b) - getRankingScore(a);
         if (scoreDiff !== 0) return scoreDiff;
         return (a.playername || '').localeCompare(b.playername || '');
       })
       .map((standing, index) => {
-        const score = getRankingScore(standing, gameType, isFullGrid);
+        const score = getRankingScore(standing);
         if (previousScore === null || score !== previousScore) {
           currentRank = index + 1;
           previousScore = score;
@@ -116,7 +108,7 @@ export function GameStandingsView({
     return rankedStandings
       .filter((standing) => standing.eligibleForPrizes)
       .map((standing, index) => {
-        const score = getRankingScore(standing, gameType, isFullGrid);
+        const score = getRankingScore(standing);
         if (previousScore === null || score !== previousScore) {
           currentRank = index + 1;
           previousScore = score;
