@@ -85,10 +85,10 @@ export default function EmojiReactions({
     if (!showPicker) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
+      const path = e.composedPath();
       if (
-        pickerRef.current && !pickerRef.current.contains(target) &&
-        buttonRef.current && !buttonRef.current.contains(target)
+        pickerRef.current && !path.includes(pickerRef.current) &&
+        buttonRef.current && !path.includes(buttonRef.current)
       ) {
         setShowPicker(false);
       }

@@ -254,11 +254,6 @@ export async function GET(
         ? Math.round((totalDifference / totalBaseValue) * 100)
         : 0;
 
-      // Use summedRiderPoints as the primary source for totalPoints.
-      // This ensures the ranking always matches the PUNTEN column (which also
-      // sums rider.pointsScored). gameParticipants.totalPoints is NOT used here
-      // because it can be stale (0 for everyone) while playerTeams.pointsScored
-      // is always up to date after a points calculation run.
       const summedRiderPoints = riders.reduce((sum, r) => sum + (r.pointsScored ?? 0), 0);
       let calculatedTotalPoints = summedRiderPoints;
 
@@ -272,6 +267,18 @@ export async function GET(
         const fullGridParticipantTotalPoints = Number(participant.totalPoints) || 0;
         if (fullGridParticipantTotalPoints > 0 || riders.length === 0) {
           calculatedTotalPoints = fullGridParticipantTotalPoints;
+        }
+      }
+
+      // For auctioneer (and other types): if playerTeams.pointsScored sums to 0 but
+      // gameParticipants.totalPoints is populated, use the participant total as fallback.
+      // This handles games where pointsScored isn't written to playerTeams yet.
+      if (gameData?.gameType !== 'full-grid' && gameData?.gameType !== 'marginal-gains' && gameData?.gameType !== 'slipstream') {
+        if (summedRiderPoints === 0) {
+          const participantTotalPoints = Number(participant.totalPoints) || 0;
+          if (participantTotalPoints > 0) {
+            calculatedTotalPoints = participantTotalPoints;
+          }
         }
       }
 

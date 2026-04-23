@@ -32,7 +32,7 @@ const JobsDashboard = dynamic(() => import("@/components/admin/JobsDashboard").t
 const NewsAdminTab = dynamic(() => import("@/components/NewsAdminTab").then(m => ({ default: m.NewsAdminTab })));
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
@@ -46,7 +46,7 @@ export default function AdminPageClient() {
     const [isProgrammer, setIsProgrammer] = useState(false);
     const [checking, setChecking] = useState(true);
 
-    const groups = [
+    const groups = useMemo(() => [
         {
             id: 'community',
             label: 'Gebruikers & Community',
@@ -267,7 +267,7 @@ export default function AdminPageClient() {
                 }
             ]
         }
-    ];
+    ], [t, isProgrammer]);
 
 
     useEffect(() => {
