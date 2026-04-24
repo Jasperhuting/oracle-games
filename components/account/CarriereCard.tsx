@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { AvatarUpload } from './AvatarUpload';
 
 interface ClusteredResult {
@@ -57,6 +58,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [clusteredResults, setClusteredResults] = useState<ClusteredResult[]>([]);
   const [totalResultCount, setTotalResultCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
   const [oracleStats, setOracleStats] = useState<OracleStats | null>(null);
   const [oracleLoading, setOracleLoading] = useState(true);
@@ -273,8 +275,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
         {loading ? (
           <div className="text-center py-8 text-gray-500">{t('global.loading')}</div>
         ) : clusteredResults.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {clusteredResults.map((result, index) => {
+              const clusterKey = `${result.ranking}-${result.gameType}`;
+              const isExpanded = expandedClusters.has(clusterKey);
+              const isCluster = result.raceNames.length > 1;
               const gameTypeLabel = GAME_TYPE_LABELS[result.gameType] || result.gameType;
               const rankBadgeClass = result.ranking === 1
                 ? 'bg-yellow-100 text-yellow-700'
@@ -283,17 +288,61 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                   : result.ranking === 3
                     ? 'bg-orange-100 text-orange-700'
                     : 'bg-primary-light text-primary';
+
+              const toggleExpand = () => {
+                setExpandedClusters(prev => {
+                  const next = new Set(prev);
+                  if (next.has(clusterKey)) next.delete(clusterKey);
+                  else next.add(clusterKey);
+                  return next;
+                });
+              };
+
               return (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${rankBadgeClass}`}>
-                    {formatRanking(result.ranking)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">
-                      {result.raceNames.join(', ')}
+                <div key={index} className="rounded-lg border border-gray-100 overflow-hidden">
+                  {/* Header row */}
+                  <div
+                    className={[
+                      'flex items-center gap-3 p-3 bg-gray-50 transition-colors',
+                      isCluster ? 'cursor-pointer hover:bg-gray-100' : '',
+                    ].join(' ')}
+                    onClick={isCluster ? toggleExpand : undefined}
+                  >
+                    <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${rankBadgeClass}`}>
+                      {formatRanking(result.ranking)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">{gameTypeLabel}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 truncate">
+                        {isCluster && !isExpanded
+                          ? `${result.raceNames[0]} +${result.raceNames.length - 1}`
+                          : result.raceNames[0]}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">{gameTypeLabel}</div>
+                    </div>
+                    {isCluster && (
+                      <div className="flex-shrink-0 text-gray-400">
+                        {isExpanded
+                          ? <IconChevronUp className="w-4 h-4" />
+                          : <IconChevronDown className="w-4 h-4" />}
+                      </div>
+                    )}
                   </div>
+
+                  {/* Expanded races */}
+                  {isCluster && isExpanded && (
+                    <div className="border-t border-gray-100 divide-y divide-gray-100">
+                      {result.raceNames.map((raceName, i) => (
+                        <div key={i} className="flex items-center gap-3 px-3 py-2 bg-white">
+                          <div className="flex-shrink-0 w-9 flex justify-center">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${rankBadgeClass}`}>
+                              {formatRanking(result.ranking)}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-700">{raceName}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
