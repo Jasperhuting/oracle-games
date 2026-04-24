@@ -49,7 +49,8 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
         );
 
         // Filter to joinable games that user hasn't joined (excluding test games)
-        // Deduplicate by game name so games with multiple divisions appear only once
+        // Deduplicate by base name (strip division suffix) so games with multiple
+        // divisions appear only once
         const seen = new Set<string>();
         const available = allGames
           .filter((game: any) =>
@@ -59,17 +60,27 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
             !game.name?.toLowerCase().includes('test')
           )
           .filter((game: any) => {
-            if (seen.has(game.name)) return false;
-            seen.add(game.name);
+            const suffix = game.division ? ` - ${game.division}` : '';
+            const baseName = suffix && game.name.endsWith(suffix)
+              ? game.name.slice(0, -suffix.length)
+              : game.name;
+            if (seen.has(baseName)) return false;
+            seen.add(baseName);
             return true;
           })
-          .map((game: any) => ({
-            id: game.id,
-            name: game.name,
-            gameType: game.gameType,
-            status: game.status,
-            deadline: game.registrationCloseDate ?? game.teamSelectionDeadline,
-          }))
+          .map((game: any) => {
+            const suffix = game.division ? ` - ${game.division}` : '';
+            const baseName = suffix && game.name.endsWith(suffix)
+              ? game.name.slice(0, -suffix.length)
+              : game.name;
+            return {
+              id: game.id,
+              name: baseName,
+              gameType: game.gameType,
+              status: game.status,
+              deadline: game.registrationCloseDate ?? game.teamSelectionDeadline,
+            };
+          })
           .slice(0, 10); // Limit to 10 games
 
         setGames(available);
