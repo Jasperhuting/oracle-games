@@ -62,23 +62,45 @@ export const GET = userHandler('forum-activity-summary', async (ctx) => {
   }
 
   // 2. Fetch recent forum topics for these games
+  // Use createdAt as ordering fallback for topics that have no replies yet (lastReplyAt may be null)
   const topicsSnap = await adminDb
     .collection('forum_topics')
     .where('gameId', 'in', gameIds)
     .orderBy('lastReplyAt', 'desc')
-    .limit(20)
+    .limit(50)
     .get();
 
-  if (topicsSnap.empty) {
+  // Also fetch topics ordered by createdAt to catch any without a lastReplyAt value
+  const topicsSnap2 = await adminDb
+    .collection('forum_topics')
+    .where('gameId', 'in', gameIds)
+    .orderBy('createdAt', 'desc')
+    .limit(50)
+    .get();
+
+  // Merge both result sets (dedup by doc id)
+  const docMap = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  for (const doc of [...topicsSnap.docs, ...topicsSnap2.docs]) {
+    if (!docMap.has(doc.id)) docMap.set(doc.id, doc);
+  }
+
+  if (docMap.size === 0) {
     return { topics: [] };
   }
 
   // Filter out deleted topics in memory
-  const activeDocs = topicsSnap.docs.filter((d) => !d.data().deleted);
+  const activeDocs = [...docMap.values()].filter((d) => !d.data().deleted);
 
   if (activeDocs.length === 0) {
     return { topics: [] };
   }
+
+  // Sort merged results by lastReplyAt (falling back to createdAt) descending
+  activeDocs.sort((a, b) => {
+    const aMs = toMillis(a.data().lastReplyAt ?? a.data().createdAt);
+    const bMs = toMillis(b.data().lastReplyAt ?? b.data().createdAt);
+    return bMs - aMs;
+  });
 
   // 3. Resolve game names
   const uniqueGameIds = [...new Set(activeDocs.map((d) => d.data().gameId as string))];
@@ -91,22 +113,21 @@ export const GET = userHandler('forum-activity-summary', async (ctx) => {
     gameNameMap.set(doc.id, (doc.data().name as string) || doc.id);
   }
 
-  // 4. Deduplicate: one topic per game (most recent), take top 5
-  const seen = new Set<string>();
+  // 4. Take the 5 most recently active topics across all games (no per-game dedup)
   const items: ForumActivityItem[] = [];
 
   for (const doc of activeDocs) {
     const data = doc.data();
     const gameId = data.gameId as string;
-    if (seen.has(gameId)) continue;
-    seen.add(gameId);
 
     const lastReplyAt =
       data.lastReplyAt instanceof Timestamp
         ? data.lastReplyAt.toDate().toISOString()
         : data.lastReplyAt
           ? new Date(data.lastReplyAt).toISOString()
-          : new Date(0).toISOString();
+          : data.createdAt instanceof Timestamp
+            ? data.createdAt.toDate().toISOString()
+            : new Date(0).toISOString();
 
     items.push({
       topicId: doc.id,

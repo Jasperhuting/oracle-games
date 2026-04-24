@@ -46,7 +46,12 @@ export function ForumActivityCard() {
                 <MessageCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900 truncate">{topic.title}</p>
-                  <p className="text-xs text-gray-400">{topic.gameName}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {topic.gameName}
+                    {topic.replyCount > 0 && (
+                      <span className="ml-1 text-gray-300">· {topic.replyCount} {topic.replyCount === 1 ? 'reactie' : 'reacties'}</span>
+                    )}
+                  </p>
                 </div>
                 <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                   {formatRelativeTime(topic.lastReplyAt)}
