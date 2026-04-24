@@ -9,7 +9,7 @@ interface AvailableGame {
   name: string;
   gameType: string;
   status: string;
-  registrationDeadline?: string;
+  registrationCloseDate?: string;
   division?: string;
 }
 
@@ -44,14 +44,16 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
 
         // Get game IDs user has joined
         const joinedGameIds = new Set(
-          participants.map((p: any) => p.gameId.replace(/-pending$/, ''))
+          participants
+            .filter((p: any) => p.gameId)
+            .map((p: any) => p.gameId.replace(/-pending$/, ''))
         );
 
-        // Filter to joinable games (registration or bidding) that user hasn't joined (excluding test games)
+        // Filter to joinable games that user hasn't joined (excluding test games)
         const available = allGames
           .filter((game: any) =>
             !joinedGameIds.has(game.id) &&
-            ['registration', 'bidding'].includes(game.status) &&
+            ['draft', 'registration', 'bidding', 'active'].includes(game.status) &&
             !game.isTest &&
             !game.name?.toLowerCase().includes('test')
           )
@@ -60,7 +62,7 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
             name: game.division ? `${game.name} - ${game.division}` : game.name,
             gameType: game.gameType,
             status: game.status,
-            registrationDeadline: game.registrationDeadline,
+            registrationCloseDate: game.registrationCloseDate,
             division: game.division,
           }))
           .slice(0, 10); // Limit to 10 games
@@ -125,7 +127,7 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
             </thead>
             <tbody>
               {games.map((game) => {
-                const deadline = formatDeadline(game.registrationDeadline);
+                const deadline = formatDeadline(game.registrationCloseDate);
                 return (
                   <tr key={game.id} className="border-t border-gray-100">
                     <td className="py-1.5">
