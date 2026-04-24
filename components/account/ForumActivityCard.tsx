@@ -1,15 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
 import { useForumActivitySummary } from '@/hooks/useForumActivitySummary';
 import { MessageCircle } from 'tabler-icons-react';
 import { useTranslation } from 'react-i18next';
 
 export function ForumActivityCard() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const { topics, loading } = useForumActivitySummary(user?.uid);
+  const { topics, loading } = useForumActivitySummary();
 
   const formatRelativeTime = (isoString: string): string => {
     const date = new Date(isoString);
@@ -46,7 +44,14 @@ export function ForumActivityCard() {
                 <MessageCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900 truncate">{topic.title}</p>
-                  <p className="text-xs text-gray-400">{topic.gameName}</p>
+                  {(topic.gameName || topic.replyCount > 0) && (
+                    <p className="text-xs text-gray-400 truncate">
+                      {topic.gameName}
+                      {topic.replyCount > 0 && (
+                        <span className="ml-1 text-gray-300">· {topic.replyCount} {topic.replyCount === 1 ? 'reactie' : 'reacties'}</span>
+                      )}
+                    </p>
+                  )}
                 </div>
                 <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                   {formatRelativeTime(topic.lastReplyAt)}
