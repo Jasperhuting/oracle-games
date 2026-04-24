@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getServerFirebase } from '@/lib/firebase/server';
+import { publicHandler, ApiError } from '@/lib/api/handler';
 
 const GAME_TYPE_LABELS: Record<string, string> = {
   'auctioneer': 'Auctioneer',
@@ -26,12 +26,12 @@ function extractRaceName(gameName: string, gameType: string): string {
   return name || gameName;
 }
 
-export async function GET(request: NextRequest) {
+export const GET = publicHandler('account-top-results', async ({ request }) => {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
 
   if (!userId) {
-    return NextResponse.json({ error: 'userId required' }, { status: 400 });
+    throw new ApiError('userId required', 400);
   }
 
   const db = getServerFirebase();
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     .where('userId', '==', userId)
     .get();
 
-  // 2. Map gameId → user's { totalPoints, ranking }
+  // 2. Map gameId → user's { totalPoints, storedRanking }
   // Skip -pending entries; keep the entry with highest totalPoints per game
   const userByGame = new Map<string, { totalPoints: number; storedRanking: number }>();
   for (const doc of participantsSnap.docs) {
@@ -59,10 +59,10 @@ export async function GET(request: NextRequest) {
 
   const gameIds = [...userByGame.keys()];
   if (gameIds.length === 0) {
-    return NextResponse.json({ results: [], totalCount: 0 });
+    return { results: [], totalCount: 0 };
   }
 
-  // 3. Batch-fetch game documents
+  // 3. Batch-fetch all game documents via Admin SDK getAll()
   const gameRefs = gameIds.map(id => db.collection('games').doc(id));
   const gameDocs = await db.getAll(...gameRefs);
 
@@ -87,17 +87,23 @@ export async function GET(request: NextRequest) {
   }
 
   if (finishedGames.length === 0) {
-    return NextResponse.json({ results: [], totalCount: 0 });
+    return { results: [], totalCount: 0 };
   }
 
   // 5. Determine ranking per finished game
-  const rawResults: Array<{ gameName: string; raceName: string; gameType: string; ranking: number; year: number }> = [];
+  const rawResults: Array<{
+    gameName: string;
+    raceName: string;
+    gameType: string;
+    ranking: number;
+    year: number;
+  }> = [];
 
   await Promise.all(finishedGames.map(async (game) => {
     const userEntry = userByGame.get(game.id);
     if (!userEntry) return;
 
-    // Use stored ranking when available
+    // Fast path: use stored ranking when already calculated
     if (userEntry.storedRanking > 0) {
       rawResults.push({
         gameName: game.name,
@@ -109,7 +115,7 @@ export async function GET(request: NextRequest) {
       return;
     }
 
-    // Fallback: compute ranking from all participants' totalPoints
+    // Fallback: compute ranking live from all participants' totalPoints
     try {
       const allSnap = await db.collection('gameParticipants')
         .where('gameId', '==', game.id)
@@ -119,32 +125,29 @@ export async function GET(request: NextRequest) {
       if (allSnap.empty) return;
 
       const userPoints = userEntry.totalPoints;
-
-      // Only include if user has any points (otherwise not a meaningful result)
       if (userPoints <= 0) return;
 
       // Count participants with strictly more points → rank = count + 1
       const betterCount = allSnap.docs.filter(
         d => (Number(d.data().totalPoints) || 0) > userPoints
       ).length;
-      const ranking = betterCount + 1;
 
       rawResults.push({
         gameName: game.name,
         raceName: extractRaceName(game.name, game.gameType),
         gameType: game.gameType,
-        ranking,
+        ranking: betterCount + 1,
         year: game.year,
       });
     } catch {
-      // Skip if we can't determine ranking
+      // Skip this game if ranking can't be determined
     }
   }));
 
   // 6. Sort by ranking ascending
   rawResults.sort((a, b) => a.ranking - b.ranking);
 
-  // 7. Cluster by ranking + gameType
+  // 7. Cluster by ranking + gameType, max 10 rows
   const clusterMap = new Map<string, { ranking: number; gameType: string; raceNames: string[] }>();
   for (const result of rawResults) {
     const key = `${result.ranking}-${result.gameType}`;
@@ -158,8 +161,5 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => a.ranking - b.ranking)
     .slice(0, 10);
 
-  return NextResponse.json({
-    results: clustered,
-    totalCount: rawResults.length,
-  });
-}
+  return { results: clustered, totalCount: rawResults.length };
+});
