@@ -6,19 +6,17 @@ export interface ForumActivitySummary {
   loading: boolean;
 }
 
-export function useForumActivitySummary(userId: string | undefined): ForumActivitySummary {
+export function useForumActivitySummary(): ForumActivitySummary {
   const [topics, setTopics] = useState<ForumActivityItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) return;
-    setLoading(true);
     fetch('/api/forum/activity-summary')
       .then((r) => (r.ok ? r.json() : { topics: [] }))
       .then((data) => setTopics(data.topics ?? []))
       .catch(() => setTopics([]))
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, []);
 
   return { topics, loading };
 }
