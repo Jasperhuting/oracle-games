@@ -6,15 +6,6 @@ import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 import { AvatarUpload } from './AvatarUpload';
 
-interface TopResult {
-  gameName: string;
-  raceName: string;
-  gameType: string;
-  ranking: number;
-  year: number;
-  division?: string;
-}
-
 interface ClusteredResult {
   ranking: number;
   gameType: string;
@@ -36,15 +27,6 @@ const GAME_TYPE_LABELS: Record<string, string> = {
   'f1-prediction': 'F1 Prediction',
 };
 
-function extractRaceName(gameName: string, gameType: string): string {
-  const label = GAME_TYPE_LABELS[gameType] || gameType;
-  let name = gameName;
-  if (name.startsWith(label + ' - ')) {
-    name = name.slice(label.length + 3);
-  }
-  name = name.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
-  return name || gameName;
-}
 
 interface OracleStats {
   userId: string;
@@ -110,54 +92,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   useEffect(() => {
     async function fetchTopResults() {
       try {
-        const response = await fetch(`/api/gameParticipants?userId=${userId}`);
+        const response = await fetch(`/api/account/top-results?userId=${userId}`);
         if (!response.ok) { setLoading(false); return; }
-
         const data = await response.json();
-        const participants = data.participants || [];
-        const allResults: TopResult[] = [];
-
-        for (const participant of participants) {
-          const gameId = participant.gameId.replace(/-pending$/, '');
-          if (!gameId || participant.ranking === 0) continue;
-          try {
-            const gameResponse = await fetch(`/api/games/${gameId}`);
-            if (!gameResponse.ok) continue;
-            const gameData = await gameResponse.json();
-            const game = gameData.game;
-            if (game?.status === 'finished' && participant.ranking > 0 &&
-                !game.isTest && !game.name?.toLowerCase().includes('test')) {
-              const gameType: string = game.gameType || '';
-              allResults.push({
-                gameName: game.name,
-                raceName: extractRaceName(game.name, gameType),
-                gameType,
-                ranking: participant.ranking,
-                year: game.year || new Date().getFullYear(),
-                division: game.division,
-              });
-            }
-          } catch { /* skip */ }
-        }
-
-        allResults.sort((a, b) => a.ranking - b.ranking);
-
-        // Cluster by ranking + gameType
-        const clusterMap = new Map<string, ClusteredResult>();
-        for (const result of allResults) {
-          const key = `${result.ranking}-${result.gameType}`;
-          if (!clusterMap.has(key)) {
-            clusterMap.set(key, { ranking: result.ranking, gameType: result.gameType, raceNames: [] });
-          }
-          clusterMap.get(key)!.raceNames.push(result.raceName);
-        }
-
-        const clustered = Array.from(clusterMap.values())
-          .sort((a, b) => a.ranking - b.ranking)
-          .slice(0, 10);
-
-        setTotalResultCount(allResults.length);
-        setClusteredResults(clustered);
+        setClusteredResults(data.results || []);
+        setTotalResultCount(data.totalCount || 0);
       } catch (error) {
         console.error('Error fetching top results:', error);
       } finally {
