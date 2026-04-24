@@ -9,8 +9,7 @@ interface AvailableGame {
   name: string;
   gameType: string;
   status: string;
-  registrationCloseDate?: string;
-  division?: string;
+  deadline?: string;
 }
 
 interface AvailableGamesCardProps {
@@ -50,6 +49,8 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
         );
 
         // Filter to joinable games that user hasn't joined (excluding test games)
+        // Deduplicate by game name so games with multiple divisions appear only once
+        const seen = new Set<string>();
         const available = allGames
           .filter((game: any) =>
             !joinedGameIds.has(game.id) &&
@@ -57,13 +58,17 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
             !game.isTest &&
             !game.name?.toLowerCase().includes('test')
           )
+          .filter((game: any) => {
+            if (seen.has(game.name)) return false;
+            seen.add(game.name);
+            return true;
+          })
           .map((game: any) => ({
             id: game.id,
-            name: game.division ? `${game.name} - ${game.division}` : game.name,
+            name: game.name,
             gameType: game.gameType,
             status: game.status,
-            registrationCloseDate: game.registrationCloseDate,
-            division: game.division,
+            deadline: game.registrationCloseDate ?? game.teamSelectionDeadline,
           }))
           .slice(0, 10); // Limit to 10 games
 
@@ -127,7 +132,7 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
             </thead>
             <tbody>
               {games.map((game) => {
-                const deadline = formatDeadline(game.registrationCloseDate);
+                const deadline = formatDeadline(game.deadline);
                 return (
                   <tr key={game.id} className="border-t border-gray-100">
                     <td className="py-1.5">
