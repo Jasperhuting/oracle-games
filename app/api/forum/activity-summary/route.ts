@@ -1,5 +1,5 @@
 import { adminDb } from '@/lib/firebase/server';
-import { userHandler } from '@/lib/api/handler';
+import { publicHandler } from '@/lib/api/handler';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export interface ForumActivityItem {
@@ -12,55 +12,33 @@ export interface ForumActivityItem {
   lastReplyPreview: string | null;
 }
 
-function toMillis(value: unknown): number {
-  if (value instanceof Timestamp) {
-    return value.toMillis();
+function toIso(value: unknown): string | null {
+  if (!value) return null;
+  if (value instanceof Timestamp) return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const obj = value as { toDate?: () => Date; _seconds?: number };
+    if (typeof obj.toDate === 'function') return obj.toDate().toISOString();
+    if (typeof obj._seconds === 'number') return new Date(obj._seconds * 1000).toISOString();
   }
-
-  if (value instanceof Date) {
-    return value.getTime();
-  }
-
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value).getTime();
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-
-  return 0;
+  return null;
 }
 
-export const GET = userHandler('forum-activity-summary', async () => {
-  // Fetch recent topics ordered by lastReplyAt
-  const [snap1, snap2] = await Promise.all([
-    adminDb.collection('forum_topics').orderBy('lastReplyAt', 'desc').limit(50).get(),
-    // Second query catches topics where lastReplyAt is missing/null
-    adminDb.collection('forum_topics').orderBy('createdAt', 'desc').limit(50).get(),
-  ]);
+export const GET = publicHandler('forum-activity-summary', async () => {
+  const snapshot = await adminDb
+    .collection('forum_topics')
+    .orderBy('lastReplyAt', 'desc')
+    .limit(20)
+    .get();
 
-  // Merge, dedup by doc id
-  const docMap = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
-  for (const doc of [...snap1.docs, ...snap2.docs]) {
-    if (!docMap.has(doc.id)) docMap.set(doc.id, doc);
-  }
-
-  if (docMap.size === 0) {
-    return { topics: [] };
-  }
-
-  // Filter deleted, sort by most recent activity
-  const activeDocs = [...docMap.values()]
-    .filter((d) => !d.data().deleted)
-    .sort((a, b) => {
-      const aMs = toMillis(a.data().lastReplyAt ?? a.data().createdAt);
-      const bMs = toMillis(b.data().lastReplyAt ?? b.data().createdAt);
-      return bMs - aMs;
-    });
+  const activeDocs = snapshot.docs.filter((d) => !d.data().deleted);
 
   if (activeDocs.length === 0) {
     return { topics: [] };
   }
 
-  // Resolve game names for topics that have a gameId
+  // Resolve game names
   const uniqueGameIds = [
     ...new Set(
       activeDocs
@@ -80,23 +58,13 @@ export const GET = userHandler('forum-activity-summary', async () => {
     }
   }
 
-  // Take the 5 most recently active topics
-  const items: ForumActivityItem[] = [];
-
-  for (const doc of activeDocs) {
+  const items: ForumActivityItem[] = activeDocs.slice(0, 5).map((doc) => {
     const data = doc.data();
     const gameId = (data.gameId as string | undefined) ?? null;
-
     const lastReplyAt =
-      data.lastReplyAt instanceof Timestamp
-        ? data.lastReplyAt.toDate().toISOString()
-        : data.lastReplyAt
-          ? new Date(data.lastReplyAt).toISOString()
-          : data.createdAt instanceof Timestamp
-            ? data.createdAt.toDate().toISOString()
-            : new Date(0).toISOString();
+      toIso(data.lastReplyAt) ?? toIso(data.createdAt) ?? new Date(0).toISOString();
 
-    items.push({
+    return {
       topicId: doc.id,
       title: (data.title as string) || '(geen titel)',
       gameId,
@@ -104,10 +72,8 @@ export const GET = userHandler('forum-activity-summary', async () => {
       lastReplyAt,
       replyCount: (data.replyCount as number) ?? 0,
       lastReplyPreview: (data.lastReplyPreview as string | null) ?? null,
-    });
-
-    if (items.length === 5) break;
-  }
+    };
+  });
 
   return { topics: items };
 });
