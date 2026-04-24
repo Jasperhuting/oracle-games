@@ -8,9 +8,42 @@ import { AvatarUpload } from './AvatarUpload';
 
 interface TopResult {
   gameName: string;
+  raceName: string;
+  gameType: string;
   ranking: number;
   year: number;
   division?: string;
+}
+
+interface ClusteredResult {
+  ranking: number;
+  gameType: string;
+  raceNames: string[];
+}
+
+const GAME_TYPE_LABELS: Record<string, string> = {
+  'auctioneer': 'Auctioneer',
+  'slipstream': 'Slipstream',
+  'last-man-standing': 'Last Man Standing',
+  'poisoned-cup': 'Poisoned Cup',
+  'nations-cup': 'Nations Cup',
+  'rising-stars': 'Rising Stars',
+  'country-roads': 'Country Roads',
+  'worldtour-manager': 'WorldTour Manager',
+  'fan-flandrien': 'Fan Flandrien',
+  'full-grid': 'Full Grid',
+  'marginal-gains': 'Marginal Gains',
+  'f1-prediction': 'F1 Prediction',
+};
+
+function extractRaceName(gameName: string, gameType: string): string {
+  const label = GAME_TYPE_LABELS[gameType] || gameType;
+  let name = gameName;
+  if (name.startsWith(label + ' - ')) {
+    name = name.slice(label.length + 3);
+  }
+  name = name.replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+  return name || gameName;
 }
 
 interface OracleStats {
@@ -39,7 +72,8 @@ interface CarriereCardProps {
 
 export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAvatarUpdate, readOnly = false }: CarriereCardProps) {
   const { t } = useTranslation();
-  const [topResults, setTopResults] = useState<TopResult[]>([]);
+  const [clusteredResults, setClusteredResults] = useState<ClusteredResult[]>([]);
+  const [totalResultCount, setTotalResultCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
   const [oracleStats, setOracleStats] = useState<OracleStats | null>(null);
@@ -81,7 +115,7 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
 
         const data = await response.json();
         const participants = data.participants || [];
-        const results: TopResult[] = [];
+        const allResults: TopResult[] = [];
 
         for (const participant of participants) {
           const gameId = participant.gameId.replace(/-pending$/, '');
@@ -93,8 +127,11 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
             const game = gameData.game;
             if (game?.status === 'finished' && participant.ranking > 0 &&
                 !game.isTest && !game.name?.toLowerCase().includes('test')) {
-              results.push({
+              const gameType: string = game.gameType || '';
+              allResults.push({
                 gameName: game.name,
+                raceName: extractRaceName(game.name, gameType),
+                gameType,
                 ranking: participant.ranking,
                 year: game.year || new Date().getFullYear(),
                 division: game.division,
@@ -103,8 +140,24 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
           } catch { /* skip */ }
         }
 
-        results.sort((a, b) => a.ranking - b.ranking);
-        setTopResults(results.slice(0, 5));
+        allResults.sort((a, b) => a.ranking - b.ranking);
+
+        // Cluster by ranking + gameType
+        const clusterMap = new Map<string, ClusteredResult>();
+        for (const result of allResults) {
+          const key = `${result.ranking}-${result.gameType}`;
+          if (!clusterMap.has(key)) {
+            clusterMap.set(key, { ranking: result.ranking, gameType: result.gameType, raceNames: [] });
+          }
+          clusterMap.get(key)!.raceNames.push(result.raceName);
+        }
+
+        const clustered = Array.from(clusterMap.values())
+          .sort((a, b) => a.ranking - b.ranking)
+          .slice(0, 10);
+
+        setTotalResultCount(allResults.length);
+        setClusteredResults(clustered);
       } catch (error) {
         console.error('Error fetching top results:', error);
       } finally {
@@ -151,8 +204,6 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
     if (ranking === 3) return '3e';
     return `${ranking}e`;
   };
-
-  const formatYear = (year: number): string => `'${String(year).slice(-2)}`;
 
   const formatOracleRating = (rating: number): string =>
     new Intl.NumberFormat('nl-NL').format(Math.round(rating * 100000));
@@ -263,13 +314,13 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
           {/* Top Results count */}
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-primary mb-1">
-              {loading ? '...' : topResults.length}
+              {loading ? '...' : totalResultCount}
             </div>
             <div className="text-sm font-medium text-gray-700 mb-1">{t('carriere.topResultsLabel')}</div>
             <div className="text-xs text-gray-500">
               {loading
                 ? t('global.loading')
-                : topResults.length > 0
+                : totalResultCount > 0
                   ? t('carriere.bestPerformances')
                   : t('carriere.noResults')}
             </div>
@@ -282,24 +333,31 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
         <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('carriere.topResultsHeading')}</h3>
         {loading ? (
           <div className="text-center py-8 text-gray-500">{t('global.loading')}</div>
-        ) : topResults.length > 0 ? (
+        ) : clusteredResults.length > 0 ? (
           <div className="space-y-3">
-            {topResults.map((result, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary-light text-primary rounded-full flex items-center justify-center text-sm font-bold">
+            {clusteredResults.map((result, index) => {
+              const gameTypeLabel = GAME_TYPE_LABELS[result.gameType] || result.gameType;
+              const rankBadgeClass = result.ranking === 1
+                ? 'bg-yellow-100 text-yellow-700'
+                : result.ranking === 2
+                  ? 'bg-gray-100 text-gray-600'
+                  : result.ranking === 3
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'bg-primary-light text-primary';
+              return (
+                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${rankBadgeClass}`}>
                     {formatRanking(result.ranking)}
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{result.gameName}</div>
-                    {result.division && (
-                      <div className="text-sm text-gray-500">{result.division}</div>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">
+                      {result.raceNames.join(', ')}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{gameTypeLabel}</div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500 font-medium">{formatYear(result.year)}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
