@@ -49,7 +49,7 @@ function getAchievedPoints(row: GameStandingRow): number {
 }
 
 function getRankingScore(row: GameStandingRow): number {
-  return Number(row.totalPoints) || getAchievedPoints(row);
+  return getAchievedPoints(row);
 }
 
 export function GameStandingsView({
