@@ -61,8 +61,10 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
   // Collect unique game IDs (strip -pending suffix)
   const gameIdSet = new Set<string>();
   participantsSnap.docs.forEach((doc) => {
-    const gameId: string = doc.data().gameId ?? '';
-    if (!gameId || gameId.endsWith('-pending')) return;
+    const rawGameId: string = doc.data().gameId ?? '';
+    if (!rawGameId) return;
+    const gameId = rawGameId.replace(/-pending$/, '');
+    if (!gameId) return;
     gameIdSet.add(gameId);
   });
 
@@ -118,7 +120,10 @@ export const GET = userHandler('account-games-summary', async ({ uid }) => {
         const totalParticipants = countSnap.data().count;
 
         // Ranking and points live in gameParticipants for all game types
-        const participantDoc = participantsSnap.docs.find(d => d.data().gameId === gameId);
+        const participantDoc = participantsSnap.docs.find(d => {
+          const docGameId = (d.data().gameId ?? '').replace(/-pending$/, '');
+          return docGameId === gameId;
+        });
         const participantData = participantDoc?.data();
 
         let ranking: number;
