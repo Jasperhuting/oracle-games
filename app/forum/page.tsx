@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AvatarBadge } from '@/components/forum/AvatarBadge';
+import { RichTextEditor } from '@/components/forum/RichTextEditor';
 import type { ForumCategory, ForumGame } from '@/lib/types/forum';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -77,6 +78,16 @@ export default function ForumPage() {
   const [selected, setSelected] = useState<SelectedSection>({ type: 'all' });
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // New topic modal
+  const [newTopicOpen, setNewTopicOpen] = useState(false);
+  const [newTopicCategoryId, setNewTopicCategoryId] = useState('');
+  const [newTopicTitle, setNewTopicTitle] = useState('');
+  const [newTopicContent, setNewTopicContent] = useState('');
+  const [newTopicSaving, setNewTopicSaving] = useState(false);
+  const [newTopicError, setNewTopicError] = useState<string | null>(null);
+  const newTopicContentPlain = newTopicContent.replace(/<[^>]+>/g, '').trim();
+  const newTopicHasContent = Boolean(newTopicContentPlain) || /<img[\s>]/i.test(newTopicContent);
 
   // ── Load sidebar data once ────────────────────────────────────────────────
 
@@ -202,6 +213,44 @@ export default function ForumPage() {
   function handleSelect(section: SelectedSection) {
     setSelected(section);
     setSidebarOpen(false);
+  }
+
+  function openNewTopicModal() {
+    setNewTopicCategoryId(categories[0]?.id || '');
+    setNewTopicTitle('');
+    setNewTopicContent('');
+    setNewTopicError(null);
+    setNewTopicOpen(true);
+  }
+
+  async function handleCreateTopic() {
+    if (!user || !newTopicTitle.trim() || !newTopicHasContent || !newTopicCategoryId) return;
+    setNewTopicSaving(true);
+    setNewTopicError(null);
+    try {
+      const cat = categories.find((c) => c.id === newTopicCategoryId);
+      const res = await fetch('/api/forum/topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId: newTopicCategoryId,
+          categorySlug: cat?.slug || '',
+          title: newTopicTitle.trim(),
+          content: newTopicContent.trim(),
+          userId: user.uid,
+        }),
+      });
+      if (res.ok) {
+        setNewTopicOpen(false);
+        // Refresh topics list
+        setSelected({ type: 'all' });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setNewTopicError(data?.error || 'Topic plaatsen mislukt.');
+      }
+    } finally {
+      setNewTopicSaving(false);
+    }
   }
 
   // ─── Sidebar content (shared between mobile + desktop) ───────────────────
@@ -332,6 +381,16 @@ export default function ForumPage() {
 
               <h1 className="font-bold text-gray-900 text-base flex-1 truncate">{headerLabel}</h1>
 
+              {user && (
+                <button
+                  onClick={openNewTopicModal}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/80 transition-colors"
+                >
+                  <span className="text-sm leading-none">+</span>
+                  <span>Nieuw topic</span>
+                </button>
+              )}
+
               {unreadCount > 0 && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
                   {unreadCount} nieuw
@@ -452,6 +511,82 @@ export default function ForumPage() {
 
         </div>
       </div>
+      {/* New topic modal */}
+      {newTopicOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setNewTopicOpen(false)}>
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-900">Nieuw topic</h2>
+              <button
+                onClick={() => setNewTopicOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Categorie</label>
+                <select
+                  value={newTopicCategoryId}
+                  onChange={(e) => setNewTopicCategoryId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Titel</label>
+                <input
+                  type="text"
+                  value={newTopicTitle}
+                  onChange={(e) => setNewTopicTitle(e.target.value)}
+                  placeholder="Titel van je topic"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bericht</label>
+                <RichTextEditor
+                  value={newTopicContent}
+                  onChange={setNewTopicContent}
+                  placeholder="Schrijf je bericht..."
+                />
+              </div>
+
+              {newTopicError && (
+                <p className="text-sm text-red-600">{newTopicError}</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setNewTopicOpen(false)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={handleCreateTopic}
+                  disabled={newTopicSaving || !newTopicTitle.trim() || !newTopicHasContent || !newTopicCategoryId}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/80 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
+                >
+                  {newTopicSaving ? 'Opslaan...' : 'Plaats topic'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
