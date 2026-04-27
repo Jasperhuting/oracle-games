@@ -29,7 +29,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 // Cards
 import { CarriereCard } from "./account/CarriereCard";
 import { InboxPreview } from "./account/InboxPreview";
-import { ActiveGamesCard } from "./account/ActiveGamesCard";
+import { JoinableGamesTab } from "./JoinableGamesTab";
 import { AvailableGamesCard } from "./account/AvailableGamesCard";
 import { GameRulesCard } from "./account/GameRulesCard";
 import { CalendarCard } from "./account/CalendarCard";
@@ -148,7 +148,7 @@ export function AccountPageContent() {
                 );
             case 'inbox':        return <InboxPreview />;
             case 'forum':        return <ForumActivityCard />;
-            case 'active-games': return <ActiveGamesCard userId={user!.uid} excludeSportTypes={['f1']} />;
+            case 'active-games': return <JoinableGamesTab />;
             case 'available-games': return <AvailableGamesCard userId={user!.uid} />;
             case 'rules':        return <GameRulesCard />;
             case 'calendar':     return <CalendarCard userId={user!.uid} />;
