@@ -83,6 +83,9 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   const [oracleStandingsOpen, setOracleStandingsOpen] = useState(false);
   const [oracleStandings, setOracleStandings] = useState<OracleStats[]>([]);
   const [oracleStandingsLoading, setOracleStandingsLoading] = useState(false);
+  const [seasonStandingsOpen, setSeasonStandingsOpen] = useState(false);
+  const [seasonStandings, setSeasonStandings] = useState<OracleStats[]>([]);
+  const [seasonStandingsLoading, setSeasonStandingsLoading] = useState(false);
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
@@ -225,6 +228,21 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
     }
   };
 
+  const openSeasonStandings = async () => {
+    setSeasonStandingsOpen(true);
+    setSeasonStandingsLoading(true);
+    try {
+      const response = await fetch(`/api/oracle-rank?userId=${userId}&includeTop=true&topLimit=100&year=${currentYear}`);
+      if (!response.ok) return;
+      const data: OracleRankResponse = await response.json();
+      setSeasonStandings(data.top || []);
+    } catch (error) {
+      console.error('Error fetching season standings:', error);
+    } finally {
+      setSeasonStandingsLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       {/* Header */}
@@ -309,6 +327,13 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                   : t('carriere.noResultsInYear', { year: currentYear })}
               <span className="ml-1 text-gray-400 cursor-help" title={pointsTooltip}>ⓘ</span>
             </div>
+            <button
+              type="button"
+              onClick={openSeasonStandings}
+              className="mt-2 text-xs text-primary hover:text-primary-hover underline"
+            >
+              {t('carriere.viewStandings')}
+            </button>
           </div>
 
           {/* Top Results count */}
@@ -389,6 +414,76 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
                 <div className="text-sm font-semibold text-gray-700 group-hover:text-primary">{label}</div>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Season Standings modal */}
+      {seasonStandingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t('global.close')}
+            onClick={() => setSeasonStandingsOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+
+          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-xl bg-white border border-gray-200 shadow-xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-900">{t('carriere.seasonRankLabel')} {currentYear}</h4>
+              <button
+                type="button"
+                onClick={() => setSeasonStandingsOpen(false)}
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                {t('global.close')}
+              </button>
+            </div>
+
+            <div className="p-4 overflow-auto max-h-[calc(85vh-65px)]">
+              {seasonStandingsLoading ? (
+                <div className="text-sm text-gray-500">{t('global.loading')}</div>
+              ) : seasonStandings.length === 0 ? (
+                <div className="text-sm text-gray-500">{t('carriere.noStandings')}</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b border-gray-200">
+                      <th className="py-2 pr-2">#</th>
+                      <th className="py-2 pr-2">{t('carriere.playerColumn')}</th>
+                      <th className="py-2 pr-2 text-right">
+                        <span title={pointsTooltip} className="cursor-help">
+                          {t('global.points')} ⓘ
+                        </span>
+                      </th>
+                      <th className="py-2 pr-2 text-right">{t('global.games')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {seasonStandings.map((entry) => (
+                      <tr
+                        key={entry.userId}
+                        className={`border-b border-gray-100 ${entry.userId === userId ? 'bg-blue-50' : ''}`}
+                      >
+                        <td className="py-2 pr-2 font-semibold text-gray-900">#{entry.oracleRank}</td>
+                        <td className="py-2 pr-2 text-gray-800">
+                          {entry.playername || t('global.unknown')}
+                          {entry.userId === userId && (
+                            <span className="ml-2 text-xs text-blue-700 font-medium">{t('carriere.you')}</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2 text-right text-gray-800">
+                          <span title={pointsTooltip} className="cursor-help">
+                            {formatOracleRating(entry.oracleRating)}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-2 text-right text-gray-600">{entry.gamesPlayed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       )}
