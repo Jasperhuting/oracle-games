@@ -102,7 +102,6 @@ export const CreateGameTab = () => {
 
   useEffect(() => {
     if (watchGameType === 'full-grid') {
-      setValue('raceType', 'season');
       setValue('raceSlug', '');
     }
   }, [watchGameType, setValue]);
@@ -380,8 +379,8 @@ export const CreateGameTab = () => {
           adminUserId: user.uid,
           name: data.name,
           gameType: data.gameType,
-          raceSlug: data.gameType === 'full-grid' ? undefined : (data.raceSlug || undefined), // Optional for season games
-          raceType: data.gameType === 'full-grid' ? 'season' : data.raceType,
+          raceSlug: data.raceType === 'season' ? undefined : (data.raceSlug || undefined),
+          raceType: data.raceType,
           year: Number(data.year),
           status: 'draft',
           divisionCount: data.divisionCount,
@@ -475,7 +474,6 @@ export const CreateGameTab = () => {
                 required: 'Race type is required'
               })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={selectedGameType === 'full-grid'}
             >
               <option value="grand-tour">Grand Tour</option>
               <option value="classics">Classics</option>
@@ -486,14 +484,12 @@ export const CreateGameTab = () => {
               <span className="text-red-500 text-xs mt-1 block">{errors.raceType.message}</span>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              {selectedGameType === 'full-grid'
-                ? 'Full Grid gebruikt altijd Season en heeft geen vaste race.'
-                : 'Select "Season" for games that span the entire season without a specific race.'}
+              {'Select "Season" for games that span the entire season without a specific race.'}
             </p>
           </div>
 
           {/* Race Selection - Only show if not season type */}
-          {watchRaceType !== 'season' && selectedGameType !== 'full-grid' && (
+          {watchRaceType !== 'season' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Race *

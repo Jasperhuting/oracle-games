@@ -92,9 +92,8 @@ export const RegisterForm = () => {
             
             // Store email for verify page
             localStorage.setItem('pendingVerificationEmail', data.email);
-            
-            // Sign out user and redirect to verify email page
-            await auth.signOut();
+
+            // Redirect to verify email page (AuthGuard blocks unverified users)
             router.push('/verify-email');
         } catch (error: unknown) {
             console.error('Registration error:', error);
