@@ -81,13 +81,16 @@ export default function ForumPage() {
 
   // New topic modal
   const [newTopicOpen, setNewTopicOpen] = useState(false);
+  const [newTopicDestType, setNewTopicDestType] = useState<'category' | 'game'>('category');
   const [newTopicCategoryId, setNewTopicCategoryId] = useState('');
+  const [newTopicGameId, setNewTopicGameId] = useState('');
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicContent, setNewTopicContent] = useState('');
   const [newTopicSaving, setNewTopicSaving] = useState(false);
   const [newTopicError, setNewTopicError] = useState<string | null>(null);
   const newTopicContentPlain = newTopicContent.replace(/<[^>]+>/g, '').trim();
   const newTopicHasContent = Boolean(newTopicContentPlain) || /<img[\s>]/i.test(newTopicContent);
+  const newTopicDestValid = newTopicDestType === 'category' ? Boolean(newTopicCategoryId) : Boolean(newTopicGameId);
 
   // ── Load sidebar data once ────────────────────────────────────────────────
 
@@ -216,7 +219,9 @@ export default function ForumPage() {
   }
 
   function openNewTopicModal() {
+    setNewTopicDestType('category');
     setNewTopicCategoryId(categories[0]?.id || '');
+    setNewTopicGameId(games[0]?.id || '');
     setNewTopicTitle('');
     setNewTopicContent('');
     setNewTopicError(null);
@@ -224,17 +229,18 @@ export default function ForumPage() {
   }
 
   async function handleCreateTopic() {
-    if (!user || !newTopicTitle.trim() || !newTopicHasContent || !newTopicCategoryId) return;
+    if (!user || !newTopicTitle.trim() || !newTopicHasContent || !newTopicDestValid) return;
     setNewTopicSaving(true);
     setNewTopicError(null);
     try {
-      const cat = categories.find((c) => c.id === newTopicCategoryId);
+      const cat = newTopicDestType === 'category' ? categories.find((c) => c.id === newTopicCategoryId) : undefined;
       const res = await fetch('/api/forum/topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          categoryId: newTopicCategoryId,
-          categorySlug: cat?.slug || '',
+          categoryId: newTopicDestType === 'category' ? newTopicCategoryId : undefined,
+          categorySlug: cat?.slug || undefined,
+          gameId: newTopicDestType === 'game' ? newTopicGameId : undefined,
           title: newTopicTitle.trim(),
           content: newTopicContent.trim(),
           userId: user.uid,
@@ -532,17 +538,50 @@ export default function ForumPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Categorie</label>
-                <select
-                  value={newTopicCategoryId}
-                  onChange={(e) => setNewTopicCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Plaatsen in</label>
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm">
+                  <button
+                    onClick={() => setNewTopicDestType('category')}
+                    className={`flex-1 py-2 font-medium transition-colors ${newTopicDestType === 'category' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    Categorie
+                  </button>
+                  <button
+                    onClick={() => setNewTopicDestType('game')}
+                    className={`flex-1 py-2 font-medium transition-colors ${newTopicDestType === 'game' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    Spel
+                  </button>
+                </div>
               </div>
+
+              {newTopicDestType === 'category' ? (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Categorie</label>
+                  <select
+                    value={newTopicCategoryId}
+                    onChange={(e) => setNewTopicCategoryId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Spel</label>
+                  <select
+                    value={newTopicGameId}
+                    onChange={(e) => setNewTopicGameId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                  >
+                    {games.map((game) => (
+                      <option key={game.id} value={game.id}>{game.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Titel</label>
@@ -577,7 +616,7 @@ export default function ForumPage() {
                 </button>
                 <button
                   onClick={handleCreateTopic}
-                  disabled={newTopicSaving || !newTopicTitle.trim() || !newTopicHasContent || !newTopicCategoryId}
+                  disabled={newTopicSaving || !newTopicTitle.trim() || !newTopicHasContent || !newTopicDestValid}
                   className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/80 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors"
                 >
                   {newTopicSaving ? 'Opslaan...' : 'Plaats topic'}
