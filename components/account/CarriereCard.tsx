@@ -113,10 +113,14 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
   useEffect(() => {
     async function fetchTopResults() {
       try {
-        const response = await fetch(`/api/gameParticipants?userId=${userId}`);
-        if (!response.ok) { setLoading(false); return; }
+        const [participantsResponse, f1RankResponse] = await Promise.all([
+          fetch(`/api/gameParticipants?userId=${userId}`),
+          fetch(`/api/f1/user-rank?userId=${userId}`),
+        ]);
 
-        const data = await response.json();
+        if (!participantsResponse.ok) { setLoading(false); return; }
+
+        const data = await participantsResponse.json();
         const participants = data.participants || [];
         const allResults: TopResult[] = [];
 
@@ -141,6 +145,19 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
               });
             }
           } catch { /* skip */ }
+        }
+
+        if (f1RankResponse.ok) {
+          const f1Data = await f1RankResponse.json();
+          for (const entry of f1Data.results || []) {
+            allResults.push({
+              gameName: `F1 Prediction ${entry.season}`,
+              raceName: String(entry.season),
+              gameType: 'f1-prediction',
+              ranking: entry.rank,
+              year: entry.season,
+            });
+          }
         }
 
         allResults.sort((a, b) => a.ranking - b.ranking);
