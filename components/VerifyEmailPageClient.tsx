@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 import { Button } from "@/components/Button";
 import { auth } from "@/lib/firebase/client";
-import { sendEmailVerification } from "firebase/auth";
+import { onAuthStateChanged, sendEmailVerification, User } from "firebase/auth";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -12,13 +12,18 @@ export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_pictur
     const [error, setError] = useState<string | null>(null);
     const [isResending, setIsResending] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
+    const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
 
     useEffect(() => {
-        // Get the last attempted login email from localStorage or auth
         const email = localStorage.getItem('pendingVerificationEmail');
         if (email) {
             setUserEmail(email);
         }
+
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return unsubscribe;
     }, []);
 
     const handleResendEmail = async () => {
@@ -26,7 +31,7 @@ export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_pictur
         setError(null);
 
         try {
-            const user = auth.currentUser;
+            const user = currentUser;
             if (user) {
                 const actionCodeSettings = {
                     url: `${window.location.origin}/login`,
