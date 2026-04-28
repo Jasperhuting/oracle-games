@@ -165,7 +165,7 @@ export const GameCard = ({
               statusLabel={getStatusLabel(game)}
               getStatusBadgeColor={getStatusBadgeColor}
             />
-            {game.gameType === 'full-grid' && (
+            {game.gameType === 'full-grid' && game.raceType === 'season' && (
               <>
                 <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                   <span className="whitespace-nowrap">Gesponsord door</span>
