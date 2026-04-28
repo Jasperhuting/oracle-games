@@ -109,14 +109,15 @@ export function createHelpers($: CheerioAPI) {
       return '-';
     },
     getTeam: (el: DomElement) => {
-      // Find team in different column positions/selectors
-      const team1 = $(el).find('td.cu600').text().trim();
-      const team2 = $(el).find('td[data-code="teamnamelink"]').text().trim();
+      // Prefer the dedicated team column to avoid picking up bonification/time cells
+      const team1 = $(el).find('td[data-code="teamnamelink"] a').text().trim();
+      const team2 = $(el).find('td[data-code="teamnamelink"]').clone().children().remove().end().text().trim();
       const team3 = $(el).find('td.team a').text().trim();
       const team4 = $(el).find('td.team').text().trim();
-      // Sometimes team is in a span with specific class
-      const team5 = $(el).find('td span.teamname').text().trim();
-      return team1 || team2 || team3 || team4 || team5 || '';
+      // Fallback for older PCS rows where the first .cu600 cell is still the team column
+      const team5 = $(el).find('td.cu600').first().text().trim();
+      const team6 = $(el).find('td span.teamname').text().trim();
+      return team1 || team2 || team3 || team4 || team5 || team6 || '';
     },
     getQualificationTime: (el: DomElement) => $(el).find('td.cu600 > .blue').text().trim(),
     getClass: (el: DomElement) => $(el).find('td').eq(4).text().trim(),

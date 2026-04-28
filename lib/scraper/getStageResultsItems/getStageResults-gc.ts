@@ -16,8 +16,8 @@ export function scrapeGeneralClassification($: CheerioAPI): ClassificationRider[
 
   console.log(`[GC_SCRAPER] Found ${resTabCount} resTabs`);
 
-  // Use second resTab (index 1) if available, otherwise first (index 0)
-  const targetIndex = resTabCount > 1 ? 1 : 0;
+  // Use last resTab (final GC standings), fallback to first if only one exists
+  const targetIndex = resTabCount > 0 ? resTabCount - 1 : 0;
   let generalClassificationResult = resTabs.eq(targetIndex).find('table');
 
   console.log(`[GC_SCRAPER] Using resTab index ${targetIndex}, table found: ${generalClassificationResult.length > 0}`)

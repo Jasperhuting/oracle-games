@@ -25,7 +25,7 @@ export const GET = publicHandler('lineup-get', async ({ params }) => {
   }
 
   const gameData = gameDoc.data();
-  const raceRef = gameData?.raceRef;
+  const raceRefRaw = gameData?.raceRef;
   const raceType = gameData?.raceType;
   const year = gameData?.year;
 
@@ -35,6 +35,11 @@ export const GET = publicHandler('lineup-get', async ({ params }) => {
 
   let raceSlug: string | null = null;
   const gameType = gameData?.gameType;
+
+  // Normalize raceRef: may be stored as string path or DocumentReference
+  const raceRef = raceRefRaw
+    ? (typeof raceRefRaw === 'string' ? db.doc(raceRefRaw) : raceRefRaw)
+    : null;
 
   // For season games or full-grid games without a race reference, we don't need a raceSlug
   // Full Grid games work like season games - they use eligibleRiders/eligibleTeams from the game document
@@ -200,7 +205,7 @@ export const PATCH = adminHandler('lineup-patch', async ({ uid, request, params 
   }
 
   const gameData = gameDoc.data();
-  const raceRef = gameData?.raceRef;
+  const raceRefRaw = gameData?.raceRef;
   const raceType = gameData?.raceType;
   const year = gameData?.year;
 
@@ -210,6 +215,11 @@ export const PATCH = adminHandler('lineup-patch', async ({ uid, request, params 
 
   let raceSlug: string | null = null;
   const gameType = gameData?.gameType;
+
+  // Normalize raceRef: may be stored as string path or DocumentReference
+  const raceRef = raceRefRaw
+    ? (typeof raceRefRaw === 'string' ? db.doc(raceRefRaw) : raceRefRaw)
+    : null;
 
   // For season games and full-grid games, we don't need a race reference
   if (raceType === 'season' || gameType === 'full-grid') {

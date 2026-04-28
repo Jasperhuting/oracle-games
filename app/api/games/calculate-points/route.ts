@@ -275,6 +275,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Complementary team classification (Giro AM) — from /info/complementary-results page, top 5
+    const complementaryTeamClassification: TeamClassificationEntry[] = Array.isArray(stageData.complementaryTeamClassification)
+      ? stageData.complementaryTeamClassification
+      : [];
+    const complementaryTeamMap = new Map<string, number>();
+    for (const tc of complementaryTeamClassification.slice(0, 5)) {
+      if (tc.place <= 5) {
+        complementaryTeamMap.set(normalizeTeamKey(tc.team), tc.place);
+        if (tc.shortName) complementaryTeamMap.set(normalizeTeamKey(tc.shortName), tc.place);
+      }
+    }
+    if (complementaryTeamMap.size > 0) {
+      console.log(`[CALCULATE_POINTS] Giro complementary team classification: ${complementaryTeamClassification.slice(0, 5).map(t => `${t.place}. ${t.team}`).join(', ')}`);
+    }
+
     console.log(`[CALCULATE_POINTS] Found ${stageResults.length} riders in stage results`);
     console.log(`[CALCULATE_POINTS] Found 55 riders in general classification`);
     
@@ -568,13 +583,35 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 3. POINTS CLASSIFICATION / SPRINT (only at final stage, with configurable multiplier)
-            if (!isFullGrid && multipliers.pointsClassMultiplier > 0 && stageData.pointsClassification) {
+            const isGiroAM = raceName === 'giro-d-italia' && gameConfig.gameType === 'auctioneer';
+
+            // 3. POINTS CLASSIFICATION / SPRINT
+            if (!isFullGrid && stageData.pointsClassification) {
               const pointsResult = stageData.pointsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId ||
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
-              if (pointsResult && pointsResult.place) {
+
+              if (isGiroAM) {
+                // Giro AM: daily raw sprint points × 2 every stage
+                const rawSprintPoints = typeof pointsResult?.points === 'number'
+                  ? pointsResult.points
+                  : (typeof pointsResult?.points === 'string' ? parseInt(pointsResult.points as string, 10) : 0);
+                if (rawSprintPoints > 0) {
+                  const sprintPoints = rawSprintPoints * 2;
+                  riderTotalPoints += sprintPoints;
+                  stagePointsBreakdown.pointsClass = sprintPoints;
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Sprint daily: ${rawSprintPoints}×2=${sprintPoints} pts`);
+                }
+                // Final sprint classification: top-20 position × 1 (no multiplier)
+                if (multipliers.pointsClassMultiplier > 0 && pointsResult?.place) {
+                  const finalSprintPts = calculateStagePoints(pointsResult.place);
+                  if (finalSprintPts > 0) {
+                    riderTotalPoints += finalSprintPts;
+                    stagePointsBreakdown.pointsClass = (stagePointsBreakdown.pointsClass || 0) + finalSprintPts;
+                  }
+                }
+              } else if (multipliers.pointsClassMultiplier > 0 && pointsResult?.place) {
                 const pointsClassPoints = calculateStagePoints(pointsResult.place) * multipliers.sprintClassMultiplierConfig;
                 if (pointsClassPoints > 0) {
                   riderTotalPoints += pointsClassPoints;
@@ -583,13 +620,33 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 4. MOUNTAINS CLASSIFICATION (only at final stage, with configurable multiplier)
-            if (multipliers.mountainsClassMultiplier > 0 && stageData.mountainsClassification) {
+            // 4. MOUNTAINS CLASSIFICATION
+            if (!isFullGrid && stageData.mountainsClassification) {
               const mountainsResult = stageData.mountainsClassification.find((r: StageResult) =>
                 r.nameID === riderNameId ||
                 r.shortName?.toLowerCase().replace(/\s+/g, '-') === riderNameId
               );
-              if (mountainsResult && mountainsResult.place) {
+
+              if (isGiroAM) {
+                // Giro AM: daily raw mountain points × 3 every stage
+                const rawMountainPoints = typeof mountainsResult?.points === 'number'
+                  ? mountainsResult.points
+                  : (typeof mountainsResult?.points === 'string' ? parseInt(mountainsResult.points as string, 10) : 0);
+                if (rawMountainPoints > 0) {
+                  const mountainPoints = rawMountainPoints * 3;
+                  riderTotalPoints += mountainPoints;
+                  stagePointsBreakdown.mountainsClass = mountainPoints;
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Mountain daily: ${rawMountainPoints}×3=${mountainPoints} pts`);
+                }
+                // Final mountain classification: top-20 position × 1 (no multiplier)
+                if (multipliers.mountainsClassMultiplier > 0 && mountainsResult?.place) {
+                  const finalMountainPts = calculateStagePoints(mountainsResult.place);
+                  if (finalMountainPts > 0) {
+                    riderTotalPoints += finalMountainPts;
+                    stagePointsBreakdown.mountainsClass = (stagePointsBreakdown.mountainsClass || 0) + finalMountainPts;
+                  }
+                }
+              } else if (multipliers.mountainsClassMultiplier > 0 && mountainsResult?.place) {
                 const mountainsClassPoints = calculateStagePoints(mountainsResult.place) * multipliers.mountainClassMultiplierConfig;
                 if (mountainsClassPoints > 0) {
                   riderTotalPoints += mountainsClassPoints;
@@ -621,19 +678,25 @@ export async function POST(request: NextRequest) {
               console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Combativity bonus: ${combativityBonus} pts`);
             }
 
-            // 6. TEAM CLASSIFICATION POINTS - tijdelijk uitgeschakeld, wordt via aparte URL afgehandeld
-            // if (raceName === 'giro-d-italia' && teamClassificationMap.size > 0 && teamData.riderTeam) {
-            //   const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
-            //   const teamRank = teamClassificationMap.get(riderTeamKey);
-            //   if (teamRank !== undefined) {
-            //     const teamClassPts = gameConfig.gameType === 'auctioneer' ? GIRO_AM_TEAM_CLASSIFICATION_POINTS : TEAM_CLASSIFICATION_POINTS;
-            //     const teamPoints = teamClassPts[teamRank] || 0;
-            //     if (teamPoints > 0) {
-            //       riderTotalPoints += teamPoints;
-            //       stagePointsBreakdown.teamPoints = teamPoints;
-            //     }
-            //   }
-            // }
+            // 6. TEAM CLASSIFICATION POINTS (Giro AM only, from complementary-results page)
+            if (
+              raceName === 'giro-d-italia' &&
+              gameConfig.gameType === 'auctioneer' &&
+              complementaryTeamMap.size > 0 &&
+              teamData.riderTeam &&
+              stage !== 'tour-gc'
+            ) {
+              const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
+              const teamRank = complementaryTeamMap.get(riderTeamKey);
+              if (teamRank !== undefined) {
+                const teamPoints = GIRO_AM_TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
+                if (teamPoints > 0) {
+                  riderTotalPoints += teamPoints;
+                  stagePointsBreakdown.teamPoints = teamPoints;
+                  console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Team class rank ${teamRank}: ${teamPoints} pts`);
+                }
+              }
+            }
           }
 
           const existingBreakdown: PointsEvent[] = Array.isArray(teamData.pointsBreakdown)
@@ -695,10 +758,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // TEAM CLASSIFICATION SECOND PASS - tijdelijk uitgeschakeld, wordt via aparte URL afgehandeld
-    if (false && raceName === 'giro-d-italia' && teamClassificationMap.size > 0 && stage !== 'tour-gc') {
+    // TEAM CLASSIFICATION SECOND PASS (Giro AM only)
+    // Catches riders not in stageResults (e.g. dropped in GC but team still scored)
+    if (raceName === 'giro-d-italia' && complementaryTeamMap.size > 0 && stage !== 'tour-gc') {
       const uniqueTeamNames = [...new Set(
-        teamClassification.slice(0, 10).flatMap(tc => [tc.team, tc.shortName]).filter(Boolean)
+        complementaryTeamClassification.slice(0, 5).flatMap(tc => [tc.team, tc.shortName]).filter(Boolean)
       )];
 
       for (const teamName of uniqueTeamNames) {
@@ -714,11 +778,11 @@ export async function POST(request: NextRequest) {
             const gameId = teamData.gameId;
             const gameConfig = await getGameConfig(gameId);
             if (!gameConfig || !doesRaceCount(gameConfig)) continue;
+            if (gameConfig.gameType !== 'auctioneer') continue;
 
-            const teamRank = teamClassificationMap.get(normalizeTeamKey(teamName));
+            const teamRank = complementaryTeamMap.get(normalizeTeamKey(teamName));
             if (teamRank === undefined) continue;
-            const teamClassPts2 = gameConfig.gameType === 'auctioneer' ? GIRO_AM_TEAM_CLASSIFICATION_POINTS : TEAM_CLASSIFICATION_POINTS;
-            const teamPoints = teamClassPts2[teamRank] || 0;
+            const teamPoints = GIRO_AM_TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
             if (teamPoints === 0) continue;
 
             gamesAffected.add(gameId);
@@ -743,7 +807,7 @@ export async function POST(request: NextRequest) {
             processedRiderTeamDocIds.add(teamDoc.id);
             results.playerTeamsUpdated++;
             results.pointsAwarded += teamPoints;
-            console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Team class (2nd pass) rank ${teamRank}: ${teamPoints} pts`);
+            console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Team class 2nd pass rank ${teamRank}: ${teamPoints} pts`);
           }
         } catch (error) {
           results.errors.push(`Team classification pass error for team ${teamName}: ${error instanceof Error ? error.message : 'Unknown'}`);

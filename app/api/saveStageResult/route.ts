@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
       mountainsClassification: enrichedMountainsClassification,
       youthClassification: enrichedYouthClassification,
       teamClassification: stageData.teamClassification || [],
+      complementaryTeamClassification: stageData.complementaryTeamClassification || [],
       scrapedAt: stageData.scrapedAt,
       source: stageData.source,
     });

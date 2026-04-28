@@ -197,6 +197,7 @@ export interface StageResult {
   mountainsClassification: ClassificationRider[];
   youthClassification: ClassificationRider[];
   teamClassification: TeamClassification[];
+  complementaryTeamClassification?: TeamClassification[];
   scrapedAt: string;
   isTourGC?: boolean; // Flag to identify this as tour GC data
 }

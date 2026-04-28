@@ -62,10 +62,9 @@ export const TEAM_CLASSIFICATION_POINTS: Record<number, number> = {
   1: 5, 2: 4, 3: 3, 4: 2, 5: 1,
 };
 
-// Team classification points for Giro Auction Master (top 10 teams)
+// Team classification points for Giro Auction Master (top 5 teams, per active rider)
 export const GIRO_AM_TEAM_CLASSIFICATION_POINTS: Record<number, number> = {
-  1: 15, 2: 12, 3: 10, 4: 8, 5: 6,
-  6: 5, 7: 4, 8: 3, 9: 2, 10: 1,
+  1: 10, 2: 7, 3: 5, 4: 3, 5: 1,
 };
 
 // Strijdlust bonus (combativity award)
