@@ -221,23 +221,33 @@ Riders removed: ${result.ridersRemoved}`,
   };
 
   const handleToggleTeams = (newTeams: Team[]) => {
-    // When multiSelect is true, Selector passes the entire updated array
-    // Check if a new team was added (array got longer)
     if (newTeams.length > selectedTeams.length) {
-      // Find the newly added team
       const addedTeam = newTeams.find(newT =>
         !selectedTeams.some(existingT => existingT.name === newT.name)
       );
 
       if (addedTeam) {
-        // Put the new team at the top
         const otherTeams = newTeams.filter(t => t.name !== addedTeam.name);
         setSelectedTeams([addedTeam, ...otherTeams]);
+
+        // Auto-add all riders from the newly added team
+        const teamId = addedTeam.id || addedTeam.slug;
+        const ridersToAdd = allRiders.filter(r => {
+          const riderTeamId = r.team?.slug || r.team?.nameID || '';
+          return riderTeamId === teamId;
+        });
+
+        if (ridersToAdd.length > 0) {
+          setSelectedRiders(prev => {
+            const existingIds = new Set(prev.map(r => r.id));
+            const newRiders = ridersToAdd.filter(r => !existingIds.has(r.id));
+            return [...prev, ...newRiders];
+          });
+        }
         return;
       }
     }
 
-    // If removed or no change, just set it directly
     setSelectedTeams(newTeams);
   };
 
