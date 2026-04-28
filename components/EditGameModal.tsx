@@ -1,6 +1,34 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+function RestDaysInput({ value, onChange, className }: { value: number[]; onChange: (days: number[]) => void; className?: string }) {
+  const [text, setText] = useState(value.join(', '));
+
+  useEffect(() => {
+    setText(value.join(', '));
+  }, [value.join(',')]);
+
+  const handleBlur = useCallback(() => {
+    const parsed = text
+      .split(',')
+      .map(s => parseInt(s.trim()))
+      .filter(n => !isNaN(n) && n > 0);
+    onChange(parsed);
+    setText(parsed.join(', '));
+  }, [text, onChange]);
+
+  return (
+    <input
+      type="text"
+      value={text}
+      onChange={e => setText(e.target.value)}
+      onBlur={handleBlur}
+      placeholder="bijv. 2, 9, 16"
+      className={className}
+    />
+  );
+}
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -811,24 +839,15 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                           {/* Rest Days */}
                           <div className="mb-3">
                             <label className="block text-xs text-gray-600 mb-1">
-                              Rustdagen (stage numbers, comma separated)
+                              Rustdagen (dagnummers)
                             </label>
-                            <input
-                              type="text"
-                              placeholder="e.g., 9, 16"
-                              value={race.restDays?.join(', ') || ''}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                const restDays = value
-                                  .split(',')
-                                  .map(s => parseInt(s.trim()))
-                                  .filter(n => !isNaN(n));
-                                updateCountingRace(index, 'restDays', restDays);
-                              }}
+                            <RestDaysInput
+                              value={race.restDays || []}
+                              onChange={(days) => updateCountingRace(index, 'restDays', days)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                              GC punten worden toegekend op rustdagen (1x eerste, 2x tweede) en eindstand (3x)
+                              Dag 1 = startdatum. GC punten worden toegekend op rustdagen (1x eerste, 2x tweede) en eindstand (3x).
                             </p>
                           </div>
 
