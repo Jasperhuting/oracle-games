@@ -33,6 +33,7 @@ export const GET = publicHandler('full-grid-rider-values-get', async ({ params }
   const config = gameData.config || {};
   const riderValues: Record<string, number> = config.riderValues || {};
   const eligibleRiders: string[] = gameData.eligibleRiders || [];
+  const eligibleTeams: string[] = gameData.eligibleTeams || [];
   const year = gameData.year || new Date().getFullYear();
 
   // If no eligible riders, return empty
@@ -105,8 +106,13 @@ export const GET = publicHandler('full-grid-rider-values-get', async ({ params }
     }
   }
 
+  // Filter by eligibleTeams if set (full-grid games should only show teams in the lineup)
+  const finalRidersData = eligibleTeams.length > 0
+    ? ridersData.filter(r => eligibleTeams.includes(r.teamSlug))
+    : ridersData;
+
   // Sort by team name, then by value (descending), then by name
-  ridersData.sort((a, b) => {
+  finalRidersData.sort((a, b) => {
     if (a.riderTeam !== b.riderTeam) {
       return a.riderTeam.localeCompare(b.riderTeam);
     }
@@ -118,7 +124,7 @@ export const GET = publicHandler('full-grid-rider-values-get', async ({ params }
 
   return {
     success: true,
-    riders: ridersData,
+    riders: finalRidersData,
     riderValues: riderValues,
     config: {
       budget: config.budget || 70,
