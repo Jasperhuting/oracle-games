@@ -66,13 +66,17 @@ export const GET = publicHandler('lineup-get', async ({ params }) => {
   // Fetch ALL available teams from teams collection
   const allTeamsSnapshot = await db.collection('teams').orderBy('points', 'desc').get();
   const teamsByName = new Map<string, { id: string; name: string; shortName: string; country: string; class: string; jerseyImage: string; pcsRank: number; uciRank: number; points: number }>();
+  // Maps any team doc ID → primary team ID (for rider teamId normalization)
+  const docIdToPrimaryId = new Map<string, string>();
+
   for (const doc of allTeamsSnapshot.docs) {
     const data = doc.data();
     const name = data.name || '';
     if (!name) continue;
-    // Keep first occurrence (highest points due to orderBy desc), but prefer entries with class data
     const existing = teamsByName.get(name);
     if (!existing || (!existing.class && data.class)) {
+      // If replacing existing, remap its docId too
+      if (existing) docIdToPrimaryId.set(existing.id, doc.id);
       teamsByName.set(name, {
         id: doc.id,
         name,
@@ -84,6 +88,10 @@ export const GET = publicHandler('lineup-get', async ({ params }) => {
         uciRank: data.rank || 0,
         points: data.points || existing?.points || 0,
       });
+      docIdToPrimaryId.set(doc.id, doc.id);
+    } else {
+      // This doc is a duplicate — map it to the primary
+      docIdToPrimaryId.set(doc.id, existing.id);
     }
   }
   const allTeams = Array.from(teamsByName.values());
@@ -147,7 +155,10 @@ export const GET = publicHandler('lineup-get', async ({ params }) => {
           rank: data.rank,
           points: data.points,
           team: teamData?.name || '',
-          teamId: teamData?.slug || teamData?.id || '',
+          teamId: (() => {
+            const rawId = teamData?.slug || teamData?.id || '';
+            return docIdToPrimaryId.get(rawId) || rawId;
+          })(),
           teamImage: teamData?.teamImage || '',
         };
       })
