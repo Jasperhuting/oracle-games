@@ -10,7 +10,7 @@ interface AvailableGame {
   gameType: string;
   status: string;
   registrationCloseDate?: string;
-  division?: string;
+  divisionCount?: number;
 }
 
 interface AvailableGamesCardProps {
@@ -50,22 +50,42 @@ export function AvailableGamesCard({ userId }: AvailableGamesCardProps) {
         );
 
         // Filter to joinable games that user hasn't joined (excluding test games)
-        const available = allGames
-          .filter((game: any) =>
-            !joinedGameIds.has(game.id) &&
-            ['draft', 'registration', 'bidding', 'active'].includes(game.status) &&
-            !game.isTest &&
-            !game.name?.toLowerCase().includes('test')
-          )
-          .map((game: any) => ({
-            id: game.id,
-            name: game.division ? `${game.name} - ${game.division}` : game.name,
-            gameType: game.gameType,
-            status: game.status,
-            registrationCloseDate: game.registrationCloseDate,
-            division: game.division,
-          }))
-          .slice(0, 10); // Limit to 10 games
+        const filtered = allGames.filter((game: any) =>
+          !joinedGameIds.has(game.id) &&
+          ['draft', 'registration', 'bidding', 'active'].includes(game.status) &&
+          !game.isTest &&
+          !game.name?.toLowerCase().includes('test')
+        );
+
+        // Deduplicate multi-division games: show one entry per base name
+        const seenBaseNames = new Set<string>();
+        const available = filtered
+          .reduce((acc: any[], game: any) => {
+            const isMultiDivision = (game.divisionCount || 1) > 1;
+            if (isMultiDivision) {
+              const baseName = (game.name || '').replace(/\s*-\s*Division\s+\d+\s*$/i, '').trim();
+              if (seenBaseNames.has(baseName)) return acc;
+              seenBaseNames.add(baseName);
+              acc.push({
+                id: game.id,
+                name: baseName,
+                gameType: game.gameType,
+                status: game.status,
+                registrationCloseDate: game.registrationCloseDate,
+                divisionCount: game.divisionCount,
+              });
+            } else {
+              acc.push({
+                id: game.id,
+                name: game.name,
+                gameType: game.gameType,
+                status: game.status,
+                registrationCloseDate: game.registrationCloseDate,
+              });
+            }
+            return acc;
+          }, [])
+          .slice(0, 10);
 
         setGames(available);
       } catch (error) {

@@ -155,18 +155,25 @@ export async function POST(
         .get();
       
       currentPlayerCount = pendingParticipantsSnapshot.size;
-      console.log(`[JOIN_GAME] Multi-division game ${baseName}: ${currentPlayerCount} pending participants, max ${maxPlayers}`);
-    }
-    
-    if (maxPlayers && currentPlayerCount >= maxPlayers) {
+      const totalCapacity = maxPlayers * divisionCount;
+      console.log(`[JOIN_GAME] Multi-division game ${baseName}: ${currentPlayerCount} total participants, max ${totalCapacity} (${divisionCount} divisions × ${maxPlayers})`);
+      if (currentPlayerCount >= totalCapacity) {
+        console.log(`[JOIN_GAME] Game ${gameId} is full: ${currentPlayerCount}/${totalCapacity}`);
+        return NextResponse.json(
+          { error: `Game is full (${currentPlayerCount}/${totalCapacity} players)` },
+          { status: 400 }
+        );
+      }
+      console.log(`[JOIN_GAME] Game ${gameId} has space: ${currentPlayerCount}/${totalCapacity} players`);
+    } else if (maxPlayers && currentPlayerCount >= maxPlayers) {
       console.log(`[JOIN_GAME] Game ${gameId} is full: ${currentPlayerCount}/${maxPlayers}`);
       return NextResponse.json(
         { error: `Game is full (${currentPlayerCount}/${maxPlayers} players)` },
         { status: 400 }
       );
+    } else {
+      console.log(`[JOIN_GAME] Game ${gameId} has space: ${currentPlayerCount}/${maxPlayers || 'unlimited'} players`);
     }
-    
-    console.log(`[JOIN_GAME] Game ${gameId} has space: ${currentPlayerCount}/${maxPlayers || 'unlimited'} players`);
 
     // Create participant
     const now = Timestamp.now();
