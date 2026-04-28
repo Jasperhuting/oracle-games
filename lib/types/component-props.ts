@@ -65,6 +65,7 @@ export interface SelectorProps<T> {
   availableLabel?: string;
   selectedLabel?: string;
   sectionHeaderClassName?: string;
+  selectedCountLabel?: (count: number) => string;
 }
 
 export interface RowProps<T> {

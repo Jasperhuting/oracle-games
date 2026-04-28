@@ -58,6 +58,7 @@ export const TeamSelector = ({
             showSelected={showSelected}
             showCheckboxes={false}
             placeholder={placeholder || (multiSelect ? "Filter on teams..." : "Filter on team...")}
+            selectedCountLabel={multiSelect ? (count) => `${count} teams geselecteerd` : undefined}
             getItemLabel={(team) => {
                 const baseLabel = team.name?.replace(/\s*\d{4}$/, '') || '';
                 if (showRiderCounts && teamRiderCounts) {

@@ -33,7 +33,8 @@ export function Selector<T>({
     selectedItemClassName,
     availableLabel = 'Beschikbaar',
     selectedLabel = 'Geselecteerd',
-    sectionHeaderClassName
+    sectionHeaderClassName,
+    selectedCountLabel
 }: SelectorProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -94,6 +95,9 @@ export function Selector<T>({
             return searchTerm;
         }
         if (selectedItems.length > 0 && getItemLabel) {
+            if (selectedCountLabel && selectedItems.length > 1) {
+                return selectedCountLabel(selectedItems.length);
+            }
             return selectedItems.map(item => getItemLabel(item)).join(', ');
         }
         return searchTerm;
