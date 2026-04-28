@@ -65,17 +65,28 @@ export const GET = publicHandler('lineup-get', async ({ params }) => {
 
   // Fetch ALL available teams from teams collection
   const allTeamsSnapshot = await db.collection('teams').orderBy('points', 'desc').get();
-  const allTeams = allTeamsSnapshot.docs.map(doc => ({
-    id: doc.id,
-    name: doc.data().name || '',
-    shortName: doc.data().name || '',
-    country: doc.data().country || '',
-    class: doc.data().class || '',
-    jerseyImage: doc.data().teamImage || '',
-    pcsRank: doc.data().pcsRank || 0,
-    uciRank: doc.data().rank || 0,
-    points: doc.data().points || 0,
-  }));
+  const teamsByName = new Map<string, { id: string; name: string; shortName: string; country: string; class: string; jerseyImage: string; pcsRank: number; uciRank: number; points: number }>();
+  for (const doc of allTeamsSnapshot.docs) {
+    const data = doc.data();
+    const name = data.name || '';
+    if (!name) continue;
+    // Keep first occurrence (highest points due to orderBy desc), but prefer entries with class data
+    const existing = teamsByName.get(name);
+    if (!existing || (!existing.class && data.class)) {
+      teamsByName.set(name, {
+        id: doc.id,
+        name,
+        shortName: name,
+        country: data.country || '',
+        class: data.class || '',
+        jerseyImage: data.teamImage || '',
+        pcsRank: data.pcsRank || 0,
+        uciRank: data.rank || 0,
+        points: data.points || existing?.points || 0,
+      });
+    }
+  }
+  const allTeams = Array.from(teamsByName.values());
 
   // Fetch available riders from rankings_{year} (limit to top 1000 to avoid quota issues)
   // Fallback to rankings_2026 if the specified year doesn't exist
