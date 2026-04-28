@@ -13,34 +13,15 @@ export default function GamesPage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      if (!loading && !user) {
-        router.push('/login');
-        return;
-      }
-
-      if (user) {
-        try {
-          const res = await fetch(`/api/getUser?userId=${user.uid}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.userType === 'admin') {
-              setIsAdmin(true);
-            } else {
-              router.push('/home');
-            }
-          } else {
-            router.push('/home');
-          }
-        } catch {
-          router.push('/home');
-        } finally {
-          setChecking(false);
-        }
-      }
-    };
-
-    checkAdmin();
+    // TODO: tijdelijk admin-check uitgeschakeld — pagina toegankelijk voor alle ingelogde gebruikers
+    if (!loading && !user) {
+      router.push('/login');
+      return;
+    }
+    if (user) {
+      setIsAdmin(true);
+      setChecking(false);
+    }
   }, [user, loading, router]);
 
   if (loading || checking) {
