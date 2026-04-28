@@ -26,6 +26,7 @@ export default function StandingsPage() {
   const [gameName, setGameName] = useState<string>('');
   const [gameYear, setGameYear] = useState<number>(new Date().getFullYear());
   const [gameType, setGameType] = useState<string | null>(null);
+  const [raceType, setRaceType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const backHref = gameType === 'full-grid' ? `/games/${gameId}/auction` : '/games';
@@ -48,6 +49,7 @@ export default function StandingsPage() {
             setGameYear(gameData.game.year);
           }
           setGameType(gameData.game?.gameType ?? gameData.game?.config?.gameType ?? null);
+          setRaceType(gameData.game?.raceType ?? null);
         }
 
         // Fetch standings
@@ -88,6 +90,7 @@ export default function StandingsPage() {
       gameName={gameName}
       gameYear={gameYear}
       gameType={gameType}
+      raceType={raceType}
       loading={loading}
       error={error}
       backHref={backHref}

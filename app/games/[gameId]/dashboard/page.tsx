@@ -379,6 +379,7 @@ export default function GameDashboardPage() {
           gameName={game?.name}
           gameYear={gameYear}
           gameType={configuredGameType}
+          raceType={game?.raceType}
           loading={standingsLoading}
           error={standingsError}
           currentUserId={user?.uid}

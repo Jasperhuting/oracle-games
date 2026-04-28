@@ -34,6 +34,7 @@ interface GameStandingsViewProps {
   gameName?: string;
   gameYear?: number;
   gameType: string | null;
+  raceType?: string | null;
   loading: boolean;
   error: string | null;
   backHref?: string;
@@ -58,6 +59,7 @@ export function GameStandingsView({
   gameName,
   gameYear,
   gameType,
+  raceType,
   loading,
   error,
   backHref = '/games',
@@ -419,6 +421,7 @@ export function GameStandingsView({
             >
               {showPrizeEligibleOnly ? 'Toon alle deelnemers' : 'Alleen voor prijzen'}
             </button>
+            {raceType === 'season' && (
             <button
               onClick={handlePrizesButtonClick}
               className={`h-12 rounded-full shadow-lg flex items-center cursor-pointer transition-all duration-300 ease-out bg-white hover:bg-emerald-50 overflow-hidden border border-emerald-200 ${prizesExpanded ? 'px-4 gap-2' : 'w-12 justify-center'}`}
@@ -430,6 +433,7 @@ export function GameStandingsView({
                 Prijzen
               </span>
             </button>
+            )}
           </div>
           )}
           <span className="text-sm text-gray-600">

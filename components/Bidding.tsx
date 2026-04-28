@@ -501,6 +501,7 @@ export const Bidding = ({
           <div className="bg-white border border-gray-200 rounded-b-md p-4">
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <div className="xl:col-span-2">
+                {game?.raceType === 'season' && (
                 <div className="mb-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-5 shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="h-14 w-14 rounded-full bg-white ring-2 ring-emerald-200 flex items-center justify-center overflow-hidden">
@@ -521,7 +522,7 @@ export const Bidding = ({
                       <p className="text-sm text-gray-600">
                         Berc Bike sponsort de prijzen voor hen die 5,- storten.
                       </p>
-                      
+
                       <button
                         type="button"
                         onClick={() => setShowPrizesModal(true)}
@@ -541,6 +542,7 @@ export const Bidding = ({
                     </div>
                   </div>
                 </div>
+                )}
                 <FullGridMyTeam
                   myTeam={fullGridMyTeam}
                   budgetStats={fullGridBudgetStats}
