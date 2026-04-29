@@ -299,7 +299,12 @@ export async function GET(request: NextRequest) {
         } else if (typeof stageNumber === 'number' && startDate) {
           const base = new Date(startDate);
           if (!Number.isNaN(base.getTime())) {
-            base.setDate(base.getDate() + Math.max(0, stageNumber - 1));
+            // When a prologue exists it occupies day 0 (the start date), so
+            // Stage 1 falls on startDate+1, Stage 2 on startDate+2, etc.
+            // Without a prologue, Stage 1 is on the start date (offset 0).
+            const hasPrologue = raceConfig?.hasPrologue ?? false;
+            const offset = hasPrologue ? stageNumber : stageNumber - 1;
+            base.setDate(base.getDate() + Math.max(0, offset));
             stageDate = base.toISOString();
           }
         }
