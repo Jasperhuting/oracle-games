@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       endDate: string | null;
       classification: string | null;
       excludeFromScraping: boolean;
-      restDays: number;
+      restDays: number[];
     }>();
 
     racesSnapshot.docs.forEach(doc => {
@@ -86,7 +86,14 @@ export async function GET(request: NextRequest) {
       }
 
       const hasPrologue = data.hasPrologue ?? false;
-      const restDays: number = data.restDays ?? 0;
+      // Backward compat: Firestore may still have restDays as a plain number (count).
+      // Treat a number as "we know how many but not which ones" → empty array of that length.
+      const rawRestDays = data.restDays;
+      const restDays: number[] = Array.isArray(rawRestDays)
+        ? rawRestDays
+        : typeof rawRestDays === 'number' && rawRestDays > 0
+          ? Array.from({ length: rawRestDays }, (_, i) => i) // placeholder positions
+          : [];
       // Dates are authoritative: if there is no end date or start === end, it is always
       // a single-day race regardless of any stored isSingleDay value.
       const datesConfirmSingleDay = !data.endDate || data.startDate === data.endDate;
@@ -97,7 +104,7 @@ export async function GET(request: NextRequest) {
       // subtract rest days and prologue day so only numbered stages remain
       const inferredStages = stagesFromDateRange(startDate, endDate);
       const totalStagesFromRange = inferredStages !== null
-        ? Math.max(1, inferredStages - (hasPrologue ? 1 : 0) - restDays)
+        ? Math.max(1, inferredStages - (hasPrologue ? 1 : 0) - restDays.length)
         : null;
 
       raceConfigs.set(slug, {
@@ -303,7 +310,12 @@ export async function GET(request: NextRequest) {
             // Stage 1 falls on startDate+1, Stage 2 on startDate+2, etc.
             // Without a prologue, Stage 1 is on the start date (offset 0).
             const hasPrologue = raceConfig?.hasPrologue ?? false;
-            const offset = hasPrologue ? stageNumber : stageNumber - 1;
+            const restDayPositions = raceConfig?.restDays ?? [];
+            // Each rest day position is the stage number after which the rest day falls.
+            // Every rest day whose position is strictly before this stage adds one extra
+            // calendar day to the offset.
+            const restDaysBefore = restDayPositions.filter(d => d < stageNumber).length;
+            const offset = (hasPrologue ? stageNumber : stageNumber - 1) + restDaysBefore;
             base.setDate(base.getDate() + Math.max(0, offset));
             stageDate = base.toISOString();
           }
@@ -583,7 +595,7 @@ export async function GET(request: NextRequest) {
         raceStatus: getRaceStatus(raceConfig?.startDate || null, raceConfig?.endDate || null),
         classification: raceConfig?.classification || null,
         excludeFromScraping: raceConfig?.excludeFromScraping ?? false,
-        restDays: raceConfig?.restDays ?? 0,
+        restDays: raceConfig?.restDays ?? [],
       });
     });
 
@@ -608,7 +620,7 @@ export async function GET(request: NextRequest) {
         // Fall back to date range inference when totalStages is not configured
         const dateRange = stagesFromDateRange(config.startDate, config.endDate);
         numberedStages = dateRange !== null
-          ? Math.max(1, dateRange - (hasPrologue ? 1 : 0) - config.restDays)
+          ? Math.max(1, dateRange - (hasPrologue ? 1 : 0) - config.restDays.length)
           : 1;
       }
 

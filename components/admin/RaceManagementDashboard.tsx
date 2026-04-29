@@ -487,7 +487,8 @@ function RaceConfigForm({
   const [hasPrologue, setHasPrologue] = useState(race.hasPrologue);
   const [isSingleDay, setIsSingleDay] = useState(race.isSingleDay);
   const [excludeFromScraping, setExcludeFromScraping] = useState(race.excludeFromScraping);
-  const [restDays, setRestDays] = useState(race.restDays ?? 0);
+  const [restDays, setRestDays] = useState<number[]>(Array.isArray(race.restDays) ? race.restDays : []);
+  const [restDaysText, setRestDaysText] = useState(Array.isArray(race.restDays) ? race.restDays.join(', ') : '');
   const [saving, setSaving] = useState(false);
 
   // Derive the Firestore document ID: {slug}_{year}
@@ -529,14 +530,21 @@ function RaceConfigForm({
           />
         </label>
         <label className="flex flex-col text-sm gap-1">
-          <span className="text-gray-600">Rustdagen</span>
+          <span className="text-gray-600">Rustdagen (na etappe nr.)</span>
           <input
-            type="number"
-            min={0}
-            max={10}
-            value={restDays}
-            onChange={e => setRestDays(parseInt(e.target.value, 10))}
-            className="border rounded px-2 py-1 w-20 text-sm"
+            type="text"
+            value={restDaysText}
+            onChange={e => setRestDaysText(e.target.value)}
+            onBlur={() => {
+              const parsed = restDaysText
+                .split(',')
+                .map(s => parseInt(s.trim(), 10))
+                .filter(n => !isNaN(n) && n > 0);
+              setRestDays(parsed);
+              setRestDaysText(parsed.join(', '));
+            }}
+            placeholder="bijv. 2, 9"
+            className="border rounded px-2 py-1 w-32 text-sm"
             disabled={isSingleDay}
           />
         </label>
