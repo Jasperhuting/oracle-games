@@ -16,6 +16,37 @@ export const DataMigrationsTab = () => {
   const [rosterResult, setRosterResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [rosterError, setRosterError] = useState<string | null>(null);
 
+  const [settingGiroLineup, setSettingGiroLineup] = useState(false);
+  const [giroLineupResult, setGiroLineupResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [giroLineupError, setGiroLineupError] = useState<string | null>(null);
+
+  const handleSetGiroLineup = async () => {
+    if (!user) return;
+    setSettingGiroLineup(true);
+    setGiroLineupError(null);
+    setGiroLineupResult(null);
+
+    try {
+      const response = await fetch('/api/admin/set-giro-lineup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Instellen mislukt');
+      }
+
+      setGiroLineupResult(data);
+    } catch (err: unknown) {
+      setGiroLineupError(err instanceof Error ? err.message : 'Onbekende fout');
+    } finally {
+      setSettingGiroLineup(false);
+    }
+  };
+
   const handleMigrateParticipantTeams = async () => {
     if (!user || !gameId.trim()) {
       setError('Please enter a game ID');
@@ -201,6 +232,53 @@ export const DataMigrationsTab = () => {
                   </ul>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Giro d'Italia 2026 Eligible Players */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-xl font-semibold mb-4">Giro d&apos;Italia 2026 — Eligible Players instellen</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Zet de volledige startlijst (187 renners, 23 teams) als <code className="bg-gray-100 px-1 rounded">eligibleRiders</code> en{' '}
+          <code className="bg-gray-100 px-1 rounded">eligibleTeams</code> op de 5 Giro 2026 games.
+        </p>
+
+        <div className="text-xs text-gray-500 mb-4 space-y-1">
+          <p className="font-medium text-gray-600">Game IDs die worden bijgewerkt:</p>
+          {['j5WTqXbqpasKYhn5rScO', 'UsVDT2ucg3EOLvwSAPOh', 'kvsCyviw01CaUvmvpXEp', 'vzBNUh6nzUaLyy6rKQos', 'wyFw2Pl5SzI0kPNtMw7J'].map((id) => (
+            <p key={id} className="font-mono">{id}</p>
+          ))}
+        </div>
+
+        <Button
+          onClick={handleSetGiroLineup}
+          disabled={settingGiroLineup}
+          text={settingGiroLineup ? 'Bezig...' : 'Stel Giro 2026 startlijst in'}
+          className="w-full"
+        />
+
+        {giroLineupError && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4 mt-4">
+            <p className="text-red-700 text-sm font-medium">Fout</p>
+            <p className="text-red-600 text-sm">{giroLineupError}</p>
+          </div>
+        )}
+
+        {giroLineupResult && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 mt-4">
+            <p className="text-green-700 text-sm font-medium mb-2">✅ {giroLineupResult.message}</p>
+            <div className="text-sm text-gray-700 space-y-1">
+              {giroLineupResult.results?.map((r: { gameId: string; name: string; status: string }) => (
+                <p key={r.gameId}>
+                  <span className={r.status === 'updated' ? 'text-green-600' : 'text-orange-500'}>
+                    {r.status === 'updated' ? '✓' : '⚠'}
+                  </span>{' '}
+                  <span className="font-mono text-xs">{r.gameId}</span>{' '}
+                  {r.name && <span className="text-gray-500">— {r.name}</span>}
+                </p>
+              ))}
             </div>
           </div>
         )}
