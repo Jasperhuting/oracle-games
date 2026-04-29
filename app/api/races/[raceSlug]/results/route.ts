@@ -69,6 +69,34 @@ export async function GET(
       }
     }
 
+    // Stage-specific lookup: raceSlug pattern "giro-d-italia-stage-1_2026"
+    // maps to scraper-data doc "giro-d-italia-2026-stage-1"
+    const stageMatch = raceName.match(/^(.+)-stage-(\d+)$/);
+    if (stageMatch) {
+      const baseRace = stageMatch[1];
+      const stageNum = stageMatch[2];
+      const stageDocId = `${baseRace}-${year}-stage-${stageNum}`;
+
+      try {
+        const scraperDoc = await db.collection('scraper-data').doc(stageDocId).get();
+        if (scraperDoc.exists) {
+          const stageResults = parseStoredStageResults(scraperDoc.data());
+          if (stageResults && stageResults.length > 0) {
+            return NextResponse.json({
+              success: true,
+              raceName,
+              requestedRaceName: raceName,
+              year,
+              source: 'scraper-data-stage',
+              stageResults,
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`[GET_RACE_RESULTS] Failed to read stage doc '${stageDocId}':`, error);
+      }
+    }
+
     const raceCollectionCandidates = [raceSlug, raceName, ...(RACE_SLUG_ALIASES[raceName] || [])];
     const dedupedRaceCollectionCandidates = Array.from(new Set(raceCollectionCandidates));
 

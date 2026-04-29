@@ -20,6 +20,38 @@ interface SlipstreamRaceManagerProps {
   onRacesChange?: () => void;
 }
 
+// Giro d'Italia 2026 stages (8 mei – 31 mei 2026)
+const DEFAULT_GIRO_STAGES_2026 = [
+  { stageNum: 1,  date: '2026-05-08' },
+  { stageNum: 2,  date: '2026-05-09' },
+  { stageNum: 3,  date: '2026-05-10' },
+  // rest day 11 mei
+  { stageNum: 4,  date: '2026-05-12' },
+  { stageNum: 5,  date: '2026-05-13' },
+  { stageNum: 6,  date: '2026-05-14' },
+  { stageNum: 7,  date: '2026-05-15' },
+  { stageNum: 8,  date: '2026-05-16' },
+  { stageNum: 9,  date: '2026-05-17' },
+  // rest day 18 mei
+  { stageNum: 10, date: '2026-05-19' },
+  { stageNum: 11, date: '2026-05-20' },
+  { stageNum: 12, date: '2026-05-21' },
+  { stageNum: 13, date: '2026-05-22' },
+  { stageNum: 14, date: '2026-05-23' },
+  { stageNum: 15, date: '2026-05-24' },
+  // rest day 25 mei
+  { stageNum: 16, date: '2026-05-26' },
+  { stageNum: 17, date: '2026-05-27' },
+  { stageNum: 18, date: '2026-05-28' },
+  { stageNum: 19, date: '2026-05-29' },
+  { stageNum: 20, date: '2026-05-30' },
+  { stageNum: 21, date: '2026-05-31' },
+].map(({ stageNum, date }) => ({
+  raceSlug: `giro-d-italia-stage-${stageNum}`,
+  raceName: `Etappe ${stageNum}`,
+  date,
+}));
+
 // Default classics calendar for 2026
 const DEFAULT_RACES_2026 = [
   { raceSlug: 'omloop-het-nieuwsblad', raceName: 'Omloop Het Nieuwsblad', date: '2026-02-28' },
@@ -57,7 +89,7 @@ export function SlipstreamRaceManager({
   const [showAddForm, setShowAddForm] = useState(false);
   const [calcLoading, setCalcLoading] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
-  
+
   // Form state for adding single race
   const [newRace, setNewRace] = useState({
     raceSlug: '',
@@ -65,14 +97,14 @@ export function SlipstreamRaceManager({
     raceDate: ''
   });
 
-  const addDefaultRaces = async () => {
+  const addRacesToGame = async (racesToAdd: { raceSlug: string; raceName: string; date: string }[], year: number) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const racesToAdd = DEFAULT_RACES_2026.map((race, index) => ({
-        raceId: `${race.raceSlug}_2026`,
+      const races = racesToAdd.map((race, index) => ({
+        raceId: `${race.raceSlug}_${year}`,
         raceSlug: race.raceSlug,
         raceName: race.raceName,
         raceDate: new Date(race.date + 'T10:00:00Z').toISOString(),
@@ -82,7 +114,7 @@ export function SlipstreamRaceManager({
       const response = await fetch(`/api/games/${gameId}/slipstream/admin/races`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ races: racesToAdd })
+        body: JSON.stringify({ races })
       });
 
       const data = await response.json();
@@ -91,7 +123,7 @@ export function SlipstreamRaceManager({
         throw new Error(data.error || 'Failed to add races');
       }
 
-      setSuccess(`Added ${data.racesAdded} races (${data.duplicatesSkipped} duplicates skipped)`);
+      setSuccess(`${data.racesAdded} toegevoegd (${data.duplicatesSkipped} al aanwezig)`);
       onRacesChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add races');
@@ -99,6 +131,9 @@ export function SlipstreamRaceManager({
       setLoading(false);
     }
   };
+
+  const addDefaultRaces = () => addRacesToGame(DEFAULT_RACES_2026, 2026);
+  const addGiroStages = () => addRacesToGame(DEFAULT_GIRO_STAGES_2026, 2026);
 
   const addSingleRace = async () => {
     if (!newRace.raceSlug || !newRace.raceName || !newRace.raceDate) {
@@ -236,13 +271,22 @@ export function SlipstreamRaceManager({
               {t('slipstream.addRace')}
             </button>
             {races.length === 0 && (
-              <button
-                onClick={addDefaultRaces}
-                disabled={loading}
-                className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
-              >
-                {loading ? t('slipstream.adding') : t('slipstream.add2026Classics')}
-              </button>
+              <>
+                <button
+                  onClick={addDefaultRaces}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                >
+                  {loading ? t('slipstream.adding') : t('slipstream.add2026Classics')}
+                </button>
+                <button
+                  onClick={addGiroStages}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-sm bg-pink-500 text-white rounded hover:bg-pink-600 disabled:opacity-50"
+                >
+                  {loading ? 'Bezig...' : 'Giro 2026 etappes'}
+                </button>
+              </>
             )}
           </div>
         </div>
