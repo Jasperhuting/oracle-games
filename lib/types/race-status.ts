@@ -11,6 +11,7 @@ export interface StageStatus {
   validationWarnings: number;
   docId: string;
   stageDate: string | null;
+  isRestDay?: boolean;
 }
 
 export interface RaceStatus {

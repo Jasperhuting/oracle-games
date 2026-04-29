@@ -106,6 +106,20 @@ function StageRow({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [details, setDetails] = useState<StageDetailResponse | null>(null);
 
+  if (stage.isRestDay) {
+    return (
+      <tr className="border-b bg-gray-50 text-gray-400">
+        <td className="px-4 py-2 italic">Rustdag</td>
+        <td className="px-4 py-2 text-sm">
+          {stage.stageDate
+            ? new Date(stage.stageDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+            : '-'}
+        </td>
+        <td colSpan={5} />
+      </tr>
+    );
+  }
+
   const handleScrape = async () => {
     // Format display name for confirmation
     const displayName = isSingleDay

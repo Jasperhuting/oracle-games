@@ -575,6 +575,34 @@ export async function GET(request: NextRequest) {
       stages.length = 0;
       stages.push(...deduplicatedStages);
 
+      // Insert rest day rows (display-only, not scrape targets)
+      for (const rdDate of (raceConfig?.restDays ?? [])) {
+        if (typeof rdDate === 'string' && rdDate.length >= 10) {
+          stages.push({
+            stageNumber: `restday:${rdDate.substring(0, 10)}`,
+            status: 'pending',
+            scrapedAt: null,
+            riderCount: 0,
+            hasValidationErrors: false,
+            validationWarnings: 0,
+            docId: '',
+            stageDate: new Date(rdDate).toISOString(),
+            isRestDay: true,
+          });
+        }
+      }
+
+      // Final sort: gc/result always last; everything else by date, fallback to stageOrder
+      stages.sort((a, b) => {
+        const aIsEnd = a.stageNumber === 'gc' || a.stageNumber === 'result';
+        const bIsEnd = b.stageNumber === 'gc' || b.stageNumber === 'result';
+        if (aIsEnd || bIsEnd) return stageOrder(a) - stageOrder(b);
+        if (a.stageDate && b.stageDate) return a.stageDate.localeCompare(b.stageDate);
+        if (a.stageDate) return -1;
+        if (b.stageDate) return 1;
+        return stageOrder(a) - stageOrder(b);
+      });
+
       const pendingStages = totalStages - scrapedStages - failedStages;
 
       races.push({
@@ -693,6 +721,41 @@ export async function GET(request: NextRequest) {
           validationWarnings: 0,
           docId: '',
           stageDate,
+        });
+
+        // Insert rest day rows
+        for (const rdDate of (config.restDays ?? [])) {
+          if (typeof rdDate === 'string' && rdDate.length >= 10) {
+            stages.push({
+              stageNumber: `restday:${rdDate.substring(0, 10)}`,
+              status: 'pending',
+              scrapedAt: null,
+              riderCount: 0,
+              hasValidationErrors: false,
+              validationWarnings: 0,
+              docId: '',
+              stageDate: new Date(rdDate).toISOString(),
+              isRestDay: true,
+            });
+          }
+        }
+
+        // Sort by date; gc/result last
+        const stageOrderLocal = (s: StageStatus): number => {
+          if (s.stageNumber === 'prologue') return -1;
+          if (typeof s.stageNumber === 'number') return s.stageNumber;
+          if (s.stageNumber === 'gc') return 1000;
+          if (s.stageNumber === 'result') return 1001;
+          return 999;
+        };
+        stages.sort((a, b) => {
+          const aIsEnd = a.stageNumber === 'gc' || a.stageNumber === 'result';
+          const bIsEnd = b.stageNumber === 'gc' || b.stageNumber === 'result';
+          if (aIsEnd || bIsEnd) return stageOrderLocal(a) - stageOrderLocal(b);
+          if (a.stageDate && b.stageDate) return a.stageDate.localeCompare(b.stageDate);
+          if (a.stageDate) return -1;
+          if (b.stageDate) return 1;
+          return stageOrderLocal(a) - stageOrderLocal(b);
         });
       }
 
