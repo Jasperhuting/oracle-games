@@ -360,6 +360,14 @@ const TEAMS: TeamEntry[] = [
   },
 ];
 
+const TARGET_GAME_IDS = [
+  'j5WTqXbqpasKYhn5rScO',
+  'UsVDT2ucg3EOLvwSAPOh',
+  'kvsCyviw01CaUvmvpXEp',
+  'vzBNUh6nzUaLyy6rKQos',
+  'wyFw2Pl5SzI0kPNtMw7J',
+];
+
 async function seedGiroLineup() {
   console.log('=== GIRO D\'ITALIA 2026 LINEUP SEED ===\n');
 
@@ -383,38 +391,33 @@ async function seedGiroLineup() {
   await db.collection('raceLineups').doc(RACE_SLUG).set(lineupData, { merge: true });
   console.log(`✅ raceLineups/${RACE_SLUG} bijgewerkt`);
 
-  // 2. Update all games with raceRef pointing to this race
-  const raceRef = db.collection('races').doc(RACE_SLUG);
-  const raceDoc = await raceRef.get();
+  // 2. Update the specified game IDs directly
+  console.log(`\nBijwerken van ${TARGET_GAME_IDS.length} games...\n`);
 
-  if (!raceDoc.exists) {
-    console.warn(`⚠️  Race document 'races/${RACE_SLUG}' bestaat niet. Games worden niet bijgewerkt.`);
-    console.log('\nMaak eerst de race aan via /api/initializeRaces of voeg het document handmatig toe.');
-  } else {
-    const gamesSnapshot = await db.collection('games').where('raceRef', '==', raceRef).get();
+  const batch = db.batch();
 
-    if (gamesSnapshot.empty) {
-      console.log('ℹ️  Geen games gevonden met raceRef naar giro-d-italia_2026.');
-    } else {
-      const batch = db.batch();
-      gamesSnapshot.forEach((doc) => {
-        batch.update(doc.ref, {
-          eligibleTeams,
-          eligibleRiders,
-          updatedAt: new Date(),
-        });
-      });
-      await batch.commit();
-      console.log(`✅ ${gamesSnapshot.size} game(s) bijgewerkt met eligibleRiders en eligibleTeams`);
-      gamesSnapshot.forEach((doc) => {
-        console.log(`   - ${doc.id}: ${doc.data().name}`);
-      });
+  for (const gameId of TARGET_GAME_IDS) {
+    const gameRef = db.collection('games').doc(gameId);
+    const gameDoc = await gameRef.get();
+
+    if (!gameDoc.exists) {
+      console.warn(`⚠️  Game ${gameId} niet gevonden, overgeslagen.`);
+      continue;
     }
+
+    batch.update(gameRef, {
+      eligibleTeams,
+      eligibleRiders,
+      updatedAt: new Date(),
+    });
+
+    console.log(`✅ ${gameId}: ${gameDoc.data()?.name}`);
   }
 
-  console.log('\n=== KLAAR ===');
-  console.log(`Eligible riders (${eligibleRiders.length}):`);
-  eligibleRiders.forEach((r) => console.log(`  - ${r}`));
+  await batch.commit();
+
+  console.log(`\n=== KLAAR ===`);
+  console.log(`Eligible riders (${eligibleRiders.length}) ingesteld voor ${TARGET_GAME_IDS.length} games.`);
 }
 
 seedGiroLineup().catch(console.error);
