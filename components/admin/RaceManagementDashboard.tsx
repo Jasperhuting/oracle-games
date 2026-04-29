@@ -487,8 +487,7 @@ function RaceConfigForm({
   const [hasPrologue, setHasPrologue] = useState(race.hasPrologue);
   const [isSingleDay, setIsSingleDay] = useState(race.isSingleDay);
   const [excludeFromScraping, setExcludeFromScraping] = useState(race.excludeFromScraping);
-  const [restDays, setRestDays] = useState<number[]>(Array.isArray(race.restDays) ? race.restDays : []);
-  const [restDaysText, setRestDaysText] = useState(Array.isArray(race.restDays) ? race.restDays.join(', ') : '');
+  const [restDays, setRestDays] = useState<string[]>(Array.isArray(race.restDays) ? race.restDays.filter(d => typeof d === 'string') : []);
   const [saving, setSaving] = useState(false);
 
   // Derive the Firestore document ID: {slug}_{year}
@@ -529,25 +528,39 @@ function RaceConfigForm({
             disabled={isSingleDay}
           />
         </label>
-        <label className="flex flex-col text-sm gap-1">
-          <span className="text-gray-600">Rustdagen (na etappe nr.)</span>
-          <input
-            type="text"
-            value={restDaysText}
-            onChange={e => setRestDaysText(e.target.value)}
-            onBlur={() => {
-              const parsed = restDaysText
-                .split(',')
-                .map(s => parseInt(s.trim(), 10))
-                .filter(n => !isNaN(n) && n > 0);
-              setRestDays(parsed);
-              setRestDaysText(parsed.join(', '));
-            }}
-            placeholder="bijv. 2, 9"
-            className="border rounded px-2 py-1 w-32 text-sm"
-            disabled={isSingleDay}
-          />
-        </label>
+        <div className="flex flex-col text-sm gap-1">
+          <span className="text-gray-600">Rustdagen</span>
+          <div className="flex flex-col gap-1">
+            {restDays.map((date, i) => (
+              <div key={i} className="flex items-center gap-1">
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => {
+                    const next = [...restDays];
+                    next[i] = e.target.value;
+                    setRestDays(next);
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                  disabled={isSingleDay}
+                />
+                <button
+                  type="button"
+                  onClick={() => setRestDays(restDays.filter((_, j) => j !== i))}
+                  className="text-red-500 hover:text-red-700 px-1"
+                  disabled={isSingleDay}
+                >✕</button>
+              </div>
+            ))}
+            {!isSingleDay && (
+              <button
+                type="button"
+                onClick={() => setRestDays([...restDays, ''])}
+                className="text-blue-600 hover:text-blue-800 text-xs w-fit"
+              >+ Rustdag toevoegen</button>
+            )}
+          </div>
+        </div>
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input
             type="checkbox"

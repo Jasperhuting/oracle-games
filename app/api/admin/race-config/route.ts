@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (typeof hasPrologue === 'boolean') update.hasPrologue = hasPrologue;
     if (typeof isSingleDay === 'boolean') update.isSingleDay = isSingleDay;
     if (typeof excludeFromScraping === 'boolean') update.excludeFromScraping = excludeFromScraping;
-    if (Array.isArray(restDays) && restDays.every(d => typeof d === 'number')) update.restDays = restDays;
+    if (Array.isArray(restDays) && restDays.every(d => typeof d === 'string')) update.restDays = restDays;
 
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
