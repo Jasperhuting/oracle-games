@@ -1,9 +1,12 @@
 import { Minus, X } from "tabler-icons-react";
 import Image from "next/image";
+import CurrencyInput from "react-currency-input-field";
 import { Button } from "./Button";
 import { Flag } from "./Flag";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { GameData } from "@/app/games/[gameId]/auction/page";
+import { RiderWithBid } from "@/lib/types";
+import { useState } from "react";
 
 // TODO: replace any with real type
 export const MyTeamSelectionRow = (
@@ -15,26 +18,35 @@ export const MyTeamSelectionRow = (
         removeAble,
         onCancelBid,
         onAdjustBid,
+        onSaveAdjustedBid,
+        onCloseAdjustBid,
         hideButton,
         adjustingBid,
+        placingBid,
         isWorldTourManager,
         game
     }: {
-        rider: any,  // eslint-disable-line @typescript-eslint/no-explicit-any
-        removeItem: (rider: any) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        rider: RiderWithBid,
+        removeItem: (rider: RiderWithBid) => void,
         showStage?: boolean,
         stageText?: string,
         removeAble?: boolean,
         onCancelBid?: (bidId: string, riderName: string) => void,
         onAdjustBid?: (bidId: string) => void,
+        onSaveAdjustedBid?: (rider: RiderWithBid, amount: string) => Promise<void> | void,
+        onCloseAdjustBid?: () => void,
         hideButton?: boolean,
         adjustingBid?: string | null,
+        placingBid?: string | null,
         isWorldTourManager?: boolean,
         game?: GameData
     }) => {
+    const [adjustAmount, setAdjustAmount] = useState('');
     const teamName = typeof rider.team === 'string' ? rider.team : rider.team?.name;
     // During bidding, only active bids can be cancelled (outbid status only appears after finalization)
     const canCancelBid = rider.myBidStatus === 'active';
+    const riderNameId = rider.nameID || rider.id || '';
+    const isAdjustingThisBid = adjustingBid === rider.myBidId;
 
     return (
         <div className="flex flex-row items-center justify-between p-2 min-h-[50px]">
@@ -90,23 +102,61 @@ export const MyTeamSelectionRow = (
                 {/* Show adjust and cancel bid buttons for auction games - only for active/outbid bids */}
                 {rider.myBid !== undefined && onCancelBid && rider.myBidId && !hideButton && canCancelBid && (
                     <div className="flex gap-2">
-                        {!isWorldTourManager && game?.gameType !== 'marginal-gains' && onAdjustBid && (
-                            <Button
-                                onClick={() => onAdjustBid(rider.myBidId)}
-                                selected={false}
-                                text="Adjust bid"
-                                variant="primary"
-                                ghost
-                            />
+                        {!isWorldTourManager && game?.gameType !== 'marginal-gains' && onAdjustBid && onSaveAdjustedBid && isAdjustingThisBid ? (
+                            <div className="flex items-center gap-2">
+                                <CurrencyInput
+                                    id={`adjust-bid-bottom-${rider.myBidId}`}
+                                    name={`adjust-bid-bottom-${riderNameId}`}
+                                    className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                                    placeholder={`${rider.myBid || 0}`}
+                                    decimalsLimit={0}
+                                    disabled={placingBid === riderNameId}
+                                    defaultValue={adjustAmount || String(rider.myBid || '')}
+                                    onValueChange={(value) => setAdjustAmount(value || '')}
+                                />
+                                <Button
+                                    onClick={async () => {
+                                        await onSaveAdjustedBid(rider, adjustAmount || String(rider.myBid || '0'));
+                                    }}
+                                    selected={false}
+                                    text="Save"
+                                    variant="primary"
+                                    disabled={placingBid === riderNameId}
+                                />
+                                <Button
+                                    onClick={() => {
+                                        setAdjustAmount('');
+                                        onCloseAdjustBid?.();
+                                    }}
+                                    selected={false}
+                                    text="Cancel"
+                                    ghost
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                {!isWorldTourManager && game?.gameType !== 'marginal-gains' && onAdjustBid && onSaveAdjustedBid && (
+                                    <Button
+                                        onClick={() => {
+                                            setAdjustAmount(String(rider.myBid || ''));
+                                            onAdjustBid(rider.myBidId);
+                                        }}
+                                        selected={false}
+                                        text="Adjust bid"
+                                        variant="primary"
+                                        ghost
+                                    />
+                                )}
+                                <Button
+                                    onClick={() => onCancelBid(rider.myBidId, rider.name)}
+                                    selected={false}
+                                    text={game?.gameType === 'marginal-gains' || game?.gameType === 'worldtour-manager' ? 'Remove' : 'Reset bid'}
+                                    endIcon={<X size={20} />}
+                                    variant="danger"
+                                    ghost
+                                />
+                            </>
                         )}
-                        <Button
-                            onClick={() => onCancelBid(rider.myBidId, rider.name)}
-                            selected={false}
-                            text={game?.gameType === 'marginal-gains' || game?.gameType === 'worldtour-manager' ? 'Remove' : 'Reset bid'}
-                            endIcon={<X size={20} />}
-                            variant="danger"
-                            ghost
-                        />
                     </div>
                 )}
 

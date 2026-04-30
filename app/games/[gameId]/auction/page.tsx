@@ -543,8 +543,8 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     return !!activePeriod?.top200Only;
   })();
 
-  const handlePlaceBid = async (rider: RiderWithBid) => {
-    if (!user || !participant) return;
+  const handlePlaceBid = async (rider: RiderWithBid): Promise<boolean> => {
+    if (!user || !participant) return false;
 
     const riderNameId = rider.nameID || rider.id || '';
     const isWorldTourManager = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains';
@@ -587,7 +587,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         ? t(validation.error as Parameters<typeof t>[0])
         : validation.error;
       setError(errorMsg);
-      return;
+      return false;
     }
     // --- End validation ---
 
@@ -645,6 +645,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         }
         return r;
       }));
+      return true;
     } catch (error) {
       console.error('Error placing bid:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to place bid';
@@ -653,6 +654,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         title: 'Error placing bid',
         description: errorMsg,
       });
+      return false;
     } finally {
       setPlacingBid(null);
     }
@@ -724,6 +726,16 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const handleAdjustBid = (bidId: string) => {
     setAdjustingBid(bidId);
+  };
+
+  const handleAdjustBidSave = async (rider: RiderWithBid, amount: string) => {
+    const riderNameId = rider.nameID || rider.id || '';
+    bidAmountsRef.current[riderNameId] = amount || '0';
+
+    const success = await handlePlaceBid(rider);
+    if (success) {
+      setAdjustingBid(null);
+    }
   };
 
   const handleCancelBidConfirm = async () => {
@@ -1048,10 +1060,10 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       </div>
 
       {/* Content */}
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="container mx-auto">
-          <div className={`w-full flex flex-row gap-4 mb-4 relative ${game?.gameType === 'full-grid' ? 'flex-col' : ''}`}>
-            <div className={`bg-white rounded-md ${game?.gameType === 'full-grid' ? 'w-full' : 'flex-9/12'}`}>
+          <div className={`w-full flex gap-4 mb-4 relative ${game?.gameType === 'full-grid' ? 'flex-col' : 'flex-col lg:flex-row'}`}>
+            <div className={`bg-white rounded-md min-w-0 order-2 lg:order-1 ${game?.gameType === 'full-grid' ? 'w-full' : 'w-full lg:flex-9/12'}`}>
               <Tabs
                 defaultTab="bidding"
                 tabs={[
@@ -1114,7 +1126,14 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               />
             </div>
 
-            <div className={`bg-white rounded-md border border-gray-200 p-4 z-20 self-start ${isGameType(game, 'full-grid') ? 'sticky min-w-[330px] w-full' : 'sticky min-w-[330px] max-w-[360px] flex-3/12'}`} style={{ top: hideBanner ? '127px' : '162px' }}>
+            <div
+              className={`bg-white rounded-md border border-gray-200 p-4 z-20 self-start w-full ${
+                isGameType(game, 'full-grid')
+                  ? 'order-1 lg:sticky lg:min-w-[330px]'
+                  : 'order-1 lg:order-2 lg:sticky lg:min-w-[330px] lg:max-w-[360px] lg:flex-3/12'
+              }`}
+              style={{ top: hideBanner ? '127px' : '162px' }}
+            >
                 {!auctionActive && (
                   <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
                     <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'}`}>
@@ -1135,7 +1154,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   </div>
                 )}
 
-                <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
+                <div className="flex relative flex-col gap-4 lg:max-h-[calc(100vh-32px-86px-142px)] lg:overflow-y-auto">
                   <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} birthYearRange={birthYearRange} setBirthYearRange={setBirthYearRange} minBirthYear={minBirthYear} maxBirthYear={maxBirthYear} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} availableTeams={availableTeams} selectedTeamFilter={selectedTeamFilter} setSelectedTeamFilter={setSelectedTeamFilter} teamsWithSelection={teamsWithSelection} />
                   <AuctionStats gameId={gameId} game={game} myBids={myBids} participant={participant} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
                   {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' && (
@@ -1163,9 +1182,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               setMyTeamSelection={() => { }}
               onCancelBid={handleCancelBidClick}
               onAdjustBid={handleAdjustBid}
+              onSaveAdjustedBid={handleAdjustBidSave}
+              onCloseAdjustBid={() => setAdjustingBid(null)}
               hideButton={!auctionActive}
               game={game}
               adjustingBid={adjustingBid}
+              placingBid={placingBid}
               isWorldTourManager={isSelectionBasedGame}
             />
           )}
@@ -1176,9 +1198,12 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               setMyTeamSelection={() => { }}
               onCancelBid={handleCancelBidClick}
               onAdjustBid={handleAdjustBid}
+              onSaveAdjustedBid={handleAdjustBidSave}
+              onCloseAdjustBid={() => setAdjustingBid(null)}
               hideButton={!auctionActive}
               game={game}
               adjustingBid={adjustingBid}
+              placingBid={placingBid}
               isWorldTourManager={isSelectionBasedGame}
             />
           )}

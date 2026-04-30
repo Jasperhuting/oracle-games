@@ -2,8 +2,18 @@ import { useState } from 'react';
 import { ChevronDown } from 'tabler-icons-react';
 import { CollapsibleProps } from '@/lib/types/component-props';
 
-export const Collapsible = ({ title, children, defaultOpen = true, className = '' }: CollapsibleProps) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+type ResponsiveCollapsibleProps = CollapsibleProps & {
+  mobileDefaultOpen?: boolean;
+};
+
+export const Collapsible = ({ title, children, defaultOpen = true, mobileDefaultOpen, className = '' }: ResponsiveCollapsibleProps) => {
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined' && mobileDefaultOpen !== undefined && window.innerWidth < 1024) {
+      return mobileDefaultOpen;
+    }
+
+    return defaultOpen;
+  });
 
   return (
     <div className={className}>

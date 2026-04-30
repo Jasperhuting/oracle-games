@@ -116,6 +116,10 @@ export const AuctionStats = ({ gameId, game, myBids, participant, auctionClosed,
       return [...standings].sort((a, b) => (a.ranking ?? 0) - (b.ranking ?? 0));
     }, [standings]);
 
+    const hasAnyStandingsPoints = useMemo(() => {
+      return sortedStandings.some((row) => (row.totalPoints ?? 0) > 0);
+    }, [sortedStandings]);
+
     // For marginal-gains, only show rider count stats (no budget)
     if (game.gameType === 'marginal-gains') {
         return <Collapsible title="Team Stats" defaultOpen={true} className="border border-gray-200 rounded-md p-2">
@@ -151,7 +155,7 @@ export const AuctionStats = ({ gameId, game, myBids, participant, auctionClosed,
         </Collapsible>
     }
 
-    return <Collapsible title="Budget Stats" defaultOpen={true} className="border border-gray-200 rounded-md p-2">
+    return <Collapsible title="Budget Stats" defaultOpen={true} mobileDefaultOpen={false} className="border border-gray-200 rounded-md p-2">
             <div className="flex items-between justify-between flex-col divide-y divide-gray-200 w-full">
               {hasBudget && (
                 <div>
@@ -231,38 +235,38 @@ export const AuctionStats = ({ gameId, game, myBids, participant, auctionClosed,
               )}
             </div>
 
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <div className="text-sm font-semibold text-gray-700 mb-2">Tussenstand</div>
-              {standingsLoading ? (
-                <div className="text-xs text-gray-500">Laden...</div>
-              ) : standingsError ? (
-                <div className="text-xs text-red-600">{standingsError}</div>
-              ) : sortedStandings.length === 0 ? (
-                <div className="text-xs text-gray-500">Nog geen tussenstand beschikbaar</div>
-              ) : (
-                <div className="max-h-40 overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <tbody className="divide-y divide-gray-100">
-                      {sortedStandings.map((row) => (
-                        <tr key={row.participantId} className="hover:bg-gray-50">
-                          <td className="py-2 pr-2 text-gray-500 w-10">#{row.ranking}</td>
-                          <td className="py-2 pr-2">
-                            <Link
-                              href={`/user/${row.userId}`}
-                              className="font-medium text-gray-900 hover:text-primary hover:underline"
-                            >
-                              {row.playername}
-                            </Link>
-                          </td>
-                          <td className="py-2 text-right font-semibold text-primary">
-                            {formatStandingsScore(row.totalPoints)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            {(standingsLoading || standingsError || hasAnyStandingsPoints) && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="text-sm font-semibold text-gray-700 mb-2">Tussenstand</div>
+                {standingsLoading ? (
+                  <div className="text-xs text-gray-500">Laden...</div>
+                ) : standingsError ? (
+                  <div className="text-xs text-red-600">{standingsError}</div>
+                ) : (
+                  <div className="max-h-40 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <tbody className="divide-y divide-gray-100">
+                        {sortedStandings.map((row) => (
+                          <tr key={row.participantId} className="hover:bg-gray-50">
+                            <td className="py-2 pr-2 text-gray-500 w-10">#{row.ranking}</td>
+                            <td className="py-2 pr-2">
+                              <Link
+                                href={`/user/${row.userId}`}
+                                className="font-medium text-gray-900 hover:text-primary hover:underline"
+                              >
+                                {row.playername}
+                              </Link>
+                            </td>
+                            <td className="py-2 text-right font-semibold text-primary">
+                              {formatStandingsScore(row.totalPoints)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
     </Collapsible>
 }

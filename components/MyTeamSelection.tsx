@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MyTeamSelectionRow } from "./MyTeamSelectionRow";
 import { ChevronDown, ChevronUp } from "tabler-icons-react";
 import { GameType } from "@/lib/types/games";
+import { RiderWithBid } from "@/lib/types";
 
 // TODO: replace any with real type
 export const MyTeamSelection = (
@@ -11,18 +12,24 @@ export const MyTeamSelection = (
         removeAble, 
         onCancelBid,
         onAdjustBid, 
+        onSaveAdjustedBid,
+        onCloseAdjustBid,
         hideButton,
         adjustingBid,
+        placingBid,
         isWorldTourManager,
         game,
     }: { 
-        myTeamSelection: any[],  // eslint-disable-line @typescript-eslint/no-explicit-any
-        setMyTeamSelection: (myTeamSelection: any[]) => void,  // eslint-disable-line @typescript-eslint/no-explicit-any
+        myTeamSelection: RiderWithBid[],
+        setMyTeamSelection: (myTeamSelection: RiderWithBid[]) => void,
         removeAble?: boolean, 
         onCancelBid?: (bidId: string, riderName: string) => void,
         onAdjustBid?: (bidId: string) => void, 
+        onSaveAdjustedBid?: (rider: RiderWithBid, amount: string) => Promise<void> | void,
+        onCloseAdjustBid?: () => void,
         hideButton?: boolean,
         adjustingBid?: string | null,
+        placingBid?: string | null,
         isWorldTourManager?: boolean,
         game?: { gameType?: GameType }
     }) => {
@@ -52,8 +59,11 @@ export const MyTeamSelection = (
                             removeAble={removeAble}
                             onCancelBid={onCancelBid}
                             onAdjustBid={onAdjustBid}
+                            onSaveAdjustedBid={onSaveAdjustedBid}
+                            onCloseAdjustBid={onCloseAdjustBid}
                             hideButton={hideButton}
                             adjustingBid={adjustingBid}
+                            placingBid={placingBid}
                             game={game}
                             isWorldTourManager={isWorldTourManager}
                         />

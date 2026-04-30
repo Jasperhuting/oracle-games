@@ -1,4 +1,4 @@
-import { Bid, Rider } from "@/lib/types"
+import { Bid, RiderWithBid } from "@/lib/types"
 import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { Collapsible } from "./Collapsible";
 
@@ -7,8 +7,11 @@ interface ExtendedBid extends Bid {
     price?: number;
 }
 
-export const MyAuctionTeam = ({ myBids, auctionPeriods, availableRiders }: { myBids: ExtendedBid[], auctionPeriods: Array<{ name: string; startDate: string; endDate: string; status: string; neoProfsRequired?: number; neoProfsMaxPoints?: number; neoProfsMaxBudget?: number; }>, availableRiders: any, starterAmount: number }) => {
+export const MyAuctionTeam = ({ myBids, auctionPeriods, availableRiders }: { myBids: ExtendedBid[], auctionPeriods: Array<{ name: string; startDate: string; endDate: string; status: string; neoProfsRequired?: number; neoProfsMaxPoints?: number; neoProfsMaxBudget?: number; }>, availableRiders: RiderWithBid[], starterAmount: number }) => {
 
+if (myBids.length === 0) {
+    return null;
+}
 
 const periodsColors = [{
     border:  'border-amber-100',
@@ -39,7 +42,7 @@ const periodsColors = [{
     bg: 'bg-indigo-50'
 }]
 
-    return <Collapsible title={`My Team (${myBids.length})`} className="border border-gray-200 rounded-md p-2" defaultOpen={true}>
+    return <Collapsible title={`My Team (${myBids.length})`} className="border border-gray-200 rounded-md p-2" defaultOpen={true} mobileDefaultOpen={false}>
         <div>
 
             {auctionPeriods?.map((period, index) => {
@@ -61,7 +64,7 @@ const periodsColors = [{
 
                     {bids.map((bid, idx) => {
 
-                        const rider: Rider = availableRiders.find((rider: any) => rider.id === bid.riderNameId || rider.nameID === bid.riderNameId);
+                        const rider = availableRiders.find((rider) => rider.id === bid.riderNameId || rider.nameID === bid.riderNameId);
 
                         return <div key={bid.id} className={`relative flex border rounded-md border-gray-100 px-2 justify-start gap-4 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
                             <span className="flex-1 text-xs absolute bottom-0 text-gray-400">

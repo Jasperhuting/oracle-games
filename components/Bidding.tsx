@@ -800,7 +800,7 @@ export const Bidding = ({
                         showPointsInsteadOfPrice={game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid'}
                         buttonContainer={<>
                           {/* it should check if the game.gameType is not worldtour-manager or marginal-gains */}
-                          <div className={`flex flex-row gap-2`}>
+                          <div className={`flex flex-row gap-2 pb-2`}>
 
                             {auctionActive ? (<>
                               {(game?.gameType === 'auctioneer') ? (
