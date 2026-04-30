@@ -8,9 +8,10 @@ export interface BuildRidersOptions {
   userBids: Bid[];
   /** All bids in the game (used for admin highestBid view). */
   allBids: Bid[];
-  /** Map of riderNameId → { ownerName, pricePaid } for sold riders. */
-  soldRidersMap: Map<string, { ownerName: string; pricePaid: number }>;
+  /** Map of riderNameId → ownership summary from previous auction rounds. */
+  soldRidersMap: Map<string, { ownerNames: string[]; pricePaid: number; ownerCount: number }>;
   gameType: string;
+  maxOwnersPerRider?: number;
   /** Maximum cap on effectiveMinBid for auctioneer games. */
   maxMinimumBid?: number;
   /** Admin-set point values per rider for full-grid games. */
@@ -30,6 +31,7 @@ export function buildBiddableRiders(opts: BuildRidersOptions): RiderWithBid[] {
     allBids,
     soldRidersMap,
     gameType,
+    maxOwnersPerRider = 1,
     maxMinimumBid,
     riderValues,
     isAdmin = false,
@@ -47,8 +49,9 @@ export function buildBiddableRiders(opts: BuildRidersOptions): RiderWithBid[] {
 
     // Sold status only applies to pure-auction game types
     const soldData = soldRidersMap.get(riderNameId);
-    const isSold = isBiddingGame && !!soldData;
-    const soldTo = soldData?.ownerName;
+    const soldCount = soldData?.ownerCount || 0;
+    const isSold = isBiddingGame && soldCount >= maxOwnersPerRider;
+    const soldTo = soldData?.ownerNames?.join(", ");
     const pricePaid = soldData?.pricePaid;
 
     const effectiveMinBid = computeEffectiveMinBid(riderNameId, rider.points, {
@@ -95,6 +98,8 @@ export function buildBiddableRiders(opts: BuildRidersOptions): RiderWithBid[] {
       soldTo,
       isSold,
       pricePaid,
+      soldCount,
+      maxOwnersPerRider,
     };
   });
 }

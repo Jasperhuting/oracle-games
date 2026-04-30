@@ -130,7 +130,7 @@ describe("buildBiddableRiders", () => {
   });
 
   it("marks rider as sold for auctioneer when in soldRidersMap", () => {
-    const sold = new Map([["van-aert", { ownerName: "Alice", pricePaid: 750 }]]);
+    const sold = new Map([["van-aert", { ownerNames: ["Alice"], pricePaid: 750, ownerCount: 1 }]]);
     const opts: BuildRidersOptions = {
       ...baseOpts,
       gameType: "auctioneer",
@@ -144,7 +144,7 @@ describe("buildBiddableRiders", () => {
   });
 
   it("does NOT mark rider as sold for full-grid (selection game)", () => {
-    const sold = new Map([["laporte", { ownerName: "Bob", pricePaid: 8 }]]);
+    const sold = new Map([["laporte", { ownerNames: ["Bob"], pricePaid: 8, ownerCount: 1 }]]);
     const opts: BuildRidersOptions = {
       ...baseOpts,
       gameType: "full-grid",
@@ -154,6 +154,20 @@ describe("buildBiddableRiders", () => {
     };
     const result = buildBiddableRiders(opts);
     expect(result[0].isSold).toBe(false);
+  });
+
+  it("keeps rider available when shared ownership limit is not yet reached", () => {
+    const sold = new Map([["pidcock", { ownerNames: ["Alice"], pricePaid: 500, ownerCount: 1 }]]);
+    const opts: BuildRidersOptions = {
+      ...baseOpts,
+      gameType: "auctioneer",
+      maxOwnersPerRider: 2,
+      riders: [makeRider({ nameID: "pidcock", points: 450 })],
+      soldRidersMap: sold,
+    };
+    const result = buildBiddableRiders(opts);
+    expect(result[0].isSold).toBe(false);
+    expect(result[0].soldCount).toBe(1);
   });
 
   it("populates highestBid and highestBidder for admins", () => {

@@ -27,6 +27,15 @@ import { buildBiddableRiders } from "@/lib/bidding/buildBiddableRiders";
 import { validateBid, type BidValidationContext } from "@/lib/bidding/BiddingStrategy";
 import { AddRiderTab } from "@/components/AddRiderTab";
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
+import { getSharedRiderRules } from "@/lib/auction/sharedRiders";
+
+interface OwnedTeamRider {
+  riderNameId?: string;
+  active?: boolean;
+  playername?: string;
+  userName?: string;
+  pricePaid?: number;
+}
 
 // Custom hook to monitor cookie changes
 function useCookieValue(cookieName: string) {
@@ -243,16 +252,23 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         }
 
         // Build soldRidersMap from cached playerTeams
-        const soldRidersMap = new Map<string, { ownerName: string; pricePaid: number }>();
+        const soldRidersMap = new Map<string, { ownerNames: string[]; pricePaid: number; ownerCount: number }>();
         if (cachedData.playerTeamsData.success && cachedData.playerTeamsData.teams) {
-          cachedData.playerTeamsData.teams.forEach((teamRider: any) => {
+          cachedData.playerTeamsData.teams.forEach((teamRider: OwnedTeamRider) => {
             if (teamRider.riderNameId && teamRider.active) {
               const ownerName = teamRider.playername || teamRider.userName || 'Unknown Player';
               const pricePaid = teamRider.pricePaid || 0;
-              soldRidersMap.set(teamRider.riderNameId, { ownerName, pricePaid });
+              const existing = soldRidersMap.get(teamRider.riderNameId);
+              soldRidersMap.set(teamRider.riderNameId, {
+                ownerNames: [...(existing?.ownerNames || []), ownerName],
+                pricePaid: existing?.pricePaid || pricePaid,
+                ownerCount: (existing?.ownerCount || 0) + 1,
+              });
             }
           });
         }
+
+        const sharedRiderRules = getSharedRiderRules(cachedData.gameData);
 
         const ridersWithBids = buildBiddableRiders({
           riders,
@@ -260,6 +276,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
           allBids: cachedData.allBidsData,
           soldRidersMap,
           gameType: cachedData.gameData.gameType,
+          maxOwnersPerRider: sharedRiderRules.maxOwnersPerRider,
           maxMinimumBid: cachedData.gameData?.config?.maxMinimumBid as number | undefined,
           riderValues: (cachedData.gameData?.config?.riderValues || {}) as Record<string, number>,
           isAdmin: false,
@@ -388,16 +405,23 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       const playerTeamsData = await playerTeamsResponse.json();
 
       // Build a map of sold riders: riderNameId -> { ownerName, pricePaid }
-      const soldRidersMap = new Map<string, { ownerName: string; pricePaid: number }>();
+      const soldRidersMap = new Map<string, { ownerNames: string[]; pricePaid: number; ownerCount: number }>();
       if (playerTeamsData.success && playerTeamsData.teams) {
-        playerTeamsData.teams.forEach((teamRider: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        playerTeamsData.teams.forEach((teamRider: OwnedTeamRider) => {
           if (teamRider.riderNameId && teamRider.active) {
             const ownerName = teamRider.playername || teamRider.userName || 'Unknown Player';
             const pricePaid = teamRider.pricePaid || 0;
-            soldRidersMap.set(teamRider.riderNameId, { ownerName, pricePaid });
+            const existing = soldRidersMap.get(teamRider.riderNameId);
+            soldRidersMap.set(teamRider.riderNameId, {
+              ownerNames: [...(existing?.ownerNames || []), ownerName],
+              pricePaid: existing?.pricePaid || pricePaid,
+              ownerCount: (existing?.ownerCount || 0) + 1,
+            });
           }
         });
       }
+
+      const sharedRiderRules = getSharedRiderRules(game);
 
       const ridersWithBids = buildBiddableRiders({
         riders,
@@ -405,6 +429,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         allBids: allBidsData,
         soldRidersMap,
         gameType: game.gameType,
+        maxOwnersPerRider: sharedRiderRules.maxOwnersPerRider,
         maxMinimumBid: game?.config?.maxMinimumBid as number | undefined,
         riderValues: (game?.config?.riderValues || {}) as Record<string, number>,
         isAdmin: userIsAdmin,

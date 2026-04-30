@@ -1,6 +1,8 @@
 import { getServerFirebase } from '@/lib/firebase/server';
 import { AuctioneerConfig, AuctionPeriod, FullGridConfig, Game, MarginalGainsConfig, WorldTourManagerConfig } from '../types';
 import { Timestamp } from 'firebase-admin/firestore';
+import { getSharedRiderRules } from './sharedRiders';
+import { splitWinningRiderBids } from './riderBidRanking';
 
 export interface FinalizeAuctionOptions {
   gameId: string;
@@ -304,6 +306,9 @@ export async function finalizeAuction(
     }
 
     console.log(`[FINALIZE] Game limits: maxRiders=${maxRiders}, maxBudget=${maxBudget}`);
+    const sharedRiderRules = getSharedRiderRules(gameData);
+    const winnerSlotsPerRider = sharedRiderRules.allowSharedRiders ? sharedRiderRules.maxOwnersPerRider : 1;
+    console.log(`[FINALIZE] Shared rider rules: allowSharedRiders=${sharedRiderRules.allowSharedRiders}, maxOwnersPerRider=${winnerSlotsPerRider}`);
 
     // First pass: collect all winning bids per participant
     const winsByParticipant = new Map<string, Array<{ riderNameId: string, bid: BidWithId }>>();
@@ -434,32 +439,18 @@ export async function finalizeAuction(
       }
     } else {
       // For auction-based games (Auctioneer):
-      // Process each rider's bids - only highest bid wins
+      // Process each rider's bids - highest bid(s) win based on division rules
       for (const [riderNameId, bids] of bidsByRider.entries()) {
-        // Sort bids: highest amount first, then earliest time
-        bids.sort((a, b) => {
-          if (b.amount !== a.amount) {
-            return b.amount - a.amount; // Higher bid wins
+        const { winningBids, losingBids } = splitWinningRiderBids(bids, winnerSlotsPerRider);
+
+        for (const winningBid of winningBids) {
+          if (!winsByParticipant.has(winningBid.userId)) {
+            winsByParticipant.set(winningBid.userId, []);
           }
-          // If amounts are equal, earlier bid wins
-          const timeA = a.bidAt.toDate();
-          const timeB = b.bidAt.toDate();
-          return timeA.getTime() - timeB.getTime();
-        });
-
-        const winningBid = bids[0];
-        const losingBids = bids.slice(1);
-
-        // Collect wins by participant
-        if (!winsByParticipant.has(winningBid.userId)) {
-          winsByParticipant.set(winningBid.userId, []);
+          winsByParticipant.get(winningBid.userId)!.push({ riderNameId, bid: winningBid });
+          await db.collection('bids').doc(winningBid.id).update({ status: 'won' });
         }
-        winsByParticipant.get(winningBid.userId)!.push({ riderNameId, bid: winningBid });
 
-        // Mark winning bid as "won"
-        await db.collection('bids').doc(winningBid.id).update({ status: 'won' });
-
-        // Mark losing bids as "lost"
         for (const losingBid of losingBids) {
           await db.collection('bids').doc(losingBid.id).update({ status: 'lost' });
           results.losersRefunded++;
@@ -532,9 +523,7 @@ export async function finalizeAuction(
           console.log(`[FINALIZE] User ${userId}: current spentBudget=${currentSpentBudget}, wins=${wins.length}, rebuilt team from ${existingPlayerTeams.size} playerTeams`);
 
           // Calculate total won amount and build new team
-          let totalWonAmount = 0;
           const newRiders = wins.map(({ riderNameId, bid }) => {
-            totalWonAmount += bid.amount;
             console.log(`[FINALIZE]   - Won rider ${bid.riderName} for ${bid.amount}`);
             return {
               riderNameId: riderNameId,

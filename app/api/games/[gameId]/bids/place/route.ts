@@ -5,6 +5,7 @@ import type { PlaceBidRequest, PlaceBidResponse, ApiErrorResponse, ClientBid, Bi
 import { placeBidSchema, validateRequest } from '@/lib/validation';
 import { jsonWithCacheVersion } from '@/lib/utils/apiCacheHeaders';
 import { isProTourTeamClass, normalizeTeamKey } from "@/lib/bidding/teamUtils";
+import { getSharedRiderRules } from '@/lib/auction/sharedRiders';
 
 // TEMPORARY: Toggle to disable bidding
 const BIDDING_DISABLED = false;
@@ -155,8 +156,22 @@ export async function POST(
       );
     }
 
-    const participantDoc = participantSnapshot.docs[0];
-    const participantData = participantDoc.data();
+    const sharedRiderRules = getSharedRiderRules(gameData);
+
+    if (gameData?.gameType === 'auctioneer' && sharedRiderRules.maxOwnersPerRider > 0) {
+      const existingOwnersSnapshot = await db.collection('playerTeams')
+        .where('gameId', '==', gameId)
+        .where('riderNameId', '==', riderNameId)
+        .get();
+
+      const existingOwnersCount = existingOwnersSnapshot.docs.filter(doc => doc.data().active !== false).length;
+      if (existingOwnersCount >= sharedRiderRules.maxOwnersPerRider) {
+        return NextResponse.json(
+          { error: `Deze renner is al ${existingOwnersCount} keer gekocht en is niet meer beschikbaar.` },
+          { status: 400 }
+        );
+      }
+    }
 
     // Check if user already has an active bid on this rider
     const existingUserBid = await db.collection('bids')

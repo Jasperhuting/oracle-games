@@ -53,6 +53,9 @@ export function validateBid(ctx: BidValidationContext): ValidationResult {
 
 export function checkNotSold(rider: RiderWithBid): ValidationResult | null {
   if (!rider.isSold) return null;
+  if (rider.maxOwnersPerRider && rider.maxOwnersPerRider > 1) {
+    return { valid: false, error: `This rider has already reached the maximum of ${rider.maxOwnersPerRider} owners (${rider.soldTo})` };
+  }
   return { valid: false, error: `This rider is already sold to ${rider.soldTo}` };
 }
 

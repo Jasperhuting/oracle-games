@@ -140,6 +140,8 @@ export interface AuctionGameData {
   year: number;
   status: GameStatus;
   division?: string;
+  divisionLevel?: number;
+  raceRef?: string;
   raceType: RaceType;
   createdBy: string;
   createdAt: Date;
@@ -187,6 +189,8 @@ export interface RiderWithBid extends Rider {
   soldTo?: string; // Player name who owns this rider (from previous auction rounds)
   isSold?: boolean; // Whether this rider is already sold
   pricePaid?: number; // Price paid for this rider in the auction
+  soldCount?: number; // How many owners currently have this rider
+  maxOwnersPerRider?: number; // How many owners are allowed for this rider in this division
 }
 
 // Auction Teams Page
@@ -225,4 +229,3 @@ export interface AuctionTeam {
   averagePrice: number;
   averageValue: number;
 }
-
