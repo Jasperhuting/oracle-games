@@ -1,0 +1,6 @@
+POINTS DISCREPANCIES BETWEEN MAIN RANKINGS AND PCS RANKINGS
+================================================================================
+
+Found 1 discrepancies:
+
+ID: matteo-scalco | Main: 52 | PCS: 59 | DIFF: -7
