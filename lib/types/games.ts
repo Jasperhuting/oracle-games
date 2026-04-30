@@ -77,7 +77,8 @@ export interface AuctioneerConfig {
   allowSharedRiders?: boolean;      // Allow multiple users to buy the same rider (default: false)
   maxOwnersPerRider?: number;       // Maximum number of users who can own the same rider (only applies if allowSharedRiders is true, default: unlimited)
   countingRaces?: (string | CountingRace)[];   // Specific races that count for points (can be strings like "tour-down-under_2026" or CountingRace objects)
-  countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])  
+  countingClassifications?: string[]; // Race classifications that count (e.g., ["1.1", "1.2", "wc"])
+  teamDayClassification?: boolean;    // Award points based on team day classification (e.g. Giro AM)
 }
 
 // ============================================================================

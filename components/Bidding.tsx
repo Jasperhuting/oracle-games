@@ -381,6 +381,15 @@ export const Bidding = ({
         )}
       />
     )}
+    {!auctionActive && !auctionClosed && (
+      <div className="mb-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+        <p className="text-sm font-medium text-yellow-800">
+          {isSelectionBasedGame
+            ? 'Team selection has not started yet. Selection will open soon.'
+            : 'The auction has not started yet. Bidding will open soon.'}
+        </p>
+      </div>
+    )}
     {game.bidding && <>
       <Countdown key={countdownDate} date={countdownDate} renderer={renderer} />
       <span className="text-gray-500 text-xs">{t('global.endDate')}: {activePeriod?.endDate ? formatDate(activePeriod.endDate instanceof Date ? activePeriod.endDate.toISOString() : typeof activePeriod.endDate === 'string' ? activePeriod.endDate : activePeriod.endDate.toDate().toISOString()) : t('global.unknownDate')}</span>

@@ -279,11 +279,11 @@ export async function POST(request: NextRequest) {
     const complementaryTeamClassification: TeamClassificationEntry[] = Array.isArray(stageData.complementaryTeamClassification)
       ? stageData.complementaryTeamClassification
       : [];
+    // Key = raw PCS slug (shortName from href, no year suffix) — matches riderTeam in playerTeams directly
     const complementaryTeamMap = new Map<string, number>();
     for (const tc of complementaryTeamClassification.slice(0, 5)) {
       if (tc.place <= 5) {
-        complementaryTeamMap.set(normalizeTeamKey(tc.team), tc.place);
-        if (tc.shortName) complementaryTeamMap.set(normalizeTeamKey(tc.shortName), tc.place);
+        if (tc.shortName) complementaryTeamMap.set(tc.shortName, tc.place);
       }
     }
     if (complementaryTeamMap.size > 0) {
@@ -678,16 +678,14 @@ export async function POST(request: NextRequest) {
               console.log(`[CALCULATE_POINTS] ${teamData.riderName} (${gameConfig.gameName}) - Combativity bonus: ${combativityBonus} pts`);
             }
 
-            // 6. TEAM CLASSIFICATION POINTS (Giro AM only, from complementary-results page)
+            // 6. TEAM CLASSIFICATION POINTS (only for games with teamDayClassification enabled)
             if (
-              raceName === 'giro-d-italia' &&
-              gameConfig.gameType === 'auctioneer' &&
+              gameConfig.config?.teamDayClassification === true &&
               complementaryTeamMap.size > 0 &&
               teamData.riderTeam &&
               stage !== 'tour-gc'
             ) {
-              const riderTeamKey = normalizeTeamKey(teamData.riderTeam);
-              const teamRank = complementaryTeamMap.get(riderTeamKey);
+              const teamRank = complementaryTeamMap.get(teamData.riderTeam);
               if (teamRank !== undefined) {
                 const teamPoints = GIRO_AM_TEAM_CLASSIFICATION_POINTS[teamRank] || 0;
                 if (teamPoints > 0) {

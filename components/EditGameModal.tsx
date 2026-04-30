@@ -79,6 +79,7 @@ interface GameFormData {
   // Auctioneer config
   budget?: number;
   maxRiders?: number;
+  teamDayClassification?: boolean;
 }
 
 interface EditGameModalProps {
@@ -145,6 +146,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           teamSelectionDeadline: formatDateForInput(game.teamSelectionDeadline),
           budget: game.config?.budget,
           maxRiders: game.config?.maxRiders,
+          teamDayClassification: game.config?.teamDayClassification ?? false,
         });
 
         // Preserve existing riderValues for full-grid
@@ -375,6 +377,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                         auctionPeriods.every(p => p.status === 'closed') ? 'closed' : 'pending',
           countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
           countingClassifications: countingClassifications.length > 0 ? countingClassifications : undefined,
+          teamDayClassification: data.teamDayClassification ?? false,
         };
       }
 
@@ -615,6 +618,19 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                         })}
                       />
                     </div>
+                  </div>
+
+                  {/* Team Day Classification */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="teamDayClassification"
+                      {...register('teamDayClassification')}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="teamDayClassification" className="text-sm font-medium text-gray-700">
+                      Team day classification punten (ploegenklassement, bijv. Giro AM)
+                    </label>
                   </div>
 
                   {/* Auction Periods */}
