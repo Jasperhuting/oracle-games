@@ -3,11 +3,13 @@ import { getServerFirebase } from '@/lib/firebase/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { Game, SlipstreamConfig, ClientSlipstreamRace, isSlipstream } from '@/lib/types/games';
 import { isDeadlinePassed, getTimeUntilDeadline, formatTimeRemaining } from '@/lib/utils/slipstreamCalculation';
+import { StageRouteInfo } from '@/lib/types/stageRouteInfo';
 
 interface CalendarRace extends ClientSlipstreamRace {
   deadlinePassed: boolean;
   timeUntilDeadline: number;
   timeUntilDeadlineFormatted: string;
+  routeInfo?: StageRouteInfo | null;
   userPick?: {
     riderId: string;
     riderName: string;
@@ -74,7 +76,22 @@ export async function GET(
       });
     }
 
-    // 2. Get user's picks if userId provided
+    // 2. Fetch routeInfo for all races in this game (batch by raceSlug)
+    const routeInfoMap = new Map<string, StageRouteInfo>();
+    if (countingRaces.length > 0) {
+      const routeInfoDocs = await Promise.all(
+        countingRaces.map(race =>
+          db.collection('stageRouteInfo').doc(race.raceSlug).get()
+        )
+      );
+      routeInfoDocs.forEach((doc, i) => {
+        if (doc.exists) {
+          routeInfoMap.set(countingRaces[i].raceSlug, doc.data() as StageRouteInfo);
+        }
+      });
+    }
+
+    // 3. Get user's picks if userId provided
     let userPicks = new Map<string, {
       riderId: string;
       riderName: string;
@@ -105,7 +122,7 @@ export async function GET(
       });
     }
 
-    // 3. Transform races to calendar format
+    // 4. Transform races to calendar format
     const calendar: CalendarRace[] = countingRaces.map(race => {
       const raceDate = race.raceDate instanceof Timestamp
         ? race.raceDate.toDate()
@@ -129,6 +146,7 @@ export async function GET(
         deadlinePassed,
         timeUntilDeadline,
         timeUntilDeadlineFormatted: formatTimeRemaining(timeUntilDeadline),
+        routeInfo: routeInfoMap.get(race.raceSlug) ?? null,
         userPick: userId ? (userPicks.get(race.raceSlug) || null) : undefined
       };
     });

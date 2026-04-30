@@ -10,6 +10,7 @@ import { SlipstreamStandings } from '@/components/slipstream/SlipstreamStandings
 import { SlipstreamRaceManager } from '@/components/slipstream/SlipstreamRaceManager';
 import { SlipstreamAdminPickOverview } from '@/components/slipstream/SlipstreamAdminPickOverview';
 import { Rider } from '@/lib/scraper/types';
+import { StageRouteInfo, STAGE_TYPE_LABELS, FINISH_TYPE_LABELS } from '@/lib/types/stageRouteInfo';
 
 const VALID_FILTERS: RaceFilter[] = ['needs_pick', 'upcoming', 'finished', 'all'];
 
@@ -24,6 +25,7 @@ interface CalendarRace {
   deadlinePassed: boolean;
   timeUntilDeadline: number;
   timeUntilDeadlineFormatted: string;
+  routeInfo?: StageRouteInfo | null;
   userPick?: {
     riderId: string;
     riderName: string;
@@ -562,6 +564,57 @@ export default function SlipstreamPage() {
                 </div>
               )}
               
+              {selectedRace?.routeInfo && (() => {
+                const ri = selectedRace.routeInfo!;
+                return (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {ri.startLocation && ri.finishLocation && (
+                        <div className="col-span-2 text-gray-600 font-medium truncate">
+                          {ri.startLocation} &rarr; {ri.finishLocation}
+                        </div>
+                      )}
+                      {ri.distanceKm && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="text-gray-400 text-[10px] uppercase tracking-wide">Afstand</div>
+                          <div className="font-semibold text-gray-800">{ri.distanceKm} km</div>
+                        </div>
+                      )}
+                      {ri.verticalMeters && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="text-gray-400 text-[10px] uppercase tracking-wide">Hoogtemeters</div>
+                          <div className="font-semibold text-gray-800">{ri.verticalMeters.toLocaleString()} m</div>
+                        </div>
+                      )}
+                      {ri.profileScore !== undefined && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="text-gray-400 text-[10px] uppercase tracking-wide">Profile score</div>
+                          <div className="font-semibold text-gray-800">{ri.profileScore}</div>
+                        </div>
+                      )}
+                      {ri.psFinal25k !== undefined && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="text-gray-400 text-[10px] uppercase tracking-wide">PS laatste 25 km</div>
+                          <div className="font-semibold text-gray-800">{ri.psFinal25k}</div>
+                        </div>
+                      )}
+                      {ri.stageType && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="text-gray-400 text-[10px] uppercase tracking-wide">Type</div>
+                          <div className="font-semibold text-gray-800">{STAGE_TYPE_LABELS[ri.stageType]}</div>
+                        </div>
+                      )}
+                      {ri.finishType && (
+                        <div className="bg-gray-50 rounded p-2">
+                          <div className="text-gray-400 text-[10px] uppercase tracking-wide">Aankomst</div>
+                          <div className="font-semibold text-gray-800">{FINISH_TYPE_LABELS[ri.finishType]}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {selectedRace && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex flex-col gap-3">

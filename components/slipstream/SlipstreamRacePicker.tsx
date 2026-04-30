@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Clock, CircleCheck, Lock, AlertCircle, Check } from 'tabler-icons-react';
 import { useTranslation } from 'react-i18next';
+import { StageRouteInfo, STAGE_TYPE_LABELS, FINISH_TYPE_LABELS } from '@/lib/types/stageRouteInfo';
 
 interface Race {
   raceId: string;
@@ -15,6 +16,7 @@ interface Race {
   deadlinePassed: boolean;
   timeUntilDeadline: number;
   timeUntilDeadlineFormatted: string;
+  routeInfo?: StageRouteInfo | null;
   userPick?: {
     riderId: string;
     riderName: string;
@@ -25,6 +27,15 @@ interface Race {
     riderFinishPosition?: number;
   } | null;
 }
+
+const STAGE_TYPE_COLORS: Record<string, string> = {
+  sprint: 'bg-green-100 text-green-700',
+  hilly: 'bg-yellow-100 text-yellow-700',
+  mountain: 'bg-orange-100 text-orange-700',
+  high_mountain: 'bg-red-100 text-red-700',
+  time_trial: 'bg-purple-100 text-purple-700',
+  unknown: 'bg-gray-100 text-gray-500',
+};
 
 export type RaceFilter = 'all' | 'upcoming' | 'finished' | 'needs_pick';
 
@@ -178,6 +189,24 @@ export function SlipstreamRacePicker({
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-gray-900 text-sm truncate">{race.raceName}</div>
                       <div className="text-xs text-gray-500">{formatDate(race.raceDate)}</div>
+                      {race.routeInfo && (
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          {race.routeInfo.stageType && (
+                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${STAGE_TYPE_COLORS[race.routeInfo.stageType] ?? STAGE_TYPE_COLORS.unknown}`}>
+                              {STAGE_TYPE_LABELS[race.routeInfo.stageType]}
+                            </span>
+                          )}
+                          {race.routeInfo.distanceKm && (
+                            <span className="text-[10px] text-gray-500">{race.routeInfo.distanceKm} km</span>
+                          )}
+                          {race.routeInfo.verticalMeters && (
+                            <span className="text-[10px] text-gray-500">↑{race.routeInfo.verticalMeters}m</span>
+                          )}
+                          {race.routeInfo.profileScore !== undefined && (
+                            <span className="text-[10px] text-gray-400">PS {race.routeInfo.profileScore}</span>
+                          )}
+                        </div>
+                      )}
                       {hasPick ? (
                         <div className="mt-1 text-xs text-green-700 font-medium">
                           ✓ {race.userPick?.riderName}
