@@ -1114,8 +1114,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               />
             </div>
 
-            {isGameType(game, 'full-grid') && (
-              <div className="bg-white rounded-md border border-gray-200 p-4 sticky z-20 self-start min-w-[330px]" style={{ top: hideBanner ? '127px' : '162px' }}>
+            <div className={`bg-white rounded-md border border-gray-200 p-4 z-20 self-start ${isGameType(game, 'full-grid') ? 'sticky min-w-[330px] w-full' : 'sticky min-w-[330px] max-w-[360px] flex-3/12'}`} style={{ top: hideBanner ? '127px' : '162px' }}>
                 {!auctionActive && (
                   <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
                     <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'}`}>
@@ -1130,7 +1129,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   </div>
                 )}
 
-                {error && !isGameType(game, 'full-grid') && (
+                {error && (
                   <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
                     <span className="text-red-700 text-sm">{error}</span>
                   </div>
@@ -1138,7 +1137,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
                 <div className="flex relative max-h-[calc(100vh-32px-86px-142px)] overflow-scroll flex-col gap-4">
                   <AuctionFilters sortedAndFilteredRiders={sortedAndFilteredRiders} game={game} searchTerm={searchTerm} setSearchTerm={setSearchTerm} priceRange={priceRange} setPriceRange={setPriceRange} minRiderPrice={minRiderPrice} maxRiderPrice={maxRiderPrice} birthYearRange={birthYearRange} setBirthYearRange={setBirthYearRange} minBirthYear={minBirthYear} maxBirthYear={maxBirthYear} myBids={myBids} handleResetBidsClick={handleResetBidsClick} showOnlyFillers={showOnlyFillers} setshowOnlyFillers={setshowOnlyFillers} hideSoldPlayers={hideSoldPlayers} setHideSoldPlayers={setHideSoldPlayers} availableTeams={availableTeams} selectedTeamFilter={selectedTeamFilter} setSelectedTeamFilter={setSelectedTeamFilter} teamsWithSelection={teamsWithSelection} />
-                  <AuctionStats gameId={gameId} game={game} myBids={myBids} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
+                  <AuctionStats gameId={gameId} game={game} myBids={myBids} participant={participant} auctionClosed={auctionClosed} getTotalMyBids={getTotalMyBids} getRemainingBudget={getRemainingBudget} />
                   {myAuctionBids.length > 0 && game.gameType === 'worldtour-manager' && (
                     <MyAuctionBids game={game} availableRiders={availableRiders} myBids={myAuctionBids} />
                   )}
@@ -1156,7 +1155,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
                   )}
                 </div>
               </div>
-            )}
           </div>
 
           {!auctionClosed && (

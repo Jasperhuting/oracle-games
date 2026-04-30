@@ -18,14 +18,33 @@ interface Standing {
 // Minimal interface for what AuctionStats needs
 interface AuctionStatsGame {
   gameType: GameType | string;
-  config: GameConfig | Record<string, any>;
+  config: GameConfig | Record<string, unknown>;
 }
 
-export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBids, getRemainingBudget }: { gameId: string, game: AuctionStatsGame, myBids: Bid[], auctionClosed: boolean, getTotalMyBids: () => number, getRemainingBudget: () => number }) => {
+interface AuctionStatsParticipant {
+  spentBudget?: number;
+}
+
+interface AuctionStatsConfig {
+  budget?: number;
+  maxRiders?: number;
+  teamSize?: number;
+}
+
+interface TeamOverviewRow {
+  ranking?: number;
+  playername?: string;
+  userId?: string;
+  totalPoints?: number;
+  participantId?: string;
+}
+
+export const AuctionStats = ({ gameId, game, myBids, participant, auctionClosed, getTotalMyBids, getRemainingBudget }: { gameId: string, game: AuctionStatsGame, myBids: Bid[], participant?: AuctionStatsParticipant | null, auctionClosed: boolean, getTotalMyBids: () => number, getRemainingBudget: () => number }) => {
 
     const { t } = useTranslation();
     const isFullGrid = game.gameType === 'full-grid';
     const isSelectionBasedGame = game.gameType === 'worldtour-manager' || game.gameType === 'full-grid';
+    const isAuctionMaster = game.gameType === 'auctioneer';
 
     const [standings, setStandings] = useState<Standing[]>([]);
     const [standingsLoading, setStandingsLoading] = useState(false);
@@ -38,10 +57,27 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
     };
 
     // Config accessors using any cast to avoid union type issues
-    const cfg = game.config as any;
+    const cfg = game.config as AuctionStatsConfig;
     const hasBudget = cfg && 'budget' in cfg;
     const hasMaxRiders = cfg && 'maxRiders' in cfg;
     const hasTeamSize = cfg && 'teamSize' in cfg;
+    const wonBidsTotal = useMemo(() => {
+      if (auctionClosed) {
+        return Number(participant?.spentBudget) || 0;
+      }
+
+      return myBids
+        .filter((bid) => bid.status === 'won')
+        .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
+    }, [auctionClosed, myBids, participant?.spentBudget]);
+
+    const openBidsTotal = useMemo(() => {
+      if (auctionClosed) return 0;
+
+      return myBids
+        .filter((bid) => bid.status === 'active' || bid.status === 'outbid')
+        .reduce((sum, bid) => sum + (Number(bid.amount) || 0), 0);
+    }, [auctionClosed, myBids]);
 
     useEffect(() => {
       if (!gameId) return;
@@ -54,14 +90,14 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
           const { data } = await fetchTeamsOverviewWithCache(gameId, {
             maxAgeMs: 2 * 60 * 1000,
           });
-          const teams = data.teams || [];
+          const teams = (data.teams || []) as TeamOverviewRow[];
 
-          const mappedStandings: Standing[] = teams.map((team: any) => ({
-            ranking: team.ranking,
-            playername: team.playername,
-            userId: team.userId,
+          const mappedStandings: Standing[] = teams.map((team) => ({
+            ranking: team.ranking ?? 0,
+            playername: team.playername || 'Onbekend',
+            userId: team.userId || '',
             totalPoints: team.totalPoints ?? 0,
-            participantId: team.participantId,
+            participantId: team.participantId || '',
           }));
 
           setStandings(mappedStandings);
@@ -125,17 +161,41 @@ export const AuctionStats = ({ gameId, game, myBids, auctionClosed, getTotalMyBi
                   </span>
                 </div>
               )}
+              {hasBudget && isAuctionMaster && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Uitgegeven:</span>
+                  <span className="ml-2 font-bold text-blue-600">
+                    {formatValue(wonBidsTotal)}
+                  </span>
+                </div>
+              )}
+              {!auctionClosed && hasBudget && isAuctionMaster && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Openstaande biedingen:</span>
+                  <span className="ml-2 font-bold text-amber-600">
+                    {formatValue(openBidsTotal)}
+                  </span>
+                </div>
+              )}
               <div>
                 <span className="text-sm font-medium text-gray-700">
-                  {auctionClosed ? 'Total Spent:' : isSelectionBasedGame ? 'Selected Riders Total:' : 'Active Bids Total:'}
+                  {auctionClosed
+                    ? 'Total Spent:'
+                    : isAuctionMaster
+                      ? 'Totaal vastgelegd:'
+                      : isSelectionBasedGame
+                        ? 'Selected Riders Total:'
+                        : 'Active Bids Total:'}
                 </span>
                 <span className="ml-2 font-bold text-blue-600">
-                  {formatValue(getTotalMyBids())}
+                  {formatValue(isAuctionMaster ? wonBidsTotal + openBidsTotal : getTotalMyBids())}
                 </span>
               </div>
               {hasBudget && (
                 <div>
-                  <span className="text-sm font-medium text-gray-700">{t('games.auctions.remainingBudget')}:</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {isAuctionMaster ? 'Beschikbaar budget:' : t('games.auctions.remainingBudget')}:
+                  </span>
                   <span className={`ml-2 font-bold ${getRemainingBudget() < 0 ? 'text-red-600' : 'text-green-600'
                     }`}>
                     {formatValue(getRemainingBudget())}
