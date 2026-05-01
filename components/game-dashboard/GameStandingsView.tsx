@@ -49,7 +49,10 @@ function getAchievedPoints(row: GameStandingRow): number {
   return achievedPoints || Number(row.totalPoints) || 0;
 }
 
-function getRankingScore(row: GameStandingRow): number {
+function getRankingScore(row: GameStandingRow, gameType?: string | null): number {
+  if (gameType === 'marginal-gains') {
+    return Number(row.totalPoints) || 0;
+  }
   return getAchievedPoints(row);
 }
 
@@ -83,12 +86,12 @@ export function GameStandingsView({
 
     return [...standings]
       .sort((a, b) => {
-        const scoreDiff = getRankingScore(b) - getRankingScore(a);
+        const scoreDiff = getRankingScore(b, gameType) - getRankingScore(a, gameType);
         if (scoreDiff !== 0) return scoreDiff;
         return (a.playername || '').localeCompare(b.playername || '');
       })
       .map((standing, index) => {
-        const score = getRankingScore(standing);
+        const score = getRankingScore(standing, gameType);
         if (previousScore === null || score !== previousScore) {
           currentRank = index + 1;
           previousScore = score;
@@ -111,7 +114,7 @@ export function GameStandingsView({
     return rankedStandings
       .filter((standing) => standing.eligibleForPrizes)
       .map((standing, index) => {
-        const score = getRankingScore(standing);
+        const score = getRankingScore(standing, gameType);
         if (previousScore === null || score !== previousScore) {
           currentRank = index + 1;
           previousScore = score;
