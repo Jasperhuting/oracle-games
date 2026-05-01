@@ -222,7 +222,7 @@ export async function GET(
         const riderNameId = String(bid.riderNameId || '');
         if (!userId || !riderNameId) return;
         if (!missingUserIds.has(userId)) return;
-        if (bid.status !== 'active' && bid.status !== 'won') return;
+        if (bid.status !== 'won') return;
 
         if (!fallbackTracker.has(userId)) {
           fallbackTracker.set(userId, new Set<string>());
