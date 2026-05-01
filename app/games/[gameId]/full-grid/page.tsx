@@ -33,6 +33,7 @@ interface MyTeamRider {
 interface GameConfig {
   budget: number;
   maxRiders: number;
+  minRiders: number;
   selectionStatus: 'open' | 'closed';
 }
 
@@ -42,7 +43,7 @@ const { user, loading: authLoading } = useAuth();
   const gameId = params?.gameId as string;
 
   const [gameName, setGameName] = useState<string>('');
-  const [gameConfig, setGameConfig] = useState<GameConfig>({ budget: 70, maxRiders: 22, selectionStatus: 'open' });
+  const [gameConfig, setGameConfig] = useState<GameConfig>({ budget: 70, maxRiders: 22, minRiders: 23, selectionStatus: 'open' });
   const [riders, setRiders] = useState<RiderData[]>([]);
   const [myTeam, setMyTeam] = useState<MyTeamRider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,44 @@ const { user, loading: authLoading } = useAuth();
     };
   }, [myTeam, gameConfig]);
 
+  // Cheapest rider per team (for budget-safety checks)
+  const cheapestByTeam = useMemo(() => {
+    const map: Record<string, number> = {};
+    riders.forEach(r => {
+      if (!(r.riderTeam in map) || r.value < map[r.riderTeam]) {
+        map[r.riderTeam] = r.value;
+      }
+    });
+    return map;
+  }, [riders]);
+
+  // Minimum budget needed after picking from a given team, to still reach minRiders
+  const minBudgetAfterPickingFromTeam = useMemo(() => {
+    const stillNeeded = Math.max(0, gameConfig.minRiders - myTeam.length - 1);
+    const result: Record<string, number> = {};
+    const unselectedTeams = teams.filter(t => !teamsWithSelection.has(t.name));
+    unselectedTeams.forEach(pickedTeam => {
+      const cheapestOthers = unselectedTeams
+        .filter(t => t.name !== pickedTeam.name)
+        .map(t => cheapestByTeam[t.name] ?? 0)
+        .sort((a, b) => a - b);
+      result[pickedTeam.name] = cheapestOthers.slice(0, stillNeeded).reduce((s, v) => s + v, 0);
+    });
+    return result;
+  }, [teams, teamsWithSelection, cheapestByTeam, gameConfig.minRiders, myTeam.length]);
+
+  // Whether current budget is already too low to complete minRiders
+  const isBudgetAtRisk = useMemo(() => {
+    const stillNeeded = Math.max(0, gameConfig.minRiders - myTeam.length);
+    if (stillNeeded === 0) return false;
+    const cheapestUnselected = teams
+      .filter(t => !teamsWithSelection.has(t.name))
+      .map(t => cheapestByTeam[t.name] ?? 0)
+      .sort((a, b) => a - b);
+    const minNeeded = cheapestUnselected.slice(0, stillNeeded).reduce((s, v) => s + v, 0);
+    return budgetStats.remaining < minNeeded;
+  }, [teams, teamsWithSelection, cheapestByTeam, gameConfig.minRiders, myTeam.length, budgetStats.remaining]);
+
   const proTeamsSelectedCount = useMemo(() => {
     const uniqueTeams = new Set(
       myTeam
@@ -172,6 +211,7 @@ const { user, loading: authLoading } = useAuth();
         setGameConfig({
           budget: valuesData.config?.budget || 70,
           maxRiders: valuesData.config?.maxRiders || 22,
+          minRiders: valuesData.config?.minRiders || valuesData.config?.maxRiders || 23,
           selectionStatus: valuesData.config?.selectionStatus || 'open',
         });
       }
@@ -431,7 +471,12 @@ const { user, loading: authLoading } = useAuth();
           {/* Progress bar */}
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
-              <span>{budgetStats.riderCount} van {budgetStats.maxRiders} renners</span>
+              <span>
+                {budgetStats.riderCount} van {budgetStats.maxRiders} renners
+                {budgetStats.riderCount < gameConfig.minRiders && (
+                  <span className="ml-1 text-orange-500">(min. {gameConfig.minRiders})</span>
+                )}
+              </span>
               <span>{Math.round((budgetStats.riderCount / budgetStats.maxRiders) * 100)}%</span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -472,6 +517,16 @@ const { user, loading: authLoading } = useAuth();
         </div>
       )}
 
+      {isBudgetAtRisk && gameConfig.selectionStatus === 'open' && (
+        <div className="max-w-7xl mx-auto px-4 mt-4">
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <span className="text-red-700 text-sm font-medium">
+              Budget te krap! Je hebt onvoldoende budget om nog {Math.max(0, gameConfig.minRiders - myTeam.length)} renner(s) te selecteren en het minimum van {gameConfig.minRiders} te halen. Verwijder een dure renner.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Main content - three columns */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -497,8 +552,9 @@ const { user, loading: authLoading } = useAuth();
               teamHasSelection={selectedTeam ? teamsWithSelection.has(selectedTeam) : false}
               canSelect={gameConfig.selectionStatus === 'open'}
               budgetRemaining={budgetStats.remaining}
+              minBudgetAfterPicking={selectedTeam ? (minBudgetAfterPickingFromTeam[selectedTeam] ?? 0) : 0}
               onSelectRider={selectRider}
-              onDeselectRider={removeRider}
+              onDeselectRider={(rider) => removeRider(rider.riderNameId)}
               saving={saving}
             />
           </div>
@@ -508,6 +564,7 @@ const { user, loading: authLoading } = useAuth();
             <FullGridMyTeam
               myTeam={myTeam}
               budgetStats={budgetStats}
+              minRiders={gameConfig.minRiders}
               canEdit={gameConfig.selectionStatus === 'open'}
               onRemoveRider={removeRider}
               saving={saving}

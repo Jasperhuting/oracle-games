@@ -12,6 +12,24 @@ import { useAuth } from "@/hooks/useAuth";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { ClientGame } from "@/lib/types/games";
+import { getPlatformConfigFromHost } from "@/lib/platform";
+
+const CYCLING_GAME_TYPES = [
+  'auctioneer',
+  'slipstream',
+  'last-man-standing',
+  'poisoned-cup',
+  'nations-cup',
+  'rising-stars',
+  'country-roads',
+  'worldtour-manager',
+  'fan-flandrien',
+  'full-grid',
+  'marginal-gains',
+] as const;
+
+const F1_GAME_TYPES = ['f1-prediction'] as const;
+const FOOTBALL_GAME_TYPES = ['football-prediction', 'wk-2026-prediction', 'football'] as const;
 
 export const GamesManagementTab = () => {
   const router = useRouter();
@@ -37,6 +55,9 @@ export const GamesManagementTab = () => {
   const [infoDialog, setInfoDialog] = useState<{ title: string; description: string } | null>(null);
 
   const { t } = useTranslation();
+  const currentPlatform = typeof window !== 'undefined'
+    ? getPlatformConfigFromHost(window.location.host).key
+    : 'cycling';
 
   const loadGames = (async () => {
     setLoading(true);
@@ -269,7 +290,7 @@ export const GamesManagementTab = () => {
 
   const getGameTypeLabel = (gameType: string) => {
     const labels: Record<string, string> = {
-      'auctioneer': 'Auctioneer',
+      'auctioneer': 'Auction Master',
       'slipstream': 'Slipstream',
       'last-man-standing': 'Last Man Standing',
       'poisoned-cup': 'Poisoned Cup',
@@ -277,11 +298,277 @@ export const GamesManagementTab = () => {
       'rising-stars': 'Rising Stars',
       'country-roads': 'Country Roads',
       'worldtour-manager': 'WorldTour Manager',
+      'marginal-gains': 'Marginal Gains',
       'fan-flandrien': 'Fan Flandrien',
       'full-grid': 'Full Grid',
+      'f1-prediction': 'F1 Prediction',
     };
     return labels[gameType] || gameType;
   };
+
+  const getSportCategory = (gameType: string): 'f1' | 'cycling' | 'football' | 'other' => {
+    if (F1_GAME_TYPES.includes(gameType as typeof F1_GAME_TYPES[number])) return 'f1';
+    if (CYCLING_GAME_TYPES.includes(gameType as typeof CYCLING_GAME_TYPES[number])) return 'cycling';
+    if (FOOTBALL_GAME_TYPES.includes(gameType as typeof FOOTBALL_GAME_TYPES[number])) return 'football';
+    return 'other';
+  };
+
+  const getSportLabel = (sport: 'f1' | 'cycling' | 'football' | 'other') => {
+    switch (sport) {
+      case 'f1':
+        return 'F1';
+      case 'cycling':
+        return 'Cycling';
+      case 'football':
+        return 'Football';
+      default:
+        return 'Other';
+    }
+  };
+
+  const visibleSports = currentPlatform === 'cycling'
+    ? (['cycling', 'football', 'other'] as const)
+    : (['cycling', 'football', 'other', 'f1'] as const);
+
+  const sportSections = visibleSports
+    .map((sport) => {
+      const sportGroups = gameGroups.filter((group) => getSportCategory(group.games[0]?.gameType || '') === sport);
+      const typeGroups = Object.entries(
+        sportGroups.reduce((acc, group) => {
+          const gameType = group.games[0]?.gameType || 'unknown';
+          if (!acc[gameType]) {
+            acc[gameType] = [];
+          }
+          acc[gameType].push(group);
+          return acc;
+        }, {} as Record<string, typeof gameGroups>)
+      )
+        .map(([gameType, groupedGames]) => ({
+          gameType,
+          label: getGameTypeLabel(gameType),
+          groups: groupedGames.sort((a, b) => a.baseName.localeCompare(b.baseName)),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      return {
+        sport,
+        label: getSportLabel(sport),
+        typeGroups,
+        totalGroups: sportGroups.length,
+      };
+    })
+    .filter((section) => section.totalGroups > 0);
+
+  const renderGameRows = (groups: typeof gameGroups) => (
+    <>
+      {groups.map((group) => {
+        const game = group.games[0];
+        const totalPlayers = group.games.reduce((sum, g) => sum + (Number(g.playerCount) || 0), 0);
+        const totalMaxPlayers = group.games.reduce((sum, g) => sum + (Number(g.maxPlayers) || 0), 0);
+        const isExpanded = expandedGroups.has(group.baseName);
+
+        return (
+          <React.Fragment key={group.baseName}>
+            <tr className="hover:bg-gray-50">
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => group.hasDivisions && toggleGroupExpanded(group.baseName)}>
+                  {group.hasDivisions && (
+                    <button
+                      onClick={() => toggleGroupExpanded(group.baseName)}
+                      className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
+                    >
+                      {isExpanded ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                  <span className="text-sm font-medium text-gray-900">
+                    {group.baseName}
+                  </span>
+                </div>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="text-sm text-gray-600">{game.year}</div>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <GameStatusManager
+                  gameId={game.id!}
+                  currentStatus={game.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
+                  onStatusChange={loadGames}
+                  compact
+                />
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="text-sm text-gray-600">
+                  {totalPlayers}
+                  {totalMaxPlayers > 0 && ` / ${totalMaxPlayers}`}
+                </div>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="text-sm text-gray-600">
+                  {group.hasDivisions ? (
+                    <button
+                      onClick={() => toggleGroupExpanded(group.baseName)}
+                      className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                    >
+                      {group.games.length} divisions
+                    </button>
+                  ) : (
+                    game.division || '1 division'
+                  )}
+                </div>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm flex flex-row gap-2">
+                <Button
+                  onClick={() => game.id && handleView(game.id)}
+                  variant="primary"
+                  ghost
+                  className="cursor-pointer"
+                >
+                  View
+                </Button>
+                <Button
+                  onClick={() => game.id && handleEdit(game.id)}
+                  variant="secondary"
+                  ghost
+                  className="cursor-pointer"
+                >
+                  Edit
+                </Button>
+                <Button
+                  onClick={() => game.id && handleManageLineup(game.id)}
+                  variant="success"
+                  ghost
+                  className="cursor-pointer"
+                >
+                  Lineup
+                </Button>
+                {game.gameType === 'auctioneer' && game.status === 'bidding' && (
+                  <Button
+                    onClick={() => game.id && confirmFinalizeAuction(game.id, game.name)}
+                    disabled={finalizingGameId === game.id}
+                    variant="warning"
+                    ghost
+                    className="cursor-pointer"
+                  >
+                    {finalizingGameId === game.id ? '...' : 'Finalize'}
+                  </Button>
+                )}
+                <Button
+                  onClick={() => game.id && handleManageDivisions(game.id)}
+                  variant="primary"
+                  ghost
+                  className="cursor-pointer"
+                >
+                  Assign Players
+                </Button>
+                {group.hasDivisions && (
+                  <Button
+                    onClick={() => handleManageDivisionGames(group.games)}
+                    variant="secondary"
+                    ghost
+                    className="cursor-pointer"
+                  >
+                    Manage Divisions
+                  </Button>
+                )}
+                {!group.hasDivisions && (
+                  <Button
+                    onClick={() => game.id && handleDeleteClick(game.id)}
+                    variant="danger"
+                    ghost
+                    className="cursor-pointer"
+                  >
+                    Delete
+                  </Button>
+                )}
+              </td>
+            </tr>
+
+            {group.hasDivisions && isExpanded && group.games.map((divisionGame) => (
+              <tr key={divisionGame.id} className="bg-gray-50 border-l-4 border-blue-300">
+                <td className="px-4 py-2 whitespace-nowrap pl-12">
+                  <div className="text-sm text-gray-700">
+                    {divisionGame.name}
+                  </div>
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">-</div>
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  <GameStatusManager
+                    gameId={divisionGame.id!}
+                    currentStatus={divisionGame.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
+                    onStatusChange={loadGames}
+                    compact
+                  />
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  <div className="text-sm text-gray-600">
+                    {divisionGame.playerCount}
+                    {divisionGame.maxPlayers && ` / ${divisionGame.maxPlayers}`}
+                  </div>
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">
+                    {divisionGame.division || '-'}
+                  </div>
+                </td>
+                <td className="px-4 py-2 whitespace-nowrap text-sm flex flex-row gap-2">
+                  <Button
+                    onClick={() => divisionGame.id && handleView(divisionGame.id)}
+                    variant="primary"
+                    ghost
+                  >
+                    View
+                  </Button>
+                  <Button
+                    onClick={() => divisionGame.id && handleEdit(divisionGame.id)}
+                    variant="secondary"
+                    ghost
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => divisionGame.id && handleManageLineup(divisionGame.id)}
+                    variant="success"
+                    ghost
+                  >
+                    Lineup
+                  </Button>
+                  {divisionGame.gameType === 'auctioneer' && divisionGame.status === 'bidding' && (
+                    <Button
+                      onClick={() => divisionGame.id && confirmFinalizeAuction(divisionGame.id, divisionGame.name)}
+                      disabled={finalizingGameId === divisionGame.id}
+                      variant="warning"
+                      ghost
+                    >
+                      {finalizingGameId === divisionGame.id ? '...' : 'Finalize'}
+                    </Button>
+                  )}
+                  {divisionGame.id && (
+                    <Button
+                      onClick={() => handleDeleteClick(divisionGame.id!)}
+                      variant="danger"
+                      ghost
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -362,254 +649,60 @@ export const GamesManagementTab = () => {
         )}
 
         {!loading && !error && gameGroups.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Year
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Players
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Divisions
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {gameGroups.map((group) => {
-                  // Use first game for common properties
-                  const game = group.games[0];
-                  // Calculate total players across all divisions
-                  const totalPlayers = group.games.reduce((sum, g) => sum + (Number(g.playerCount) || 0), 0);
-                  const totalMaxPlayers = group.games.reduce((sum, g) => sum + (Number(g.maxPlayers) || 0), 0);
-                  const isExpanded = expandedGroups.has(group.baseName);
+          <div className="space-y-8">
+            {sportSections.map((section) => (
+              <div key={section.sport} className="space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{section.label}</h3>
+                  <span className="text-sm text-gray-500">
+                    {section.totalGroups} {section.totalGroups === 1 ? 'game' : 'games'}
+                  </span>
+                </div>
 
-                  return (
-                    <React.Fragment key={group.baseName}>
-                      {/* Main game row */}
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-2 cursor-pointer" onClick={() => group.hasDivisions && toggleGroupExpanded(group.baseName)}>
-                            {group.hasDivisions && (
-                              <button
-                                onClick={() => toggleGroupExpanded(group.baseName)}
-                                className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
-                              >
-                                {isExpanded ? (
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                )}
-                              </button>
-                            )}
-                            <span className="text-sm font-medium text-gray-900">
-                              {group.baseName}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">
-                            {getGameTypeLabel(game.gameType)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">{game.year}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <GameStatusManager
-                            gameId={game.id!}
-                            currentStatus={game.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
-                            onStatusChange={loadGames}
-                            compact
-                          />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">
-                            {totalPlayers}
-                            {totalMaxPlayers > 0 && ` / ${totalMaxPlayers}`}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">
-                            {group.hasDivisions ? (
-                              <button
-                                onClick={() => toggleGroupExpanded(group.baseName)}
-                                className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
-                              >
-                                {group.games.length} divisions
-                              </button>
-                            ) : (
-                              game.division || '1 division'
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm flex flex-row gap-2">
-                          <Button
-                            onClick={() => game.id && handleView(game.id)}
-                            variant="primary"
-                            ghost
-                            className="cursor-pointer"
-                          >
-                            View
-                          </Button>
-                          <Button
-                            onClick={() => game.id && handleEdit(game.id)}
-                            variant="secondary"
-                            ghost
-                            className="cursor-pointer"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            onClick={() => game.id && handleManageLineup(game.id)}
-                            variant="success"
-                            ghost
-                            className="cursor-pointer"
-                          >
-                            Lineup
-                          </Button>
-                          {game.gameType === 'auctioneer' && game.status === 'bidding' && (
-                            <Button
-                              onClick={() => game.id && confirmFinalizeAuction(game.id, game.name)}
-                              disabled={finalizingGameId === game.id}
-                              variant="warning"
-                              ghost
-                              className="cursor-pointer"
-                            >
-                              {finalizingGameId === game.id ? '...' : 'Finalize'}
-                            </Button>
-                          )}
-                          <Button
-                            onClick={() => game.id && handleManageDivisions(game.id)}
-                            variant="primary"
-                            ghost
-                            className="cursor-pointer"
-                          >
-                            Assign Players
-                          </Button>
-                          {group.hasDivisions && (
-                            <Button
-                              onClick={() => handleManageDivisionGames(group.games)}
-                              variant="secondary"
-                              ghost
-                              className="cursor-pointer"
-                            >
-                              Manage Divisions
-                            </Button>
-                          )}
-                          {!group.hasDivisions && (
-                            <Button
-                              onClick={() => game.id && handleDeleteClick(game.id)}
-                              variant="danger"
-                              ghost
-                              className="cursor-pointer"
-                            >
-                              Delete
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
+                {section.typeGroups.map((typeGroup) => (
+                  <div key={`${section.sport}-${typeGroup.gameType}`} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-600">
+                        {typeGroup.label}
+                      </h4>
+                      <span className="text-xs text-gray-500">
+                        {typeGroup.groups.length} {typeGroup.groups.length === 1 ? 'reeks' : 'reeksen'}
+                      </span>
+                    </div>
 
-                      {/* Expanded division rows */}
-                      {group.hasDivisions && isExpanded && group.games.map((divisionGame) => (
-                        <tr key={divisionGame.id} className="bg-gray-50 border-l-4 border-blue-300">
-                          <td className="px-4 py-2 whitespace-nowrap pl-12">
-                            <div className="text-sm text-gray-700">
-                              {divisionGame.name}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">-</div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">-</div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            <GameStatusManager
-                              gameId={divisionGame.id!}
-                              currentStatus={divisionGame.status as any} // eslint-disable-line @typescript-eslint/no-explicit-any
-                              onStatusChange={loadGames}
-                              compact
-                            />
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">
-                              {divisionGame.playerCount}
-                              {divisionGame.maxPlayers && ` / ${divisionGame.maxPlayers}`}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {divisionGame.division || '-'}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm flex flex-row gap-2">
-                            <Button
-                              onClick={() => divisionGame.id && handleView(divisionGame.id)}
-                              variant="primary"
-                              ghost
-                            >
-                              View
-                            </Button>
-                            <Button
-                              onClick={() => divisionGame.id && handleEdit(divisionGame.id)}
-                              variant="secondary"
-                              ghost
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              onClick={() => divisionGame.id && handleManageLineup(divisionGame.id)}
-                              variant="success"
-                              ghost
-                            >
-                              Lineup
-                            </Button>
-                            {divisionGame.gameType === 'auctioneer' && divisionGame.status === 'bidding' && (
-                              <Button
-                                onClick={() => divisionGame.id && confirmFinalizeAuction(divisionGame.id, divisionGame.name)}
-                                disabled={finalizingGameId === divisionGame.id}
-                                variant="warning"
-                                ghost
-                              >
-                                {finalizingGameId === divisionGame.id ? '...' : 'Finalize'}
-                              </Button>
-                            )}
-                            {divisionGame.id && (
-                              <Button
-                                onClick={() => handleDeleteClick(divisionGame.id!)}
-                                variant="danger"
-                                ghost
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Name
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Year
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Players
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Divisions
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {renderGameRows(typeGroup.groups)}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         )}
       </div>

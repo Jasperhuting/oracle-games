@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from "react";
+import type { TFunction } from "i18next";
 import { Button } from "./Button";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/utils";
@@ -27,6 +28,14 @@ interface Game {
 }
 
 interface GameParticipantRow {
+  id: string;
+  playername: string;
+  userEmail?: string;
+  status?: string;
+  eligibleForPrizes?: boolean;
+}
+
+interface GameParticipantApiRow {
   id: string;
   playername: string;
   userEmail?: string;
@@ -84,7 +93,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
         throw new Error('Failed to load participants');
       }
       const data = await response.json();
-      const rows = (data.participants || []).map((participant: any) => ({
+      const rows = (data.participants || []).map((participant: GameParticipantApiRow) => ({
         id: participant.id,
         playername: participant.playername,
         userEmail: participant.userEmail,
@@ -169,7 +178,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
 
   const getGameTypeLabel = (gameType: string) => {
     const labels: Record<string, string> = {
-      'auctioneer': 'Auctioneer',
+      'auctioneer': 'Auction Master',
       'slipstream': 'Slipstream',
       'last-man-standing': 'Last Man Standing',
       'poisoned-cup': 'Poisoned Cup',
@@ -184,7 +193,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
     return labels[gameType] || gameType;
   };
 
-  const getStatusLabel = (status: string, t: any) => {
+  const getStatusLabel = (status: string, t: TFunction) => {
     switch (status) {
       case 'draft': return t('games.statuses.draft');
       case 'registration': return t('games.statuses.registration');

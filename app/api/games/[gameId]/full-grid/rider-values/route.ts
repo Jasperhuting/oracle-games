@@ -123,6 +123,7 @@ export const GET = publicHandler('full-grid-rider-values-get', async ({ params }
     config: {
       budget: config.budget || 70,
       maxRiders: config.maxRiders || 22,
+      minRiders: config.minRiders || 22,
       selectionStatus: config.selectionStatus || 'open',
     },
   };

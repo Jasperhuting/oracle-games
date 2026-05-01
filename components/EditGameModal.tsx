@@ -79,6 +79,7 @@ interface GameFormData {
   // Auctioneer config
   budget?: number;
   maxRiders?: number;
+  minRiders?: number;
   teamDayClassification?: boolean;
 }
 
@@ -146,6 +147,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           teamSelectionDeadline: formatDateForInput(game.teamSelectionDeadline),
           budget: game.config?.budget,
           maxRiders: game.config?.maxRiders,
+          minRiders: game.config?.minRiders,
           teamDayClassification: game.config?.teamDayClassification ?? false,
         });
 
@@ -386,6 +388,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
         updates.config = {
           budget: Number(data.budget) || 80,
           maxRiders: Number(data.maxRiders) || 22,
+          minRiders: data.minRiders ? Number(data.minRiders) : undefined,
           riderValues: existingRiderValues,
           selectionStatus: 'open',
           countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
@@ -995,6 +998,19 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                         label="Max Riders"
                         placeholder="E.g. 22"
                         {...register('maxRiders', {
+                          min: {
+                            value: 1,
+                            message: 'At least 1 rider required'
+                          }
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <TextInput
+                        type="number"
+                        label="Min Riders (leeg = geen minimum)"
+                        placeholder="E.g. 23"
+                        {...register('minRiders', {
                           min: {
                             value: 1,
                             message: 'At least 1 rider required'

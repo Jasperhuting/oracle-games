@@ -24,6 +24,7 @@ interface BudgetStats {
 interface FullGridMyTeamProps {
   myTeam: MyTeamRider[];
   budgetStats: BudgetStats;
+  minRiders: number;
   canEdit: boolean;
   onRemoveRider: (riderNameId: string) => void;
   saving: boolean;
@@ -32,6 +33,7 @@ interface FullGridMyTeamProps {
 export function FullGridMyTeam({
   myTeam,
   budgetStats,
+  minRiders,
   canEdit,
   onRemoveRider,
   saving,
@@ -50,7 +52,10 @@ export function FullGridMyTeam({
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
         <h2 className="font-semibold text-gray-900">Mijn Team</h2>
         <p className="text-sm text-gray-500">
-          {budgetStats.riderCount} van {budgetStats.maxRiders} renners
+          {budgetStats.riderCount} / {budgetStats.maxRiders} renners
+          {budgetStats.riderCount < minRiders && (
+            <span className="ml-1 text-orange-600">(min. {minRiders})</span>
+          )}
         </p>
       </div>
 
@@ -75,11 +80,22 @@ export function FullGridMyTeam({
         <div className="flex items-center justify-between mt-1">
           <span className="text-xs text-gray-500">Besteed</span>
           <span className={`text-sm font-semibold ${
-            budgetStats.remaining < 0 ? 'text-red-600' : 'text-green-600'
+            budgetStats.remaining < 0
+              ? 'text-red-600'
+              : budgetStats.riderCount < minRiders && budgetStats.remaining === 0
+              ? 'text-red-600'
+              : 'text-green-600'
           }`}>
             {budgetStats.remaining} pts over
           </span>
         </div>
+        {budgetStats.riderCount < minRiders && budgetStats.remaining <= 0 && (
+          <div className="mt-2 bg-red-50 border border-red-200 rounded px-3 py-2">
+            <span className="text-xs text-red-700 font-medium">
+              Budget op maar nog {minRiders - budgetStats.riderCount} renner(s) te selecteren (minimum {minRiders}). Verwijder een dure renner. Teams met minder dan {minRiders} renners worden gediskwalificeerd.
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Team list */}
@@ -245,9 +261,15 @@ export function FullGridMyTeam({
             </span>
           </div>
 
-          {budgetStats.riderCount < budgetStats.maxRiders && (
+          {budgetStats.riderCount < minRiders && (
             <p className="text-xs text-orange-600 mt-2">
-              Nog {budgetStats.maxRiders - budgetStats.riderCount} renners te selecteren
+              Nog {minRiders - budgetStats.riderCount} renner(s) vereist (minimum {minRiders})
+            </p>
+          )}
+
+          {budgetStats.riderCount >= minRiders && budgetStats.riderCount < budgetStats.maxRiders && (
+            <p className="text-xs text-green-600 mt-2">
+              Minimum bereikt! Nog {budgetStats.maxRiders - budgetStats.riderCount} plek(ken) over.
             </p>
           )}
 

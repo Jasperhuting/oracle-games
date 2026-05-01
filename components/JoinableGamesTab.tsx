@@ -8,11 +8,20 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { GameCard } from "./joinable-games";
 import Link from "next/link";
+import { getPlatformConfigFromHost } from "@/lib/platform";
 import { 
   JoinableGame, 
   JoinableGameGroup, 
   JoinableGameParticipant 
 } from "@/lib/types";
+
+interface F1ParticipantApiRow {
+  userId: string;
+  gameId: string;
+  displayName: string;
+  joinedAt: string;
+  status: string;
+}
 
 export const JoinableGamesTab = () => {
   const { user, impersonationStatus, loading: authLoading } = useAuth();
@@ -37,6 +46,9 @@ export const JoinableGamesTab = () => {
   const [showTestGames, setShowTestGames] = useState(false);
 
   const { t } = useTranslation();
+  const currentPlatform = typeof window !== 'undefined'
+    ? getPlatformConfigFromHost(window.location.host).key
+    : 'cycling';
 
   const loadGames = async () => {
     setLoading(true);
@@ -84,8 +96,8 @@ export const JoinableGamesTab = () => {
             if (f1Data.success && f1Data.participants) {
               // Convert F1 participants to JoinableGameParticipant format
               f1Participants = f1Data.participants
-                .filter((p: any) => p.userId === user.uid) // Only get current user's F1 participation
-                .map((p: any) => ({
+                .filter((p: F1ParticipantApiRow) => p.userId === user.uid) // Only get current user's F1 participation
+                .map((p: F1ParticipantApiRow) => ({
                   id: p.userId,
                   gameId: p.gameId,
                   userId: p.userId,
@@ -444,6 +456,25 @@ export const JoinableGamesTab = () => {
   const F1_GAME_TYPES = ['f1-prediction'];
   const SOCCER_GAME_TYPES: string[] = []; // Toekomstige uitbreiding
 
+  const getGameTypeLabel = (gameType: string) => {
+    const labels: Record<string, string> = {
+      'auctioneer': 'Auction Master',
+      'slipstream': 'Slipstream',
+      'last-man-standing': 'Last Man Standing',
+      'poisoned-cup': 'Poisoned Cup',
+      'nations-cup': 'Nations Cup',
+      'rising-stars': 'Rising Stars',
+      'country-roads': 'Country Roads',
+      'worldtour-manager': 'WorldTour Manager',
+      'marginal-gains': 'Marginal Gains',
+      'fan-flandrien': 'Fan Flandrien',
+      'full-grid': 'Full Grid',
+      'f1-prediction': 'F1 Prediction',
+    };
+
+    return labels[gameType] || gameType;
+  };
+
   const getCategoryForGroup = (group: JoinableGameGroup): 'cycling' | 'f1' | 'soccer' | 'other' => {
     const gameType = group.games[0]?.gameType;
     if (CYCLING_GAME_TYPES.includes(gameType)) return 'cycling';
@@ -460,6 +491,77 @@ export const JoinableGamesTab = () => {
   const f1Games = regularGameGroups.filter(g => getCategoryForGroup(g) === 'f1');
   const soccerGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'soccer');
   const otherGames = regularGameGroups.filter(g => getCategoryForGroup(g) === 'other');
+  const visibleSports = currentPlatform === 'cycling'
+    ? (['cycling', 'soccer', 'other'] as const)
+    : (['cycling', 'soccer', 'other', 'f1'] as const);
+
+  const sportGroupsMap = {
+    cycling: cyclingGames,
+    soccer: soccerGames,
+    other: otherGames,
+    f1: f1Games,
+  } satisfies Record<'cycling' | 'soccer' | 'other' | 'f1', JoinableGameGroup[]>;
+
+  const getSportMeta = (sport: 'cycling' | 'soccer' | 'other' | 'f1') => {
+    switch (sport) {
+      case 'cycling':
+        return {
+          label: 'Wielrennen',
+          icon: '🚴',
+          iconClassName: 'bg-emerald-100 text-emerald-700',
+          lineClassName: 'bg-emerald-100',
+        };
+      case 'soccer':
+        return {
+          label: 'Voetbal',
+          icon: '⚽',
+          iconClassName: 'bg-orange-100 text-orange-700',
+          lineClassName: 'bg-orange-100',
+        };
+      case 'f1':
+        return {
+          label: 'Formule 1',
+          icon: '🏎️',
+          iconClassName: 'bg-blue-100 text-blue-700',
+          lineClassName: 'bg-blue-100',
+        };
+      default:
+        return {
+          label: 'Overige',
+          icon: '✦',
+          iconClassName: 'bg-gray-100 text-gray-600',
+          lineClassName: 'bg-gray-100',
+        };
+    }
+  };
+
+  const sportSections = visibleSports
+    .map((sport) => {
+      const groups = sportGroupsMap[sport];
+      const typeGroups = Object.entries(
+        groups.reduce((acc, group) => {
+          const gameType = group.games[0]?.gameType || 'unknown';
+          if (!acc[gameType]) {
+            acc[gameType] = [];
+          }
+          acc[gameType].push(group);
+          return acc;
+        }, {} as Record<string, JoinableGameGroup[]>)
+      )
+        .map(([gameType, groupedGames]) => ({
+          gameType,
+          label: getGameTypeLabel(gameType),
+          groups: groupedGames.sort((a, b) => a.baseName.localeCompare(b.baseName)),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      return {
+        sport,
+        ...getSportMeta(sport),
+        typeGroups,
+      };
+    })
+    .filter((section) => section.typeGroups.length > 0);
 
   // Show loading state until auth is ready, games are loaded, and participations are loaded
   if (authLoading || loading || (user && !participationsLoaded)) {
@@ -487,149 +589,56 @@ export const JoinableGamesTab = () => {
             </div>
           ) : (
             <div className="space-y-6">
-          {/* Cycling Games */}
-          {cyclingGames.length > 0 && (
-            <div className="space-y-4">
+          {sportSections.map((section) => (
+            <div key={section.sport} className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  🚴
+                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${section.iconClassName}`}>
+                  {section.icon}
                 </span>
-                <h3 className="text-lg font-semibold text-gray-800">Wielrennen</h3>
-                <div className="h-px flex-1 bg-emerald-100" />
+                <h3 className="text-lg font-semibold text-gray-800">{section.label}</h3>
+                <div className={`h-px flex-1 ${section.lineClassName}`} />
               </div>
-              {cyclingGames.map((group) => (
-                <GameCard
-                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
-                  group={group}
-                  myGames={myGames}
-                  myParticipants={myParticipants}
-                  isAdmin={isAdmin}
-                  availableRules={availableRules}
-                  joining={joining}
-                  leaving={leaving}
-                  onJoin={handleJoinGame}
-                  onLeave={confirmLeaveGame}
-                  onShowRules={handleShowRules}
-                  isRegistrationOpen={isRegistrationOpen}
-                  canJoin={canJoin}
-                  canLeave={canLeave}
-                  isSelectionBasedGame={isSelectionBasedGame}
-                  getStatusLabel={getStatusLabel}
-                  getStatusBadgeColor={getStatusBadgeColor}
-                  formatDate={formatDate}
-                  formatDateTime={formatDateTime}
-                />
-              ))}
-            </div>
-          )}
 
-          {/* F1 Games */}
-          {f1Games.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-                  🏎️
-                </span>
-                <h3 className="text-lg font-semibold text-gray-800">Formule 1</h3>
-                <div className="h-px flex-1 bg-blue-100" />
-              </div>
-              {f1Games.map((group) => (
-                <GameCard
-                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
-                  group={group}
-                  myGames={myGames}
-                  myParticipants={myParticipants}
-                  isAdmin={isAdmin}
-                  availableRules={availableRules}
-                  joining={joining}
-                  leaving={leaving}
-                  onJoin={handleJoinGame}
-                  onLeave={confirmLeaveGame}
-                  onShowRules={handleShowRules}
-                  isRegistrationOpen={isRegistrationOpen}
-                  canJoin={canJoin}
-                  canLeave={canLeave}
-                  isSelectionBasedGame={isSelectionBasedGame}
-                  getStatusLabel={getStatusLabel}
-                  getStatusBadgeColor={getStatusBadgeColor}
-                  formatDate={formatDate}
-                  formatDateTime={formatDateTime}
-                />
-              ))}
-            </div>
-          )}
+              {section.typeGroups.map((typeGroup) => (
+                <div key={`${section.sport}-${typeGroup.gameType}`} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-600">
+                      {typeGroup.label}
+                    </h4>
+                    <span className="text-xs text-gray-500">
+                      {typeGroup.groups.length} {typeGroup.groups.length === 1 ? 'reeks' : 'reeksen'}
+                    </span>
+                  </div>
 
-          {/* Soccer Games (toekomst) */}
-          {soccerGames.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-700">
-                  ⚽
-                </span>
-                <h3 className="text-lg font-semibold text-gray-800">Voetbal</h3>
-                <div className="h-px flex-1 bg-orange-100" />
-              </div>
-              {soccerGames.map((group) => (
-                <GameCard
-                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
-                  group={group}
-                  myGames={myGames}
-                  myParticipants={myParticipants}
-                  isAdmin={isAdmin}
-                  availableRules={availableRules}
-                  joining={joining}
-                  leaving={leaving}
-                  onJoin={handleJoinGame}
-                  onLeave={confirmLeaveGame}
-                  onShowRules={handleShowRules}
-                  isRegistrationOpen={isRegistrationOpen}
-                  canJoin={canJoin}
-                  canLeave={canLeave}
-                  isSelectionBasedGame={isSelectionBasedGame}
-                  getStatusLabel={getStatusLabel}
-                  getStatusBadgeColor={getStatusBadgeColor}
-                  formatDate={formatDate}
-                  formatDateTime={formatDateTime}
-                />
+                  <div className="space-y-4">
+                    {typeGroup.groups.map((group) => (
+                      <GameCard
+                        key={group.isMultiDivision ? group.baseName : group.games[0].id}
+                        group={group}
+                        myGames={myGames}
+                        myParticipants={myParticipants}
+                        isAdmin={isAdmin}
+                        availableRules={availableRules}
+                        joining={joining}
+                        leaving={leaving}
+                        onJoin={handleJoinGame}
+                        onLeave={confirmLeaveGame}
+                        onShowRules={handleShowRules}
+                        isRegistrationOpen={isRegistrationOpen}
+                        canJoin={canJoin}
+                        canLeave={canLeave}
+                        isSelectionBasedGame={isSelectionBasedGame}
+                        getStatusLabel={getStatusLabel}
+                        getStatusBadgeColor={getStatusBadgeColor}
+                        formatDate={formatDate}
+                        formatDateTime={formatDateTime}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-
-          {/* Other Games (uncategorized) */}
-          {otherGames.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600">
-                  ✦
-                </span>
-                <h3 className="text-lg font-semibold text-gray-800">Overige</h3>
-                <div className="h-px flex-1 bg-gray-100" />
-              </div>
-              {otherGames.map((group) => (
-                <GameCard
-                  key={group.isMultiDivision ? group.baseName : group.games[0].id}
-                  group={group}
-                  myGames={myGames}
-                  myParticipants={myParticipants}
-                  isAdmin={isAdmin}
-                  availableRules={availableRules}
-                  joining={joining}
-                  leaving={leaving}
-                  onJoin={handleJoinGame}
-                  onLeave={confirmLeaveGame}
-                  onShowRules={handleShowRules}
-                  isRegistrationOpen={isRegistrationOpen}
-                  canJoin={canJoin}
-                  canLeave={canLeave}
-                  isSelectionBasedGame={isSelectionBasedGame}
-                  getStatusLabel={getStatusLabel}
-                  getStatusBadgeColor={getStatusBadgeColor}
-                  formatDate={formatDate}
-                  formatDateTime={formatDateTime}
-                />
-              ))}
-            </div>
-          )}
+          ))}
 
           {/* Test Games Section */}
           {(isAdmin || impersonationStatus?.isImpersonating) && testGameGroups.length > 0 && (

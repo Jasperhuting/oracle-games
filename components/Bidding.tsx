@@ -299,6 +299,32 @@ export const Bidding = ({
     return uniqueTeams.size;
   }, [fullGridMyTeam]);
 
+  const fullGridMinRiders = Number(game?.config?.minRiders || game?.config?.maxRiders || fullGridTeams.length);
+
+  const fullGridCheapestByTeam = useMemo(() => {
+    const map: Record<string, number> = {};
+    fullGridRiders.forEach(r => {
+      if (!(r.riderTeam in map) || r.value < map[r.riderTeam]) {
+        map[r.riderTeam] = r.value;
+      }
+    });
+    return map;
+  }, [fullGridRiders]);
+
+  const fullGridMinBudgetAfterPickingFromTeam = useMemo(() => {
+    const stillNeeded = Math.max(0, fullGridMinRiders - fullGridMyTeam.length - 1);
+    const result: Record<string, number> = {};
+    const unselectedTeams = fullGridTeams.filter(t => !teamsWithSelection?.has(t.name));
+    unselectedTeams.forEach(pickedTeam => {
+      const cheapestOthers = unselectedTeams
+        .filter(t => t.name !== pickedTeam.name)
+        .map(t => fullGridCheapestByTeam[t.name] ?? 0)
+        .sort((a, b) => a - b);
+      result[pickedTeam.name] = cheapestOthers.slice(0, stillNeeded).reduce((s, v) => s + v, 0);
+    });
+    return result;
+  }, [fullGridTeams, teamsWithSelection, fullGridCheapestByTeam, fullGridMinRiders, fullGridMyTeam.length]);
+
   const fullGridSelectedRiderByTeam = useMemo(() => {
     const map: Record<string, string> = {};
     fullGridMyTeam.forEach(rider => {
@@ -555,6 +581,7 @@ export const Bidding = ({
                 <FullGridMyTeam
                   myTeam={fullGridMyTeam}
                   budgetStats={fullGridBudgetStats}
+                  minRiders={fullGridMinRiders}
                   canEdit={!auctionClosed}
                   onRemoveRider={handleFullGridRemove}
                   saving={fullGridSaving}
@@ -718,6 +745,7 @@ export const Bidding = ({
               teamHasSelection={selectedTeam ? (teamsWithSelection?.has(selectedTeam) || false) : false}
               canSelect={!auctionClosed}
               budgetRemaining={fullGridBudgetStats.remaining}
+              minBudgetAfterPicking={selectedTeam ? (fullGridMinBudgetAfterPickingFromTeam[selectedTeam] ?? 0) : 0}
               onSelectRider={(rider) => {
                 const fullRider = fullGridRiderLookup.get(rider.riderNameId);
                 if (fullRider) {

@@ -23,6 +23,7 @@ interface FullGridRiderListProps {
   teamHasSelection: boolean;
   canSelect: boolean;
   budgetRemaining: number;
+  minBudgetAfterPicking: number;
   onSelectRider: (rider: RiderData) => void;
   onDeselectRider?: (rider: RiderData) => void;
   saving: boolean;
@@ -36,6 +37,7 @@ export function FullGridRiderList({
   teamHasSelection,
   canSelect,
   budgetRemaining,
+  minBudgetAfterPicking,
   onSelectRider,
   onDeselectRider,
   saving,
@@ -70,7 +72,9 @@ export function FullGridRiderList({
         {riders.map((rider) => {
           const isSelected = isRiderSelected(rider.riderNameId);
           const canAfford = budgetRemaining >= rider.value;
-          const isDisabled = !canSelect || saving || (!isSelected && (teamHasSelection || !canAfford));
+          // Picking this rider would leave too little budget to complete minimum riders
+          const wouldBreakMinimum = !isSelected && !teamHasSelection && canAfford && (budgetRemaining - rider.value) < minBudgetAfterPicking;
+          const isDisabled = !canSelect || saving || (!isSelected && (teamHasSelection || !canAfford || wouldBreakMinimum));
 
           return (
             <div
@@ -78,6 +82,8 @@ export function FullGridRiderList({
               className={`px-4 py-3 flex items-center gap-3 ${
                 isSelected
                   ? 'bg-green-50'
+                  : wouldBreakMinimum
+                  ? 'bg-orange-50 opacity-70'
                   : isDisabled
                   ? 'bg-gray-50 opacity-60'
                   : 'hover:bg-gray-50'
@@ -127,9 +133,11 @@ export function FullGridRiderList({
               <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
                 isSelected
                   ? 'bg-green-500 text-white'
-                  : canAfford
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-red-100 text-red-600'
+                  : !canAfford
+                  ? 'bg-red-100 text-red-600'
+                  : wouldBreakMinimum
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'bg-primary/10 text-primary'
               }`}>
                 {rider.value} pts
               </div>
