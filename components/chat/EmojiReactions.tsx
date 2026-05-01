@@ -169,12 +169,14 @@ export default function EmojiReactions({
         createPortal(
           <>
             <div
-              className="fixed inset-0 z-[9998]"
+              className="fixed inset-0"
+              style={{ zIndex: 9998 }}
               onMouseDown={() => setShowPicker(false)}
             />
             <div
-              className="fixed z-[9999] shadow-xl rounded-xl overflow-hidden"
-              style={{ top: pickerPos.top, left: pickerPos.left }}
+              className="fixed shadow-xl rounded-xl overflow-hidden"
+              style={{ top: pickerPos.top, left: pickerPos.left, zIndex: 9999 }}
+              onMouseDown={e => e.stopPropagation()}
             >
               <EmojiPicker
                 onEmojiClick={handleEmojiClick}
