@@ -210,7 +210,7 @@ export const GameDetailsModal = ({ gameId, onClose, onEdit, onDelete }: GameDeta
       case 'registration': return 'bg-blue-200 text-blue-800';
       case 'bidding': return 'bg-yellow-200 text-yellow-800';
       case 'active': return 'bg-green-200 text-green-800';
-      case 'finished': return 'bg-primary text-primary';
+      case 'finished': return 'bg-gray-700 text-white';
       default: return 'bg-gray-200 text-gray-800';
     }
   };

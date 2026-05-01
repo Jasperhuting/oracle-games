@@ -1,8 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Trash, Calendar, Refresh, Lock, CircleCheck, Clock } from 'tabler-icons-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Trash, Calendar, Refresh, Lock, CircleCheck, Clock, AlertTriangle, UserOff, UserCheck } from 'tabler-icons-react';
 import { useTranslation } from 'react-i18next';
+
+const MISSED_RACES_THRESHOLD = 4;
+
+interface InactivePlayer {
+  participantId: string;
+  userId: string;
+  playername: string;
+  missedPicksCount: number;
+  status: string;
+}
 
 interface Race {
   raceId: string;
@@ -57,7 +67,59 @@ export function SlipstreamRaceManager({
   const [showAddForm, setShowAddForm] = useState(false);
   const [calcLoading, setCalcLoading] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState<string | null>(null);
-  
+
+  // Inactive players state
+  const [inactivePlayers, setInactivePlayers] = useState<InactivePlayer[]>([]);
+  const [withdrawnPlayers, setWithdrawnPlayers] = useState<InactivePlayer[]>([]);
+  const [finishedRacesCount, setFinishedRacesCount] = useState(0);
+  const [withdrawLoading, setWithdrawLoading] = useState<string | null>(null);
+
+  const fetchInactivePlayers = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/games/${gameId}/slipstream/admin/inactive-players?threshold=${MISSED_RACES_THRESHOLD}`
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setInactivePlayers(data.inactivePlayers || []);
+        setWithdrawnPlayers(data.withdrawnPlayers || []);
+        setFinishedRacesCount(data.finishedRacesCount || 0);
+      }
+    } catch {
+      // silent
+    }
+  }, [gameId]);
+
+  useEffect(() => {
+    fetchInactivePlayers();
+  }, [fetchInactivePlayers]);
+
+  const handleWithdraw = async (player: InactivePlayer, restore: boolean) => {
+    setWithdrawLoading(player.participantId);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/games/${gameId}/slipstream/admin/withdraw-player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId: player.participantId, restore }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setSuccess(
+        restore
+          ? `${player.playername} hersteld naar actief`
+          : `${player.playername} teruggetrokken uit het spel`
+      );
+      await fetchInactivePlayers();
+      onRacesChange?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fout bij bijwerken speler');
+    } finally {
+      setWithdrawLoading(null);
+    }
+  };
+
   // Form state for adding single race
   const [newRace, setNewRace] = useState({
     raceSlug: '',
@@ -220,6 +282,89 @@ export function SlipstreamRaceManager({
   };
 
   return (
+    <div className="space-y-4">
+
+      {/* Inactive players alert */}
+      {(inactivePlayers.length > 0 || withdrawnPlayers.length > 0) && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Inactieve spelers
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              {finishedRacesCount} races afgerond. Spelers met {MISSED_RACES_THRESHOLD}+ gemiste races.
+            </p>
+          </div>
+
+          {inactivePlayers.length > 0 && (
+            <div className="p-4 space-y-2">
+              <p className="text-sm font-medium text-amber-700">
+                {inactivePlayers.length} speler{inactivePlayers.length !== 1 ? 's' : ''} te veel races gemist:
+              </p>
+              {inactivePlayers.map(player => (
+                <div
+                  key={player.participantId}
+                  className="flex items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserOff className="w-4 h-4 text-amber-600 shrink-0" />
+                    <div>
+                      <span className="font-medium text-gray-900">{player.playername}</span>
+                      <span className="ml-2 text-sm text-amber-700">
+                        {player.missedPicksCount} gemiste races
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleWithdraw(player, false)}
+                    disabled={withdrawLoading === player.participantId}
+                    className="px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 shrink-0"
+                  >
+                    {withdrawLoading === player.participantId ? 'Bezig...' : 'Uitsluiten'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {withdrawnPlayers.length > 0 && (
+            <div className={`p-4 space-y-2 ${inactivePlayers.length > 0 ? 'border-t border-gray-100' : ''}`}>
+              <p className="text-sm font-medium text-gray-500">
+                {withdrawnPlayers.length} uitgesloten speler{withdrawnPlayers.length !== 1 ? 's' : ''} (herstelbaar):
+              </p>
+              {withdrawnPlayers.map(player => (
+                <div
+                  key={player.participantId}
+                  className="flex items-center justify-between gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserOff className="w-4 h-4 text-gray-400 shrink-0" />
+                    <div>
+                      <span className="font-medium text-gray-600">{player.playername}</span>
+                      <span className="ml-2 text-xs text-gray-400">uitgesloten</span>
+                      {player.missedPicksCount > 0 && (
+                        <span className="ml-1 text-xs text-gray-400">
+                          ({player.missedPicksCount} gemiste races)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleWithdraw(player, true)}
+                    disabled={withdrawLoading === player.participantId}
+                    className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 flex items-center gap-1 shrink-0"
+                  >
+                    <UserCheck className="w-3 h-3" />
+                    {withdrawLoading === player.participantId ? 'Bezig...' : 'Herstellen'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -398,6 +543,8 @@ export function SlipstreamRaceManager({
           </div>
         )}
       </div>
+    </div>
+
     </div>
   );
 }

@@ -17,6 +17,11 @@ interface GameSummary {
   isParticipant: boolean;
 }
 
+interface TeamsOverviewTeam {
+  userId?: string;
+  ranking?: number;
+}
+
 interface ListGame {
   id: string;
   name: string;
@@ -43,6 +48,25 @@ function getSportType(gameType: string): 'cycling' | 'f1' | 'other' {
   return 'other';
 }
 
+function getGameTypeLabel(gameType: string): string {
+  const labels: Record<string, string> = {
+    'auctioneer': 'Auction Master',
+    'slipstream': 'Slipstream',
+    'last-man-standing': 'Last Man Standing',
+    'poisoned-cup': 'Poisoned Cup',
+    'nations-cup': 'Nations Cup',
+    'rising-stars': 'Rising Stars',
+    'country-roads': 'Country Roads',
+    'worldtour-manager': 'WorldTour Manager',
+    'fan-flandrien': 'Fan Flandrien',
+    'full-grid': 'Full Grid',
+    'marginal-gains': 'Marginal Gains',
+    'f1-prediction': 'F1 Prediction',
+  };
+
+  return labels[gameType] || gameType;
+}
+
 export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesCardProps) {
   const { t } = useTranslation();
   const [games, setGames] = useState<GameSummary[]>([]);
@@ -59,8 +83,34 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
         const summaryMap = new Map<string, GameSummary>();
         if (summaryRes.ok) {
           const summaryData = await summaryRes.json();
+          const fullGridRankingCache = new Map<string, number>();
           for (const g of summaryData.games ?? []) {
-            summaryMap.set(g.gameId, { ...g, isParticipant: true });
+            const gameSummary: GameSummary = { ...g, isParticipant: true };
+
+            if (gameSummary.gameType === 'full-grid' && gameSummary.ranking === 0) {
+              if (!fullGridRankingCache.has(gameSummary.gameId)) {
+                try {
+                  const standingsResponse = await fetch(`/api/games/${gameSummary.gameId}/teams-overview`);
+                  if (standingsResponse.ok) {
+                    const standingsData = await standingsResponse.json();
+                    const teams = Array.isArray(standingsData?.teams) ? standingsData.teams as TeamsOverviewTeam[] : [];
+                    const ownTeam = teams.find((team) => team.userId === userId);
+                    fullGridRankingCache.set(gameSummary.gameId, Number(ownTeam?.ranking) || 0);
+                  } else {
+                    fullGridRankingCache.set(gameSummary.gameId, 0);
+                  }
+                } catch {
+                  fullGridRankingCache.set(gameSummary.gameId, 0);
+                }
+              }
+
+              const resolvedRanking = fullGridRankingCache.get(gameSummary.gameId) || 0;
+              if (resolvedRanking > 0) {
+                gameSummary.ranking = resolvedRanking;
+              }
+            }
+
+            summaryMap.set(g.gameId, gameSummary);
           }
         }
 
@@ -121,6 +171,23 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
   const f1Games = games.filter(g => g.sportType === 'f1' && !excludeSportTypes.includes(g.sportType));
   const otherGames = games.filter(g => g.sportType === 'other' && !excludeSportTypes.includes(g.sportType));
 
+  const groupByGameType = (list: GameSummary[]) =>
+    Object.entries(
+      list.reduce((acc, game) => {
+        if (!acc[game.gameType]) {
+          acc[game.gameType] = [];
+        }
+        acc[game.gameType].push(game);
+        return acc;
+      }, {} as Record<string, GameSummary[]>)
+    )
+      .map(([gameType, groupedGames]) => ({
+        gameType,
+        label: getGameTypeLabel(gameType),
+        games: groupedGames.sort((a, b) => a.gameName.localeCompare(b.gameName)),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
   const formatRanking = (game: GameSummary): string => {
     if (!game.isParticipant) return '-';
     if (game.ranking === 0) return '-';
@@ -149,7 +216,7 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
     return t('activeGames.daysAgo', { days: diffDays });
   };
 
-  const renderTable = (list: GameSummary[], borderColor: string, bgColor: string) => (
+  const renderTable = (list: GameSummary[], borderColor: string) => (
     <table className="w-full text-sm">
       <tbody>
         {list.map((game) => (
@@ -178,6 +245,38 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
     </table>
   );
 
+  const renderSportSection = (
+    list: GameSummary[],
+    accentBorderClass: string,
+    accentBgClass: string,
+    titleClassName: string,
+    icon: string,
+    title: string,
+    borderColor: string,
+  ) => (
+    <div className={`border-l-4 ${accentBorderClass} pl-4 ${accentBgClass} py-3 pr-3 rounded-r-lg`}>
+      <h3 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${titleClassName}`}>
+        <span className="text-lg">{icon}</span> {title}
+      </h3>
+
+      <div className="space-y-4">
+        {groupByGameType(list).map((typeGroup) => (
+          <div key={typeGroup.gameType} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                {typeGroup.label}
+              </h4>
+              <span className="text-xs text-gray-500">
+                {typeGroup.games.length} {typeGroup.games.length === 1 ? 'spel' : 'spellen'}
+              </span>
+            </div>
+            {renderTable(typeGroup.games, borderColor)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-200 pb-2">
@@ -203,30 +302,39 @@ export function ActiveGamesCard({ userId, excludeSportTypes = [] }: ActiveGamesC
       ) : (
         <div className="space-y-6">
           {cyclingGames.length > 0 && (
-            <div className="border-l-4 border-emerald-500 pl-4 bg-emerald-50/50 py-3 pr-3 rounded-r-lg">
-              <h3 className="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
-                <span className="text-lg">🚴</span> {t('preferences.sports.cycling')}
-              </h3>
-              {renderTable(cyclingGames, 'border-emerald-200/50', 'bg-emerald-50')}
-            </div>
+            renderSportSection(
+              cyclingGames,
+              'border-emerald-500',
+              'bg-emerald-50/50',
+              'text-emerald-700',
+              '🚴',
+              t('preferences.sports.cycling'),
+              'border-emerald-200/50',
+            )
           )}
 
           {f1Games.length > 0 && (
-            <div className="border-l-4 border-red-500 pl-4 bg-red-50/50 py-3 pr-3 rounded-r-lg">
-              <h3 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
-                <span className="text-lg">🏎️</span> {t('preferences.sports.f1')}
-              </h3>
-              {renderTable(f1Games, 'border-red-200/50', 'bg-red-50')}
-            </div>
+            renderSportSection(
+              f1Games,
+              'border-red-500',
+              'bg-red-50/50',
+              'text-red-700',
+              '🏎️',
+              t('preferences.sports.f1'),
+              'border-red-200/50',
+            )
           )}
 
           {otherGames.length > 0 && (
-            <div className="border-l-4 border-gray-400 pl-4 bg-gray-50/50 py-3 pr-3 rounded-r-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <span className="text-lg">🎮</span> {t('preferences.sports.other')}
-              </h3>
-              {renderTable(otherGames, 'border-gray-200/50', 'bg-gray-50')}
-            </div>
+            renderSportSection(
+              otherGames,
+              'border-gray-400',
+              'bg-gray-50/50',
+              'text-gray-700',
+              '🎮',
+              t('preferences.sports.other'),
+              'border-gray-200/50',
+            )
           )}
         </div>
       )}

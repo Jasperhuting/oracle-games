@@ -21,6 +21,11 @@ interface ClusteredResult {
   raceNames: string[];
 }
 
+interface TeamsOverviewTeam {
+  userId?: string;
+  ranking?: number;
+}
+
 const GAME_TYPE_LABELS: Record<string, string> = {
   'auctioneer': 'Auctioneer',
   'slipstream': 'Slipstream',
@@ -123,23 +128,48 @@ export function CarriereCard({ userId, playername, dateOfBirth, avatarUrl, onAva
         const data = await participantsResponse.json();
         const participants = data.participants || [];
         const allResults: TopResult[] = [];
+        const fullGridRankingCache = new Map<string, number>();
 
         for (const participant of participants) {
           const gameId = participant.gameId.replace(/-pending$/, '');
-          if (!gameId || participant.ranking === 0) continue;
+          if (!gameId) continue;
           try {
             const gameResponse = await fetch(`/api/games/${gameId}`);
             if (!gameResponse.ok) continue;
             const gameData = await gameResponse.json();
             const game = gameData.game;
-            if (game?.status === 'finished' && participant.ranking > 0 &&
+            if (game?.status === 'finished' &&
                 !game.isTest && !game.name?.toLowerCase().includes('test')) {
               const gameType: string = game.gameType || '';
+              let resolvedRanking = Number(participant.ranking) || 0;
+
+              if (resolvedRanking === 0 && gameType === 'full-grid') {
+                if (!fullGridRankingCache.has(gameId)) {
+                  try {
+                    const standingsResponse = await fetch(`/api/games/${gameId}/teams-overview`);
+                    if (standingsResponse.ok) {
+                      const standingsData = await standingsResponse.json();
+                      const teams = Array.isArray(standingsData?.teams) ? standingsData.teams as TeamsOverviewTeam[] : [];
+                      const ownTeam = teams.find((team) => team.userId === userId);
+                      fullGridRankingCache.set(gameId, Number(ownTeam?.ranking) || 0);
+                    } else {
+                      fullGridRankingCache.set(gameId, 0);
+                    }
+                  } catch {
+                    fullGridRankingCache.set(gameId, 0);
+                  }
+                }
+
+                resolvedRanking = fullGridRankingCache.get(gameId) || 0;
+              }
+
+              if (resolvedRanking <= 0) continue;
+
               allResults.push({
                 gameName: game.name,
                 raceName: extractRaceName(game.name, gameType),
                 gameType,
-                ranking: participant.ranking,
+                ranking: resolvedRanking,
                 year: game.year || new Date().getFullYear(),
                 division: game.division,
               });
