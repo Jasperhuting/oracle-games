@@ -156,6 +156,11 @@ export interface AuctionGameData {
     teamSize?: number;
     auctionStatus?: 'pending' | 'active' | 'closed' | 'finalized';
     maxMinimumBid?: number;
+    auctionNotice?: {
+      type?: 'info' | 'warning' | 'error' | 'success';
+      title?: string;
+      message: string;
+    };
     // WorldTour Manager specific
     minNeoPros?: number;
     maxNeoProPoints?: number;

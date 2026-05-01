@@ -43,6 +43,14 @@ export const MyAuctionBidsBig = ({
 
   const { t } = useTranslation();
 
+  const toDate = (value: unknown): Date => {
+    if (value instanceof Date) return value;
+    if (typeof value === 'object' && value !== null && 'toDate' in value && typeof value.toDate === 'function') {
+      return value.toDate();
+    }
+    return new Date(String(value));
+  };
+
 
   // Calculate remaining budget for a player based on their won bids up to a specific auction period
   const calculateRemainingBudget = (playerBids: Bid[], upToAuctionPeriodIndex: number): number => {
@@ -58,12 +66,8 @@ export const MyAuctionBidsBig = ({
       if (i >= auctionPeriods.length) break;
 
       const period = auctionPeriods[i];
-      const startDate = typeof period.startDate === 'object' && 'toDate' in period.startDate
-        ? period.startDate.toDate()
-        : new Date(period.startDate as any);
-      const endDate = typeof period.endDate === 'object' && 'toDate' in period.endDate
-        ? period.endDate.toDate()
-        : new Date(period.endDate as any);
+      const startDate = toDate(period.startDate);
+      const endDate = toDate(period.endDate);
 
       // Find all won bids in this period
       const wonBidsInPeriod = playerBids.filter((bid) => {
@@ -86,7 +90,7 @@ export const MyAuctionBidsBig = ({
               {divisionParticipants.length > 0 && (
                 <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
                   <label htmlFor="player-selector" className="block text-sm font-medium text-gray-700 mb-2">
-                    View another player's bids:
+                    View another player&apos;s bids:
                   </label>
                   <select
                     id="player-selector"
@@ -117,12 +121,8 @@ export const MyAuctionBidsBig = ({
                     <nav className="-mb-px flex space-x-4" aria-label="Tabs">
                       {game.config.auctionPeriods.map((period, index) => {
                         const now = new Date()
-                        const startDate = typeof period.startDate === 'object' && 'toDate' in period.startDate
-                          ? period.startDate.toDate()
-                          : new Date(period.startDate as any)
-                        const endDate = typeof period.endDate === 'object' && 'toDate' in period.endDate
-                          ? period.endDate.toDate()
-                          : new Date(period.endDate as any)
+                        const startDate = toDate(period.startDate)
+                        const endDate = toDate(period.endDate)
                         const isPeriodActive = now >= startDate && now <= endDate
 
                         const formatDate = (date: Date) => {
@@ -178,12 +178,8 @@ export const MyAuctionBidsBig = ({
                               // help me filter them
                               // the bids are empty
               
-                              const startDate = typeof auctionPeriod.startDate === 'object' && 'toDate' in auctionPeriod.startDate
-                                ? auctionPeriod.startDate.toDate()
-                                : new Date(auctionPeriod.startDate as any);
-                              const endDate = typeof auctionPeriod.endDate === 'object' && 'toDate' in auctionPeriod.endDate
-                                ? auctionPeriod.endDate.toDate()
-                                : new Date(auctionPeriod.endDate as any);
+                              const startDate = toDate(auctionPeriod.startDate);
+                              const endDate = toDate(auctionPeriod.endDate);
                               const now = new Date()
 
                               // SECURITY: Check if this auction period is currently active
@@ -194,8 +190,9 @@ export const MyAuctionBidsBig = ({
                               const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
 
 
-                              // Filter bids to only show bids within this auction period
+                              // Bidding history should only show finalized winning bids for this period.
                               const bidsInPeriod = bidsToShow.filter((bid) => {
+                                if (bid.status !== 'won') return false;
                                 const bidDate = new Date(bid.bidAt);
                                 if (bid.riderNameId === 'mattia-agostinacchio') {
                                   console.log('bid', bid)
@@ -221,8 +218,8 @@ export const MyAuctionBidsBig = ({
 
                               // Sort the bids based on the selected criteria
                               const sortedBidsInPeriod = [...bidsInPeriod].sort((a, b) => {
-                                const riderA = availableRiders.find((r: any) => r.id === a.riderNameId || r.nameID === a.riderNameId);
-                                const riderB = availableRiders.find((r: any) => r.id === b.riderNameId || r.nameID === b.riderNameId);
+                                const riderA = availableRiders.find((r: RiderWithBid) => r.id === a.riderNameId || r.nameID === a.riderNameId);
+                                const riderB = availableRiders.find((r: RiderWithBid) => r.id === b.riderNameId || r.nameID === b.riderNameId);
 
                                 if (!riderA || !riderB) return 0;
 
@@ -270,7 +267,7 @@ export const MyAuctionBidsBig = ({
                                 return sortDirection === 'asc' ? comparison : -comparison;
                               });
 
-                              // Card View - Show all bids (won and lost) for this auction period
+                              // Card View - Show won bids only for this auction period
                               return <div key={periodIndex} className="mb-8">
                                 <div className="flex justify-between items-center mb-4">
                                   <div className="flex items-center gap-2">
@@ -309,7 +306,7 @@ export const MyAuctionBidsBig = ({
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {sortedBidsInPeriod
                                   .map((myBidRider) => {
-                                    const rider = availableRiders.find((rider: any) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
+                                    const rider = availableRiders.find((rider: RiderWithBid) => rider.id === myBidRider.riderNameId || rider.nameID === myBidRider.riderNameId);
 
                                     // SECURITY: Only show other players' active bids if the auction period is over
                                     // If auction period is still active, filter out all 'active' status bids from other players

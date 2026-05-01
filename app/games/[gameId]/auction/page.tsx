@@ -1033,6 +1033,36 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
 
   const myAuctionBids = myBids.map((bid: Bid) => ({ ...bid, price: sortedAndFilteredRiders.find((b: RiderWithBid) => b.id === bid.riderNameId)?.points })).filter((bid: Bid) => bid.status === 'active')
   const isSelectionBasedGame = game?.gameType === 'worldtour-manager' || game?.gameType === 'marginal-gains' || game?.gameType === 'full-grid';
+  const auctionNotice = game.config.auctionNotice;
+  const auctionNoticeStyles = (() => {
+    switch (auctionNotice?.type) {
+      case 'success':
+        return {
+          container: 'bg-green-50 border-green-200',
+          title: 'text-green-900',
+          message: 'text-green-800',
+        };
+      case 'warning':
+        return {
+          container: 'bg-yellow-50 border-yellow-200',
+          title: 'text-yellow-900',
+          message: 'text-yellow-800',
+        };
+      case 'error':
+        return {
+          container: 'bg-red-50 border-red-200',
+          title: 'text-red-900',
+          message: 'text-red-800',
+        };
+      default:
+        return {
+          container: 'bg-blue-50 border-blue-200',
+          title: 'text-blue-900',
+          message: 'text-blue-800',
+        };
+    }
+  })();
+
   return (
     <div className={`min-h-screen mt-24 relative `}>
       <div className="bg-white border-b border-gray-200 z-10 px-8">
@@ -1159,6 +1189,19 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
               }`}
               style={{ top: hideBanner ? '127px' : '162px' }}
             >
+                {auctionNotice?.message && (
+                  <div className={`mb-4 rounded-lg border p-4 ${auctionNoticeStyles.container}`}>
+                    {auctionNotice.title && (
+                      <p className={`text-sm font-semibold ${auctionNoticeStyles.title}`}>
+                        {auctionNotice.title}
+                      </p>
+                    )}
+                    <p className={`text-sm ${auctionNotice.title ? 'mt-1' : ''} ${auctionNoticeStyles.message}`}>
+                      {auctionNotice.message}
+                    </p>
+                  </div>
+                )}
+
                 {!auctionActive && (
                   <div className={`mb-4 p-4 rounded-lg ${auctionClosed ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
                     <p className={`text-sm font-medium ${auctionClosed ? 'text-red-800' : 'text-yellow-800'}`}>

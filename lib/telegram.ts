@@ -8,11 +8,54 @@ interface TelegramMessageOptions {
   disable_web_page_preview?: boolean;
 }
 
+export interface TelegramConfig {
+  botToken: string | null;
+  chatId: string | null;
+  webhookSecret: string | null;
+  adminUserId: string | null;
+}
+
+export interface TelegramBridgeConfig {
+  botToken: string | null;
+  chatId: string | null;
+  webhookSecret: string | null;
+  bridgeRoomId: string;
+  adminUserId: string | null;
+}
+
+interface ChatBridgeMessageOptions {
+  roomTitle: string;
+  userName: string;
+  text: string;
+  roomId?: string;
+}
+
+const DEFAULT_TELEGRAM_BRIDGE_ROOM_ID = 'tHgkj5j0vZDu5nHg2LVf';
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+export function getTelegramConfig(): TelegramConfig {
+  return {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || null,
+    chatId: process.env.TELEGRAM_CHAT_ID || null,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || null,
+    adminUserId: process.env.TELEGRAM_ADMIN_USER_ID || null,
+  };
+}
+
+export function getTelegramBridgeConfig(): TelegramBridgeConfig {
+  return {
+    botToken: process.env.TELEGRAM_BRIDGE_BOT_TOKEN || null,
+    chatId: process.env.TELEGRAM_BRIDGE_CHAT_ID || null,
+    webhookSecret: process.env.TELEGRAM_BRIDGE_WEBHOOK_SECRET || null,
+    bridgeRoomId: process.env.TELEGRAM_BRIDGE_ROOM_ID || DEFAULT_TELEGRAM_BRIDGE_ROOM_ID,
+    adminUserId: process.env.TELEGRAM_BRIDGE_ADMIN_USER_ID || null,
+  };
 }
 
 /**
@@ -22,8 +65,7 @@ export async function sendTelegramMessage(
   message: string,
   options: TelegramMessageOptions = {}
 ): Promise<boolean> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const { botToken, chatId } = getTelegramConfig();
 
   if (!botToken || !chatId) {
     console.error('Telegram credentials not configured');
@@ -58,6 +100,70 @@ export async function sendTelegramMessage(
     console.error('Failed to send Telegram message:', error);
     return false;
   }
+}
+
+export async function sendTelegramBridgeMessage(
+  message: string,
+  options: TelegramMessageOptions = {}
+): Promise<boolean> {
+  const { botToken, chatId } = getTelegramBridgeConfig();
+
+  if (!botToken || !chatId) {
+    console.error('Telegram bridge credentials not configured');
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: options.parse_mode || 'HTML',
+          disable_web_page_preview: options.disable_web_page_preview ?? true,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Telegram bridge API error:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Failed to send Telegram bridge message:', error);
+    return false;
+  }
+}
+
+export async function sendChatRoomBridgeMessage(
+  options: ChatBridgeMessageOptions
+): Promise<boolean> {
+  const safeText = options.text.trim();
+  if (!safeText) {
+    return false;
+  }
+
+  const telegramMessage = `
+💬 <b>${escapeHtml(options.roomTitle)}</b>
+
+<b>${escapeHtml(options.userName)}:</b>
+${escapeHtml(safeText)}
+
+${options.roomId ? `🆔 <code>${escapeHtml(options.roomId)}</code>\n` : ''}⏰ ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
+  `.trim();
+
+  return sendTelegramBridgeMessage(telegramMessage, {
+    parse_mode: 'HTML',
+    disable_web_page_preview: true,
+  });
 }
 
 /**
@@ -223,7 +329,8 @@ ${statusIcon} <b>Rider Script ${statusText}</b>
  */
 export async function sendChatSummaryNotification(
   roomTitle: string,
-  messages: { userName: string; text: string }[]
+  messages: { userName: string; text: string }[],
+  roomId?: string
 ): Promise<boolean> {
   const maxMessages = 20;
   const shown = messages.slice(0, maxMessages);
@@ -239,6 +346,10 @@ export async function sendChatSummaryNotification(
 📊 ${messages.length} nieuwe berichten
 
 ${messageLines}`;
+
+  if (roomId) {
+    telegramMessage += `\n\n🆔 <code>${escapeHtml(roomId)}</code>`;
+  }
 
   if (remaining > 0) {
     telegramMessage += `\n  ... en ${remaining} meer`;

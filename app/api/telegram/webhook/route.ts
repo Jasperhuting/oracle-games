@@ -1,23 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/server';
-import { Timestamp } from 'firebase-admin/firestore';
+import {
+  getTelegramBridgeConfig,
+  getTelegramConfig,
+  type TelegramBridgeConfig,
+  type TelegramConfig,
+} from '@/lib/telegram';
 
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
-const TELEGRAM_ADMIN_USER_ID = process.env.TELEGRAM_ADMIN_USER_ID;
+type TelegramUser = {
+  id?: number;
+  is_bot?: boolean;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+};
 
 type TelegramMessage = {
   text?: string;
-  chat?: { id?: number | string };
+  chat?: { id?: number | string; type?: string; title?: string };
+  from?: TelegramUser;
   reply_to_message?: { text?: string };
+};
+
+type WebhookBotKind = 'default' | 'bridge';
+
+type ResolvedWebhookConfig = {
+  kind: WebhookBotKind;
+  botToken: string | null;
+  chatId: string | null;
+  webhookSecret: string | null;
+  adminUserId: string | null;
+  bridgeRoomId?: string;
 };
 
 function extractFeedbackIdFromText(text: string): string | null {
   const match = text.match(/Feedback ID:\s*([A-Za-z0-9_-]+)/i);
   if (match?.[1]) return match[1];
-  const fallback = text.match(/\b([A-Za-z0-9_-]{16,})\b/);
-  return fallback?.[1] || null;
+  return null;
 }
 
 function parseReplyCommand(text: string): { feedbackId: string; replyText: string } | null {
@@ -26,9 +46,19 @@ function parseReplyCommand(text: string): { feedbackId: string; replyText: strin
   return { feedbackId: match[2], replyText: match[3].trim() };
 }
 
+function getTelegramSenderName(sender?: TelegramUser): string {
+  const fullName = [sender?.first_name, sender?.last_name].filter(Boolean).join(' ').trim();
+  if (fullName) return fullName;
+  if (sender?.username) return `@${sender.username}`;
+  if (sender?.id) return `Telegram ${sender.id}`;
+  return 'Telegram gebruiker';
+}
+
 async function resolveAdminUser() {
-  if (TELEGRAM_ADMIN_USER_ID) {
-    const adminDoc = await adminDb.collection('users').doc(TELEGRAM_ADMIN_USER_ID).get();
+  const { adminUserId } = getTelegramConfig();
+
+  if (adminUserId) {
+    const adminDoc = await adminDb.collection('users').doc(adminUserId).get();
     if (adminDoc.exists) return adminDoc;
   }
 
@@ -42,9 +72,11 @@ async function resolveAdminUser() {
 }
 
 async function sendTelegramReply(chatId: string | number, text: string) {
-  if (!TELEGRAM_BOT_TOKEN) return;
+  const { botToken } = getTelegramConfig();
+  if (!botToken) return;
+
   try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -59,24 +91,206 @@ async function sendTelegramReply(chatId: string | number, text: string) {
   }
 }
 
+async function handleFeedbackReply(
+  text: string,
+  message: TelegramMessage,
+  chatId: string | number
+) {
+  let feedbackId: string | null = null;
+  let replyText: string | null = null;
+
+  const command = parseReplyCommand(text);
+  if (command) {
+    feedbackId = command.feedbackId;
+    replyText = command.replyText;
+  } else if (message.reply_to_message?.text) {
+    feedbackId = extractFeedbackIdFromText(message.reply_to_message.text);
+    replyText = text;
+  }
+
+  if (!feedbackId || !replyText) {
+    return false;
+  }
+
+  const feedbackDoc = await adminDb.collection('feedback').doc(feedbackId).get();
+  if (!feedbackDoc.exists) {
+    return true;
+  }
+
+  const feedbackData = feedbackDoc.data();
+  const feedbackUserId = feedbackData?.userId;
+  const feedbackUserEmail = feedbackData?.userEmail;
+
+  if (!feedbackUserId) {
+    return true;
+  }
+
+  const adminDoc = await resolveAdminUser();
+  if (!adminDoc) {
+    throw new Error('Admin user not found');
+  }
+
+  const adminId = adminDoc.id;
+  const adminName = adminDoc.data()?.displayName || adminDoc.data()?.email || 'Admin';
+
+  const messageRef = adminDb.collection('messages').doc();
+  await messageRef.set({
+    type: 'individual',
+    senderId: adminId,
+    senderName: adminName,
+    recipientId: feedbackUserId,
+    recipientName: feedbackUserEmail || 'User',
+    subject: 'Response to your feedback',
+    message: `Antwoord op je feedback:\n\n${replyText}`,
+    sentAt: Timestamp.now(),
+    read: false,
+  });
+
+  await adminDb.collection('feedback').doc(feedbackId).update({
+    adminResponse: replyText,
+    adminResponseDate: Timestamp.now(),
+    status: 'reviewed',
+  });
+
+  await adminDb.collection('activityLogs').doc().set({
+    action: 'FEEDBACK_REPLY_TELEGRAM',
+    userId: adminId,
+    userName: adminName,
+    targetUserId: feedbackUserId,
+    details: {
+      feedbackId,
+      messageId: messageRef.id,
+    },
+    timestamp: Timestamp.now(),
+  });
+
+  if (chatId) {
+    await sendTelegramReply(
+      chatId,
+      `✅ Antwoord verzonden en opgeslagen voor feedback <code>${feedbackId}</code>.`
+    );
+  }
+
+  return true;
+}
+
+async function handleChatBridge(
+  text: string,
+  message: TelegramMessage,
+  config: ResolvedWebhookConfig
+) {
+  const bridgeRoomId = config.bridgeRoomId;
+  const sender = message.from;
+
+  if (!bridgeRoomId || sender?.is_bot) {
+    return;
+  }
+
+  const roomRef = adminDb.collection('chat_rooms').doc(bridgeRoomId);
+  const roomDoc = await roomRef.get();
+  if (!roomDoc.exists) {
+    throw new Error(`Chat room ${bridgeRoomId} not found`);
+  }
+
+  const roomData = roomDoc.data();
+  if (roomData?.status === 'closed') {
+    return;
+  }
+
+  const trimmedText = text.trim();
+  if (!trimmedText) {
+    return;
+  }
+
+  const senderId = sender?.id ? `telegram:${sender.id}` : 'telegram:unknown';
+  const senderName = getTelegramSenderName(sender);
+
+  await roomRef.collection('messages').add({
+    text: trimmedText,
+    giphy: null,
+    userId: senderId,
+    userName: senderName,
+    userAvatar: null,
+    replyTo: null,
+    reactions: {},
+    deleted: false,
+    createdAt: Timestamp.now(),
+    source: 'telegram',
+    sourceMeta: {
+      telegramChatId: message.chat?.id ? String(message.chat.id) : null,
+      telegramUserId: sender?.id ? String(sender.id) : null,
+      telegramUsername: sender?.username || null,
+    },
+  });
+
+  await roomRef.update({
+    messageCount: FieldValue.increment(1),
+  });
+}
+
+function normalizeDefaultConfig(config: TelegramConfig): ResolvedWebhookConfig {
+  return {
+    kind: 'default',
+    botToken: config.botToken,
+    chatId: config.chatId,
+    webhookSecret: config.webhookSecret,
+    adminUserId: config.adminUserId,
+  };
+}
+
+function normalizeBridgeConfig(config: TelegramBridgeConfig): ResolvedWebhookConfig {
+  return {
+    kind: 'bridge',
+    botToken: config.botToken,
+    chatId: config.chatId,
+    webhookSecret: config.webhookSecret,
+    adminUserId: config.adminUserId,
+    bridgeRoomId: config.bridgeRoomId,
+  };
+}
+
+function resolveWebhookConfig(request: NextRequest): ResolvedWebhookConfig | null {
+  const defaultConfig = normalizeDefaultConfig(getTelegramConfig());
+  const bridgeConfig = normalizeBridgeConfig(getTelegramBridgeConfig());
+  const header = request.headers.get('x-telegram-bot-api-secret-token');
+
+  if (header) {
+    if (bridgeConfig.webhookSecret && header === bridgeConfig.webhookSecret) {
+      return bridgeConfig;
+    }
+    if (defaultConfig.webhookSecret && header === defaultConfig.webhookSecret) {
+      return defaultConfig;
+    }
+    return null;
+  }
+
+  if (!bridgeConfig.webhookSecret && bridgeConfig.botToken && bridgeConfig.chatId) {
+    return bridgeConfig;
+  }
+
+  if (!defaultConfig.webhookSecret && defaultConfig.botToken && defaultConfig.chatId) {
+    return defaultConfig;
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    if (TELEGRAM_WEBHOOK_SECRET) {
-      const header = request.headers.get('x-telegram-bot-api-secret-token');
-      if (header !== TELEGRAM_WEBHOOK_SECRET) {
-        return NextResponse.json({ ok: false }, { status: 401 });
-      }
+    const webhookConfig = resolveWebhookConfig(request);
+    if (!webhookConfig) {
+      return NextResponse.json({ ok: false }, { status: 401 });
     }
 
     const update = await request.json();
-    const message: TelegramMessage | undefined = update?.message || update?.edited_message;
+    const message: TelegramMessage | undefined = update?.message;
 
     if (!message) {
       return NextResponse.json({ ok: true });
     }
 
     const chatId = message.chat?.id;
-    if (TELEGRAM_CHAT_ID && `${chatId}` !== `${TELEGRAM_CHAT_ID}`) {
+    if (webhookConfig.chatId && `${chatId}` !== `${webhookConfig.chatId}`) {
       return NextResponse.json({ ok: false }, { status: 403 });
     }
 
@@ -85,80 +299,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    let feedbackId: string | null = null;
-    let replyText: string | null = null;
-
-    const command = parseReplyCommand(text);
-    if (command) {
-      feedbackId = command.feedbackId;
-      replyText = command.replyText;
-    } else if (message.reply_to_message?.text) {
-      feedbackId = extractFeedbackIdFromText(message.reply_to_message.text);
-      replyText = text;
-    }
-
-    if (!feedbackId || !replyText) {
+    if (text.startsWith('/') && !/^\/(reply|r)\b/i.test(text)) {
       return NextResponse.json({ ok: true });
     }
 
-    const feedbackDoc = await adminDb.collection('feedback').doc(feedbackId).get();
-    if (!feedbackDoc.exists) {
+    if (webhookConfig.kind === 'default') {
+      await handleFeedbackReply(text, message, chatId || '');
       return NextResponse.json({ ok: true });
     }
 
-    const feedbackData = feedbackDoc.data();
-    const feedbackUserId = feedbackData?.userId;
-    const feedbackUserEmail = feedbackData?.userEmail;
-
-    if (!feedbackUserId) {
+    if (text.startsWith('/')) {
       return NextResponse.json({ ok: true });
     }
 
-    const adminDoc = await resolveAdminUser();
-    if (!adminDoc) {
-      return NextResponse.json({ ok: false, error: 'Admin user not found' }, { status: 500 });
-    }
-
-    const adminId = adminDoc.id;
-    const adminName = adminDoc.data()?.displayName || adminDoc.data()?.email || 'Admin';
-
-    const messageRef = adminDb.collection('messages').doc();
-    await messageRef.set({
-      type: 'individual',
-      senderId: adminId,
-      senderName: adminName,
-      recipientId: feedbackUserId,
-      recipientName: feedbackUserEmail || 'User',
-      subject: 'Response to your feedback',
-      message: `Antwoord op je feedback:\n\n${replyText}`,
-      sentAt: Timestamp.now(),
-      read: false,
-    });
-
-    await adminDb.collection('feedback').doc(feedbackId).update({
-      adminResponse: replyText,
-      adminResponseDate: Timestamp.now(),
-      status: 'reviewed',
-    });
-
-    await adminDb.collection('activityLogs').doc().set({
-      action: 'FEEDBACK_REPLY_TELEGRAM',
-      userId: adminId,
-      userName: adminName,
-      targetUserId: feedbackUserId,
-      details: {
-        feedbackId,
-        messageId: messageRef.id,
-      },
-      timestamp: Timestamp.now(),
-    });
-
-    if (chatId) {
-      await sendTelegramReply(
-        chatId,
-        `✅ Antwoord verzonden en opgeslagen voor feedback <code>${feedbackId}</code>.`
-      );
-    }
+    await handleChatBridge(text, message, webhookConfig);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
