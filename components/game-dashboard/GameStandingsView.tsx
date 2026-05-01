@@ -411,7 +411,7 @@ export function GameStandingsView({
 
       <div className="mb-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {gameType !== 'worldtour-manager' && gameType !== 'auctioneer' && !(gameType === 'full-grid' && raceType !== 'season') && (
+          {gameType === 'full-grid' && raceType === 'season' && (
           <div className="flex items-center gap-2">
             <button
               type="button"
