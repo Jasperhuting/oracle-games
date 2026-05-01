@@ -92,6 +92,14 @@ function getConfiguredGameType(game: Game | null): string | null {
   return null;
 }
 
+function isAuctionNavigationGame(gameType: string | null): boolean {
+  return gameType === 'auction'
+    || gameType === 'auctioneer'
+    || gameType === 'worldtour-manager'
+    || gameType === 'marginal-gains'
+    || gameType === 'full-grid';
+}
+
 export default function GameDashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -431,12 +439,14 @@ export default function GameDashboardPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              {game?.gameType === 'auctioneer' && game?.status === 'bidding' && (
+              {isAuctionNavigationGame(configuredGameType) && (
                 <Link
                   href={`/games/${gameId}/auction`}
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
                 >
-                  Auction
+                  {configuredGameType === 'worldtour-manager' || configuredGameType === 'marginal-gains' || configuredGameType === 'full-grid'
+                    ? 'Selectie'
+                    : 'Auction'}
                 </Link>
               )}
             </div>
