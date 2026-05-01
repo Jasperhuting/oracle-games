@@ -24,7 +24,6 @@ export default function EmojiReactions({
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const pickerRef = useRef<HTMLDivElement>(null);
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 });
 
   // Position the picker relative to the button, rendered via portal
@@ -80,25 +79,6 @@ export default function EmojiReactions({
     };
   }, [reactions]);
 
-  // Close picker when clicking outside
-  useEffect(() => {
-    if (!showPicker) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const path = e.composedPath();
-      if (
-        pickerRef.current && !path.includes(pickerRef.current) &&
-        buttonRef.current && !path.includes(buttonRef.current)
-      ) {
-        setShowPicker(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showPicker]);
 
   const toggleReaction = async (emoji: string) => {
     if (loading) return;
@@ -187,20 +167,25 @@ export default function EmojiReactions({
 
       {showPicker &&
         createPortal(
-          <div
-            ref={pickerRef}
-            className="fixed z-[9999] shadow-xl rounded-xl overflow-hidden"
-            style={{ top: pickerPos.top, left: pickerPos.left }}
-          >
-            <EmojiPicker
-              onEmojiClick={handleEmojiClick}
-              theme={Theme.LIGHT}
-              width={320}
-              height={400}
-              searchPlaceHolder="Zoek emoji..."
-              previewConfig={{ showPreview: false }}
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onMouseDown={() => setShowPicker(false)}
             />
-          </div>,
+            <div
+              className="fixed z-[9999] shadow-xl rounded-xl overflow-hidden"
+              style={{ top: pickerPos.top, left: pickerPos.left }}
+            >
+              <EmojiPicker
+                onEmojiClick={handleEmojiClick}
+                theme={Theme.LIGHT}
+                width={320}
+                height={400}
+                searchPlaceHolder="Zoek emoji..."
+                previewConfig={{ showPreview: false }}
+              />
+            </div>
+          </>,
           document.body
         )}
     </div>
