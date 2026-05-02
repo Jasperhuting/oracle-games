@@ -732,7 +732,7 @@ export const Bidding = ({
               teamsWithSelection={teamsWithSelection || new Set<string>()}
               onSelectTeam={setSelectedTeam}
               proTeamsSelectedCount={proTeamsSelectedCount}
-              proTeamsLimit={4}
+              proTeamsLimit={game?.config?.proTeamLimit ?? 4}
               selectedRiderByTeam={fullGridSelectedRiderByTeam}
             />
           </div>

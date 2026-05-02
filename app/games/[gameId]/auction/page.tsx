@@ -894,7 +894,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     return map;
   }, [availableRiders, game?.gameType]);
 
-  const fullGridProTeamLimit = 4;
+  const fullGridProTeamLimit = game?.config?.proTeamLimit ?? 4;
 
   // Full Grid: build unique team list for filter dropdown
   const availableTeams = useMemo(() => {
