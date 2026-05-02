@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerFirebase } from '@/lib/firebase/server';
+import { getServerFirebase, getServerAuth } from '@/lib/firebase/server';
 import type { UserResponse, ApiErrorResponse } from '@/lib/types';
 
 export async function GET(request: NextRequest): Promise<NextResponse<UserResponse | ApiErrorResponse>> {
@@ -25,7 +25,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
     }
 
     const userData = userDoc.data();
-    
+
+    let authPhotoURL: string | undefined;
+    if (!userData?.avatarUrl) {
+      try {
+        const auth = getServerAuth();
+        const authUser = await auth.getUser(userId);
+        authPhotoURL = authUser.photoURL || undefined;
+      } catch {
+        // Auth user may not exist, ignore
+      }
+    }
+
     return NextResponse.json({
       uid: userData?.uid,
       email: userData?.email,
@@ -33,7 +44,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserRespon
       firstName: userData?.firstName,
       lastName: userData?.lastName,
       dateOfBirth: userData?.dateOfBirth,
-      avatarUrl: userData?.avatarUrl,
+      avatarUrl: userData?.avatarUrl || authPhotoURL,
       createdAt: userData?.createdAt,
       updatedAt: userData?.updatedAt,
       userType: userData?.userType,

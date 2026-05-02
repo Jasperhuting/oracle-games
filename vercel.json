@@ -42,10 +42,7 @@
       "path": "/api/cron/open-scheduled-chats",
       "schedule": "*/5 * * * *"
     },
-    {
-      "path": "/api/cron/chat-telegram-summary",
-      "schedule": "*/15 * * * *"
-    },
+
     {
       "path": "/api/cron/scrape-race-calendar",
       "schedule": "0 9 * 1 *"
