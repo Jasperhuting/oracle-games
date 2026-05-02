@@ -255,7 +255,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
         const soldRidersMap = new Map<string, { ownerNames: string[]; pricePaid: number; ownerCount: number }>();
         if (cachedData.playerTeamsData.success && cachedData.playerTeamsData.teams) {
           cachedData.playerTeamsData.teams.forEach((teamRider: OwnedTeamRider) => {
-            if (teamRider.riderNameId && teamRider.active) {
+            if (teamRider.riderNameId && teamRider.active !== false) {
               const ownerName = teamRider.playername || teamRider.userName || 'Unknown Player';
               const pricePaid = teamRider.pricePaid || 0;
               const existing = soldRidersMap.get(teamRider.riderNameId);
@@ -408,7 +408,7 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
       const soldRidersMap = new Map<string, { ownerNames: string[]; pricePaid: number; ownerCount: number }>();
       if (playerTeamsData.success && playerTeamsData.teams) {
         playerTeamsData.teams.forEach((teamRider: OwnedTeamRider) => {
-          if (teamRider.riderNameId && teamRider.active) {
+          if (teamRider.riderNameId && teamRider.active !== false) {
             const ownerName = teamRider.playername || teamRider.userName || 'Unknown Player';
             const pricePaid = teamRider.pricePaid || 0;
             const existing = soldRidersMap.get(teamRider.riderNameId);

@@ -227,6 +227,7 @@ export async function GET(request: NextRequest) {
         // Update game if any periods changed or game status needs update
         if (gameNeedsUpdate || gameStatusNeedsUpdate) {
           // CRITICAL SAFETY CHECK: Validate that we're not accidentally deleting periods
+          // Note: only applies when gameNeedsUpdate is true - gameStatusNeedsUpdate alone is always safe
           const originalPeriods = game.config?.auctionPeriods || [];
           if (gameNeedsUpdate && originalPeriods.length > 0 && updatedPeriods.length !== originalPeriods.length) {
             console.error('[CRON] CRITICAL ERROR: Period count mismatch detected!', {
@@ -236,8 +237,11 @@ export async function GET(request: NextRequest) {
               originalPeriods: originalPeriods.map((p: any) => p.name),
               updatedPeriods: updatedPeriods.map((p: any) => p.name),
             });
-            results.errors.push(`CRITICAL: Period count mismatch for ${gameId}. Skipping update to prevent data loss.`);
-            continue; // Skip this game to prevent data corruption
+            results.errors.push(`CRITICAL: Period count mismatch for ${gameId}. Skipping period update to prevent data loss.`);
+            // Still allow game status update even if period update is blocked
+            if (!gameStatusNeedsUpdate) {
+              continue;
+            }
           }
 
           const updateData: any = {
@@ -248,7 +252,7 @@ export async function GET(request: NextRequest) {
             updateData.status = newGameStatus;
           }
 
-          if (gameNeedsUpdate) {
+          if (gameNeedsUpdate && updatedPeriods.length === originalPeriods.length) {
             updateData['config.auctionPeriods'] = updatedPeriods;
           }
 
