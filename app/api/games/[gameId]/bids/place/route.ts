@@ -154,36 +154,49 @@ export async function POST(
         return null;
       };
 
-      const activePeriod = auctionPeriods.find((p: { status: string }) => p.status === 'active');
-      if (activePeriod) {
-        const periodEnd = toDate(activePeriod.endDate);
-        if (periodEnd && now > periodEnd) {
-          await db.collection('activityLogs').add({
-            action: 'BID_VALIDATION_FAILED',
-            userId,
-            userEmail: userData?.email,
-            userName: userData?.playername || userData?.email,
-            details: {
-              gameId,
-              gameName: gameData?.name,
-              riderNameId,
-              riderName,
-              amount,
-              validationType: 'AUCTION_PERIOD_ENDED',
-              errorMessage: `Auction period "${activePeriod.name}" has ended`,
-              periodEndDate: periodEnd.toISOString(),
-              bidAttemptTime: now.toISOString(),
-            },
-            timestamp: Timestamp.now(),
-            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-            userAgent: request.headers.get('user-agent') || 'unknown',
-          });
+      // Find any period that is currently open based on actual dates (not just status)
+      const currentPeriod = auctionPeriods.find((p: { startDate: unknown; endDate: unknown }) => {
+        const start = toDate(p.startDate);
+        const end = toDate(p.endDate);
+        return start && end && now >= start && now <= end;
+      });
 
-          return NextResponse.json(
-            { error: 'The auction period has ended. No more bids can be placed.' },
-            { status: 400 }
-          );
-        }
+      if (!currentPeriod) {
+        // No period is currently open — either not started yet or already ended
+        const logDetails: Record<string, unknown> = {
+          gameId,
+          gameName: gameData?.name,
+          riderNameId,
+          riderName,
+          amount,
+          bidAttemptTime: now.toISOString(),
+        };
+
+        // Determine reason for better error message
+        const futurePeriod = auctionPeriods.find((p: { startDate: unknown }) => {
+          const start = toDate(p.startDate);
+          return start && now < start;
+        });
+
+        const errorMessage = futurePeriod
+          ? 'The auction has not started yet.'
+          : 'The auction period has ended. No more bids can be placed.';
+
+        logDetails.validationType = futurePeriod ? 'AUCTION_PERIOD_NOT_STARTED' : 'AUCTION_PERIOD_ENDED';
+        logDetails.errorMessage = errorMessage;
+
+        await db.collection('activityLogs').add({
+          action: 'BID_VALIDATION_FAILED',
+          userId,
+          userEmail: userData?.email,
+          userName: userData?.playername || userData?.email,
+          details: logDetails,
+          timestamp: Timestamp.now(),
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        });
+
+        return NextResponse.json({ error: errorMessage }, { status: 400 });
       }
     }
 
