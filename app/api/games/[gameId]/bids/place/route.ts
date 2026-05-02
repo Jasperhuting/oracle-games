@@ -337,9 +337,9 @@ export async function POST(
       }
     }
 
-    // Full Grid: ProTeam limit (max 4 different ProTeams)
+    // Full Grid: ProTeam limit (configurable, default 4)
     if (gameData?.gameType === 'full-grid' && !isUpdatingOwnBid) {
-      const fullGridProTeamLimit = 4;
+      const fullGridProTeamLimit = gameData?.config?.proTeamLimit ?? 4;
       const rankingsCollection = `rankings_${gameData.year || new Date().getFullYear()}`;
 
       const riderTeamCache = new Map<string, { teamName: string; teamClass?: string }>();

@@ -125,6 +125,7 @@ export const GET = publicHandler('full-grid-rider-values-get', async ({ params }
       maxRiders: config.maxRiders || 22,
       minRiders: config.minRiders || 22,
       selectionStatus: config.selectionStatus || 'open',
+      proTeamLimit: config.proTeamLimit ?? 4,
     },
   };
 });

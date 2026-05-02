@@ -35,6 +35,7 @@ interface GameConfig {
   maxRiders: number;
   minRiders: number;
   selectionStatus: 'open' | 'closed';
+  proTeamLimit: number;
 }
 
 export default function FullGridPage() {
@@ -43,7 +44,7 @@ const { user, loading: authLoading } = useAuth();
   const gameId = params?.gameId as string;
 
   const [gameName, setGameName] = useState<string>('');
-  const [gameConfig, setGameConfig] = useState<GameConfig>({ budget: 70, maxRiders: 22, minRiders: 23, selectionStatus: 'open' });
+  const [gameConfig, setGameConfig] = useState<GameConfig>({ budget: 70, maxRiders: 22, minRiders: 23, selectionStatus: 'open', proTeamLimit: 4 });
   const [riders, setRiders] = useState<RiderData[]>([]);
   const [myTeam, setMyTeam] = useState<MyTeamRider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ const { user, loading: authLoading } = useAuth();
     );
   }, []);
 
-  const proTeamLimit = 4;
+  const proTeamLimit = gameConfig.proTeamLimit;
 
   // Get unique teams with counts
   const teams = useMemo(() => {
@@ -213,6 +214,7 @@ const { user, loading: authLoading } = useAuth();
           maxRiders: valuesData.config?.maxRiders || 22,
           minRiders: valuesData.config?.minRiders || valuesData.config?.maxRiders || 23,
           selectionStatus: valuesData.config?.selectionStatus || 'open',
+          proTeamLimit: valuesData.config?.proTeamLimit ?? 4,
         });
       }
 

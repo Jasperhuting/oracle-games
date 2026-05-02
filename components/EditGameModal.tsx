@@ -80,6 +80,7 @@ interface GameFormData {
   budget?: number;
   maxRiders?: number;
   minRiders?: number;
+  proTeamLimit?: number;
   teamDayClassification?: boolean;
 }
 
@@ -148,6 +149,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           budget: game.config?.budget,
           maxRiders: game.config?.maxRiders,
           minRiders: game.config?.minRiders,
+          proTeamLimit: game.config?.proTeamLimit ?? 4,
           teamDayClassification: game.config?.teamDayClassification ?? false,
         });
 
@@ -389,6 +391,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           budget: Number(data.budget) || 80,
           maxRiders: Number(data.maxRiders) || 22,
           minRiders: data.minRiders ? Number(data.minRiders) : undefined,
+          proTeamLimit: data.proTeamLimit ? Number(data.proTeamLimit) : 4,
           riderValues: existingRiderValues,
           selectionStatus: 'open',
           countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
@@ -1014,6 +1017,19 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                           min: {
                             value: 1,
                             message: 'At least 1 rider required'
+                          }
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <TextInput
+                        type="number"
+                        label="Max Pro Tour ploegen (standaard 4)"
+                        placeholder="E.g. 4"
+                        {...register('proTeamLimit', {
+                          min: {
+                            value: 1,
+                            message: 'At least 1 required'
                           }
                         })}
                       />
