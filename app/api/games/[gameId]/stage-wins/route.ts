@@ -37,8 +37,9 @@ export async function GET(
   }
 
   const gameData = gameDoc.data()!;
-  if (gameData.gameType !== 'auctioneer') {
-    return NextResponse.json({ error: 'Stage wins only available for auctioneer games' }, { status: 400 });
+  const gameType = gameData.gameType ?? gameData?.config?.gameType;
+  if (gameType !== 'auctioneer' && gameType !== 'full-grid') {
+    return NextResponse.json({ error: 'Stage wins only available for auctioneer and full-grid games' }, { status: 400 });
   }
 
   // Fetch all playerTeams for this game

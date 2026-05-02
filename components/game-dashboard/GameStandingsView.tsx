@@ -26,6 +26,7 @@ export interface GameStandingRow {
   totalPercentageDiff?: number;
   totalSpent?: number;
   riders?: Array<{ pointsScored?: number; pricePaid?: number }>;
+  stageWins?: number;
 }
 
 interface GameStandingsViewProps {
@@ -40,6 +41,7 @@ interface GameStandingsViewProps {
   backHref?: string;
   currentUserId?: string;
   embedded?: boolean;
+  showStageWins?: boolean;
 }
 
 const columnHelper = createColumnHelper<GameStandingRow>();
@@ -68,6 +70,7 @@ export function GameStandingsView({
   backHref = '/games',
   currentUserId,
   embedded = false,
+  showStageWins = false,
 }: GameStandingsViewProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [showPrizeEligibleOnly, setShowPrizeEligibleOnly] = useState(false);
@@ -88,6 +91,9 @@ export function GameStandingsView({
       .sort((a, b) => {
         const scoreDiff = getRankingScore(b, gameType) - getRankingScore(a, gameType);
         if (scoreDiff !== 0) return scoreDiff;
+        // Tiebreaker: most stage wins wins
+        const stageWinDiff = (b.stageWins ?? 0) - (a.stageWins ?? 0);
+        if (stageWinDiff !== 0) return stageWinDiff;
         return (a.playername || '').localeCompare(b.playername || '');
       })
       .map((standing, index) => {
@@ -103,7 +109,7 @@ export function GameStandingsView({
           ranking: currentRank,
         };
       });
-  }, [gameType, isFullGrid, standings]);
+  }, [gameType, standings]);
 
   const filteredStandings = useMemo(() => {
     if (!showPrizeEligibleOnly) return rankedStandings;
@@ -125,7 +131,7 @@ export function GameStandingsView({
           ranking: currentRank,
         };
       });
-  }, [gameType, isFullGrid, rankedStandings, showPrizeEligibleOnly]);
+  }, [gameType, rankedStandings, showPrizeEligibleOnly]);
 
   const columns = useMemo(() => {
     // TanStack Table column definitions are intentionally heterogeneous by value type.
@@ -196,6 +202,31 @@ export function GameStandingsView({
         }
       ),
     ];
+
+    if (showStageWins) {
+      allColumns.push(
+        columnHelper.accessor('stageWins', {
+          id: 'stageWins',
+          header: () => (
+            <span
+              data-tooltip-id="standings-stagewins-tooltip"
+              data-tooltip-content="Etappezeges (tiebreaker bij gelijke stand)"
+            >
+              Zeges
+            </span>
+          ),
+          cell: (info) => {
+            const wins = info.getValue() ?? 0;
+            return (
+              <span className={wins > 0 ? 'font-semibold text-primary' : 'text-gray-400'}>
+                {wins}
+              </span>
+            );
+          },
+          size: 80,
+        })
+      );
+    }
 
     if (!isFullGrid) {
       allColumns.push(
@@ -279,7 +310,7 @@ export function GameStandingsView({
     }
 
     return allColumns;
-  }, [currentUserId, gameType, isFullGrid]);
+  }, [currentUserId, gameType, isFullGrid, showStageWins]);
 
   const table = useReactTable({
     data: filteredStandings,
@@ -384,6 +415,12 @@ export function GameStandingsView({
 
       <Tooltip
         id="standings-percentage-tooltip"
+        delayShow={0}
+        className="!opacity-100"
+        render={({ content }) => <div className="text-sm whitespace-pre-line">{String(content || '')}</div>}
+      />
+      <Tooltip
+        id="standings-stagewins-tooltip"
         delayShow={0}
         className="!opacity-100"
         render={({ content }) => <div className="text-sm whitespace-pre-line">{String(content || '')}</div>}

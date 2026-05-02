@@ -82,6 +82,7 @@ interface GameFormData {
   minRiders?: number;
   proTeamLimit?: number;
   teamDayClassification?: boolean;
+  showStageWins?: boolean;
 }
 
 interface EditGameModalProps {
@@ -151,6 +152,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           minRiders: game.config?.minRiders,
           proTeamLimit: game.config?.proTeamLimit ?? 4,
           teamDayClassification: game.config?.teamDayClassification ?? false,
+          showStageWins: game.config?.showStageWins ?? false,
         });
 
         // Preserve existing riderValues for full-grid
@@ -392,6 +394,7 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
           maxRiders: Number(data.maxRiders) || 22,
           minRiders: data.minRiders ? Number(data.minRiders) : undefined,
           proTeamLimit: data.proTeamLimit ? Number(data.proTeamLimit) : 4,
+          showStageWins: data.showStageWins ?? false,
           riderValues: existingRiderValues,
           selectionStatus: 'open',
           countingRaces: countingRaces.length > 0 ? countingRaces : undefined,
@@ -1034,6 +1037,18 @@ export const EditGameModal = ({ gameId, onClose, onSuccess }: EditGameModalProps
                         })}
                       />
                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="showStageWins"
+                      className="w-4 h-4 rounded border-gray-300"
+                      {...register('showStageWins')}
+                    />
+                    <label htmlFor="showStageWins" className="text-sm font-medium text-gray-700">
+                      Etappezeges klassement tonen (tiebreaker bij gelijke stand)
+                    </label>
                   </div>
 
                   {/* Counting Races */}

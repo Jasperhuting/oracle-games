@@ -27,6 +27,7 @@ export default function StandingsPage() {
   const [gameYear, setGameYear] = useState<number>(new Date().getFullYear());
   const [gameType, setGameType] = useState<string | null>(null);
   const [raceType, setRaceType] = useState<string | null>(null);
+  const [showStageWins, setShowStageWins] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const backHref = gameType === 'full-grid' ? `/games/${gameId}/auction` : '/games';
@@ -41,6 +42,8 @@ export default function StandingsPage() {
       try {
         // Fetch game info for the name
         const gameResponse = await fetch(`/api/games/${gameId}`);
+        let currentGameType: string | null = null;
+        let currentShowStageWins = false;
 
         if (gameResponse.ok) {
           const gameData = await gameResponse.json();
@@ -48,17 +51,33 @@ export default function StandingsPage() {
           if (typeof gameData.game?.year === 'number') {
             setGameYear(gameData.game.year);
           }
-          setGameType(gameData.game?.gameType ?? gameData.game?.config?.gameType ?? null);
+          currentGameType = gameData.game?.gameType ?? gameData.game?.config?.gameType ?? null;
+          currentShowStageWins = gameData.game?.config?.showStageWins ?? false;
+          setGameType(currentGameType);
           setRaceType(gameData.game?.raceType ?? null);
+          setShowStageWins(currentShowStageWins);
         }
 
-        // Fetch standings
-        const response = await fetch(`/api/games/${gameId}/teams-overview`);
+        const fetchStageWins = currentGameType === 'full-grid' && currentShowStageWins
+          ? fetch(`/api/games/${gameId}/stage-wins`).then(r => r.ok ? r.json() : null).catch(() => null)
+          : Promise.resolve(null);
+
+        const [response, stageWinsData] = await Promise.all([
+          fetch(`/api/games/${gameId}/teams-overview`),
+          fetchStageWins,
+        ]);
         if (!response.ok) {
           throw new Error('Failed to load standings');
         }
         const data = await response.json();
         const teams: TeamOverview[] = data.teams || [];
+
+        const stageWinsMap = new Map<string, number>();
+        if (stageWinsData?.ranking) {
+          for (const entry of stageWinsData.ranking) {
+            stageWinsMap.set(entry.userId, entry.stageWins);
+          }
+        }
 
         const mappedStandings: GameStandingRow[] = teams.map((team) => ({
           ranking: team.ranking,
@@ -70,6 +89,7 @@ export default function StandingsPage() {
           totalPercentageDiff: team.totalPercentageDiff,
           totalSpent: team.totalSpent,
           riders: team.riders,
+          stageWins: stageWinsMap.get(team.userId) ?? 0,
         }));
 
         setStandings(mappedStandings);
@@ -95,6 +115,7 @@ export default function StandingsPage() {
       error={error}
       backHref={backHref}
       currentUserId={user?.uid}
+      showStageWins={showStageWins}
     />
   );
 }
