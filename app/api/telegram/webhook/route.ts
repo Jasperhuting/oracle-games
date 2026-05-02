@@ -54,6 +54,37 @@ function getTelegramSenderName(sender?: TelegramUser): string {
   return 'Telegram gebruiker';
 }
 
+async function resolveChatBridgeUser(config: ResolvedWebhookConfig) {
+  const fallbackAdminId = getTelegramConfig().adminUserId;
+  const preferredUserId = config.adminUserId || fallbackAdminId;
+
+  if (preferredUserId) {
+    const userDoc = await adminDb.collection('users').doc(preferredUserId).get();
+    if (userDoc.exists) {
+      return {
+        id: userDoc.id,
+        data: userDoc.data() || {},
+      };
+    }
+  }
+
+  return null;
+}
+
+function getPreferredProfileName(profile: Record<string, unknown> | undefined, fallback = 'Anoniem'): string {
+  return String(
+    profile?.playername ||
+    profile?.displayName ||
+    profile?.email ||
+    fallback
+  );
+}
+
+function getPreferredProfileAvatar(profile: Record<string, unknown> | undefined): string | null {
+  const avatar = profile?.avatarUrl;
+  return typeof avatar === 'string' && avatar.trim() ? avatar : null;
+}
+
 async function resolveAdminUser() {
   const { adminUserId } = getTelegramConfig();
 
@@ -202,15 +233,21 @@ async function handleChatBridge(
     return;
   }
 
-  const senderId = sender?.id ? `telegram:${sender.id}` : 'telegram:unknown';
-  const senderName = getTelegramSenderName(sender);
+  const bridgeUser = await resolveChatBridgeUser(config);
+  const senderId = bridgeUser?.id || (sender?.id ? `telegram:${sender.id}` : 'telegram:unknown');
+  const senderName = bridgeUser
+    ? getPreferredProfileName(bridgeUser.data, 'Anoniem')
+    : getTelegramSenderName(sender);
+  const userAvatar = bridgeUser
+    ? getPreferredProfileAvatar(bridgeUser.data)
+    : null;
 
   await roomRef.collection('messages').add({
     text: trimmedText,
     giphy: null,
     userId: senderId,
     userName: senderName,
-    userAvatar: null,
+    userAvatar,
     replyTo: null,
     reactions: {},
     deleted: false,
