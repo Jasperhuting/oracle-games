@@ -191,16 +191,14 @@ export const MyAuctionBidsBig = ({
 
 
                               // Show finalized won and lost bids for this period.
+                              // Won bids: only check bidAt <= endDate (no lower bound — bids placed slightly
+                              // before period open still count if finalized in this period).
+                              // Lost bids: strict range check since they were placed during the period.
                               const bidsInPeriod = bidsToShow.filter((bid) => {
                                 if (bid.status !== 'won' && bid.status !== 'lost') return false;
                                 const bidDate = new Date(bid.bidAt);
-                                if (bid.riderNameId === 'mattia-agostinacchio') {
-                                  console.log('bid', bid)
-                                  console.log('bidAt', bid.bidAt)
-                                  console.log('bidDate', bidDate)
-                                  console.log('startDate', startDate)
-                                  console.log('endDate', endDate)
-                                  console.log('bidDate >= startDate && bidDate <= endDate', bidDate >= startDate && bidDate <= endDate)
+                                if (bid.status === 'won') {
+                                  return bidDate <= endDate && bidDate >= new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
                                 }
                                 return bidDate >= startDate && bidDate <= endDate;
                               });
