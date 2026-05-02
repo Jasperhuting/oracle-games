@@ -190,9 +190,9 @@ export const MyAuctionBidsBig = ({
                               const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
 
 
-                              // Bidding history should only show finalized winning bids for this period.
+                              // Show finalized won and lost bids for this period.
                               const bidsInPeriod = bidsToShow.filter((bid) => {
-                                if (bid.status !== 'won') return false;
+                                if (bid.status !== 'won' && bid.status !== 'lost') return false;
                                 const bidDate = new Date(bid.bidAt);
                                 if (bid.riderNameId === 'mattia-agostinacchio') {
                                   console.log('bid', bid)
@@ -327,7 +327,7 @@ export const MyAuctionBidsBig = ({
                                       <PlayerCard
                                         key={myBidRider.id}
                                         showBid={true}
-                                        className={`border-2 rounded-md ${myBidRider.status === 'won' ? 'border-green-500 bg-green-50' : ''}`}
+                                        className={`border-2 rounded-md ${myBidRider.status === 'won' ? 'border-green-500 bg-green-50' : myBidRider.status === 'lost' ? 'border-red-400 bg-red-50 opacity-70' : ''}`}
                                         hideInfo={true}
                                         showRank={true}
                                         bidders={riderBidders}
