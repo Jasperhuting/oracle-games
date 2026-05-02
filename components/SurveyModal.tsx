@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSurveyStatus } from '@/hooks/useSurveyStatus';
+import { authorizedFetch } from '@/lib/auth/token-service';
 import { SURVEY_QUESTIONS, SURVEY_ROUND_ID } from '@/lib/constants/survey';
 import type { SurveyAnswers } from '@/lib/types/survey';
 
@@ -35,7 +36,7 @@ export function SurveyModal() {
   const handleSkip = async () => {
     setSubmitting(true);
     try {
-      await fetch('/api/survey', {
+      await authorizedFetch('/api/survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,7 +58,7 @@ export function SurveyModal() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const res = await fetch('/api/survey', {
+      const res = await authorizedFetch('/api/survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
