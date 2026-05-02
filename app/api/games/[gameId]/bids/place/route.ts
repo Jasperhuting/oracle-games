@@ -142,6 +142,51 @@ export async function POST(
       );
     }
 
+    // Check if the active auction period has already ended (cron may not have run yet)
+    const auctionPeriods = gameData?.config?.auctionPeriods;
+    if (Array.isArray(auctionPeriods) && auctionPeriods.length > 0) {
+      const now = new Date();
+      const toDate = (value: unknown): Date | null => {
+        if (!value) return null;
+        if (value instanceof Date) return value;
+        if (typeof value === 'string') return new Date(value);
+        if (typeof value === 'object' && typeof (value as { toDate?: () => Date }).toDate === 'function') return (value as { toDate: () => Date }).toDate();
+        return null;
+      };
+
+      const activePeriod = auctionPeriods.find((p: { status: string }) => p.status === 'active');
+      if (activePeriod) {
+        const periodEnd = toDate(activePeriod.endDate);
+        if (periodEnd && now > periodEnd) {
+          await db.collection('activityLogs').add({
+            action: 'BID_VALIDATION_FAILED',
+            userId,
+            userEmail: userData?.email,
+            userName: userData?.playername || userData?.email,
+            details: {
+              gameId,
+              gameName: gameData?.name,
+              riderNameId,
+              riderName,
+              amount,
+              validationType: 'AUCTION_PERIOD_ENDED',
+              errorMessage: `Auction period "${activePeriod.name}" has ended`,
+              periodEndDate: periodEnd.toISOString(),
+              bidAttemptTime: now.toISOString(),
+            },
+            timestamp: Timestamp.now(),
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          });
+
+          return NextResponse.json(
+            { error: 'The auction period has ended. No more bids can be placed.' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // Get participant data
     const participantSnapshot = await db.collection('gameParticipants')
       .where('gameId', '==', gameId)
