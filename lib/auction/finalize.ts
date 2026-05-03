@@ -441,7 +441,21 @@ export async function finalizeAuction(
       // For auction-based games (Auctioneer):
       // Process each rider's bids - highest bid(s) win based on division rules
       for (const [riderNameId, bids] of bidsByRider.entries()) {
-        const { winningBids, losingBids } = splitWinningRiderBids(bids, winnerSlotsPerRider);
+        // Check how many owners already exist from previous periods
+        let availableSlots = winnerSlotsPerRider;
+        if (winnerSlotsPerRider > 0) {
+          const existingOwnersSnapshot = await db.collection('playerTeams')
+            .where('gameId', '==', gameId)
+            .where('riderNameId', '==', riderNameId)
+            .get();
+          const existingOwners = existingOwnersSnapshot.docs.filter(doc => doc.data().active !== false).length;
+          availableSlots = Math.max(0, winnerSlotsPerRider - existingOwners);
+          if (existingOwners > 0) {
+            console.log(`[FINALIZE] Rider ${riderNameId}: ${existingOwners} existing owner(s), ${availableSlots} slot(s) remaining of ${winnerSlotsPerRider}`);
+          }
+        }
+
+        const { winningBids, losingBids } = splitWinningRiderBids(bids, availableSlots);
 
         for (const winningBid of winningBids) {
           if (!winsByParticipant.has(winningBid.userId)) {
