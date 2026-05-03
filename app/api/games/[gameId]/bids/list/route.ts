@@ -58,7 +58,7 @@ export async function GET(
             let q = db.collection('bids')
               .where('gameId', '==', gameId)
               .where('userId', '==', userId)
-              .where('status', '!=', 'active');
+              .where('status', 'in', ['won', 'lost', 'outbid', 'refunded']);
             if (riderNameId) q = q.where('riderNameId', '==', riderNameId);
             if (!skipOrder) q = q.orderBy('bidAt', 'desc');
             q = q.limit(limit);
