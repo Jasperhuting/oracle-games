@@ -35,6 +35,7 @@ export interface BidValidationContext {
 export function validateBid(ctx: BidValidationContext): ValidationResult {
   return (
     checkNotSold(ctx.rider) ??
+    checkAlreadyOwned(ctx.rider, ctx.myBids) ??
     checkTop200Restriction(ctx.rider, ctx.isTop200Restricted) ??
     checkBidAmount(ctx.rider, ctx.bidAmount, ctx.isSelectionGame) ??
     checkTeamConstraint(ctx.rider, ctx.myBids, ctx.isFullGrid) ??
@@ -50,6 +51,15 @@ export function validateBid(ctx: BidValidationContext): ValidationResult {
 // ---------------------------------------------------------------------------
 // Individual rule functions (exported for unit-testing individual rules)
 // ---------------------------------------------------------------------------
+
+export function checkAlreadyOwned(rider: RiderWithBid, myBids: Bid[]): ValidationResult | null {
+  const riderNameId = rider.nameID || rider.id || "";
+  const alreadyWon = myBids.some(
+    (b) => b.status === "won" && b.riderNameId === riderNameId,
+  );
+  if (!alreadyWon) return null;
+  return { valid: false, error: `Je hebt ${rider.name} al gewonnen in een eerdere ronde.` };
+}
 
 export function checkNotSold(rider: RiderWithBid): ValidationResult | null {
   if (!rider.isSold) return null;
