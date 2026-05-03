@@ -49,10 +49,16 @@ export const GET = userHandler('f1-join-check', async ({ uid, request }) => {
 
     // Check registration deadline if set
     if (game.config?.registrationDeadline) {
-      const deadline = new Date(game.config.registrationDeadline);
+      const dl = game.config.registrationDeadline;
+      const deadline = dl?.toDate ? dl.toDate() : new Date(dl);
       if (new Date() > deadline) {
         registrationOpen = false;
       }
+    }
+
+    // Check explicit registrationOpen flag
+    if (game.config?.registrationOpen === false) {
+      registrationOpen = false;
     }
 
     // Check max participants
@@ -116,10 +122,16 @@ export const POST = userHandler('f1-join', async ({ uid, request }) => {
 
     // Check registration deadline
     if (game.config?.registrationDeadline) {
-      const deadline = new Date(game.config.registrationDeadline);
+      const dl = game.config.registrationDeadline;
+      const deadline = dl?.toDate ? dl.toDate() : new Date(dl);
       if (new Date() > deadline) {
         throw new ApiError('Registratie deadline is verstreken', 400);
       }
+    }
+
+    // Check explicit registrationOpen flag
+    if (game.config?.registrationOpen === false) {
+      throw new ApiError('Registratie is gesloten', 400);
     }
 
     // Check max participants
