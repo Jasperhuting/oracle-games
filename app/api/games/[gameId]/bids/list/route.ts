@@ -96,7 +96,11 @@ export async function GET(
 
     let query = db.collection('bids').where('gameId', '==', gameId);
 
-    if (notActive) query = query.where('status', 'in', ['won', 'lost', 'outbid', 'refunded']);
+    // Only apply status filter in Firestore when userId is also present — otherwise
+    // gameId+status(in)+bidAt has no composite index and causes a 500.
+    // Without userId we fetch all and filter client-side.
+    const applyNotActiveInFirestore = notActive && !!userId;
+    if (applyNotActiveInFirestore) query = query.where('status', 'in', ['won', 'lost', 'outbid', 'refunded']);
     if (userId) query = query.where('userId', '==', userId);
     if (riderNameId) query = query.where('riderNameId', '==', riderNameId);
     if (status) query = query.where('status', '==', status);
@@ -108,14 +112,17 @@ export async function GET(
 
     const snapshot = await query.get();
 
-    const bids = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt,
-      } as ClientBid;
-    });
+    const historicalStatuses = new Set(['won', 'lost', 'outbid', 'refunded']);
+    const bids = snapshot.docs
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt,
+        } as ClientBid;
+      })
+      .filter(bid => !notActive || historicalStatuses.has(bid.status));
 
     return jsonWithCacheVersion({ success: true, bids, count: bids.length });
   } catch (error) {
