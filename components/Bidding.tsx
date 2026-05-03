@@ -875,7 +875,7 @@ export const Bidding = ({
                                 <span className="text-xs text-gray-400">{t('global.noBid')}</span>
                               )
                             )}
-                            {auctionActive && !rider.isSold && !teamAlreadySelected && (
+                            {auctionActive && !rider.isSold && !teamAlreadySelected && rider.myBidStatus !== 'won' && (
                               <>
                                 {rider.myBid && rider.myBidId && (rider.myBidStatus === 'active' || rider.myBidStatus === 'outbid') ? (
                                   <Button
