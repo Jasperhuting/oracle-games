@@ -137,15 +137,12 @@ export const MyAuctionBidsBig = ({
                         return (
                           <button
                             key={index}
-                            onClick={() => !isPeriodActive && setActiveAuctionPeriodTab(index)}
-                            disabled={isPeriodActive}
+                            onClick={() => setActiveAuctionPeriodTab(index)}
                             className={`
                             whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm
-                            ${isPeriodActive
-                              ? 'border-transparent text-gray-400 cursor-not-allowed opacity-50'
-                              : activeAuctionPeriodTab === index
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            ${activeAuctionPeriodTab === index
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }
                           `}
                           >
@@ -156,7 +153,7 @@ export const MyAuctionBidsBig = ({
                               </span>
                               {isPeriodActive && (
                                 <span className="text-xs font-bold text-orange-500 mt-1">
-                                  ● Actief - Niet zichtbaar
+                                  ● Actief
                                 </span>
                               )}
                             </div>
@@ -202,9 +199,9 @@ export const MyAuctionBidsBig = ({
                                 if (bid.status === 'lost') {
                                   return bidDate >= startDate && bidDate <= endDate;
                                 }
-                                // Show active bids from closed periods (bid not yet finalized to won/lost
-                                // but rider may already be in playerTeam)
-                                if (bid.status === 'active' && !isAuctionPeriodActive) {
+                                // Show active bids for this period (own bids always visible;
+                                // other players' active bids are filtered in riderBidders below)
+                                if (bid.status === 'active') {
                                   return bidDate >= startDate && bidDate <= endDate;
                                 }
                                 return false;
