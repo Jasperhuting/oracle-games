@@ -131,7 +131,11 @@ export default function AdminKnockoutPage() {
   };
 
   // Calculate all qualified teams based on group standings
-  const calculateQualifiedTeams = (poules: PouleData[], allMatches: Record<string, unknown>[]) => {
+  const calculateQualifiedTeams = (
+    poules: PouleData[],
+    allMatches: Record<string, unknown>[],
+    thirdPlacedOverride?: Array<{ teamId: string; poule: string }> | null
+  ) => {
     const qualified: Record<string, string> = {};
 
     // Get winners and runners-up from each group
@@ -155,13 +159,20 @@ export default function AdminKnockoutPage() {
       }
     });
 
-    // Sort third-placed teams
-    const sortedThirdPlaced = allThirdPlaced.sort((a: TeamStats, b: TeamStats) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-      return b.won - a.won;
-    });
+    let sortedThirdPlaced: TeamStats[];
+    if (thirdPlacedOverride && thirdPlacedOverride.length > 0) {
+      const statsMap = new Map(allThirdPlaced.map((t) => [t.teamId, t]));
+      sortedThirdPlaced = thirdPlacedOverride
+        .map((entry) => statsMap.get(entry.teamId))
+        .filter((t): t is TeamStats => t !== undefined);
+    } else {
+      sortedThirdPlaced = allThirdPlaced.sort((a: TeamStats, b: TeamStats) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+        if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+        return b.won - a.won;
+      });
+    }
 
     // Assign third-placed teams to their slots
     const thirdPlaceSlots = [
@@ -268,8 +279,16 @@ export default function AdminKnockoutPage() {
       const matchesData = await matchesResponse.json();
       const allMatches: Record<string, unknown>[] = matchesData.matches || [];
 
+      // Load third-placed override
+      let thirdPlacedOverride: Array<{ teamId: string; poule: string }> | null = null;
+      try {
+        const overrideRes = await fetch('/api/wk-2026/third-placed-override');
+        const overrideData = await overrideRes.json();
+        if (overrideData.order && overrideData.order.length > 0) thirdPlacedOverride = overrideData.order;
+      } catch {}
+
       // Calculate qualified teams
-      const qualifiedTeams = calculateQualifiedTeams(poules, allMatches);
+      const qualifiedTeams = calculateQualifiedTeams(poules, allMatches, thirdPlacedOverride);
       console.log('Admin - Qualified teams:', qualifiedTeams);
 
       // Load actual knockout results

@@ -106,7 +106,11 @@ export function calculateGroupStandings(
   });
 }
 
-export function calculateQualifiedTeams(poules: GroupData[], allMatches: GroupStageMatch[]) {
+export function calculateQualifiedTeams(
+  poules: GroupData[],
+  allMatches: GroupStageMatch[],
+  thirdPlacedOverride?: Array<{ teamId: string; poule: string }> | null
+) {
   const qualified: Record<string, string> = {};
 
   POULES.forEach((pouleId) => {
@@ -117,23 +121,39 @@ export function calculateQualifiedTeams(poules: GroupData[], allMatches: GroupSt
     }
   });
 
-  const allThirdPlaced: ThirdPlacedStanding[] = [];
-  POULES.forEach((pouleId) => {
-    const standings = calculateGroupStandings(pouleId, poules, allMatches);
-    if (standings.length >= 3) {
-      allThirdPlaced.push({
-        ...standings[2],
-        poule: pouleId.toUpperCase(),
-      });
-    }
-  });
+  let sortedThirdPlaced: ThirdPlacedStanding[];
 
-  const sortedThirdPlaced = allThirdPlaced.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-    return b.won - a.won;
-  });
+  if (thirdPlacedOverride && thirdPlacedOverride.length > 0) {
+    const allThirdPlaced: ThirdPlacedStanding[] = [];
+    POULES.forEach((pouleId) => {
+      const standings = calculateGroupStandings(pouleId, poules, allMatches);
+      if (standings.length >= 3) {
+        allThirdPlaced.push({ ...standings[2], poule: pouleId.toUpperCase() });
+      }
+    });
+    const statsMap = new Map(allThirdPlaced.map((t) => [t.teamId, t]));
+    sortedThirdPlaced = thirdPlacedOverride
+      .map((entry) => statsMap.get(entry.teamId) ?? { teamId: entry.teamId, poule: entry.poule, played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 })
+      .filter((t) => t !== undefined) as ThirdPlacedStanding[];
+  } else {
+    const allThirdPlaced: ThirdPlacedStanding[] = [];
+    POULES.forEach((pouleId) => {
+      const standings = calculateGroupStandings(pouleId, poules, allMatches);
+      if (standings.length >= 3) {
+        allThirdPlaced.push({
+          ...standings[2],
+          poule: pouleId.toUpperCase(),
+        });
+      }
+    });
+
+    sortedThirdPlaced = allThirdPlaced.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+      return b.won - a.won;
+    });
+  }
 
   const thirdPlaceSlots = [
     { slot: "3A/B/C/D/F", groups: ["A", "B", "C", "D", "F"] },
@@ -217,8 +237,24 @@ export function updateKnockoutMatchesWithQualifiedTeams(
 
   seededMatches.forEach((match) => {
     if (match.round === "round_of_32") {
-      match.team1 = qualifiedTeams[match.team1Source] || match.team1 || null;
-      match.team2 = qualifiedTeams[match.team2Source] || match.team2 || null;
+      const nextTeam1 = qualifiedTeams[match.team1Source] || null;
+      const nextTeam2 = qualifiedTeams[match.team2Source] || null;
+      const teamsChanged = match.team1 !== nextTeam1 || match.team2 !== nextTeam2;
+
+      match.team1 = nextTeam1;
+      match.team2 = nextTeam2;
+
+      // If the seeded teams changed, any old score/winner belongs to a stale matchup.
+      if (teamsChanged) {
+        match.team1Score = null;
+        match.team2Score = null;
+        match.winner = null;
+        return;
+      }
+
+      if (match.winner && match.winner !== match.team1 && match.winner !== match.team2) {
+        match.winner = null;
+      }
     }
   });
 

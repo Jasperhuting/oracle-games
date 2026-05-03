@@ -63,6 +63,9 @@ export default function StandingsPage() {
   const [actualMatches, setActualMatches] = useState<Match[]>([]);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [baseMatches, setBaseMatches] = useState<Match[]>([]);
+  const [thirdPlacedOverride, setThirdPlacedOverride] = useState<Array<{ teamId: string; poule: string }> | null>(null);
+  const [draggedThirdIdx, setDraggedThirdIdx] = useState<number | null>(null);
+  const [savingOverride, setSavingOverride] = useState(false);
 
   const [liveScoresData, setLiveScoresData] = useState<LiveScore[]>([]);
 
@@ -148,6 +151,12 @@ export default function StandingsPage() {
         setIsAdminUser(userData.userType === 'admin');
 
         setIsLoadingPredictions(true);
+
+        try {
+          const overrideRes = await fetch('/api/wk-2026/third-placed-override');
+          const overrideData = await overrideRes.json();
+          if (overrideData.order) setThirdPlacedOverride(overrideData.order);
+        } catch {}
 
         const predsResponse = await fetch('/api/wk-2026/predictions');
         const predsData = await predsResponse.json();
@@ -318,25 +327,73 @@ export default function StandingsPage() {
     });
   };
 
-  // Calculate best third-placed teams across all groups
   const calculateBestThirdPlaced = (): TeamStats[] => {
     const allThirdPlaced: TeamStats[] = [];
 
     POULES.forEach((pouleId) => {
       const standings = calculateStandings(pouleId);
       if (standings.length >= 3) {
-        const thirdPlace = standings[2];
-        allThirdPlaced.push(thirdPlace);
+        allThirdPlaced.push(standings[2]);
       }
     });
 
-    // Sort by same criteria: points, goal difference, goals for, wins
+    if (thirdPlacedOverride && thirdPlacedOverride.length > 0) {
+      const statsMap = new Map(allThirdPlaced.map((t) => [t.teamId, t]));
+      return thirdPlacedOverride
+        .map((entry) => statsMap.get(entry.teamId))
+        .filter((t): t is TeamStats => t !== undefined);
+    }
+
     return allThirdPlaced.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
       if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
       return b.won - a.won;
     });
+  };
+
+  const handleThirdDragStart = (idx: number) => setDraggedThirdIdx(idx);
+
+  const handleThirdDrop = (targetIdx: number) => {
+    if (draggedThirdIdx === null || draggedThirdIdx === targetIdx) {
+      setDraggedThirdIdx(null);
+      return;
+    }
+    const current = calculateBestThirdPlaced();
+    const reordered = [...current];
+    const [moved] = reordered.splice(draggedThirdIdx, 1);
+    reordered.splice(targetIdx, 0, moved);
+    setThirdPlacedOverride(reordered.map((t) => ({ teamId: t.teamId, poule: t.team.poule ?? '' })));
+    setDraggedThirdIdx(null);
+  };
+
+  const saveThirdPlacedOverride = async () => {
+    const current = calculateBestThirdPlaced();
+    const order = current.map((t) => ({ teamId: t.teamId, poule: t.team.poule ?? '' }));
+    setSavingOverride(true);
+    try {
+      await fetch('/api/wk-2026/third-placed-override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order }),
+      });
+    } finally {
+      setSavingOverride(false);
+    }
+  };
+
+  const resetThirdPlacedOverride = async () => {
+    setSavingOverride(true);
+    try {
+      await fetch('/api/wk-2026/third-placed-override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: [] }),
+      });
+      setThirdPlacedOverride(null);
+    } finally {
+      setSavingOverride(false);
+    }
   };
 
   return (
@@ -370,15 +427,42 @@ export default function StandingsPage() {
       {/* Best Third-Placed Teams Table */}
       {!isLoadingPredictions && hasPredictions && (
         <div className="bg-white border-2 border-gray-300 rounded-lg overflow-x-auto mb-8">
-          <div className="px-4 pt-4 pb-2">
-            <h2 className="text-xl font-semibold">Stand best third-placed teams</h2>
-            <p className="text-xs text-gray-600 mt-1">
-              The first 8 third-placed teams qualify for the knockout phase
-            </p>
+          <div className="px-4 pt-4 pb-2 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Stand best third-placed teams</h2>
+              <p className="text-xs text-gray-600 mt-1">
+                The first 8 third-placed teams qualify for the knockout phase.
+                {isAdminUser && ' Drag rows to manually override the ranking.'}
+              </p>
+              {thirdPlacedOverride && thirdPlacedOverride.length > 0 && (
+                <p className="text-xs text-orange-600 mt-1 font-medium">Handmatige volgorde actief</p>
+              )}
+            </div>
+            {isAdminUser && (
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  onClick={saveThirdPlacedOverride}
+                  disabled={savingOverride}
+                  className="px-3 py-1.5 bg-green-500 text-white text-xs rounded font-semibold hover:bg-green-600 disabled:opacity-50"
+                >
+                  {savingOverride ? 'Opslaan...' : 'Volgorde opslaan'}
+                </button>
+                {thirdPlacedOverride && thirdPlacedOverride.length > 0 && (
+                  <button
+                    onClick={resetThirdPlacedOverride}
+                    disabled={savingOverride}
+                    className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded font-semibold hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Reset naar auto
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <table className="min-w-full">
             <thead className="bg-gray-100">
               <tr>
+                {isAdminUser && <th className="px-2 py-3 w-6"></th>}
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Pos</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Grp</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Team</th>
@@ -399,8 +483,15 @@ export default function StandingsPage() {
                 return (
                   <tr
                     key={`${teamStats.team.poule}-${teamStats.teamId}`}
-                    className={`border-t ${qualifies ? 'bg-green-50' : ''}`}
+                    draggable={isAdminUser}
+                    onDragStart={isAdminUser ? () => handleThirdDragStart(idx) : undefined}
+                    onDragOver={isAdminUser ? (e) => e.preventDefault() : undefined}
+                    onDrop={isAdminUser ? () => handleThirdDrop(idx) : undefined}
+                    className={`border-t ${qualifies ? 'bg-green-50' : ''} ${isAdminUser ? 'cursor-move hover:bg-yellow-50' : ''} ${draggedThirdIdx === idx ? 'opacity-40' : ''}`}
                   >
+                    {isAdminUser && (
+                      <td className="px-2 py-3 text-gray-400 text-xs select-none">⠿</td>
+                    )}
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{idx + 1}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{teamStats.team.poule?.toUpperCase()}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{getCountryDisplayNameNL(teamStats.team.name)}</td>
