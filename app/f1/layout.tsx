@@ -12,7 +12,6 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const currentRound = params.round ? parseInt(params.round as string) : undefined;
     const isStandingsPage = pathname === "/f1/standings";
-    const isRoundOneRacePage = pathname === "/f1/race/1";
     
     const { races, loading: racesLoading } = useF1Races();
     const { predictions } = useF1UserPredictions(2026);
@@ -64,26 +63,6 @@ export default function F1Layout({ children }: { children: React.ReactNode }) {
                 </Link>
             </div>
 
-            {isRoundOneRacePage ? (
-                <div className="mb-5 overflow-hidden rounded-lg border border-red-500/70 bg-gradient-to-r from-red-950/80 via-amber-950/70 to-red-950/80 shadow-[0_0_18px_rgba(239,68,68,0.12)]">
-                    <div className="h-1 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDE2IDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0id2hpdGUiLz48cmVjdCB4PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSJibGFjayIvPjwvc3ZnPg==')]"></div>
-                    <div className="px-4 py-4 md:px-5 md:py-4">
-                        <div className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-red-300">Belangrijke melding</div>
-                        <p className="text-base font-black text-white md:text-lg">
-                            De punten van ronde 1 tellen niet mee.
-                        </p>
-                        <p className="mt-1.5 max-w-3xl text-sm text-red-100/90">
-                            Door een systeemfout is ronde 1 uitgesloten van de stand. Je voorspelling blijft zichtbaar, maar deze race levert geen punten of strafpunten op voor het klassement.
-                        </p>
-                    </div>
-                </div>
-            ) : (
-                <div className="mb-4 rounded-lg border border-amber-500/50 bg-amber-900/30 px-4 py-3 text-amber-100">
-                    <p className="text-sm font-medium">
-                        Let op: door een systeemfout tellen de punten van ronde 1 helaas niet mee.
-                    </p>
-                </div>
-            )}
 
             {/* Race cards - hide on standings page */}
             {!isStandingsPage && (

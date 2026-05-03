@@ -166,9 +166,6 @@ export default function F1PreviewPage() {
           </button>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-[#aa6a11] bg-[rgba(84,38,22,0.58)] px-5 py-4 text-sm text-[#ffd39b]">
-          Let op: door een systeemfout tellen de punten van ronde 1 helaas niet mee.
-        </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
           {raceTabs.map((item) => (
