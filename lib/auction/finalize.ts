@@ -596,6 +596,7 @@ export async function finalizeAuction(
                 gameId: gameId,
                 userId: userId,
                 riderNameId: riderNameId,
+                active: true,
 
                 // Acquisition info
                 acquiredAt: Timestamp.now(), // Finalize timestamp as Firestore Timestamp
