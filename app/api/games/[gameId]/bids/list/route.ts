@@ -28,54 +28,51 @@ async function getCurrentUserId(request: NextRequest): Promise<string | null> {
 // GET all bids for a game
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ gameId: string, notActive?: string }> }
+  context: { params: Promise<{ gameId: string }> }
 ): Promise<NextResponse<BidsListResponse | ApiErrorResponse>> {
   try {
-    const { gameId, notActive } = await context.params; // ← FIX
+    const { gameId } = await context.params;
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const riderNameId = searchParams.get('riderNameId');
     const status = searchParams.get('status');
+    const notActive = searchParams.get('notActive') === 'true';
     const limit = parseInt(searchParams.get('limit') || '100');
     const skipOrder = searchParams.get('skipOrder') === 'true';
 
     const db = getServerFirebase();
 
-    // Determine if requesting user is admin or owner of requested bids
     const currentUserId = await getCurrentUserId(request);
     const isOwnBids = !userId || userId === currentUserId;
 
-    if (!isOwnBids && currentUserId) {
+    let isAdmin = false;
+    if (currentUserId) {
       const userDoc = await db.collection('users').doc(currentUserId).get();
-      const isAdmin = userDoc.data()?.userType === 'admin';
-      if (!isAdmin && !isOwnBids) {
-        // Non-admin viewing another player's bids: only show non-active (historical) bids
-        // Active bids are secret during live auction rounds
-        return jsonWithCacheVersion({
-          success: true,
-          bids: await (async () => {
-            let q = db.collection('bids')
-              .where('gameId', '==', gameId)
-              .where('userId', '==', userId)
-              .where('status', 'in', ['won', 'lost', 'outbid', 'refunded']);
-            if (riderNameId) q = q.where('riderNameId', '==', riderNameId);
-            if (!skipOrder) q = q.orderBy('bidAt', 'desc');
-            q = q.limit(limit);
-            const snap = await q.get();
-            return snap.docs.map(doc => {
-              const data = doc.data();
-              return { id: doc.id, ...data, bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt } as ClientBid;
-            });
-          })(),
-          count: 0,
-        });
-      }
+      isAdmin = userDoc.data()?.userType === 'admin';
+    }
+
+    // Non-admin requesting another player's bids or all-game bids (no userId):
+    // only return non-active bids to prevent seeing live active bids during auction
+    if (!isAdmin && (!isOwnBids || (!userId && !currentUserId))) {
+      const historicalStatuses = ['won', 'lost', 'outbid', 'refunded'];
+      let q = db.collection('bids').where('gameId', '==', gameId)
+        .where('status', 'in', historicalStatuses);
+      if (userId) q = q.where('userId', '==', userId);
+      if (riderNameId) q = q.where('riderNameId', '==', riderNameId);
+      if (!skipOrder) q = q.orderBy('bidAt', 'desc');
+      q = q.limit(limit);
+      const snap = await q.get();
+      const bids = snap.docs.map(doc => {
+        const data = doc.data();
+        return { id: doc.id, ...data, bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt } as ClientBid;
+      });
+      return jsonWithCacheVersion({ success: true, bids, count: bids.length });
     }
 
     let query = db.collection('bids').where('gameId', '==', gameId);
 
-    if (notActive) query = query.where('status', '!=', 'active');
+    if (notActive) query = query.where('status', 'in', ['won', 'lost', 'outbid', 'refunded']);
     if (userId) query = query.where('userId', '==', userId);
     if (riderNameId) query = query.where('riderNameId', '==', riderNameId);
     if (status) query = query.where('status', '==', status);
