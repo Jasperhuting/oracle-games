@@ -219,9 +219,10 @@ export const PlayerCard = (
                     </div>
                 )}
 
-                {isSold ? (
-                    participant?.playername === soldTo ? <></> : <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">Sold to {soldTo}</div>
-                ): (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />)}
+                {soldTo && participant?.playername !== soldTo && (
+                    <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">Sold to {soldTo}</div>
+                )}
+                {!isSold && (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />)}
             </div>
         </div>
     );
