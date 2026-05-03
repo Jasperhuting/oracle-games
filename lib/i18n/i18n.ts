@@ -1,7 +1,10 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-export const initI18n = async (locale: string, resources: Record<string, string> = {}) => {
+export const initI18n = async (
+  locale: string,
+  resources: Record<string, unknown> = {},
+) => {
   await i18n.use(initReactI18next).init({
     lng: locale,
     fallbackLng: 'en',
@@ -14,8 +17,10 @@ export const initI18n = async (locale: string, resources: Record<string, string>
     },
     saveMissing: true,
     missingKeyHandler: (lngs: string | readonly string[] | undefined, ns: string, key: string) => {
-      // only show this local 
-      process.env.NODE_ENV === 'development' && console.warn(`Missing translation for key: ${key} in language: ${lngs}`);
+      // only show this local
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`Missing translation for key: ${key} in language: ${lngs}`);
+      }
     },
     parseMissingKeyHandler: (key: string) => {
       console.warn(`Missing key: ${key}, falling back to key as value`);

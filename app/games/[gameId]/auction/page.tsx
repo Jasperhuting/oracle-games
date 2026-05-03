@@ -537,36 +537,37 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     }
   }, [availableRiders, isFullGridGame]);
 
-  // Determine if the current auction period is restricted to top 200 riders
-  const isTop200Restricted = (() => {
+  // Helper for date conversion - defined outside component render
+  const toDateValue = useCallback((value: unknown): Date | null => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'string') return new Date(value);
+    if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate: () => Date }).toDate === 'function') {
+      return (value as { toDate: () => Date }).toDate();
+    }
+    return null;
+  }, []);
+
+  // Determine if the current auction period is restricted to top 200 riders - memoized
+  const isTop200Restricted = useMemo(() => {
     if (!game || (game.gameType !== 'auctioneer')) return false;
 
-    const config: any = game.config; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const config = game.config;
     if (!config || !Array.isArray(config.auctionPeriods)) return false;
-
-    const toDate = (value: any): Date | null => { // eslint-disable-line @typescript-eslint/no-explicit-any
-      if (!value) return null;
-      if (value instanceof Date) return value;
-      if (typeof value === 'string') return new Date(value);
-      if (typeof value.toDate === 'function') return value.toDate();
-      return null;
-    };
 
     const now = new Date();
 
     // Find the period where we are currently in the time window
-    // IMPORTANT: Only check time window, ignore status field to avoid confusion
-    let activePeriod = config.auctionPeriods.find((p: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-      const start = toDate(p.startDate);
-      const end = toDate(p.endDate);
+    const activePeriod = config.auctionPeriods.find((p: { startDate?: unknown; endDate?: unknown; top200Only?: boolean }) => {
+      const start = toDateValue(p.startDate);
+      const end = toDateValue(p.endDate);
       if (!start || !end) return false;
 
-      const inWindow = now >= start && now <= end;
-      return inWindow;
+      return now >= start && now <= end;
     });
 
     return !!activePeriod?.top200Only;
-  })();
+  }, [game, toDateValue]);
 
   const handlePlaceBid = async (rider: RiderWithBid): Promise<boolean> => {
     if (!user || !participant) return false;

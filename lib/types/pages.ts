@@ -166,6 +166,8 @@ export interface AuctionGameData {
     maxNeoProPoints?: number;
     maxNeoProAge?: number;
     auctionPeriods?: AuctionPeriod[];
+    // Full Grid specific
+    proTeamLimit?: number;
   };
   eligibleRiders: string[];
   bidding: boolean;

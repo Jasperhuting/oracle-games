@@ -4,9 +4,32 @@ import { formatCurrencyWhole } from "@/lib/utils/formatCurrency";
 import { User } from "firebase/auth"
 import { PlayerCard } from "./PlayerCard";
 import { qualifiesAsNeoProf } from "@/lib/utils";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, Activity } from "react";
 import { SortAscending, SortDescending } from "tabler-icons-react";
 import { useTranslation } from "react-i18next";
+
+// Types shared between components
+type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank' | 'status';
+type SortDirection = 'asc' | 'desc';
+
+// Helper function for date formatting - defined outside component to avoid recreation
+const formatDate = (date: Date): string => {
+  return date.toLocaleDateString('nl-NL', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Shared date conversion helper
+const toDate = (value: unknown): Date => {
+  if (value instanceof Date) return value;
+  if (typeof value === 'object' && value !== null && 'toDate' in value && typeof value.toDate === 'function') {
+    return value.toDate();
+  }
+  return new Date(String(value));
+};
 
 export const MyAuctionBidsBig = ({
     divisionParticipants,
@@ -35,25 +58,11 @@ export const MyAuctionBidsBig = ({
     activeAuctionPeriodTab: number,
     setActiveAuctionPeriodTab: (index: number) => void}) => {
 
-  // Sorting state
-  type SortOption = 'price' | 'name' | 'age' | 'team' | 'neoprof' | 'rank' | 'status';
-  type SortDirection = 'asc' | 'desc';
-  const [sortBy, setSortBy] = useState<SortOption>('price');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
   const { t } = useTranslation();
-
-  const toDate = (value: unknown): Date => {
-    if (value instanceof Date) return value;
-    if (typeof value === 'object' && value !== null && 'toDate' in value && typeof value.toDate === 'function') {
-      return value.toDate();
-    }
-    return new Date(String(value));
-  };
 
 
   // Calculate remaining budget for a player based on their won bids up to a specific auction period
-  const calculateRemainingBudget = (playerBids: Bid[], upToAuctionPeriodIndex: number): number => {
+  const calculateRemainingBudget = useCallback((playerBids: Bid[], upToAuctionPeriodIndex: number): number => {
     if (!game?.config?.budget) return 0;
 
     const startingBudget = game.config.budget;
@@ -80,7 +89,7 @@ export const MyAuctionBidsBig = ({
     }
 
     return startingBudget - totalSpent;
-  };
+  }, [game?.config?.budget, game?.config?.auctionPeriods, toDate]);
 
     
 
@@ -125,15 +134,6 @@ export const MyAuctionBidsBig = ({
                         const endDate = toDate(period.endDate)
                         const isPeriodActive = now >= startDate && now <= endDate
 
-                        const formatDate = (date: Date) => {
-                          return date.toLocaleDateString('nl-NL', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })
-                        }
-
                         return (
                           <button
                             key={index}
@@ -170,107 +170,144 @@ export const MyAuctionBidsBig = ({
 
 
               {game.config.auctionPeriods?.map((auctionPeriod, periodIndex) => {
-                              // Only render the active tab
-                              if (periodIndex !== activeAuctionPeriodTab) return null;
-              
-                              // bidAt looks like: bidAt: "2025-12-14T19:26:01.513Z"
-                              // auctionPeriod looks like: startDate: '2025-12-15T22:00:00.000Z', endDate: '2025-12-17T22:00:00.000Z',
-                              // help me filter them
-                              // the bids are empty
-              
-                              const startDate = toDate(auctionPeriod.startDate);
-                              const endDate = toDate(auctionPeriod.endDate);
-                              const now = new Date()
+                const isVisible = periodIndex === activeAuctionPeriodTab;
 
-                              // SECURITY: Check if this auction period is currently active
-                              // During an active auction period, users should NOT see active bids from other players
-                              const isAuctionPeriodActive = now >= startDate && now <= endDate
+                return (
+                  <Activity key={periodIndex} mode={isVisible ? 'visible' : 'hidden'}>
+                    <AuctionPeriodContent
+                      auctionPeriod={auctionPeriod}
+                      periodIndex={periodIndex}
+                      bidsToShow={selectedPlayerId ? selectedPlayerBids : myBids}
+                      availableRiders={availableRiders}
+                      alleBiedingen={alleBiedingen}
+                      game={game}
+                      selectedPlayerId={selectedPlayerId}
+                      calculateRemainingBudget={calculateRemainingBudget}
+                    />
+                  </Activity>
+                );
+              })}
+            </>
+          
+};
 
-                              // Use selectedPlayerBids if a player is selected, otherwise use myBids
-                              const bidsToShow = selectedPlayerId ? selectedPlayerBids : myBids;
+// Separate component for each auction period - state is preserved when hidden via Activity
+interface AuctionPeriodContentProps {
+  auctionPeriod: {
+    name: string;
+    startDate: Date | string | { toDate: () => Date };
+    endDate: Date | string | { toDate: () => Date };
+  };
+  periodIndex: number;
+  bidsToShow: Bid[];
+  availableRiders: RiderWithBid[];
+  alleBiedingen: Bid[];
+  game: GameData;
+  selectedPlayerId: string | null;
+  calculateRemainingBudget: (bids: Bid[], index: number) => number;
+}
 
+const AuctionPeriodContent = ({
+  auctionPeriod,
+  periodIndex,
+  bidsToShow,
+  availableRiders,
+  alleBiedingen,
+  game,
+  calculateRemainingBudget
+}: AuctionPeriodContentProps) => {
+  // State is preserved even when Activity is hidden!
+  const [sortBy, setSortBy] = useState<SortOption>('price');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const { t } = useTranslation();
 
-                              // Show finalized won and lost bids for this period.
-                              // Won bids: only check bidAt <= endDate (no lower bound — bids placed slightly
-                              // before period open still count if finalized in this period).
-                              // Lost bids: strict range check since they were placed during the period.
-                              const bidsInPeriod = bidsToShow.filter((bid) => {
-                                const bidDate = new Date(bid.bidAt);
-                                if (bid.status === 'won') {
-                                  return bidDate <= endDate && bidDate >= new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
-                                }
-                                if (bid.status === 'lost') {
-                                  return bidDate >= startDate && bidDate <= endDate;
-                                }
-                                // Show active bids from closed periods (bid not yet finalized to won/lost
-                                // but rider may already be in playerTeam)
-                                if (bid.status === 'active' && !isAuctionPeriodActive) {
-                                  return bidDate >= startDate && bidDate <= endDate;
-                                }
-                                return false;
-                              });
+  const startDate = toDate(auctionPeriod.startDate);
+  const endDate = toDate(auctionPeriod.endDate);
+  const now = new Date();
+  const isAuctionPeriodActive = now >= startDate && now <= endDate;
 
-                              // Don't render this section if there are no bids in this period
-                              if (bidsInPeriod.length === 0) return null;
+  // Filter bids for this period - memoized
+  const bidsInPeriod = useMemo(() => {
+    return bidsToShow.filter((bid) => {
+      const bidDate = new Date(bid.bidAt);
+      if (bid.status === 'won') {
+        return bidDate <= endDate && bidDate >= new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+      }
+      if (bid.status === 'lost') {
+        return bidDate >= startDate && bidDate <= endDate;
+      }
+      if (bid.status === 'active' && !isAuctionPeriodActive) {
+        return bidDate >= startDate && bidDate <= endDate;
+      }
+      return false;
+    });
+  }, [bidsToShow, startDate, endDate, isAuctionPeriodActive]);
 
-                              // Calculate remaining budget for the selected player up to this period
-                              const remainingBudget = selectedPlayerId
-                                ? calculateRemainingBudget(selectedPlayerBids, periodIndex)
-                                : calculateRemainingBudget(myBids, periodIndex);
+  // Calculate remaining budget - memoized
+  const remainingBudget = useMemo(() => {
+    return calculateRemainingBudget(bidsToShow, periodIndex);
+  }, [bidsToShow, periodIndex, calculateRemainingBudget]);
 
-                              // Sort the bids based on the selected criteria
-                              const sortedBidsInPeriod = [...bidsInPeriod].sort((a, b) => {
-                                const riderA = availableRiders.find((r: RiderWithBid) => r.id === a.riderNameId || r.nameID === a.riderNameId);
-                                const riderB = availableRiders.find((r: RiderWithBid) => r.id === b.riderNameId || r.nameID === b.riderNameId);
+  // Sort the bids - memoized
+  const sortedBidsInPeriod = useMemo(() => {
+    return [...bidsInPeriod].sort((a, b) => {
+      const riderA = availableRiders.find((r: RiderWithBid) => r.id === a.riderNameId || r.nameID === a.riderNameId);
+      const riderB = availableRiders.find((r: RiderWithBid) => r.id === b.riderNameId || r.nameID === b.riderNameId);
 
-                                if (!riderA || !riderB) return 0;
+      if (!riderA || !riderB) return 0;
 
-                                let comparison = 0;
+      let comparison = 0;
 
-                                switch (sortBy) {
-                                  case 'price':
-                                    comparison = (a.amount || 0) - (b.amount || 0);
-                                    break;
-                                  case 'name':
-                                    comparison = (riderA.name || '').localeCompare(riderB.name || '');
-                                    break;
-                                  case 'age': {
-                                    const ageA = typeof riderA.age === 'number' ? riderA.age : parseInt(String(riderA.age || '0'), 10);
-                                    const ageB = typeof riderB.age === 'number' ? riderB.age : parseInt(String(riderB.age || '0'), 10);
-                                    comparison = ageA - ageB;
-                                    break;
-                                  }
-                                  case 'team': {
-                                    const teamA = riderA.team?.name || '';
-                                    const teamB = riderB.team?.name || '';
-                                    if (!teamA && teamB) return 1;
-                                    if (teamA && !teamB) return -1;
-                                    comparison = teamA.localeCompare(teamB);
-                                    break;
-                                  }
-                                  case 'neoprof': {
-                                    const isNeoProfA = qualifiesAsNeoProf(riderA, game?.config) ? 1 : 0;
-                                    const isNeoProfB = qualifiesAsNeoProf(riderB, game?.config) ? 1 : 0;
-                                    comparison = isNeoProfB - isNeoProfA;
-                                    break;
-                                  }
-                                  case 'rank':
-                                    comparison = (riderA.rank || 0) - (riderB.rank || 0);
-                                    break;
-                                  case 'status': {
-                                    const statusOrder = { won: 0, active: 1, outbid: 2, lost: 3, cancelled: 4 };
-                                    comparison = (statusOrder[a.status as keyof typeof statusOrder] || 99) - (statusOrder[b.status as keyof typeof statusOrder] || 99);
-                                    break;
-                                  }
-                                  default:
-                                    return 0;
-                                }
+      switch (sortBy) {
+        case 'price':
+          comparison = (a.amount || 0) - (b.amount || 0);
+          break;
+        case 'name':
+          comparison = (riderA.name || '').localeCompare(riderB.name || '');
+          break;
+        case 'age': {
+          const ageA = typeof riderA.age === 'number' ? riderA.age : parseInt(String(riderA.age || '0'), 10);
+          const ageB = typeof riderB.age === 'number' ? riderB.age : parseInt(String(riderB.age || '0'), 10);
+          comparison = ageA - ageB;
+          break;
+        }
+        case 'team': {
+          const teamA = riderA.team?.name || '';
+          const teamB = riderB.team?.name || '';
+          if (!teamA && teamB) return 1;
+          if (teamA && !teamB) return -1;
+          comparison = teamA.localeCompare(teamB);
+          break;
+        }
+        case 'neoprof': {
+          const isNeoProfA = qualifiesAsNeoProf(riderA, game?.config) ? 1 : 0;
+          const isNeoProfB = qualifiesAsNeoProf(riderB, game?.config) ? 1 : 0;
+          comparison = isNeoProfB - isNeoProfA;
+          break;
+        }
+        case 'rank':
+          comparison = (riderA.rank || 0) - (riderB.rank || 0);
+          break;
+        case 'status': {
+          const statusOrder = { won: 0, active: 1, outbid: 2, lost: 3, cancelled: 4 };
+          comparison = (statusOrder[a.status as keyof typeof statusOrder] || 99) - (statusOrder[b.status as keyof typeof statusOrder] || 99);
+          break;
+        }
+        default:
+          return 0;
+      }
 
-                                return sortDirection === 'asc' ? comparison : -comparison;
-                              });
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [bidsInPeriod, availableRiders, sortBy, sortDirection, game?.config]);
 
-                              // Card View - Show won bids only for this auction period
-                              return <div key={periodIndex} className="mb-8">
+  // Show empty state if no bids (but only after all hooks have been called)
+  if (bidsInPeriod.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-8">
                                 <div className="flex justify-between items-center mb-4">
                                   <div className="flex items-center gap-2">
                                     <label className="text-sm font-medium">{t('global.sortingBy')}</label>
@@ -346,8 +383,6 @@ export const MyAuctionBidsBig = ({
                                     ) : null;
                                   })
                                 }</div>
-                              </div>
-                            })}
-    
-    </>
-}
+    </div>
+  );
+};

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Activity } from 'react';
 import { useTranslation } from 'react-i18next';
 
 
@@ -66,9 +66,10 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
         </button>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content - wrapped in Activity to preserve state */}
       <div>
         {/* Stage Results Tab */}
+        <Activity mode={activeTab === 'stage' ? 'visible' : 'hidden'}>
         {activeTab === 'stage' && selectedStage.stageResults?.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -115,8 +116,10 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
             )}
           </div>
         )}
+        </Activity>
 
         {/* General Classification Tab */}
+        <Activity mode={activeTab === 'gc' ? 'visible' : 'hidden'}>
         {activeTab === 'gc' && selectedStage.generalClassification?.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -171,8 +174,10 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
             )}
           </div>
         )}
+        </Activity>
 
         {/* Points Classification Tab */}
+        <Activity mode={activeTab === 'points' ? 'visible' : 'hidden'}>
         {activeTab === 'points' && selectedStage.pointsClassification?.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -213,8 +218,10 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
             </table>
           </div>
         )}
+        </Activity>
 
         {/* Mountains Classification Tab */}
+        <Activity mode={activeTab === 'mountains' ? 'visible' : 'hidden'}>
         {activeTab === 'mountains' && selectedStage.mountainsClassification?.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -255,8 +262,10 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
             </table>
           </div>
         )}
+        </Activity>
 
         {/* Team Classification Tab */}
+        <Activity mode={activeTab === 'team' ? 'visible' : 'hidden'}>
         {activeTab === 'team' && selectedStage.teamClassification?.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -292,6 +301,7 @@ export default function ClassificationTabs({ selectedStage }: { selectedStage: a
             </table>
           </div>
         )}
+        </Activity>
       </div>
     </div>
   );

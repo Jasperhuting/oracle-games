@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Activity } from "react";
 import { TabsProps } from "@/lib/types/component-props";
 
 export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
@@ -24,8 +24,6 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
     setActiveTab(tabId);
     router.push(`?tab=${tabId}`, { scroll: false });
   };
-
-  const activeTabContent = tabs.find(tab => tab.id === activeTab)?.content;
 
   return (
     <div className="w-full">
@@ -52,9 +50,15 @@ export const Tabs = ({ tabs, defaultTab }: TabsProps) => {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content - wrapped in Activity to preserve state */}
       <div className="bg-white rounded-b-lg p-6 border border-gray-200 border-t-0">
-        {activeTabContent}
+        {tabs.map((tab) => (
+          <Activity key={tab.id} mode={activeTab === tab.id ? 'visible' : 'hidden'}>
+            <div style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
+              {tab.content}
+            </div>
+          </Activity>
+        ))}
       </div>
     </div>
   );
