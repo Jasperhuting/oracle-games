@@ -69,6 +69,9 @@ export const PlayerCard = (
     const isSold = player?.isSold;
     const soldTo = player?.soldTo;
     const isSoldFor = player?.pricePaid;
+    const soldCount = player?.soldCount ?? 0;
+    const maxOwnersPerRider = player?.maxOwnersPerRider ?? 1;
+    const isPartiallySold = soldCount > 0 && soldCount < maxOwnersPerRider;
     const riderSlug = player?.nameID || player?.id || '';
     const riderName = player?.name || '';
     const pointsValueRaw = player?.effectiveMinBid ?? player?.points ?? 1;
@@ -83,7 +86,13 @@ export const PlayerCard = (
     
     return (
         <div
-            className={cn("bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]", isSold && !myTeam && "opacity-60 bg-gray-50", className)}
+            className={cn(
+                "bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]",
+                isSold && !myTeam && "opacity-60 bg-gray-50",
+                isSold && !myTeam && "shadow-[0_0_12px_3px_rgba(239,68,68,0.5)]",
+                isPartiallySold && !myTeam && "shadow-[0_0_12px_3px_rgba(234,179,8,0.5)]",
+                className
+            )}
             data-rider-id={riderSlug}
             data-rider-slug={riderSlug}
             data-rider-name={riderName}
@@ -220,7 +229,7 @@ export const PlayerCard = (
                 )}
 
                 {soldTo && participant?.playername !== soldTo && (
-                    <div className="bg-red-100 text-red-700 text-sm font-medium rounded-t-md p-3">Sold to {soldTo}</div>
+                    <div className={`text-sm font-medium rounded-t-md p-3 ${isPartiallySold ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>Sold to {soldTo}</div>
                 )}
                 {!isSold && (buttonContainer ? buttonContainer : <Button className="w-full my-2" onClick={() => onClick(player)} selected={selected} text={selected ? "Verwijder uit je team" : "Voeg toe aan je team"} endIcon={selected ? <Minus color="currentColor" size={20} /> : <Plus color="currentColor" size={20} />} />)}
             </div>
