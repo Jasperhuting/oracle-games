@@ -88,9 +88,8 @@ export const PlayerCard = (
         <div
             className={cn(
                 "bg-white w-full rounded-md p-4 divide-y-2 divide-[#CAC4D0]",
-                isSold && !myTeam && "opacity-60 bg-gray-50",
-                isSold && !myTeam && "shadow-[0_0_12px_3px_rgba(239,68,68,0.5)]",
-                isPartiallySold && !myTeam && "shadow-[0_0_12px_3px_rgba(234,179,8,0.5)]",
+                isSold && !myTeam && "opacity-60 bg-red-50 border-l-4 border-red-400",
+                isPartiallySold && !myTeam && "bg-yellow-50 border-l-4 border-yellow-400",
                 className
             )}
             data-rider-id={riderSlug}
