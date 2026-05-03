@@ -88,12 +88,14 @@ export async function GET(request: NextRequest) {
               });
 
               // Also update game status to 'bidding' if not already
-              if (game.status === 'registration') {
+              // Allow from 'registration' (first period) or 'active' (subsequent periods in multi-period games)
+              if (game.status === 'registration' || game.status === 'active') {
                 newGameStatus = 'bidding';
                 gameStatusNeedsUpdate = true;
                 console.log('[CRON] Auto-updating game status to bidding', {
                   gameId,
                   periodName: period.name,
+                  previousStatus: game.status,
                 });
               }
             }
