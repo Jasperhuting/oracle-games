@@ -195,16 +195,20 @@ export const MyAuctionBidsBig = ({
                               // before period open still count if finalized in this period).
                               // Lost bids: strict range check since they were placed during the period.
                               const bidsInPeriod = bidsToShow.filter((bid) => {
-                                if (bid.status !== 'won' && bid.status !== 'lost') return false;
                                 const bidDate = new Date(bid.bidAt);
                                 if (bid.status === 'won') {
                                   return bidDate <= endDate && bidDate >= new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
                                 }
-                                return bidDate >= startDate && bidDate <= endDate;
+                                if (bid.status === 'lost') {
+                                  return bidDate >= startDate && bidDate <= endDate;
+                                }
+                                // Show active bids from closed periods (bid not yet finalized to won/lost
+                                // but rider may already be in playerTeam)
+                                if (bid.status === 'active' && !isAuctionPeriodActive) {
+                                  return bidDate >= startDate && bidDate <= endDate;
+                                }
+                                return false;
                               });
-
-                              console.log('bidsInPeriod', bidsInPeriod);
-                              console.log('availableRiders', availableRiders);
 
                               // Don't render this section if there are no bids in this period
                               if (bidsInPeriod.length === 0) return null;
