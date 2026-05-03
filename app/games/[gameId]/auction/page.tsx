@@ -469,23 +469,6 @@ export default function AuctionPage({ params }: { params: Promise<{ gameId: stri
     loadAuctionData(forceRefresh);
   }, [gameId, user, authLoading, router, forceRefresh, rankingsLoading, loadAuctionData]);
 
-  // Default auction period tab to the currently active period
-  useEffect(() => {
-    if (!game?.config?.auctionPeriods) return;
-    const now = new Date();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const toDate = (v: any): Date => {
-      if (v instanceof Date) return v;
-      if (v && typeof v.toDate === 'function') return v.toDate();
-      return new Date(String(v));
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const activeIndex = game.config.auctionPeriods.findIndex((p: any) =>
-      now >= toDate(p.startDate) && now <= toDate(p.endDate)
-    );
-    if (activeIndex >= 0) setActiveAuctionPeriodTab(activeIndex);
-  }, [game]);
-
   // Load all participants in the same division
   useEffect(() => {
     const loadDivisionParticipants = async () => {
