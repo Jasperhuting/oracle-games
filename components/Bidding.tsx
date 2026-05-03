@@ -840,7 +840,9 @@ export const Bidding = ({
                           <div className={`flex flex-row gap-2 pb-2`}>
 
                             {auctionActive ? (<>
-                              {(game?.gameType === 'auctioneer') ? (
+                              {rider.myBidStatus === 'won' ? (
+                                <span className="text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded px-3 py-1 w-full text-center">Reeds gekocht</span>
+                              ) : (game?.gameType === 'auctioneer') ? (
                                 <CurrencyInput
                                   id="input-example"
                                   name="input-name"
