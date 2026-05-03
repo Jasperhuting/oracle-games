@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { Timestamp } from "firebase-admin/firestore";
 import { getServerAuth, getServerFirebase, getServerFirebaseFootball } from "@/lib/firebase/server";
 import {
   createWkParticipantDocId,
@@ -7,9 +8,6 @@ import {
   WK_2026_SEASON,
   Wk2026Participant,
 } from "@/app/wk-2026/types";
-
-const db = getServerFirebase();
-const footballDb = getServerFirebaseFootball();
 
 async function getCurrentUserId(request: NextRequest): Promise<string | null> {
   try {
@@ -40,6 +38,7 @@ async function getCurrentUserId(request: NextRequest): Promise<string | null> {
 
 export async function GET(request: NextRequest) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
@@ -81,6 +80,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const db = getServerFirebase();
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
       userId,
       season,
       displayName,
-      joinedAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+      joinedAt: Timestamp.now() as unknown as import("firebase/firestore").Timestamp,
       status: "active",
     };
 

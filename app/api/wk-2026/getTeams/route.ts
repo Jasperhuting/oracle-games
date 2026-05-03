@@ -8,15 +8,29 @@ interface Team {
   [key: string]: unknown;
 }
 
+function dedupeTeamsById(teams: Team[]) {
+  const uniqueTeams = new Map<string, Team>();
+
+  teams.forEach((team) => {
+    if (!team.id) {
+      return;
+    }
+
+    uniqueTeams.set(team.id, team);
+  });
+
+  return Array.from(uniqueTeams.values());
+}
+
 export async function GET() {
   try {
     const db = getServerFirebaseFootball();
     const snapshot = await db.collection('contenders').get();
 
-    const teams = snapshot.docs.map((doc): Team => ({
+    const teams = dedupeTeamsById(snapshot.docs.map((doc): Team => ({
+      ...doc.data(),
       id: doc.id,
-      ...doc.data()
-    }));
+    })));
 
     // If contenders is empty, reconstruct teams from saved poules data
     if (teams.length === 0) {
@@ -37,7 +51,7 @@ export async function GET() {
         }
       });
 
-      return Response.json({ teams: Object.values(teamsFromPoules) });
+      return Response.json({ teams: dedupeTeamsById(Object.values(teamsFromPoules)) });
     }
 
     return Response.json({ teams });

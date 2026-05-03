@@ -24,12 +24,62 @@ import {
   createTeamHistoryPairKey,
   orientTeamHistory,
   reverseTeamHistory,
-  type HeadToHeadMatch,
-  type MatchResult,
   type StoredTeamHistoryMap,
   type TeamHistoryResponse,
 } from '@/lib/wk-2026/team-history-types';
 
+const FLAG_CODE_ALIASES: Record<string, string> = {
+  northern_ireland: 'gb-nir',
+};
+
+interface SavedPouleRanking {
+  pouleId: string;
+  rankings: Array<{ id: string } | null>;
+}
+
+function normalizeManualRankings(
+  currentPoules: GroupData[],
+  savedRankings?: SavedPouleRanking[]
+): SavedPouleRanking[] {
+  if (!savedRankings?.length) {
+    return currentPoules.map((poule) => ({
+      pouleId: poule.pouleId,
+      rankings: Object.keys(poule.teams || {}).map((teamId) => ({ id: teamId })),
+    }));
+  }
+
+  return currentPoules.map((currentPoule) => {
+    const savedPoule = savedRankings.find((ranking) => ranking.pouleId === currentPoule.pouleId);
+    const officialTeamIds = Object.keys(currentPoule.teams || {});
+    const officialTeamIdSet = new Set(officialTeamIds);
+    const usedTeamIds = new Set<string>();
+    const mergedRankings: Array<{ id: string } | null> = [null, null, null, null];
+
+    savedPoule?.rankings.forEach((team, position) => {
+      if (!team?.id || !officialTeamIdSet.has(team.id) || usedTeamIds.has(team.id)) {
+        return;
+      }
+
+      mergedRankings[position] = { id: team.id };
+      usedTeamIds.add(team.id);
+    });
+
+    const remainingTeamIds = officialTeamIds.filter((teamId) => !usedTeamIds.has(teamId));
+    for (let position = 0; position < mergedRankings.length; position += 1) {
+      if (!mergedRankings[position] && remainingTeamIds.length > 0) {
+        const nextTeamId = remainingTeamIds.shift();
+        if (nextTeamId) {
+          mergedRankings[position] = { id: nextTeamId };
+        }
+      }
+    }
+
+    return {
+      pouleId: currentPoule.pouleId,
+      rankings: mergedRankings,
+    };
+  });
+}
 
 export default function KnockoutPredictionsPage() {
   const { user, loading } = useAuth();
@@ -83,8 +133,10 @@ export default function KnockoutPredictionsPage() {
       const userPredResponse = await fetch(`/api/wk-2026/predictions/${user?.uid}`);
       const userPredData = await userPredResponse.json();
       const userPredictedMatches: GroupStageMatch[] = userPredData.predictions?.matches || [];
-      const userRankings: Array<{ pouleId: string; rankings: Array<{ id: string } | null> }> =
-        userPredData.predictions?.rankings || [];
+      const userRankings = normalizeManualRankings(
+        poules,
+        userPredData.predictions?.rankings as SavedPouleRanking[] | undefined,
+      );
 
       // Use user's predicted match scores for standings (for 3rd-place comparison),
       // falling back to admin matches if none exist
@@ -379,12 +431,22 @@ export default function KnockoutPredictionsPage() {
   const getTeamFlagCode = (teamId: string | null | undefined): string => {
     if (!teamId) return '';
 
+    if (FLAG_CODE_ALIASES[teamId]) {
+      return FLAG_CODE_ALIASES[teamId];
+    }
+
     for (const poule of actualPoules) {
       if (poule.teams && poule.teams[teamId]) {
         const englishName = poule.teams[teamId].name;
         // Use TEAM_CODE_MAP first (handles FIFA-specific names like USA, Korea Republic, Türkiye)
         const fromMap = TEAM_CODE_MAP[englishName];
         if (fromMap) return fromMap;
+        const normalizedEnglishName = englishName
+          .toLowerCase()
+          .replace(/\s+/g, '_');
+        if (FLAG_CODE_ALIASES[normalizedEnglishName]) {
+          return FLAG_CODE_ALIASES[normalizedEnglishName];
+        }
         // Fall back to countriesList
         const entry = (countriesList as { name: string; code: string }[]).find(
           (c) => c.name.toLowerCase() === englishName.toLowerCase()
@@ -426,9 +488,13 @@ export default function KnockoutPredictionsPage() {
       const sourceMatch = matches.find(m => m.matchNumber === matchNum);
 
       if (sourceMatch) {
+        if (sourceMatch.winner) {
+          return [sourceMatch.winner];
+        }
+
         // If the source match has both teams directly, return them
         if (sourceMatch.team1 && sourceMatch.team2) {
-          return [sourceMatch.team1, sourceMatch.team2];
+          return Array.from(new Set([sourceMatch.team1, sourceMatch.team2]));
         }
 
         // Otherwise, recursively get potential teams from the source match's sources
@@ -436,7 +502,7 @@ export default function KnockoutPredictionsPage() {
         const team2Potentials = sourceMatch.team2Source ? getPotentialTeams(sourceMatch.team2Source) : [];
 
         // Combine all potential teams
-        return [...team1Potentials, ...team2Potentials];
+        return Array.from(new Set([...team1Potentials, ...team2Potentials]));
       }
     }
     return [];
@@ -457,8 +523,8 @@ export default function KnockoutPredictionsPage() {
     if (potentialTeams.length > 0) {
       return (
         <span className={`grid ${gridClass} items-center gap-1`}>
-          {potentialTeams.map((team) => (
-            <span key={team} className="inline-flex items-center" title={getTeamName(team)}>
+          {potentialTeams.map((team, index) => (
+            <span key={`${team}-${index}`} className="inline-flex items-center" title={getTeamName(team)}>
               <Flag countryCode={getTeamFlagCode(team)} width={24} />
             </span>
           ))}

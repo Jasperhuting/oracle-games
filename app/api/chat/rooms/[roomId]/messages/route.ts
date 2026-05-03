@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as db } from '@/lib/firebase/server';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { getTelegramBridgeConfig, sendChatRoomBridgeMessage } from '@/lib/telegram';
+import { getTelegramBridgeConfigForRoom, sendChatRoomBridgeMessage } from '@/lib/telegram';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,15 +110,15 @@ export async function POST(
       messageCount: FieldValue.increment(1),
     });
 
-    const telegramConfig = getTelegramBridgeConfig();
-    if (roomId === telegramConfig.bridgeRoomId && trimmedText) {
+    const telegramConfig = getTelegramBridgeConfigForRoom(roomId);
+    if (telegramConfig && trimmedText) {
       try {
         await sendChatRoomBridgeMessage({
           roomTitle: roomData.title || 'Algemene chat',
           userName: resolvedUserName,
           text: trimmedText,
           roomId,
-        });
+        }, telegramConfig);
       } catch (telegramError) {
         console.error('Failed to mirror chat message to Telegram:', telegramError);
       }

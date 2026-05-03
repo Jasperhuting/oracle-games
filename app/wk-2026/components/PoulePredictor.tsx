@@ -273,13 +273,15 @@ export function PoulePredictor({
                   />
                 </div>
 
-                {t1Form.length > 0 && (
-                  <div className="flex items-center gap-1 mb-2 pl-7">
-                    {t1Form.map((m, fi) => <FormDot key={fi} match={m} />)}
-                  </div>
-                )}
+                <div className="mb-2 min-h-[20px] pl-7">
+                  {t1Form.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {t1Form.map((m, fi) => <FormDot key={fi} match={m} />)}
+                    </div>
+                  )}
+                </div>
 
-                <div className="mb-2 pl-7">
+                <div className="mb-2">
                   <GoalScorerSelector
                     players={t1.squad ?? []}
                     selectedPlayerName={match.team1GoalScorer}
@@ -304,13 +306,15 @@ export function PoulePredictor({
                   />
                 </div>
 
-                {t2Form.length > 0 && (
-                  <div className="flex items-center gap-1 mb-2 pl-7">
-                    {t2Form.map((m, fi) => <FormDot key={fi} match={m} />)}
-                  </div>
-                )}
+                <div className="mb-2 min-h-[20px] pl-7">
+                  {t2Form.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {t2Form.map((m, fi) => <FormDot key={fi} match={m} />)}
+                    </div>
+                  )}
+                </div>
 
-                <div className="pl-7">
+                <div className="">
                   <GoalScorerSelector
                     players={t2.squad ?? []}
                     selectedPlayerName={match.team2GoalScorer}
@@ -320,28 +324,34 @@ export function PoulePredictor({
                   />
                 </div>
 
-                {historyLoading && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 animate-pulse">
-                    Historische data laden...
-                  </div>
-                )}
+                <p className="mt-2 text-[11px] text-gray-400">
+                  Kies de maker van de 1e goal bij precies één team, of laat beide op geen doelpunt bij 0-0.
+                </p>
 
-                {!historyLoading && h2h.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                      Onderling ({h2h.length}x)
+                <div className="mt-3 min-h-[88px] border-t border-gray-100 pt-3">
+                  {historyLoading && (
+                    <div className="text-xs text-gray-400 animate-pulse">
+                      Historische data laden...
                     </div>
-                    {h2h.map((m, hi) => (
-                      <H2HRow key={hi} match={m} team1Name={t1.name} team2Name={t2.name} />
-                    ))}
-                  </div>
-                )}
+                  )}
 
-                {!historyLoading && history && h2h.length === 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-                    Nog nooit tegen elkaar gespeeld
-                  </div>
-                )}
+                  {!historyLoading && h2h.length > 0 && (
+                    <>
+                      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                        Onderling ({h2h.length}x)
+                      </div>
+                      {h2h.map((m, hi) => (
+                        <H2HRow key={hi} match={m} team1Name={t1.name} team2Name={t2.name} />
+                      ))}
+                    </>
+                  )}
+
+                  {!historyLoading && history && h2h.length === 0 && (
+                    <div className="flex min-h-[56px] items-center text-xs text-gray-400">
+                      Nog nooit tegen elkaar gespeeld
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -358,7 +368,7 @@ export function PoulePredictor({
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                <th className="w-1 px-2 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">#</th>
                 <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Team</th>
                 <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase">P</th>
                 <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase">W</th>
@@ -371,7 +381,7 @@ export function PoulePredictor({
             <tbody className="divide-y divide-gray-50">
               {standings.map((s, i) => (
                 <tr key={s.teamId} className={i < 2 ? 'bg-orange-50/30' : 'bg-white'}>
-                  <td className="px-4 py-2.5">
+                  <td className="px-2 py-2.5">
                     <span className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-bold ${i < 2 ? 'bg-orange-100 text-[#ff9900]' : 'bg-gray-100 text-gray-500'}`}>
                       {i + 1}
                     </span>

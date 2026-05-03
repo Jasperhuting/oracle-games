@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { Timestamp } from "firebase-admin/firestore";
 import { getServerAuth, getServerFirebaseFootball } from "@/lib/firebase/server";
 import { WK2026_COLLECTIONS, Wk2026SubLeague } from "@/app/wk-2026/types";
-
-const footballDb = getServerFirebaseFootball();
 
 async function getCurrentUserId(request: NextRequest): Promise<string | null> {
   try {
@@ -36,6 +35,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const { id } = await params;
     const doc = await footballDb.collection(WK2026_COLLECTIONS.SUB_LEAGUES).doc(id).get();
 
@@ -64,6 +64,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -84,7 +85,7 @@ export async function PATCH(
     }
 
     const updates: Partial<Wk2026SubLeague> = {
-      updatedAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+      updatedAt: Timestamp.now() as unknown as import("firebase/firestore").Timestamp,
     };
 
     if (body.name !== undefined) updates.name = String(body.name).trim();
@@ -109,6 +110,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -148,7 +150,7 @@ export async function POST(
 
         await docRef.update({
           pendingMemberIds: [...pendingMemberIds, userId],
-          updatedAt: new Date(),
+          updatedAt: Timestamp.now(),
         });
 
         return NextResponse.json({ success: true, message: "Aanvraag verstuurd" });
@@ -161,7 +163,7 @@ export async function POST(
 
         await docRef.update({
           pendingMemberIds: pendingMemberIds.filter((id) => id !== userId),
-          updatedAt: new Date(),
+          updatedAt: Timestamp.now(),
         });
 
         return NextResponse.json({ success: true, message: "Aanvraag geannuleerd" });
@@ -181,7 +183,7 @@ export async function POST(
 
         const updatePayload: Record<string, unknown> = {
           pendingMemberIds: pendingMemberIds.filter((id) => id !== targetUserId),
-          updatedAt: new Date(),
+          updatedAt: Timestamp.now(),
         };
 
         if (action === "approve") {

@@ -6,6 +6,8 @@ import { auth } from "@/lib/firebase/client";
 import { onAuthStateChanged, sendEmailVerification, User } from "firebase/auth";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { buildPathWithInviteCode, getInviteCodeFromSearchParams, persistPendingInviteCode } from "@/lib/wk-2026/subleague-invite";
 
 export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_picture_3.jpg" }: { heroImageSrc?: string }) {
     const [emailSent, setEmailSent] = useState(false);
@@ -13,8 +15,12 @@ export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_pictur
     const [isResending, setIsResending] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
     const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
+    const searchParams = useSearchParams();
+    const inviteCode = getInviteCodeFromSearchParams(searchParams);
 
     useEffect(() => {
+        persistPendingInviteCode(inviteCode);
+
         const email = localStorage.getItem('pendingVerificationEmail');
         if (email) {
             setUserEmail(email);
@@ -24,7 +30,7 @@ export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_pictur
             setCurrentUser(user);
         });
         return unsubscribe;
-    }, []);
+    }, [inviteCode]);
 
     const handleResendEmail = async () => {
         setIsResending(true);
@@ -124,7 +130,7 @@ export default function VerifyEmailPageClient({ heroImageSrc = "/homepage_pictur
                                 disabled={isResending}
                             />
 
-                            <Link href="/login">
+                            <Link href={buildPathWithInviteCode('/login', inviteCode)}>
                                 <Button
                                     className="w-full justify-center py-2 bg-white text-primary hover:bg-primary hover:text-white"
                                     text="Back to login"

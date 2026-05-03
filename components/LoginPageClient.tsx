@@ -9,8 +9,10 @@ import {
 import { LoginForm } from "@/components/LoginForm";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { buildPathWithInviteCode, getInviteCodeFromSearchParams } from "@/lib/wk-2026/subleague-invite";
 
 export default function LoginPageClient({
     initialPlatform,
@@ -23,6 +25,9 @@ export default function LoginPageClient({
 }) {
     const { t } = useTranslation();
     const [currentPlatform, setCurrentPlatform] = useState<PlatformKey>(initialPlatform);
+    const searchParams = useSearchParams();
+    const inviteCode = getInviteCodeFromSearchParams(searchParams);
+    const previewLink = useMemo(() => buildPathWithInviteCode(previewHref, inviteCode), [previewHref, inviteCode]);
 
     const platformOptions = getAllPlatformConfigs().map((platform) => ({
         key: platform.key,
@@ -41,7 +46,10 @@ export default function LoginPageClient({
             return;
         }
 
-        window.location.href = buildPlatformUrl(window.location.host, targetPlatform, "/login");
+        window.location.href = buildPathWithInviteCode(
+            buildPlatformUrl(window.location.host, targetPlatform, "/login"),
+            inviteCode,
+        );
     };
 
     return (
@@ -81,7 +89,7 @@ export default function LoginPageClient({
                     </div>
                     <div className="mt-3 text-center text-sm text-slate-600">
                         Wil je eerst even zien wat de website is?{" "}
-                        <Link href={previewHref} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+                        <Link href={previewLink} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
                             Bekijk dan de previewpagina
                         </Link>
                         .

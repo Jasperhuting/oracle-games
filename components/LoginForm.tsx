@@ -5,14 +5,20 @@ import Link from "next/link";
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { User } from "firebase/auth";
 import { LoginFormProps } from "@/lib/types/component-props";
 import { createSharedSession } from "@/lib/auth/client-session";
 import { getPlatformConfigFromHost } from "@/lib/platform";
 import { useTranslation } from "react-i18next";
+import {
+    buildPathWithInviteCode,
+    getInviteCodeFromSearchParams,
+    getWk2026InviteRedirectPath,
+    persistPendingInviteCode,
+} from "@/lib/wk-2026/subleague-invite";
 
 const PasskeyLogin = dynamic(
   () => import("./PasskeyLogin").then(mod => mod.PasskeyLogin),
@@ -31,13 +37,21 @@ export const LoginForm = () => {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [stayLoggedIn, setStayLoggedIn] = useState(true);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const inviteCode = getInviteCodeFromSearchParams(searchParams);
+
+    useEffect(() => {
+        persistPendingInviteCode(inviteCode);
+    }, [inviteCode]);
 
     const getPostLoginPath = () => {
         if (typeof window === 'undefined') {
             return '/home';
         }
 
-        return getPlatformConfigFromHost(window.location.host).authenticatedEntryPath;
+        return getWk2026InviteRedirectPath(
+            getPlatformConfigFromHost(window.location.host).authenticatedEntryPath,
+        );
     };
 
     const onSubmit: SubmitHandler<LoginFormProps> = async (data) => {
@@ -322,7 +336,7 @@ export const LoginForm = () => {
                         {t('login.stayLoggedIn')}
                     </label>
                     <div className="text-xs">
-                        <Link href="/reset-password" className="underline text-slate-700 hover:text-slate-900">{t('login.forgotPassword')}</Link>
+                <Link href={buildPathWithInviteCode('/reset-password', inviteCode)} className="underline text-slate-700 hover:text-slate-900">{t('login.forgotPassword')}</Link>
                     </div>
                 </div>
                 <Button
@@ -364,7 +378,7 @@ export const LoginForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs">{t('login.noAccount')} <Link className="underline" href="/register">{t('login.registerLink')}</Link></span>
+                <span className="text-xs">{t('login.noAccount')} <Link className="underline" href={buildPathWithInviteCode('/register', inviteCode)}>{t('login.registerLink')}</Link></span>
             </div>
         </div>
     );

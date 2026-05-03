@@ -67,11 +67,10 @@ export default function WK2026PreviewPage() {
 
         {/* Hoe werkt het */}
         <section className="px-6 pb-14 max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 gap-5">
             {[
-              { stap: "1", titel: "Loot de groepen", beschrijving: "Sleep 48 landen naar de 16 groepen in de groepsfase. Wijs elk land toe aan een pot en maak jouw eigen groepsdraw." },
-              { stap: "2", titel: "Voorspel de uitslagen", beschrijving: "Kies wie je denkt dat doorgaan per groep en wie uiteindelijk de knockout-rondes wint. Elke juiste voorspelling levert punten op." },
-              { stap: "3", titel: "Maak een subpoule", beschrijving: "Maak een privépoule aan en nodig vrienden, familie of collega's uit. Strijdt onderling om de beste voorspeller te zijn." },
+              { stap: "1", titel: "Voorspel de uitslagen", beschrijving: "Kies wie je denkt dat doorgaan per groep en wie uiteindelijk de knockout-rondes wint. Elke juiste voorspelling levert punten op." },
+              { stap: "2", titel: "Maak een subpoule", beschrijving: "Maak een privépoule aan en nodig vrienden, familie of collega's uit. Strijdt onderling om de beste voorspeller te zijn." },
             ].map(({ stap, titel, beschrijving }) => (
               <div key={stap} className="bg-white/80 backdrop-blur-sm rounded-2xl p-7 border border-white shadow-sm">
                 <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center mb-4">

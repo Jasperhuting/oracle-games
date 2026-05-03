@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
 import type { ChatRoom } from '@/lib/types/chat';
+import { useAuth } from '@/hooks/useAuth';
 
 const CHAT_SEEN_EVENT = 'chat-seen-updated';
 const POLL_INTERVAL_MS = 30_000; // 30 seconds
+
+type FirestoreTimestampLike = {
+  toDate: () => Date;
+};
 
 export interface UseChatRoomsResult {
   rooms: ChatRoom[];
@@ -40,43 +43,61 @@ export function markRoomAsSeen(roomId: string, messageCount: number): void {
 
 const toIso = (val: unknown): string | null => {
   if (!val) return null;
-  if (typeof (val as any).toDate === 'function') return (val as any).toDate().toISOString();
+  if (typeof val === 'object' && val !== null && 'toDate' in val && typeof (val as FirestoreTimestampLike).toDate === 'function') {
+    return (val as FirestoreTimestampLike).toDate().toISOString();
+  }
   return String(val);
 };
 
 export function useChatRooms(): UseChatRoomsResult {
+  const { user, loading: authLoading } = useAuth();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unreadByRoom, setUnreadByRoom] = useState<Map<string, number>>(new Map());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(authLoading);
   const [error, setError] = useState<Error | null>(null);
   const roomsRef = useRef<ChatRoom[]>([]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'chat_rooms'),
-      where('status', '==', 'open'),
-      orderBy('createdAt', 'desc')
-    );
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (!user) {
+      roomsRef.current = [];
+      setRooms([]);
+      setUnreadByRoom(new Map());
+      setError(null);
+      setLoading(false);
+      return;
+    }
 
     const fetchRooms = async () => {
       try {
-        const snapshot = await getDocs(q);
-        const fetched: ChatRoom[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          fetched.push({
-            id: doc.id,
-            title: data.title,
-            description: data.description,
-            gameType: data.gameType,
-            opensAt: toIso(data.opensAt) || null,
-            closesAt: toIso(data.closesAt) || '',
-            createdAt: toIso(data.createdAt) || '',
-            createdBy: data.createdBy,
-            status: data.status,
-            messageCount: data.messageCount || 0,
-          });
+        const response = await fetch('/api/chat/rooms?skipRecount=true', {
+          cache: 'no-store',
+          credentials: 'include',
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch chat rooms (${response.status})`);
+        }
+
+        const data = await response.json();
+        const fetched: ChatRoom[] = (data.rooms ?? [])
+          .filter((room: ChatRoom) => room.status === 'open')
+          .map((room: ChatRoom) => ({
+            id: room.id,
+            title: room.title,
+            description: room.description,
+            gameType: room.gameType,
+            opensAt: toIso(room.opensAt) || null,
+            closesAt: toIso(room.closesAt) || '',
+            createdAt: toIso(room.createdAt) || '',
+            createdBy: room.createdBy,
+            status: room.status,
+            messageCount: room.messageCount || 0,
+          }));
 
         roomsRef.current = fetched;
         setRooms(fetched);
@@ -97,7 +118,7 @@ export function useChatRooms(): UseChatRoomsResult {
     const interval = setInterval(fetchRooms, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => {
     const handleSeen = () => {

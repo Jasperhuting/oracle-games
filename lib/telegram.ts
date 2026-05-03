@@ -16,6 +16,7 @@ export interface TelegramConfig {
 }
 
 export interface TelegramBridgeConfig {
+  key: string;
   botToken: string | null;
   chatId: string | null;
   webhookSecret: string | null;
@@ -50,12 +51,33 @@ export function getTelegramConfig(): TelegramConfig {
 
 export function getTelegramBridgeConfig(): TelegramBridgeConfig {
   return {
+    key: 'default',
     botToken: process.env.TELEGRAM_BRIDGE_BOT_TOKEN || null,
     chatId: process.env.TELEGRAM_BRIDGE_CHAT_ID || null,
     webhookSecret: process.env.TELEGRAM_BRIDGE_WEBHOOK_SECRET || null,
     bridgeRoomId: process.env.TELEGRAM_BRIDGE_ROOM_ID || DEFAULT_TELEGRAM_BRIDGE_ROOM_ID,
     adminUserId: process.env.TELEGRAM_BRIDGE_ADMIN_USER_ID || null,
   };
+}
+
+export function getTelegramFootballBridgeConfig(): TelegramBridgeConfig {
+  return {
+    key: 'football',
+    botToken: process.env.TELEGRAM_FOOTBALL_BRIDGE_BOT_TOKEN || null,
+    chatId: process.env.TELEGRAM_FOOTBALL_BRIDGE_CHAT_ID || null,
+    webhookSecret: process.env.TELEGRAM_FOOTBALL_BRIDGE_WEBHOOK_SECRET || null,
+    bridgeRoomId: process.env.TELEGRAM_FOOTBALL_BRIDGE_ROOM_ID || '',
+    adminUserId: process.env.TELEGRAM_FOOTBALL_BRIDGE_ADMIN_USER_ID || null,
+  };
+}
+
+export function getTelegramBridgeConfigs(): TelegramBridgeConfig[] {
+  return [getTelegramBridgeConfig(), getTelegramFootballBridgeConfig()]
+    .filter((config) => Boolean(config.botToken && config.chatId && config.webhookSecret && config.bridgeRoomId));
+}
+
+export function getTelegramBridgeConfigForRoom(roomId: string): TelegramBridgeConfig | null {
+  return getTelegramBridgeConfigs().find((config) => config.bridgeRoomId === roomId) || null;
 }
 
 /**
@@ -104,9 +126,10 @@ export async function sendTelegramMessage(
 
 export async function sendTelegramBridgeMessage(
   message: string,
-  options: TelegramMessageOptions = {}
+  options: TelegramMessageOptions = {},
+  bridgeConfig: TelegramBridgeConfig = getTelegramBridgeConfig()
 ): Promise<boolean> {
-  const { botToken, chatId } = getTelegramBridgeConfig();
+  const { botToken, chatId } = bridgeConfig;
 
   if (!botToken || !chatId) {
     console.error('Telegram bridge credentials not configured');
@@ -144,7 +167,8 @@ export async function sendTelegramBridgeMessage(
 }
 
 export async function sendChatRoomBridgeMessage(
-  options: ChatBridgeMessageOptions
+  options: ChatBridgeMessageOptions,
+  bridgeConfig: TelegramBridgeConfig
 ): Promise<boolean> {
   const safeText = options.text.trim();
   if (!safeText) {
@@ -163,7 +187,7 @@ ${options.roomId ? `🆔 <code>${escapeHtml(options.roomId)}</code>\n` : ''}⏰ 
   return sendTelegramBridgeMessage(telegramMessage, {
     parse_mode: 'HTML',
     disable_web_page_preview: true,
-  });
+  }, bridgeConfig);
 }
 
 /**

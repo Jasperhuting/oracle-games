@@ -2,12 +2,20 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { authorizedFetch } from '@/lib/auth/token-service';
 import { POULES, TeamInPoule } from '../page';
 import { useWk2026Participant, useWk2026SubLeagues } from '../hooks';
 import { Wk2026SubLeague } from '../types';
+import {
+  buildWk2026RegisterInviteUrl,
+  clearPendingInviteCode,
+  getInviteCodeFromSearchParams,
+  getPendingInviteCode,
+  persistPendingInviteCode,
+} from '@/lib/wk-2026/subleague-invite';
+import { isCorrectFirstGoalScorerPrediction } from '@/lib/wk-2026/first-goal-scorer';
 
 interface PouleRanking {
   pouleId: string;
@@ -21,6 +29,8 @@ interface Match {
   team2Id: string;
   team1Score: number | null;
   team2Score: number | null;
+  team1GoalScorer?: string | null;
+  team2GoalScorer?: string | null;
   isLive?: boolean;
 }
 
@@ -47,8 +57,10 @@ interface TeamStats {
 interface UserStanding {
   userId: string;
   userName: string;
+  totalPoints: number;
   exactScores: number;
   correctPlacements: number;
+  correctFirstGoalScorers: number;
   totalPredictions: number;
 }
 
@@ -57,6 +69,7 @@ export default function WkStandingsPage() {
   const { isParticipant, loading: participantLoading, refresh: refreshParticipant } = useWk2026Participant(user?.uid || null, 2026);
   const { subLeagues, loading: subLeaguesLoading, refresh: refreshSubLeagues } = useWk2026SubLeagues(user?.uid || null, 2026);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [allPredictions, setAllPredictions] = useState<PredictionDoc[]>([]);
   const [actualPoules, setActualPoules] = useState<PouleRanking[]>([]);
@@ -81,6 +94,10 @@ export default function WkStandingsPage() {
   const [requestingSubpouleId, setRequestingSubpouleId] = useState<string | null>(null);
   const [managingSubLeagueId, setManagingSubLeagueId] = useState<string | null>(null);
   const [pendingUserNames, setPendingUserNames] = useState<Record<string, string>>({});
+  const [isResolvingInvite, setIsResolvingInvite] = useState(false);
+  const [copiedInviteLinkLeagueId, setCopiedInviteLinkLeagueId] = useState<string | null>(null);
+
+  const inviteCodeFromUrl = getInviteCodeFromSearchParams(searchParams);
 
   const getTeamById = useCallback((teamId: string): TeamInPoule | null => {
     for (const poule of actualPoules) {
@@ -153,6 +170,8 @@ export default function WkStandingsPage() {
               team2Id: teams[j].id,
               team1Score: savedMatch?.team1Score ?? null,
               team2Score: savedMatch?.team2Score ?? null,
+              team1GoalScorer: savedMatch?.team1GoalScorer ?? null,
+              team2GoalScorer: savedMatch?.team2GoalScorer ?? null,
             });
           }
         }
@@ -207,6 +226,10 @@ export default function WkStandingsPage() {
 
     fetchStandingsData();
   }, [user, loading, router, participantLoading, isParticipant, fetchStandingsData]);
+
+  useEffect(() => {
+    persistPendingInviteCode(inviteCodeFromUrl);
+  }, [inviteCodeFromUrl]);
 
   useEffect(() => {
     if (selectedSubpoule && !subLeagues.some((league) => league.id === selectedSubpoule)) {
@@ -370,12 +393,25 @@ export default function WkStandingsPage() {
     });
   }, [actualMatches, actualPoules]);
 
+  const hasPlayedMatchesInPoule = useCallback((pouleId: string) => {
+    return actualMatches.some(
+      (match) =>
+        match.pouleId === pouleId &&
+        match.team1Score !== null &&
+        match.team2Score !== null,
+    );
+  }, [actualMatches]);
+
   const userStandings = useMemo<UserStanding[]>(() => {
     if (allPredictions.length === 0) return [];
 
     return allPredictions
       .map((prediction) => {
         const correctPlacements = POULES.reduce((total, pouleId) => {
+          if (!hasPlayedMatchesInPoule(pouleId)) {
+            return total;
+          }
+
           const actualRanking = calculateStandings(pouleId).map((entry) => entry.team);
           const predictedRanking =
             prediction.rankings?.find((entry) => entry.pouleId === pouleId)?.rankings ?? [null, null, null, null];
@@ -405,22 +441,37 @@ export default function WkStandingsPage() {
           return total;
         }, 0);
 
+        const correctFirstGoalScorers = actualMatches.reduce((total, match) => {
+          if (match.team1Score === null || match.team2Score === null) {
+            return total;
+          }
+
+          const predictedMatch = prediction.matches?.find((entry) => entry.id === match.id);
+          return total + (isCorrectFirstGoalScorerPrediction(match, predictedMatch) ? 1 : 0);
+        }, 0);
+
+        const totalPoints = exactScores + correctPlacements + correctFirstGoalScorers;
+
         return {
           userId: prediction.userId,
           userName: userNames[prediction.userId] || prediction.userId,
+          totalPoints,
           exactScores,
           correctPlacements,
+          correctFirstGoalScorers,
           totalPredictions: (prediction.matches || []).filter(
             (entry) => entry.team1Score !== null && entry.team2Score !== null,
           ).length,
         };
       })
       .sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
         if (b.exactScores !== a.exactScores) return b.exactScores - a.exactScores;
         if (b.correctPlacements !== a.correctPlacements) return b.correctPlacements - a.correctPlacements;
+        if (b.correctFirstGoalScorers !== a.correctFirstGoalScorers) return b.correctFirstGoalScorers - a.correctFirstGoalScorers;
         return a.userName.localeCompare(b.userName);
       });
-  }, [actualMatches, allPredictions, calculateStandings, userNames]);
+  }, [actualMatches, allPredictions, calculateStandings, hasPlayedMatchesInPoule, userNames]);
 
   const selectedSubLeague = useMemo(
     () => subLeagues.find((league) => league.id === selectedSubpoule) ?? null,
@@ -439,6 +490,8 @@ export default function WkStandingsPage() {
     const memberIds = new Set(selectedSubLeague.memberIds);
     return userStandings.filter((standing) => memberIds.has(standing.userId));
   }, [selectedSubLeague, userStandings]);
+
+  const totalAvailablePredictions = actualMatches.length;
 
   const handleJoinCompetition = async () => {
     if (!user) return;
@@ -467,6 +520,35 @@ export default function WkStandingsPage() {
     } finally {
       setIsJoiningCompetition(false);
     }
+  };
+
+  const handleCopyInviteLink = async (league: Wk2026SubLeague) => {
+    if (!league.code || typeof window === 'undefined') {
+      return;
+    }
+
+    const inviteUrl = `${window.location.origin}${buildWk2026RegisterInviteUrl(league.code)}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(inviteUrl);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = inviteUrl;
+      textArea.setAttribute('readonly', '');
+      textArea.style.position = 'absolute';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+
+    setCopiedInviteLinkLeagueId(league.id || league.code);
+
+    window.setTimeout(() => {
+      setCopiedInviteLinkLeagueId((current) => (
+        current === (league.id || league.code) ? null : current
+      ));
+    }, 2000);
   };
 
   const handleCreateSubpoule = async () => {
@@ -652,6 +734,107 @@ export default function WkStandingsPage() {
       setRequestingSubpouleId(null);
     }
   };
+
+  useEffect(() => {
+    const pendingInviteCode = inviteCodeFromUrl || getPendingInviteCode();
+
+    if (!pendingInviteCode || !user || loading || participantLoading || subLeaguesLoading || isResolvingInvite) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const resolveInvite = async () => {
+      setIsResolvingInvite(true);
+      setFeedbackMessage(null);
+
+      try {
+        if (!isParticipant) {
+          const joinResponse = await authorizedFetch('/api/wk-2026/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ season: 2026 }),
+          });
+          const joinData = await joinResponse.json();
+
+          if (!joinResponse.ok || !joinData.success) {
+            if (!isCancelled) {
+              setFeedbackMessage({ type: 'error', text: joinData.error || 'Aanmelden voor WK 2026 is mislukt' });
+            }
+            return;
+          }
+
+          await refreshParticipant();
+          return;
+        }
+
+        const joinSubLeagueResponse = await authorizedFetch('/api/wk-2026/subleagues', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: pendingInviteCode }),
+        });
+        const joinSubLeagueData = await joinSubLeagueResponse.json();
+
+        if (!joinSubLeagueResponse.ok && joinSubLeagueData.error !== 'Je zit al in deze subpoule') {
+          if (!isCancelled) {
+            setFeedbackMessage({ type: 'error', text: joinSubLeagueData.error || 'Subpoule joinen is mislukt' });
+          }
+          return;
+        }
+
+        await refreshSubLeagues();
+
+        const lookupResponse = await fetch(`/api/wk-2026/subleagues?code=${encodeURIComponent(pendingInviteCode)}`);
+        const lookupData = await lookupResponse.json();
+        const joinedLeague = lookupResponse.ok && lookupData.success ? lookupData.data as Wk2026SubLeague : null;
+
+        if (!isCancelled) {
+          if (joinedLeague?.id) {
+            setSelectedSubpoule(joinedLeague.id);
+          }
+
+          setFeedbackMessage({
+            type: 'success',
+            text: joinedLeague?.name
+              ? `Je bent toegevoegd aan ${joinedLeague.name}.`
+              : 'Je bent toegevoegd aan de subpoule.',
+          });
+        }
+
+        clearPendingInviteCode();
+
+        if (inviteCodeFromUrl && !isCancelled) {
+          router.replace('/wk-2026/standings');
+        }
+      } catch (error) {
+        console.error('Error resolving WK invite:', error);
+        if (!isCancelled) {
+          setFeedbackMessage({ type: 'error', text: 'Registratie via subpoule-link is mislukt' });
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsResolvingInvite(false);
+        }
+      }
+    };
+
+    void resolveInvite();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    inviteCodeFromUrl,
+    isParticipant,
+    isResolvingInvite,
+    loading,
+    participantLoading,
+    refreshParticipant,
+    refreshSubLeagues,
+    router,
+    subLeaguesLoading,
+    user,
+  ]);
 
   if (loading || participantLoading || subLeaguesLoading) {
     return (
@@ -945,19 +1128,33 @@ export default function WkStandingsPage() {
               <p className="text-sm text-gray-600">
                 Code: <span className="font-mono font-semibold text-[#9a4d00]">{selectedSubLeague.code}</span>
               </p>
+              <p className="text-sm text-gray-600">
+                Registratielink: <span className="font-medium text-[#9a4d00]">direct naar deze subpoule</span>
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => handleLeaveSubpoule(selectedSubLeague)}
-              disabled={leavingSubpouleId === selectedSubLeague.id}
-              className="rounded-xl border border-[#ff9900] px-4 py-2 text-sm font-semibold text-[#9a4d00] transition-colors hover:bg-[#fff0d9] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {leavingSubpouleId === selectedSubLeague.id
-                ? 'Bezig...'
-                : selectedSubLeague.createdBy === user.uid
-                  ? 'Subpoule verwijderen'
-                  : 'Subpoule verlaten'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => handleCopyInviteLink(selectedSubLeague)}
+                className="rounded-xl bg-[#ff9900] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e68a00]"
+              >
+                {copiedInviteLinkLeagueId === (selectedSubLeague.id || selectedSubLeague.code)
+                  ? 'Registratielink gekopieerd'
+                  : 'Kopieer registratielink'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLeaveSubpoule(selectedSubLeague)}
+                disabled={leavingSubpouleId === selectedSubLeague.id}
+                className="rounded-xl border border-[#ff9900] px-4 py-2 text-sm font-semibold text-[#9a4d00] transition-colors hover:bg-[#fff0d9] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {leavingSubpouleId === selectedSubLeague.id
+                  ? 'Bezig...'
+                  : selectedSubLeague.createdBy === user.uid
+                    ? 'Subpoule verwijderen'
+                    : 'Subpoule verlaten'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -994,8 +1191,10 @@ export default function WkStandingsPage() {
             <div className="w-8 flex-shrink-0" />
             <div className="w-8 flex-shrink-0" />
             <div className="flex-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Speler</div>
+            <div className="w-20 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Punten</div>
             <div className="w-20 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Exacte scores</div>
             <div className="w-24 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Correcte posities</div>
+            <div className="w-20 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">1e goal</div>
             <div className="w-20 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400">Ingevuld</div>
           </div>
 
@@ -1041,6 +1240,10 @@ export default function WkStandingsPage() {
                   {/* Stats */}
                   <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
                     <div className="text-center">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5 hidden sm:block">Punten</p>
+                      <p className="text-base font-bold text-gray-900">{standing.totalPoints}</p>
+                    </div>
+                    <div className="text-center">
                       <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5 hidden sm:block">Exact</p>
                       <p className="text-base font-bold text-[#9a4d00]">{standing.exactScores}</p>
                     </div>
@@ -1049,8 +1252,14 @@ export default function WkStandingsPage() {
                       <p className="text-sm font-semibold text-gray-700">{standing.correctPlacements}</p>
                     </div>
                     <div className="hidden sm:block text-center w-20">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">1e goal</p>
+                      <p className="text-sm font-semibold text-gray-700">{standing.correctFirstGoalScorers}</p>
+                    </div>
+                    <div className="hidden sm:block text-center w-20">
                       <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Ingevuld</p>
-                      <p className="text-sm font-semibold text-gray-500">{standing.totalPredictions}</p>
+                      <p className="text-sm font-semibold text-gray-500">
+                        {standing.totalPredictions} / {totalAvailablePredictions}
+                      </p>
                     </div>
                   </div>
                 </Link>
@@ -1059,7 +1268,7 @@ export default function WkStandingsPage() {
           </div>
 
           <p className="px-6 py-3 text-xs text-gray-400 border-t border-gray-100">
-            Gesorteerd op exacte scores. Klik op een naam om de voorspellingen te bekijken.
+            Gesorteerd op totaalpunten: exacte scores, correcte posities en correcte eerste doelpuntenmakers. Klik op een naam om de voorspellingen te bekijken.
           </p>
         </div>
       )}

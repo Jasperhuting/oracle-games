@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getServerAuth, getServerFirebaseFootball } from "@/lib/firebase/server";
 import { WK2026_COLLECTIONS, WK_2026_SEASON, Wk2026SubLeague } from "@/app/wk-2026/types";
-
-const footballDb = getServerFirebaseFootball();
 
 async function getCurrentUserId(request: NextRequest): Promise<string | null> {
   try {
@@ -44,6 +42,7 @@ function generateCode() {
 
 export async function GET(request: NextRequest) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const isPublic = searchParams.get("public") === "true";
@@ -99,6 +98,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
@@ -130,15 +130,15 @@ export async function POST(request: NextRequest) {
     const subLeague: Omit<Wk2026SubLeague, "id"> = {
       name,
       code,
-      description: description || undefined,
       season: Number(body.season || WK_2026_SEASON),
       createdBy: userId,
       memberIds: [userId],
       pendingMemberIds: [],
       isPublic,
       maxMembers: 50,
-      createdAt: new Date() as unknown as import("firebase/firestore").Timestamp,
-      updatedAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+      createdAt: Timestamp.now() as unknown as import("firebase/firestore").Timestamp,
+      updatedAt: Timestamp.now() as unknown as import("firebase/firestore").Timestamp,
+      ...(description ? { description } : {}),
     };
 
     const docRef = await subLeaguesRef.add(subLeague);
@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(
@@ -210,7 +211,7 @@ export async function PUT(request: NextRequest) {
 
     await doc.ref.update({
       memberIds: FieldValue.arrayUnion(userId),
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
     });
 
     return NextResponse.json({
@@ -228,6 +229,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const footballDb = getServerFirebaseFootball();
     const userId = await getCurrentUserId(request);
     if (!userId) {
       return NextResponse.json(

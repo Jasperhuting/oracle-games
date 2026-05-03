@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/server';
 import {
-  getTelegramBridgeConfig,
+  getTelegramBridgeConfigs,
   getTelegramConfig,
   type TelegramBridgeConfig,
   type TelegramConfig,
@@ -288,12 +288,15 @@ function normalizeBridgeConfig(config: TelegramBridgeConfig): ResolvedWebhookCon
 
 function resolveWebhookConfig(request: NextRequest): ResolvedWebhookConfig | null {
   const defaultConfig = normalizeDefaultConfig(getTelegramConfig());
-  const bridgeConfig = normalizeBridgeConfig(getTelegramBridgeConfig());
+  const bridgeConfigs = getTelegramBridgeConfigs().map(normalizeBridgeConfig);
   const header = request.headers.get('x-telegram-bot-api-secret-token');
 
   if (header) {
-    if (bridgeConfig.webhookSecret && header === bridgeConfig.webhookSecret) {
-      return bridgeConfig;
+    const matchedBridgeConfig = bridgeConfigs.find(
+      (config) => config.webhookSecret && header === config.webhookSecret
+    );
+    if (matchedBridgeConfig) {
+      return matchedBridgeConfig;
     }
     if (defaultConfig.webhookSecret && header === defaultConfig.webhookSecret) {
       return defaultConfig;
@@ -301,8 +304,11 @@ function resolveWebhookConfig(request: NextRequest): ResolvedWebhookConfig | nul
     return null;
   }
 
-  if (!bridgeConfig.webhookSecret && bridgeConfig.botToken && bridgeConfig.chatId) {
-    return bridgeConfig;
+  const bridgeWithoutSecret = bridgeConfigs.find(
+    (config) => !config.webhookSecret && config.botToken && config.chatId
+  );
+  if (bridgeWithoutSecret) {
+    return bridgeWithoutSecret;
   }
 
   if (!defaultConfig.webhookSecret && defaultConfig.botToken && defaultConfig.chatId) {

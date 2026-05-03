@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { WkAdminNav } from "@/components/WkAdminNav";
 import { GoalScorerSelector, type GoalScorerPlayer } from "@/app/wk-2026/components/GoalScorerSelector";
+import { validateFirstGoalScorerSelection } from "@/lib/wk-2026/first-goal-scorer";
 
 interface Match {
     id: string;
@@ -540,6 +541,10 @@ export default function GroupsPage() {
                                         firstGoalLabel
                                     />
                                 </div>
+
+                                <p className="mt-2 ml-8 text-[11px] text-gray-400">
+                                    Kies de maker van de 1e goal bij precies één team, of laat beide op geen doelpunt bij 0-0.
+                                </p>
                             </div>
                         );
                     })}
@@ -551,6 +556,12 @@ export default function GroupsPage() {
                 <button
                     onClick={async () => {
                         try {
+                            const invalidMatch = matches.find((match) => validateFirstGoalScorerSelection(match) !== null);
+                            if (invalidMatch) {
+                                alert(validateFirstGoalScorerSelection(invalidMatch) || 'Controleer de eerste doelpuntenmakers.');
+                                return;
+                            }
+
                             // Save manual rankings
                             const teamsWithRankings: unknown[] = [];
                             manualRankings.forEach(poule => {

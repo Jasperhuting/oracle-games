@@ -3,6 +3,9 @@ import { RegisterForm } from "@/components/RegisterForm";
 import Image from 'next/image';
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { buildPathWithInviteCode, getInviteCodeFromSearchParams } from "@/lib/wk-2026/subleague-invite";
 
 export default function RegisterPageClient({
     previewHref = "/preview",
@@ -12,6 +15,9 @@ export default function RegisterPageClient({
     heroImageSrc?: string;
 }) {
     const { t } = useTranslation();
+    const searchParams = useSearchParams();
+    const inviteCode = getInviteCodeFromSearchParams(searchParams);
+    const previewLink = useMemo(() => buildPathWithInviteCode(previewHref, inviteCode), [previewHref, inviteCode]);
     return (
         <div className="relative min-h-screen overflow-hidden">
             <Image
@@ -40,7 +46,7 @@ export default function RegisterPageClient({
                     </div>
                     <div className="mt-3 text-center text-sm text-slate-600">
                         Eerst even rondkijken?{" "}
-                        <Link href={previewHref} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+                        <Link href={previewLink} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
                             Bekijk de previewpagina
                         </Link>
                         .

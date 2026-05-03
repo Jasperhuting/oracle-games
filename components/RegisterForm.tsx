@@ -4,14 +4,20 @@ import Link from "next/link";
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createUserWithEmailAndPassword, sendEmailVerification, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FirebaseError } from "firebase/app";
 import { RegisterFormProps } from "@/lib/types/component-props";
 import { createSharedSession } from "@/lib/auth/client-session";
 import { useTranslation } from "react-i18next";
+import {
+    buildPathWithInviteCode,
+    getInviteCodeFromSearchParams,
+    getWk2026InviteRedirectPath,
+    persistPendingInviteCode,
+} from "@/lib/wk-2026/subleague-invite";
 
 const BLOCKED_EMAIL_DOMAINS = new Set(["esims.nl"]);
 
@@ -23,6 +29,12 @@ export const RegisterForm = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const inviteCode = getInviteCodeFromSearchParams(searchParams);
+
+    useEffect(() => {
+        persistPendingInviteCode(inviteCode);
+    }, [inviteCode]);
 
     const onSubmit: SubmitHandler<RegisterFormProps> = async (data) => {
         if (isSubmitting) return;
@@ -94,7 +106,7 @@ export const RegisterForm = () => {
             localStorage.setItem('pendingVerificationEmail', data.email);
 
             // Redirect to verify email page (AuthGuard blocks unverified users)
-            router.push('/verify-email');
+            router.push(buildPathWithInviteCode('/verify-email', inviteCode));
         } catch (error: unknown) {
             console.error('Registration error:', error);
             setError(error instanceof Error ? error.message : 'Something went wrong registering');
@@ -126,7 +138,7 @@ export const RegisterForm = () => {
             
             // Google accounts are pre-verified, go directly to home
             await createSharedSession(user, true);
-            router.push('/home');
+            router.push(getWk2026InviteRedirectPath('/home'));
         } catch (error: unknown) {
             console.error('Google signup error:', error);
             if (error && typeof error === 'object' && 'code' in error) {
@@ -217,7 +229,7 @@ export const RegisterForm = () => {
             </div>
 
             <div className="mt-4 text-center">
-                <span className="text-xs text-slate-700">{t('register.alreadyHaveAccount')} <Link className="underline text-slate-800 hover:text-slate-950" href="/login">{t('register.loginLink')}</Link></span>
+                <span className="text-xs text-slate-700">{t('register.alreadyHaveAccount')} <Link className="underline text-slate-800 hover:text-slate-950" href={buildPathWithInviteCode('/login', inviteCode)}>{t('register.loginLink')}</Link></span>
             </div>
         </div>
     );

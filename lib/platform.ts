@@ -80,10 +80,10 @@ const PLATFORM_CONFIGS: PlatformConfig[] = [
     accountPath: "/wk-2026/account",
     headerMenuItems: ["footballWedstrijden", "footballPredictions", "footballKnockout", "footballStandings", "admin"],
     authImages: {
-      login: "/homepage_picture_wk.webp",
-      register: "/homepage_picture_wk.webp",
-      resetPassword: "/homepage_picture_wk.webp",
-      verifyEmail: "/homepage_picture_wk.webp",
+      login: "/homepage_picture_wk.jpg",
+      register: "/homepage_picture_wk.jpg",
+      resetPassword: "/homepage_picture_wk.jpg",
+      verifyEmail: "/homepage_picture_wk.jpg",
     },
   },
 ];

@@ -84,6 +84,7 @@ export default function AdminChatManagementPage() {
   const [formOpensAt, setFormOpensAt] = useState(getDefaultOpensAt());
   const [formClosesAt, setFormClosesAt] = useState(getDefaultClosesAt());
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const [presetSubmitting, setPresetSubmitting] = useState(false);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -176,6 +177,45 @@ export default function AdminChatManagementPage() {
     }
   };
 
+  const handleCreateFootballRoom = async () => {
+    if (!user) return;
+
+    const hasExistingFootballRoom = rooms.some(
+      (room) => room.gameType === 'football' && (room.status === 'open' || room.status === 'scheduled')
+    );
+
+    if (hasExistingFootballRoom) {
+      alert('Er bestaat al een actieve of geplande voetbalchat.');
+      return;
+    }
+
+    setPresetSubmitting(true);
+    try {
+      const res = await fetch('/api/chat/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'WK 2026 Voetbalchat',
+          description: 'Praat mee over het WK 2026, wedstrijden, voorspellingen en opvallende momenten.',
+          gameType: 'football',
+          opensAt: new Date().toISOString(),
+          closesAt: new Date('2026-12-31T23:59:59.000Z').toISOString(),
+          createdBy: user.uid,
+        }),
+      });
+
+      if (res.ok) {
+        await fetchRooms();
+      } else {
+        alert('Fout bij aanmaken van de voetbalchat.');
+      }
+    } catch {
+      alert('Fout bij aanmaken van de voetbalchat.');
+    } finally {
+      setPresetSubmitting(false);
+    }
+  };
+
   const handleToggleStatus = async (room: ChatRoomResponse) => {
     const newStatus = room.status === 'open' ? 'closed' : 'open';
     try {
@@ -254,12 +294,21 @@ export default function AdminChatManagementPage() {
                 Stel een openingstijd in om de chat automatisch te laten starten (bijv. elke dag 14:00 voor de Giro).
               </p>
             </div>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
-            >
-              {showForm ? 'Verbergen' : 'Nieuw'}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCreateFootballRoom}
+                disabled={presetSubmitting}
+                className="px-4 py-2 rounded-lg font-semibold transition-colors bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {presetSubmitting ? 'Aanmaken...' : 'Voetbalchat toevoegen'}
+              </button>
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
+              >
+                {showForm ? 'Verbergen' : 'Nieuw'}
+              </button>
+            </div>
           </div>
 
           {showForm && (

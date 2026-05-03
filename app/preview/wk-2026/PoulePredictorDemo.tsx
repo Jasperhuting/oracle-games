@@ -5,10 +5,46 @@ import { PoulePredictor, type PoulePredictorTeam, type PoulePredictorMatch } fro
 
 // Demo teams using ISO codes as IDs so flags always render correctly
 const DEMO_TEAMS: PoulePredictorTeam[] = [
-  { id: 'nl', name: 'Nederland' },
-  { id: 'de', name: 'Duitsland' },
-  { id: 'ma', name: 'Marokko' },
-  { id: 'sn', name: 'Senegal' },
+  {
+    id: 'nl',
+    name: 'Nederland',
+    squad: [
+      { name: 'Bart Verbruggen', position: 'keeper' },
+      { name: 'Virgil van Dijk', position: 'verdediger' },
+      { name: 'Frenkie de Jong', position: 'middenvelder' },
+      { name: 'Memphis Depay', position: 'spits' },
+    ],
+  },
+  {
+    id: 'de',
+    name: 'Duitsland',
+    squad: [
+      { name: 'Marc-Andre ter Stegen', position: 'keeper' },
+      { name: 'Antonio Rudiger', position: 'verdediger' },
+      { name: 'Jamal Musiala', position: 'middenvelder' },
+      { name: 'Kai Havertz', position: 'spits' },
+    ],
+  },
+  {
+    id: 'ma',
+    name: 'Marokko',
+    squad: [
+      { name: 'Yassine Bounou', position: 'keeper' },
+      { name: 'Achraf Hakimi', position: 'verdediger' },
+      { name: 'Azzedine Ounahi', position: 'middenvelder' },
+      { name: 'Youssef En-Nesyri', position: 'spits' },
+    ],
+  },
+  {
+    id: 'sn',
+    name: 'Senegal',
+    squad: [
+      { name: 'Edouard Mendy', position: 'keeper' },
+      { name: 'Kalidou Koulibaly', position: 'verdediger' },
+      { name: 'Pape Matar Sarr', position: 'middenvelder' },
+      { name: 'Nicolas Jackson', position: 'spits' },
+    ],
+  },
 ];
 
 function generateDemoMatches(teams: PoulePredictorTeam[]): PoulePredictorMatch[] {
@@ -21,6 +57,8 @@ function generateDemoMatches(teams: PoulePredictorTeam[]): PoulePredictorMatch[]
         team2Id: teams[j].id,
         team1Score: null,
         team2Score: null,
+        team1GoalScorer: null,
+        team2GoalScorer: null,
       });
     }
   }
@@ -46,6 +84,20 @@ export function PoulePredictorDemo() {
     );
   };
 
+  const handleGoalScorerChange = (
+    matchId: string,
+    team: 'team1' | 'team2',
+    scorer: string | null
+  ) => {
+    setMatches((prev) =>
+      prev.map((m) =>
+        m.id === matchId
+          ? { ...m, [team === 'team1' ? 'team1GoalScorer' : 'team2GoalScorer']: scorer }
+          : m
+      )
+    );
+  };
+
   return (
     <PoulePredictor
       pouleLabel="A"
@@ -54,6 +106,7 @@ export function PoulePredictorDemo() {
       matches={matches}
       onRankingsChange={setRankings}
       onScoreChange={handleScoreChange}
+      onGoalScorerChange={handleGoalScorerChange}
     />
   );
 }

@@ -17,6 +17,7 @@ import {
 import type { GoalScorerPlayer } from "@/app/wk-2026/components/GoalScorerSelector";
 import { PoulePredictor } from "@/app/wk-2026/components/PoulePredictor";
 import type { FixtureEntry } from "@/app/api/wk-2026/all-fixtures/route";
+import { validateFirstGoalScorerSelection } from "@/lib/wk-2026/first-goal-scorer";
 
 interface Match {
     id: string;
@@ -41,6 +42,47 @@ interface ContenderWithSquad {
 interface PouleRanking {
     pouleId: string;
     rankings: (TeamInPoule | null)[];
+}
+
+const FIXTURE_NAME_ALIASES: Record<string, string> = {
+    'south korea': 'korea republic',
+    'korea republic': 'korea republic',
+    'czech republic': 'czechia',
+    'czechia': 'czechia',
+    'bosnia and herzegovina': 'bosnia-herzegovina',
+    'bosnia herzegovina': 'bosnia-herzegovina',
+    'bosnia-herzegovina': 'bosnia-herzegovina',
+    'turkey': 'turkiye',
+    'türkiye': 'turkiye',
+    'turkiye': 'turkiye',
+    'iran': 'ir iran',
+    'ir iran': 'ir iran',
+    'united states': 'usa',
+    'usa': 'usa',
+    "cote d'ivoire": "côte d'ivoire",
+    'ivory coast': "côte d'ivoire",
+    "côte d'ivoire": "côte d'ivoire",
+    'cape verde': 'cabo verde',
+    'cabo verde': 'cabo verde',
+    'dr congo': 'congo dr',
+    'congo dr': 'congo dr',
+    'curacao': 'curaçao',
+    'curaçao': 'curaçao',
+};
+
+function normalizeFixtureName(value: string): string {
+    const normalized = value
+        .trim()
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ');
+
+    return FIXTURE_NAME_ALIASES[normalized] ?? normalized;
+}
+
+function isSameFixtureTeamName(a: string, b: string): boolean {
+    return normalizeFixtureName(a) === normalizeFixtureName(b);
 }
 
 function normalizeManualRankings(
@@ -218,13 +260,18 @@ export default function PlayerPredictionsPage() {
                         const predictedMatch = predictionsData.predictions?.matches?.find((m: any) => m.id === matchId); // eslint-disable-line @typescript-eslint/no-explicit-any
 
                         // Look up date from official fixtures by matching team names and group
-                        const fixture = groupFixtures.find(f =>
-                            f.group === poule.pouleId &&
-                            (
-                                (f.team1?.name === teams[i].name && f.team2?.name === teams[j].name) ||
-                                (f.team1?.name === teams[j].name && f.team2?.name === teams[i].name)
-                            )
-                        );
+                        const fixture = groupFixtures.find((f) => {
+                            if (f.group !== poule.pouleId || !f.team1?.name || !f.team2?.name) {
+                                return false;
+                            }
+
+                            return (
+                                (isSameFixtureTeamName(f.team1.name, teams[i].name) &&
+                                    isSameFixtureTeamName(f.team2.name, teams[j].name)) ||
+                                (isSameFixtureTeamName(f.team1.name, teams[j].name) &&
+                                    isSameFixtureTeamName(f.team2.name, teams[i].name))
+                            );
+                        });
 
                         allMatches.push({
                             id: matchId,
@@ -370,6 +417,15 @@ export default function PlayerPredictionsPage() {
             return;
         }
 
+        const invalidMatch = matches.find((match) => validateFirstGoalScorerSelection(match) !== null);
+        if (invalidMatch) {
+            setSaveFeedback({
+                type: 'error',
+                text: validateFirstGoalScorerSelection(invalidMatch) || 'Controleer de eerste doelpuntenmakers.',
+            });
+            return;
+        }
+
         setIsSaving(true);
         setSaveFeedback(null);
 
@@ -454,20 +510,22 @@ export default function PlayerPredictionsPage() {
 
             {/* Poule Selector */}
             <div className="mb-8">
-                <div className="flex flex-wrap gap-2">
+                <div className="rounded-2xl border border-[#ffd7a6] bg-[#fff7eb] p-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                     {POULES.map(pouleId => (
                         <button
                             key={pouleId}
                             onClick={() => handleSelectPoule(pouleId)}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                            className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
                                 selectedPoule === pouleId
-                                    ? 'bg-[#ff9900] text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-[#ff9900] text-white shadow-sm'
+                                    : 'bg-white text-gray-600 hover:bg-[#fff0d9] hover:text-[#9a4d00]'
                             }`}
                         >
                             Poule {pouleId.toUpperCase()}
                         </button>
                     ))}
+                </div>
                 </div>
             </div>
 
