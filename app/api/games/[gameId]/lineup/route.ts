@@ -289,6 +289,31 @@ export const PATCH = adminHandler('lineup-patch', async ({ uid, request, params 
       updatedGameIds.push(gameId);
     }
 
+    // Also sync to any other game types (e.g. auctioneer) that share the same raceRef.
+    // This ensures that removing a rider from the full-grid lineup also removes them from
+    // the auction master lineup (and vice versa in the raceRef path below).
+    const updatedIdSet = new Set(updatedGameIds);
+    if (raceRef) {
+      const sameRaceSnapshot = await db.collection('games')
+        .where('raceRef', '==', raceRef)
+        .get();
+
+      const crossBatch = db.batch();
+      let crossUpdated = 0;
+      sameRaceSnapshot.forEach((doc) => {
+        if (!updatedIdSet.has(doc.id)) {
+          crossBatch.update(doc.ref, {
+            eligibleTeams: teamIds || [],
+            eligibleRiders: riderIds || [],
+            updatedAt: new Date(),
+          });
+          updatedGameIds.push(doc.id);
+          crossUpdated++;
+        }
+      });
+      if (crossUpdated > 0) await crossBatch.commit();
+    }
+
     await bumpCacheVersion(db);
 
     // Log the activity
