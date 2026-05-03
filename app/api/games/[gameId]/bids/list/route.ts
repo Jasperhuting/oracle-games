@@ -53,20 +53,23 @@ export async function GET(
     }
 
     // Non-admin requesting another player's bids or all-game bids (no userId):
-    // only return non-active bids to prevent seeing live active bids during auction
+    // only return non-active bids to prevent seeing live active bids during auction.
+    // Use gameId+userId+bidAt index (exists), filter status client-side to avoid
+    // missing composite index for gameId+userId+status+bidAt.
     if (!isAdmin && (!isOwnBids || (!userId && !currentUserId))) {
-      const historicalStatuses = ['won', 'lost', 'outbid', 'refunded'];
-      let q = db.collection('bids').where('gameId', '==', gameId)
-        .where('status', 'in', historicalStatuses);
+      const historicalStatuses = new Set(['won', 'lost', 'outbid', 'refunded']);
+      let q = db.collection('bids').where('gameId', '==', gameId);
       if (userId) q = q.where('userId', '==', userId);
       if (riderNameId) q = q.where('riderNameId', '==', riderNameId);
       if (!skipOrder) q = q.orderBy('bidAt', 'desc');
       q = q.limit(limit);
       const snap = await q.get();
-      const bids = snap.docs.map(doc => {
-        const data = doc.data();
-        return { id: doc.id, ...data, bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt } as ClientBid;
-      });
+      const bids = snap.docs
+        .map(doc => {
+          const data = doc.data();
+          return { id: doc.id, ...data, bidAt: data.bidAt?.toDate?.()?.toISOString() || data.bidAt } as ClientBid;
+        })
+        .filter(bid => historicalStatuses.has(bid.status));
       return jsonWithCacheVersion({ success: true, bids, count: bids.length });
     }
 
