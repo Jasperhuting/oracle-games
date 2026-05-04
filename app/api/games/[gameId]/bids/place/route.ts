@@ -21,6 +21,12 @@ export async function POST(
   let amount: number | undefined;
 
   try {
+    // Capture the request time once — reused for both period validation and bidAt.
+    // Two separate new Date() calls can straddle a period boundary when async Firestore
+    // reads happen between them, causing a bid that passed validation to get a bidAt that
+    // falls outside the period and be excluded at finalization.
+    const requestTime = new Date();
+
     // Check if bidding is temporarily disabled
     if (BIDDING_DISABLED) {
       return NextResponse.json(
@@ -145,7 +151,7 @@ export async function POST(
     // Check if the active auction period has already ended (cron may not have run yet)
     const auctionPeriods = gameData?.config?.auctionPeriods;
     if (Array.isArray(auctionPeriods) && auctionPeriods.length > 0) {
-      const now = new Date();
+      const now = requestTime;
       const toDate = (value: unknown): Date | null => {
         if (!value) return null;
         if (value instanceof Date) return value;
@@ -558,14 +564,13 @@ export async function POST(
     }
 
     // Create new bid - wrap in try-catch to restore old bid if this fails
-    const now = new Date();
     const bid = {
       gameId,
       userId,
       playername: userData?.playername || userData?.email,
       riderNameId,
       amount,
-      bidAt: now,
+      bidAt: requestTime,
       status: 'active' as BidStatus,
       riderName: riderName || '',
       riderTeam: riderTeam || '',

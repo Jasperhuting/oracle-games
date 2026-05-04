@@ -811,8 +811,10 @@ export const Bidding = ({
               // Get all bidders for this rider (admin only)
               const riderBidders = allBids
                 .filter((b: Bid) => (b.riderNameId === rider.nameID || b.riderNameId === rider.id) && b.status === 'active')
-                .sort((a: Bid, b: Bid) => b.amount - a.amount)
-                .sort((a: Bid, b: Bid) => new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime()) // Sort by bidAt descending (newest first)
+                .sort((a: Bid, b: Bid) => {
+                  if (b.amount !== a.amount) return b.amount - a.amount;
+                  return new Date(a.bidAt).getTime() - new Date(b.bidAt).getTime();
+                })
                 .map((b: Bid) => ({ playername: b.playername, amount: b.amount, bidAt: b.bidAt }))
 
               // Full Grid: check if this rider's team already has a selection
