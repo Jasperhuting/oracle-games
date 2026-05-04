@@ -20,6 +20,33 @@ export const DataMigrationsTab = () => {
   const [giroLineupResult, setGiroLineupResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [giroLineupError, setGiroLineupError] = useState<string | null>(null);
 
+  const [resetPointsGameId, setResetPointsGameId] = useState('vzBNUh6nzUaLyy6rKQos');
+  const [resetPointsDryRun, setResetPointsDryRun] = useState(true);
+  const [resettingPoints, setResettingPoints] = useState(false);
+  const [resetPointsResult, setResetPointsResult] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [resetPointsError, setResetPointsError] = useState<string | null>(null);
+
+  const handleResetGamePoints = async () => {
+    if (!resetPointsGameId.trim()) return;
+    setResettingPoints(true);
+    setResetPointsError(null);
+    setResetPointsResult(null);
+    try {
+      const response = await fetch('/api/admin/reset-game-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId: resetPointsGameId.trim(), dryRun: resetPointsDryRun }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Reset mislukt');
+      setResetPointsResult(data);
+    } catch (err: unknown) {
+      setResetPointsError(err instanceof Error ? err.message : 'Onbekende fout');
+    } finally {
+      setResettingPoints(false);
+    }
+  };
+
   const handleSetGiroLineup = async () => {
     if (!user) return;
     setSettingGiroLineup(true);
@@ -231,6 +258,75 @@ export const DataMigrationsTab = () => {
                     ))}
                   </ul>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Reset game points */}
+      <div className="bg-white rounded-lg border border-orange-200 p-6">
+        <h2 className="text-xl font-semibold mb-2">Punten resetten voor een game</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Verwijdert alle <code className="bg-gray-100 px-1 rounded">pointsBreakdown</code> en zet{' '}
+          <code className="bg-gray-100 px-1 rounded">pointsScored</code> op 0 voor alle renners,
+          en <code className="bg-gray-100 px-1 rounded">totalPoints</code>/<code className="bg-gray-100 px-1 rounded">ranking</code> op 0
+          voor alle deelnemers. Gebruik dit alleen als punten onterecht zijn toegekend.
+        </p>
+
+        <div className="space-y-3 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Game ID</label>
+            <input
+              type="text"
+              value={resetPointsGameId}
+              onChange={(e) => setResetPointsGameId(e.target.value)}
+              placeholder="Game ID"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+              disabled={resettingPoints}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={resetPointsDryRun}
+              onChange={(e) => setResetPointsDryRun(e.target.checked)}
+              disabled={resettingPoints}
+            />
+            Dry run (geen wijzigingen opslaan)
+          </label>
+          <Button
+            onClick={handleResetGamePoints}
+            disabled={resettingPoints || !resetPointsGameId.trim()}
+            text={resettingPoints ? 'Bezig...' : resetPointsDryRun ? 'Dry run uitvoeren' : '⚠️ Punten definitief resetten'}
+            className={`w-full ${!resetPointsDryRun ? 'bg-red-600 hover:bg-red-700' : ''}`}
+          />
+        </div>
+
+        {resetPointsError && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-700 text-sm font-medium">Fout</p>
+            <p className="text-red-600 text-sm">{resetPointsError}</p>
+          </div>
+        )}
+
+        {resetPointsResult && (
+          <div className={`border rounded-md p-4 ${resetPointsResult.dryRun ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
+            <p className={`text-sm font-medium mb-2 ${resetPointsResult.dryRun ? 'text-yellow-800' : 'text-green-700'}`}>
+              {resetPointsResult.dryRun ? '🔍 Dry run resultaat' : '✅ Reset voltooid'} — {resetPointsResult.gameName}
+            </p>
+            <div className="text-sm text-gray-700 space-y-1">
+              <p><strong>Renners met punten:</strong> {resetPointsResult.teamsReset}</p>
+              <p><strong>Deelnemers met punten:</strong> {resetPointsResult.participantsReset}</p>
+              {resetPointsResult.affectedTeams?.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-gray-500">Toon renners ({resetPointsResult.affectedTeams.length})</summary>
+                  <ul className="mt-1 space-y-0.5 text-xs text-gray-600 max-h-48 overflow-y-auto">
+                    {resetPointsResult.affectedTeams.map((t: { riderName: string; pointsScored: number }, i: number) => (
+                      <li key={i}>{t.riderName} — {t.pointsScored} pts</li>
+                    ))}
+                  </ul>
+                </details>
               )}
             </div>
           </div>
